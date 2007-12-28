@@ -1,0 +1,176 @@
+===========
+Django MPTT
+===========
+
+Utilities for implementing Modified Preorder Tree Traversal (MPTT) with
+your `Django`_ ``Model`` classes and working with trees of ``Model``
+instances.
+
+.. _`Django`: http://www.djangoproject.com
+
+Setting up a ``Model`` class for MPTT
+-------------------------------------
+
+The ``mptt.models`` module contains a ``treeify`` function, which users
+can call to set a ``Model`` class up for MPTT. This function takes as
+its arguments the ``Model`` class itself and attribute names for certain
+fields which are required in order to manage the database table for the
+``Model`` as a tree.
+
+The following argument is required:
+
+* ``cls`` -- the ``Model`` class which is to be set up for MPTT.
+
+All remaining arguments are optional, but you should take care to
+specify appropriate attribute names where the default attribute names
+do not fit with your ``Model`` class' definition:
+
+* ``parent_attr`` -- the name of an attribute which relates the
+  ``Model`` back to itself such that each instance can be a child of
+  another instance. Defaults to ``'parent'``.
+
+  Users are responsible for setting this field up on the model class,
+  which can be done like so::
+
+     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+
+For the following four arguments, if fields with the given attribute
+names do not exist, they will be added to the ``Model`` class
+dynamically:
+
+* ``left_attr`` -- the name of an attribute which contains the left tree
+  node edge indicator, which should be a ``PositiveIntegerField``.
+  Defaults to ``'lft'``.
+
+* ``right_attr`` -- the name of an attribute which contains the right
+  tree node edge indicator, which should be a ``PositiveIntegerField``.
+  Defaults to ``'rght'``.
+
+* ``tree_id_attr`` -- the name of an attribute which contains the tree
+  id, which should be a ``PositiveIntegerField``. Defaults to
+  ``'tree_id'``.
+
+  Items which do not have a parent are considered to be "root" nodes in
+  the tree and will be allocated a new tree id. All descendants of root
+  nodes will be given the same tree id as their root node.
+
+* ``level_attr`` -- the name of an attribute which contains the
+  (zero-based) level at which an item sits in the tree, which should be
+  a ``PositiveIntegerField``. Defaults to ``'level'``.
+
+  For example, root nodes would have a level of ``0`` and their
+  immediate children would have have a level of ``1``.
+
+* ``tree_manager_attr`` -- the name of an attribute which should
+  reference a custom ``Manager`` which handles working with trees of
+  ``Model`` instances. Defaults to ``'tree'``.
+
+.. _`minimal example usage`:
+
+Mimimal example usage is given below, where the ``Model`` class being
+set up for MPTT is suitable for use with the default arguments of
+``treeify``::
+
+   from django.db import models
+
+   from mptt.models import treeify
+
+   class Genre(models.Model):
+       name = models.CharField(max_length=50, unique=True)
+       parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+
+   treeify(Genre)
+
+MPTT setup details
+~~~~~~~~~~~~~~~~~~
+
+The following steps are taken when ``treeify`` is called to set up a
+``Model`` class for MPTT:
+
+1. If the ``Model`` class does not have fields defined with names
+   matching any of the attribute names given for the ``left_attr``,
+   ``right_attr``, ``tree_id_attr`` or ``level_attr`` arguments, the
+   following field is dynamically added to the model for each missing
+   field::
+
+      models.PositiveIntegerField(db_index=True, editable=False)
+
+   As such, if all of these fields are left to be dynamically added, the
+   tree structure is effectively invisible to the
+   ``django.contrib.admin`` application and any ``newforms`` forms
+   generated using the ``ModelForm`` class, if these are being used with
+   the ``Model`` in question.
+
+2. Signal receiving functions are registered for the built-in
+   ``pre_save`` and ``pre_delete`` signals which are fired when a
+   ``Model`` instance is about to be saved or deleted, respectively.
+
+   These functions take care of managing MPTT fields when a ``Model``
+   instance is about to be created or deleted.
+
+3. Additional instance methods are added to the ``Model`` class to
+   retrieve information related to ``Model`` instances, based on the
+   tree structure.
+
+   See `additional instance methods`_ below for details about the new
+   methods which are available.
+
+4. A custom ``Manager`` is added to the ``Model`` class to handle
+   working with the tree of model instances.
+
+   See `the TreeManager custom Manager`_ below for details about
+   the operations available on this custom ``Manager``.
+
+Dynamic field creation vs. Explicitly defining MPTT fields
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As the `minimal example usage`_ above demonstrates, ``Model`` classes
+which do not have any field names which clash with the default arguments
+to the ``treeify`` function need not contain any details about MPTT
+fields at all in their class definition.
+
+One of the goals of this application is that authors should not have to
+worry about or use MPTT fields directly in order to reap the benefits of
+the functionality their existence enables.
+
+While dynamically added MPTT fields can be used in inner ``Meta`` and
+``Admin`` classes, it is recommended that models in which these fields
+will be used elsewhere in the class definition should implement the
+fields themselves for clarity - it's already bad enough that we're
+dynamically adding fields without your model definitions using fields
+which don't appear to exist.
+
+Salt to taste, your mileage may vary, etc. etc.
+
+Additional instance methods
+---------------------------
+
+The following instance methods will be available on all instances of
+``Model`` classes set up for MPTT:
+
+* ``get_ancestors(ascending=False)`` -- creates a ``QuerySet``
+  containing all the ancestors of the model instance.
+
+  These default to being in descending order (root ancestor first,
+  immediate parent last); passing ``True`` for the ``ascending``
+  argument will reverse the ordering (immediate parent first, root
+  ancestor last).
+
+* ``get_descendants(include_self=False)`` -- creates a ``QuerySet``
+  containing all the descendants of the model instance.
+
+  If ``include_self`` is ``True``, the ``QuerySet`` will also include
+  the model instance itself.
+
+* ``get_descendant_count()`` -- returns the number of descendants the
+  model instance has, based on its left and right tree node edge
+  indicators. As such, this does not incur any database access.
+
+The ``TreeManager`` custom ``Manager``
+--------------------------------------
+
+At the moment, this manager only redefines the ``get_query_set`` method,
+such that the contents of any ``QuerySet`` created using this manager
+will be ordered based on the tree structure, with trees appearing in the
+order they were created and their items being ordered in a depth-first
+fashion within each tree.
