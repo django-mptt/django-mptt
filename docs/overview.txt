@@ -157,7 +157,7 @@ The following instance methods will be available on all instances of
   ancestor last).
 
 * ``get_descendants(include_self=False)`` -- creates a ``QuerySet``
-  containing all the descendants of the model instance.
+  containing descendants of the model instance.
 
   If ``include_self`` is ``True``, the ``QuerySet`` will also include
   the model instance itself.
@@ -165,6 +165,13 @@ The following instance methods will be available on all instances of
 * ``get_descendant_count()`` -- returns the number of descendants the
   model instance has, based on its left and right tree node edge
   indicators. As such, this does not incur any database access.
+
+* ``get_siblings(include_self=False)`` -- creates a ``QuerySet``
+  containing siblings of the model instance. Root nodes are considered
+  to be siblings of other root nodes.
+
+  If ``include_self`` is ``True``, the ``QuerySet`` will also include
+  the model instance itself.
 
 The ``TreeManager`` custom ``Manager``
 --------------------------------------

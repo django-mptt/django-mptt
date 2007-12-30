@@ -1,0 +1,8 @@
+=====================
+Django MPTT CHANGELOG
+=====================
+
+Sun 30th Dec, 2007
+-------------------
+
+* Added a ``get_siblings`` method to model instances.
