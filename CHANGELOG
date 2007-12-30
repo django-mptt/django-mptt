@@ -5,4 +5,6 @@ Django MPTT CHANGELOG
 Sun 30th Dec, 2007
 -------------------
 
+* Added tests for creation, model instance methods and deletion.
+
 * Added a ``get_siblings`` method to model instances.
