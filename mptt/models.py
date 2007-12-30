@@ -52,6 +52,8 @@ def treeify(cls, parent_attr='parent', left_attr='lft', right_attr='rght',
             get_descendants(left_attr, right_attr, tree_id_attr))
     setattr(cls, 'get_descendant_count',
             get_descendant_count(left_attr, right_attr))
+    setattr(cls, 'get_siblings',
+            get_siblings(parent_attr, left_attr, tree_id_attr, level_attr))
     TreeManager(parent_attr, left_attr, right_attr, tree_id_attr,
                 level_attr).contribute_to_class(cls, tree_manager_attr)
 
@@ -82,13 +84,13 @@ def get_ancestors(parent_attr, left_attr, right_attr, tree_id_attr):
 
 def get_descendants(left_attr, right_attr, tree_id_attr):
     """
-    Creates a function which retrieves the descendants of a model
+    Creates a function which retrieves descendants of a model
     instance which has the given tree attributes.
     """
     def _get_descendants(instance, include_self=False):
         """
-        Creates a ``QuerySet`` containing all the descendants of this
-        model instance.
+        Creates a ``QuerySet`` containing descendants of this model
+        instance.
 
         If ``include_self`` is ``True``, the ``QuerySet`` will also
         include this model instance.
@@ -114,3 +116,30 @@ def get_descendant_count(left_attr, right_attr):
         """
         return (getattr(instance, right_attr) - getattr(instance, left_attr) - 1) / 2
     return _get_descendant_count
+
+def get_siblings(parent_attr, left_attr, tree_id_attr, level_attr):
+    """
+    Creates a function which retrieves siblings of a model instance
+    which has the given tree attributes.
+    """
+    def _get_siblings(instance, include_self=False):
+        """
+        Creates a ``QuerySet`` containing siblings of this model
+        instance. Root nodes are considered to be siblings of other root
+        nodes.
+
+        If ``include_self`` is ``True``, the ``QuerySet`` will also
+        include this model instance.
+        """
+        if getattr(instance, level_attr) == 0:
+            queryset = instance._default_manager.filter(**{
+                level_attr: 0
+            }).order_by(tree_id_attr)
+        else:
+            queryset = instance._default_manager.filter(**{
+                parent_attr: getattr(instance, '%s_id' % parent_attr)
+            }).order_by(left_attr)
+        if not include_self:
+            queryset = queryset.exclude(pk=instance.pk)
+        return queryset
+    return _get_siblings
