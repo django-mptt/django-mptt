@@ -1,0 +1,111 @@
+=============================
+Django MPTT Development Notes
+=============================
+
+This document contains notes related to use cases/reasoning behind and
+implementation details for Django MPTT features.
+
+I've not worked with this particular kind of hierarchical data structure
+before to any degree of complexity, so you can consider this my "working
+out" :)
+
+Reparenting
+-----------
+
+Since it's not unreasonable to assume a good percentage of the people
+who use this application will also be using the ``django.contrib.admin``
+application or ``newforms`` forms generated with ``ModelForm`` to edit
+their data, and since in these cases only the parent field will be
+editable if users have allowed ``mptt.models.treeify`` to create tree
+fields for them, it would be nice if Django MPTT automatically took care
+of the tree when a ``Model`` instance has its parent changed.
+
+When the parent of a tree node is changed, its left, right, level and
+tree id may also be updated to keep the integrity of the tree structure
+intact.
+
+The following diagram depicts a representation of a nested set which
+we'll base some basic reparenting examples on - hopefully, by observing
+the resulting tree structures, we can come up with algorithms for
+different reparenting scenarios::
+
+    __________________________________________________________________________
+   |  Root 1                                                                  |
+   |   ________________________________    ________________________________   |
+   |  |  Child 1.1                     |  |  Child 1.2                     |  |
+   |  |   ___________    ___________   |  |   ___________    ___________   |  |
+   |  |  |  C 1.1.1  |  |  C 1.1.2  |  |  |  |  C 1.2.1  |  |  C 1.2.2  |  |  |
+   1  2  3___________4  5___________6  7  8  9___________10 11__________12 13 14
+   |  |________________________________|  |________________________________|  |
+   |__________________________________________________________________________|
+
+Extract Root Node (Remove Parent)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If the node's previous parent was not ``None`` and the node's new parent
+is ``None``, we need to make it into a new root.
+
+For example, were we to change Child 1.2's parent to ``None``, we should
+end up with the following structure::
+
+    ______________________________________
+   |  Root 1                              |
+   |   ________________________________   |
+   |  |  Child 1.1                     |  |
+   |  |   ___________   ____________   |  |
+   |  |  |  C 1.1.1  |  |  C 1.1.2  |  |  |
+   1  2  3___________4  5___________6  7  8
+   |  |________________________________|  |
+   |______________________________________|
+
+    ____________________________________
+   |  Root 2                            |
+   |   _____________    _____________   |
+   |  |  Child 2.1  |  |  Child 2.2  |  |
+   1  2_____________3  4_____________5  6
+   |____________________________________|
+
+The following steps should translate an existing node and its
+descendants into the new format required:
+
+   1. The new root node's level will have to become ``0``, and the
+      levels of any descendants will decrease by the same amount, so
+      just subtract the root node's current level from all affected
+      nodes::
+
+         new_level = current_level - new_root_node.level
+
+   2. The new root node's left value will have to become ``1``. Since
+      the node's number of descendants hasn't changed, we can simply use
+      the node's current left value to adjust all left and right values
+      by the amount required::
+
+         new_left = current_left - new_root_node.left + 1
+         new_right = current_right - new_root_node.left + 1
+
+   3. A new tree id will be generated for the new root node, so update
+      the node and all descendents with this value.
+
+This can be expressed as a single SQL query::
+
+   UPDATE nodes
+   SET level = level - [NODE_LEVEL],
+       left = left - [NODE_LEFT + 1],
+       right = right - [NODE_LEFT + 1],
+       tree_id = [NEW_TREE_ID]
+   WHERE left BETWEEN [NODE_LEFT] AND [NODE_RIGHT]
+     AND tree_id = [CURRENT_TREE_ID]
+
+Now we have to fix the original tree, as there's a hole the size of the
+node we just moved. We can calculate the size of the gap using the
+node's left and right values, updating the original tree accordingly::
+
+   UPDATE nodes
+   SET left = left - [NODE_RIGHT - NODE_LEFT + 1]
+   WHERE left > [NODE_LEFT]
+     AND tree_id = [CURRENT_TREE_ID]
+
+   UPDATE nodes
+   SET right = right - [NODE_RIGHT - NODE_LEFT + 1]
+   WHERE right > [NODE_RIGHT]
+     AND tree_id = [CURRENT_TREE_ID]
