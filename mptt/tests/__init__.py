@@ -76,10 +76,15 @@ r"""
 
 # Reparenting #################################################################
 
+Test that trees are in the appropriate state and that reparented items have the
+correct tree attributes defined, should they be required for use after a save.
+
 # Extract new root node with descendants
 >>> platformer = Genre.objects.get(pk=platformer.pk)
 >>> platformer.parent = None
 >>> platformer.save()
+>>> print_tree_details([platformer])
+2 - 3 0 1 8
 >>> print_tree_details(Genre.tree.all())
 1 - 1 0 1 2
 6 - 2 0 1 6
@@ -94,6 +99,8 @@ r"""
 >>> platformer_3d = Genre.objects.get(pk=platformer_3d.pk)
 >>> platformer_3d.parent = None
 >>> platformer_3d.save()
+>>> print_tree_details([platformer_3d])
+4 - 4 0 1 2
 >>> print_tree_details(Genre.tree.all())
 1 - 1 0 1 2
 6 - 2 0 1 6
@@ -124,6 +131,8 @@ InvalidParent: A root node may not have its parent changed to any node in its ow
 >>> platformer = Genre.objects.get(pk=platformer.pk)
 >>> rpg.parent = platformer
 >>> rpg.save()
+>>> print_tree_details([rpg])
+6 2 3 1 6 11
 >>> print_tree_details(Genre.tree.all())
 1 - 1 0 1 2
 2 - 3 0 1 12
