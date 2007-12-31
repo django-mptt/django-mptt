@@ -104,30 +104,62 @@ r"""
 5 2 3 1 4 5
 4 - 4 0 1 2
 
+# Check that invalid parent errors are thrown appropriately when giving
+# a root node a parent.
+>>> rpg = Genre.objects.get(pk=rpg.pk)
+>>> rpg.parent = rpg
+>>> rpg.save()
+Traceback (most recent call last):
+    ...
+InvalidParent: A root node may not have its parent changed to any node in its own tree.
+>>> arpg = Genre.objects.get(pk=arpg.pk)
+>>> rpg.parent = arpg
+>>> rpg.save()
+Traceback (most recent call last):
+    ...
+InvalidParent: A root node may not have its parent changed to any node in its own tree.
+
+# Make a root node a child node
+>>> rpg = Genre.objects.get(pk=rpg.pk)
+>>> platformer = Genre.objects.get(pk=platformer.pk)
+>>> rpg.parent = platformer
+>>> rpg.save()
+>>> print_tree_details(Genre.tree.all())
+1 - 1 0 1 2
+2 - 3 0 1 12
+3 2 3 1 2 3
+5 2 3 1 4 5
+6 2 3 1 6 11
+7 6 3 2 7 8
+8 6 3 2 9 10
+4 - 4 0 1 2
+
 # Deletion ####################################################################
+
+# Delete a node which has siblings
 >>> platformer_3d = Genre.objects.get(pk=platformer_3d.pk)
 >>> platformer_3d.delete()
 >>> print_tree_details(Genre.tree.all())
 1 - 1 0 1 2
-6 - 2 0 1 6
-7 6 2 1 2 3
-8 6 2 1 4 5
+2 - 3 0 1 12
+3 2 3 1 2 3
+5 2 3 1 4 5
+6 2 3 1 6 11
+7 6 3 2 7 8
+8 6 3 2 9 10
+
+# Delete a node which has descendants
+>>> rpg = Genre.objects.get(pk=rpg.pk)
+>>> rpg.delete()
+>>> print_tree_details(Genre.tree.all())
+1 - 1 0 1 2
 2 - 3 0 1 6
 3 2 3 1 2 3
 5 2 3 1 4 5
 
+# Delete a root node
 >>> platformer = Genre.objects.get(pk=platformer.pk)
 >>> platformer.delete()
 >>> print_tree_details(Genre.tree.all())
 1 - 1 0 1 2
-6 - 2 0 1 6
-7 6 2 1 2 3
-8 6 2 1 4 5
-
->>> action = Genre.objects.get(pk=action.pk)
->>> action.delete()
->>> print_tree_details(Genre.tree.all())
-6 - 2 0 1 6
-7 6 2 1 2 3
-8 6 2 1 4 5
 """

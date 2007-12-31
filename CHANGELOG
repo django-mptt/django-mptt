@@ -2,8 +2,14 @@
 Django MPTT CHANGELOG
 =====================
 
+Mon 31st Dec, 2007
+------------------
+
+* Implemented reparenting when a root node is transformed into a child
+  node by being assigned a parent.
+
 Sun 30th Dec, 2007
--------------------
+------------------
 
 * Implemented reparenting when a model instance is transformed into a
   root node by having its parent removed.
