@@ -52,7 +52,7 @@ end up with the following structure::
    |  Root 1                              |
    |   ________________________________   |
    |  |  Child 1.1                     |  |
-   |  |   ___________   ____________   |  |
+   |  |   ___________    ___________   |  |
    |  |  |  C 1.1.1  |  |  C 1.1.2  |  |  |
    1  2  3___________4  5___________6  7  8
    |  |________________________________|  |
@@ -90,8 +90,8 @@ This can be expressed as a single SQL query::
 
    UPDATE nodes
    SET level = level - [NODE_LEVEL],
-       left = left - [NODE_LEFT + 1],
-       right = right - [NODE_LEFT + 1],
+       left = left - [NODE_LEFT - 1],
+       right = right - [NODE_LEFT - 1],
        tree_id = [NEW_TREE_ID]
    WHERE left BETWEEN [NODE_LEFT] AND [NODE_RIGHT]
      AND tree_id = [CURRENT_TREE_ID]
