@@ -74,17 +74,47 @@ r"""
 >>> [g.name for g in platformer_3d.get_siblings(include_self=True)]
 [u'2D Platformer', u'3D Platformer', u'4D Platformer']
 
+# Reparenting #################################################################
+
+# Extract new root node with descendants
+>>> platformer = Genre.objects.get(pk=platformer.pk)
+>>> platformer.parent = None
+>>> platformer.save()
+>>> print_tree_details(Genre.tree.all())
+1 - 1 0 1 2
+6 - 2 0 1 6
+7 6 2 1 2 3
+8 6 2 1 4 5
+2 - 3 0 1 8
+3 2 3 1 2 3
+4 2 3 1 4 5
+5 2 3 1 6 7
+
+# Extract new root node without descendants, which has existing siblings
+>>> platformer_3d = Genre.objects.get(pk=platformer_3d.pk)
+>>> platformer_3d.parent = None
+>>> platformer_3d.save()
+>>> print_tree_details(Genre.tree.all())
+1 - 1 0 1 2
+6 - 2 0 1 6
+7 6 2 1 2 3
+8 6 2 1 4 5
+2 - 3 0 1 6
+3 2 3 1 2 3
+5 2 3 1 4 5
+4 - 4 0 1 2
+
 # Deletion ####################################################################
 >>> platformer_3d = Genre.objects.get(pk=platformer_3d.pk)
 >>> platformer_3d.delete()
 >>> print_tree_details(Genre.tree.all())
-1 - 1 0 1 8
-2 1 1 1 2 7
-3 2 1 2 3 4
-5 2 1 2 5 6
+1 - 1 0 1 2
 6 - 2 0 1 6
 7 6 2 1 2 3
 8 6 2 1 4 5
+2 - 3 0 1 6
+3 2 3 1 2 3
+5 2 3 1 4 5
 
 >>> platformer = Genre.objects.get(pk=platformer.pk)
 >>> platformer.delete()
