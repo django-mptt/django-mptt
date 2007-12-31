@@ -109,3 +109,56 @@ node's left and right values, updating the original tree accordingly::
    SET right = right - [NODE_RIGHT - NODE_LEFT + 1]
    WHERE right > [NODE_RIGHT]
      AND tree_id = [CURRENT_TREE_ID]
+
+Insert Tree (Add Parent)
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+If the node's previous parent was ``None`` and the node's new parent is
+not ``None``, we need to move the entire tree it was the root node for.
+
+First, we need to make some space for the tree to be moved into the new
+parent's tree. This is the same as the process used when creating a new
+child node, where we add ``2`` to all left and right values which are
+greater than or equal to the right value of the parent into which the
+new node will be inserted.
+
+In this case, we want to use the width of the tree we'll be inserting,
+which is ``right - left + 1``. For any node without children, this would
+be ``2``, which is why we add that amount when creating a new node.
+This seems like the kind of operation which could be extracted out into
+a reusable function at some stage.
+
+Steps to translate the node and its descendants to the new format
+required:
+
+   1. The node's level (``0``, as it's a root node) will have to become
+      one greater than its new parent's level. We can add this amount to
+      the node and all its descendants to get the correct levels::
+
+         new_level = current_level + new_parent.level + 1
+
+   2. The node's left value (``1``, as it's a root node) will have to
+      become the current right value of its new parent (look at the
+      diagrams above if this doesn't make sense - imagine inserting Root
+      2 back into Root 1). Add the difference between the node's left
+      value and the new parent's right value to all left and right
+      values of the node and its descendants::
+
+         new_left = current_left + new_parent.right - 1
+         new_right = current_right + new_parent.right - 1
+
+   3. Update the node and all descendents with the tree id of the tree
+      they're moving to.
+
+This is a similar query to that used when creating new root nodes from
+existing child nodes. We can omit the left value from the ``WHERE``
+statement in this case, since we'll be operating on a whole tree, but
+this also looks like something which could be extracted into a reusable
+function at some stage::
+
+   UPDATE nodes
+   SET level = level + [PARENT_LEVEL + 1],
+       left = left + [PARENT_RIGHT - 1],
+       right = right + [PARENT_RIGHT - 1],
+       tree_id = [PARENT_TREE_ID]
+   WHERE tree_id = [CURRENT_TREE_ID]
