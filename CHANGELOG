@@ -5,6 +5,11 @@ Django MPTT CHANGELOG
 Tue 1st Jan, 2008
 -----------------
 
+* Extracted logic for turning a ``Model`` instance which is the root
+  node of a tree into a child of a given parent node in another tree from
+  ``mptt.signals.pre_save`` into the ``make_child_node`` method in
+  ``TreeManager``.
+
 * Extracted logic for turning a ``Model`` instance which is a child node
   into the root node of a new tree from ``mptt.signals.pre_save`` into
   the ``make_root_node`` method in ``TreeManager``.
