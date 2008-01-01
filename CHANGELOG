@@ -5,6 +5,9 @@ Django MPTT CHANGELOG
 Tue 1st Jan, 2008
 -----------------
 
+* Removed ``mptt.signals._get_next_tree_id``; added a
+  ``get_next_tree_id`` method to ``TreeManager`` to replace it.
+
 * Extracted some similar space-management queries out into the
   ``close_gap`` and ``create_space`` methods in ``TreeManager``.
 

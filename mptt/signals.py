@@ -12,17 +12,6 @@ __all__ = ['pre_save', 'pre_delete']
 
 qn = connection.ops.quote_name
 
-def _get_next_tree_id(model, tree_id_attr):
-    """
-    Determines the next tree id for the given model or model instance.
-    """
-    cursor = connection.cursor()
-    cursor.execute('SELECT MAX(%s) FROM %s' % (
-        qn(model._meta.get_field(tree_id_attr).column),
-        qn(model._meta.db_table)))
-    row = cursor.fetchone()
-    return row[0] and (row[0] + 1) or 1
-
 def pre_save(parent_attr, left_attr, right_attr, tree_id_attr, level_attr):
     """
     Creates a pre-save signal receiver for a model which has the given
@@ -54,7 +43,7 @@ def pre_save(parent_attr, left_attr, right_attr, tree_id_attr, level_attr):
                 setattr(instance, left_attr, 1)
                 setattr(instance, right_attr, 2)
                 setattr(instance, tree_id_attr,
-                        _get_next_tree_id(instance, tree_id_attr))
+                        instance._tree_manager.get_next_tree_id())
                 setattr(instance, level_attr, 0)
         else:
             # TODO Is it possible to track the original parent so we
@@ -83,7 +72,7 @@ def pre_save(parent_attr, left_attr, right_attr, tree_id_attr, level_attr):
                         'tree_id': qn(opts.get_field(tree_id_attr).column),
                     }
                     tree_id = getattr(instance, tree_id_attr)
-                    new_tree_id = _get_next_tree_id(instance, tree_id_attr)
+                    new_tree_id = instance._tree_manager.get_next_tree_id()
                     edge_change = getattr(instance, left_attr) - 1
                     cursor.execute(move_subtree_query, [
                         getattr(instance, level_attr),
