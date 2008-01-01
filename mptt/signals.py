@@ -45,15 +45,7 @@ def pre_save(parent_attr, left_attr, right_attr, tree_id_attr, level_attr):
             if parent:
                 target_right = getattr(parent, right_attr) - 1
                 tree_id = getattr(parent, tree_id_attr)
-                update_query = 'UPDATE %s SET %%(col)s = %%(col)s + 2 WHERE %%(col)s > %%%%s AND %s = %%%%s' % (
-                    qn(opts.db_table),
-                    qn(opts.get_field(tree_id_attr).column))
-                cursor.execute(update_query % {
-                    'col': qn(opts.get_field(right_attr).column),
-                }, [target_right, tree_id])
-                cursor.execute(update_query % {
-                    'col': qn(opts.get_field(left_attr).column),
-                }, [target_right, tree_id])
+                instance._tree_manager.create_space(2, target_right, tree_id)
                 setattr(instance, left_attr, target_right + 1)
                 setattr(instance, right_attr, target_right + 2)
                 setattr(instance, tree_id_attr, tree_id)
@@ -100,23 +92,12 @@ def pre_save(parent_attr, left_attr, right_attr, tree_id_attr, level_attr):
                         getattr(instance, right_attr),
                         tree_id])
 
-                    # Plug the gap left by moving the subtree.
-                    plug_gap_query = """
-                    UPDATE %(table)s
-                    SET %%(col)s = %%(col)s - %%%%s
-                    WHERE %%(col)s > %%%%s
-                      AND %(tree_id)s = %%%%s""" % {
-                        'table': db_table,
-                        'tree_id': qn(opts.get_field(tree_id_attr).column),
-                    }
+                    # Close the gap left after the subtree was moved
+                    target_left = getattr(instance, left_attr) - 1
                     gap_size = (getattr(instance, right_attr) -
                                 getattr(instance, left_attr) + 1)
-                    cursor.execute(plug_gap_query % {
-                        'col': qn(opts.get_field(left_attr).column),
-                    }, [gap_size, getattr(instance, left_attr), tree_id])
-                    cursor.execute(plug_gap_query % {
-                        'col': qn(opts.get_field(right_attr).column),
-                    }, [gap_size, getattr(instance, right_attr), tree_id])
+                    instance._tree_manager.close_gap(gap_size, target_left,
+                                                     tree_id)
 
                     # The model instance is yet to be saved, so make sure its
                     # new tree values are present.
@@ -132,20 +113,14 @@ def pre_save(parent_attr, left_attr, right_attr, tree_id_attr, level_attr):
                         getattr(instance, tree_id_attr)):
                         raise InvalidParent(_('A root node may not have its parent changed to any node in its own tree.'))
 
-                    # Make space for the tree which will be moved
+                    # Create space for the tree which will be moved
                     target_right = getattr(parent, right_attr) - 1
                     new_tree_id = getattr(parent, tree_id_attr)
                     tree_width = (getattr(instance, right_attr) -
                                   getattr(instance, left_attr) + 1)
-                    update_query = 'UPDATE %s SET %%(col)s = %%(col)s + %%%%s WHERE %%(col)s > %%%%s AND %s = %%%%s' % (
-                        qn(opts.db_table),
-                        qn(opts.get_field(tree_id_attr).column))
-                    cursor.execute(update_query % {
-                        'col': qn(opts.get_field(right_attr).column),
-                    }, [tree_width, target_right, new_tree_id])
-                    cursor.execute(update_query % {
-                        'col': qn(opts.get_field(left_attr).column),
-                    }, [tree_width, target_right, new_tree_id])
+                    instance._tree_manager.create_space(tree_width,
+                                                        target_right,
+                                                        new_tree_id)
 
                     # Move the tree's root node and its descendants,
                     # making the root node a child node.
@@ -183,15 +158,9 @@ def pre_save(parent_attr, left_attr, right_attr, tree_id_attr, level_attr):
                     new_tree_id = getattr(parent, tree_id_attr)
                     tree_width = (getattr(instance, right_attr) -
                                   getattr(instance, left_attr) + 1)
-                    update_query = 'UPDATE %s SET %%(col)s = %%(col)s + %%%%s WHERE %%(col)s > %%%%s AND %s = %%%%s' % (
-                        qn(opts.db_table),
-                        qn(opts.get_field(tree_id_attr).column))
-                    cursor.execute(update_query % {
-                        'col': qn(opts.get_field(right_attr).column),
-                    }, [tree_width, target_right, new_tree_id])
-                    cursor.execute(update_query % {
-                        'col': qn(opts.get_field(left_attr).column),
-                    }, [tree_width, target_right, new_tree_id])
+                    instance._tree_manager.create_space(tree_width,
+                                                        target_right,
+                                                        new_tree_id)
 
                     # Move the subtree
                     move_subtree_query = """
@@ -219,21 +188,10 @@ def pre_save(parent_attr, left_attr, right_attr, tree_id_attr, level_attr):
                         getattr(instance, right_attr),
                         tree_id])
 
-                    # Plug the gap left by moving the subtree.
-                    plug_gap_query = """
-                    UPDATE %(table)s
-                    SET %%(col)s = %%(col)s - %%%%s
-                    WHERE %%(col)s > %%%%s
-                      AND %(tree_id)s = %%%%s""" % {
-                        'table': db_table,
-                        'tree_id': qn(opts.get_field(tree_id_attr).column),
-                    }
-                    cursor.execute(plug_gap_query % {
-                        'col': qn(opts.get_field(left_attr).column),
-                    }, [tree_width, getattr(instance, left_attr), tree_id])
-                    cursor.execute(plug_gap_query % {
-                        'col': qn(opts.get_field(right_attr).column),
-                    }, [tree_width, getattr(instance, right_attr), tree_id])
+                    # Close the gap left by moving the subtree.
+                    target_left = getattr(instance, left_attr) - 1
+                    instance._tree_manager.close_gap(tree_width, target_left,
+                                                     tree_id)
 
                     # The model instance is yet to be saved, so make sure its
                     # new tree values are present.
@@ -327,21 +285,13 @@ def pre_delete(left_attr, right_attr, tree_id_attr):
     def _pre_delete(instance):
         """
         Updates tree node edge indicators which will by affected by the
-        deletion of the given model instance and any childrem it may
+        deletion of the given model instance and any descendants it may
         have, to ensure the integrity of the tree structure is
         maintained.
         """
-        span = getattr(instance, right_attr) - getattr(instance, left_attr) + 1
-        update_query = 'UPDATE %s SET %%(col)s = %%(col)s - %%%%s WHERE %%(col)s > %%%%s AND %s = %%%%s' % (
-            qn(instance._meta.db_table),
-            qn(instance._meta.get_field(tree_id_attr).column))
+        tree_width = (getattr(instance, right_attr) -
+                      getattr(instance, left_attr) + 1)
+        target_right = getattr(instance, right_attr)
         tree_id = getattr(instance, tree_id_attr)
-        right = getattr(instance, right_attr)
-        cursor = connection.cursor()
-        cursor.execute(update_query % {
-            'col': qn(instance._meta.get_field(right_attr).column),
-        }, [span, right, tree_id])
-        cursor.execute(update_query % {
-            'col': qn(instance._meta.get_field(left_attr).column),
-        }, [span, right, tree_id])
+        instance._tree_manager.close_gap(tree_width, target_right, tree_id)
     return _pre_delete
