@@ -2,6 +2,9 @@
 Custom managers for working with trees of objects.
 """
 from django.db import connection, models
+from django.utils.translation import ugettext as _
+
+from mptt.exceptions import InvalidParent
 
 __all__ = ['TreeManager']
 
@@ -59,6 +62,61 @@ class TreeManager(models.Manager):
             qn(opts.db_table)))
         row = cursor.fetchone()
         return row[0] and (row[0] + 1) or 1
+
+    def make_child_node(self, root, parent):
+        """
+        Transforms a ``Model`` instance which is the root node of a tree
+        into a child of a given parent node in another tree.
+
+        The given instance will be modified to reflect its new tree
+        state in the database.
+        """
+        left = getattr(root, self.left_attr)
+        right = getattr(root, self.right_attr)
+        level = getattr(root, self.level_attr)
+        tree_id = getattr(root, self.tree_id_attr)
+        new_tree_id = getattr(parent, self.tree_id_attr)
+
+        # Ensure the new parent is valid
+        if tree_id == new_tree_id:
+            raise InvalidParent(_('A root node may not have its parent changed to any node in its own tree.'))
+
+        # Create space for the tree which will be inserted
+        target_right = getattr(parent, self.right_attr) - 1
+        tree_width = right - left + 1
+        self.create_space(tree_width, target_right, new_tree_id)
+
+        # Move the root node and its descendants, making the root node a
+        # child node.
+        opts = self.model._meta
+        make_child_node_query = """
+        UPDATE %(table)s
+        SET %(level)s = %(level)s + %%s,
+            %(left)s = %(left)s + %%s,
+            %(right)s = %(right)s + %%s,
+            %(tree_id)s = %%s,
+            %(parent)s = CASE WHEN %(pk)s = %%s THEN %%s ELSE %(parent)s END
+        WHERE %(tree_id)s = %%s""" % {
+            'table': qn(opts.db_table),
+            'level': qn(opts.get_field(self.level_attr).column),
+            'left': qn(opts.get_field(self.left_attr).column),
+            'right': qn(opts.get_field(self.right_attr).column),
+            'tree_id': qn(opts.get_field(self.tree_id_attr).column),
+            'parent': qn(opts.get_field(self.parent_attr).column),
+            'pk': qn(opts.pk.column),
+        }
+        level_change = getattr(parent, self.level_attr) + 1
+        cursor = connection.cursor()
+        cursor.execute(make_child_node_query, [level_change, target_right,
+            target_right, new_tree_id, root.pk, parent.pk, tree_id])
+
+        # Update the former root node to be consistent with the updated
+        # tree in the database.
+        setattr(root, self.left_attr, left + target_right)
+        setattr(root, self.right_attr, right + target_right)
+        setattr(root, self.level_attr, level + level_change)
+        setattr(root, self.tree_id_attr, new_tree_id)
+        setattr(root, self.parent_attr, parent)
 
     def make_root_node(self, instance):
         """

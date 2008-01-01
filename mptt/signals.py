@@ -57,49 +57,7 @@ def pre_save(parent_attr, left_attr, right_attr, tree_id_attr, level_attr):
                 if parent is None:
                     instance._tree_manager.make_root_node(instance)
                 elif old_parent is None:
-                    # Check the validity of the new parent
-                    if (getattr(parent, tree_id_attr) ==
-                        getattr(instance, tree_id_attr)):
-                        raise InvalidParent(_('A root node may not have its parent changed to any node in its own tree.'))
-
-                    # Create space for the tree which will be moved
-                    target_right = getattr(parent, right_attr) - 1
-                    new_tree_id = getattr(parent, tree_id_attr)
-                    tree_width = (getattr(instance, right_attr) -
-                                  getattr(instance, left_attr) + 1)
-                    instance._tree_manager.create_space(tree_width,
-                                                        target_right,
-                                                        new_tree_id)
-
-                    # Move the tree's root node and its descendants,
-                    # making the root node a child node.
-                    move_tree_query = """
-                    UPDATE %(table)s
-                    SET %(level)s = %(level)s + %%s,
-                        %(left)s = %(left)s + %%s,
-                        %(right)s = %(right)s + %%s,
-                        %(tree_id)s = %%s
-                    WHERE %(tree_id)s = %%s""" % {
-                        'table': db_table,
-                        'level': qn(opts.get_field(level_attr).column),
-                        'left': qn(opts.get_field(left_attr).column),
-                        'right': qn(opts.get_field(right_attr).column),
-                        'tree_id': qn(opts.get_field(tree_id_attr).column),
-                    }
-                    tree_id = getattr(instance, tree_id_attr)
-                    level_change = getattr(parent, level_attr) + 1
-                    cursor.execute(move_tree_query, [level_change, target_right,
-                        target_right, new_tree_id, tree_id])
-
-                    # The model instance is yet to be saved, so make sure its
-                    # new tree values are present.
-                    setattr(instance, left_attr,
-                            getattr(instance, left_attr) + target_right)
-                    setattr(instance, right_attr,
-                            getattr(instance, right_attr) + target_right)
-                    setattr(instance, level_attr,
-                            getattr(instance, level_attr) + level_change)
-                    setattr(instance, tree_id_attr, new_tree_id)
+                    instance._tree_manager.make_child_node(instance, parent)
                 elif (getattr(parent, tree_id_attr) !=
                       getattr(instance, tree_id_attr)):
                     # Make space for the subtree which will be moved
