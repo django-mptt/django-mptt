@@ -2,6 +2,12 @@
 Django MPTT CHANGELOG
 =====================
 
+Tue 1st Jan, 2008
+-----------------
+
+* Implemented reparenting when a child node is assigned a parent in a
+  different tree.
+
 Mon 31st Dec, 2007
 ------------------
 

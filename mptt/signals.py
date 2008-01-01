@@ -176,6 +176,74 @@ def pre_save(parent_attr, left_attr, right_attr, tree_id_attr, level_attr):
                     setattr(instance, level_attr,
                             getattr(instance, level_attr) + level_change)
                     setattr(instance, tree_id_attr, new_tree_id)
+                elif (getattr(parent, tree_id_attr) !=
+                      getattr(instance, tree_id_attr)):
+                    # Make space for the subtree which will be moved
+                    target_right = getattr(parent, right_attr) - 1
+                    new_tree_id = getattr(parent, tree_id_attr)
+                    tree_width = (getattr(instance, right_attr) -
+                                  getattr(instance, left_attr) + 1)
+                    update_query = 'UPDATE %s SET %%(col)s = %%(col)s + %%%%s WHERE %%(col)s > %%%%s AND %s = %%%%s' % (
+                        qn(opts.db_table),
+                        qn(opts.get_field(tree_id_attr).column))
+                    cursor.execute(update_query % {
+                        'col': qn(opts.get_field(right_attr).column),
+                    }, [tree_width, target_right, new_tree_id])
+                    cursor.execute(update_query % {
+                        'col': qn(opts.get_field(left_attr).column),
+                    }, [tree_width, target_right, new_tree_id])
+
+                    # Move the subtree
+                    move_subtree_query = """
+                    UPDATE %(table)s
+                    SET %(level)s = %(level)s - %%s,
+                        %(left)s = %(left)s - %%s,
+                        %(right)s = %(right)s - %%s,
+                        %(tree_id)s = %%s
+                    WHERE %(left)s >= %%s AND %(left)s <= %%s
+                      AND %(tree_id)s = %%s""" % {
+                        'table': db_table,
+                        'level': qn(opts.get_field(level_attr).column),
+                        'left': qn(opts.get_field(left_attr).column),
+                        'right': qn(opts.get_field(right_attr).column),
+                        'tree_id': qn(opts.get_field(tree_id_attr).column),
+                    }
+                    tree_id = getattr(instance, tree_id_attr)
+                    level_change = (getattr(instance, level_attr) -
+                                    getattr(parent, level_attr) - 1)
+                    left_right_change = (getattr(instance, left_attr) -
+                                         getattr(parent, right_attr))
+                    cursor.execute(move_subtree_query, [level_change,
+                        left_right_change, left_right_change, new_tree_id,
+                        getattr(instance, left_attr),
+                        getattr(instance, right_attr),
+                        tree_id])
+
+                    # Plug the gap left by moving the subtree.
+                    plug_gap_query = """
+                    UPDATE %(table)s
+                    SET %%(col)s = %%(col)s - %%%%s
+                    WHERE %%(col)s > %%%%s
+                      AND %(tree_id)s = %%%%s""" % {
+                        'table': db_table,
+                        'tree_id': qn(opts.get_field(tree_id_attr).column),
+                    }
+                    cursor.execute(plug_gap_query % {
+                        'col': qn(opts.get_field(left_attr).column),
+                    }, [tree_width, getattr(instance, left_attr), tree_id])
+                    cursor.execute(plug_gap_query % {
+                        'col': qn(opts.get_field(right_attr).column),
+                    }, [tree_width, getattr(instance, right_attr), tree_id])
+
+                    # The model instance is yet to be saved, so make sure its
+                    # new tree values are present.
+                    setattr(instance, left_attr,
+                            getattr(instance, left_attr) - left_right_change)
+                    setattr(instance, right_attr,
+                            getattr(instance, right_attr) - left_right_change)
+                    setattr(instance, level_attr,
+                            getattr(instance, level_attr) - level_change)
+                    setattr(instance, tree_id_attr, new_tree_id)
                 else:
                     # TODO Implement remaining reparenting scenarios
                     pass
