@@ -199,3 +199,10 @@ The following tree management methods are available:
 
 * ``get_next_tree_id()`` -- determines the next available tree id for
   the ``Model`` being managed.
+
+* ``make_root_node(instance)`` -- transforms a ``Model`` instance which
+  is a child node into the root node of a new tree, removing it and any
+  descendants from the tree it currently occupies.
+
+  The given instance will be modified to reflect its new tree state in
+  the database.

@@ -5,6 +5,10 @@ Django MPTT CHANGELOG
 Tue 1st Jan, 2008
 -----------------
 
+* Extracted logic for turning a ``Model`` instance which is a child node
+  into the root node of a new tree from ``mptt.signals.pre_save`` into
+  the ``make_root_node`` method in ``TreeManager``.
+
 * Removed ``mptt.signals._get_next_tree_id``; added a
   ``get_next_tree_id`` method to ``TreeManager`` to replace it.
 
