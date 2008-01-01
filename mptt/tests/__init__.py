@@ -172,3 +172,14 @@ InvalidParent: A root node may not have its parent changed to any node in its ow
 >>> print_tree_details(Genre.tree.all())
 1 - 1 0 1 2
 """
+
+# TODO Fixtures won't work with Django MPTT unless the pre_save signal
+#      is given the ``save()`` method's ``raw`` argument, so we know not
+#      to attempt any tree processing.
+#
+#      http://code.djangoproject.com/ticket/5422 has a patch for this.
+#
+#      Once this change is available, we can think about using the more
+#      appropriate ``django.tests.TestCase`` with fixtures for testing
+#      specific features without having a knock-on effect on other
+#      tests.
