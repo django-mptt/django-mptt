@@ -196,3 +196,6 @@ The following tree management methods are available:
 * ``create_space(size, target, tree_id)`` -- creates a space of a
   certain size after the given target point (a left or right value) in
   the tree with the given id.
+
+* ``get_next_tree_id()`` -- determines the next available tree id for
+  the ``Model`` being managed.

@@ -47,6 +47,19 @@ class TreeManager(models.Manager):
         """
         self._manage_space(size, target, tree_id, '+')
 
+    def get_next_tree_id(self):
+        """
+        Determines the next available tree id for the tree managed by
+        this manager.
+        """
+        opts = self.model._meta
+        cursor = connection.cursor()
+        cursor.execute('SELECT MAX(%s) FROM %s' % (
+            qn(opts.get_field(self.tree_id_attr).column),
+            qn(opts.db_table)))
+        row = cursor.fetchone()
+        return row[0] and (row[0] + 1) or 1
+
     def _manage_space(self, size, target, tree_id, operator):
         """
         Manages spaces in a tree by changing the values of the left and
