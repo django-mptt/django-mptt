@@ -1,9 +1,11 @@
 """
 Custom managers for working with trees of objects.
 """
-from django.db import models
+from django.db import connection, models
 
 __all__ = ['TreeManager']
+
+qn = connection.ops.quote_name
 
 class TreeManager(models.Manager):
     """
@@ -30,3 +32,40 @@ class TreeManager(models.Manager):
         """
         return super(TreeManager, self).get_query_set().order_by(
             self.tree_id_attr, self.left_attr)
+
+    def close_gap(self, size, target, tree_id):
+        """
+        Closes a gap of a certain size after the given target point in
+        the tree with the given id.
+        """
+        self._manage_space(size, target, tree_id, '-')
+
+    def create_space(self, size, target, tree_id):
+        """
+        Creates a space of a certain size after the given target point
+        in the tree with the given id.
+        """
+        self._manage_space(size, target, tree_id, '+')
+
+    def _manage_space(self, size, target, tree_id, operator):
+        """
+        Manages spaces in a tree by changing the values of the left and
+        right columns after a given target point.
+        """
+        opts = self.model._meta
+        space_query = """
+        UPDATE %(table)s
+        SET %%(col)s = %%(col)s %(operator)s %%%%s
+        WHERE %%(col)s > %%%%s
+          AND %(tree_id)s = %%%%s""" % {
+            'table': qn(opts.db_table),
+            'operator': operator,
+            'tree_id': qn(opts.get_field(self.tree_id_attr).column),
+        }
+        cursor = connection.cursor()
+        cursor.execute(space_query % {
+            'col': qn(opts.get_field(self.right_attr).column),
+        }, [size, target, tree_id])
+        cursor.execute(space_query % {
+            'col': qn(opts.get_field(self.left_attr).column),
+        }, [size, target, tree_id])

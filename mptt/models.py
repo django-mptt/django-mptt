@@ -56,6 +56,7 @@ def treeify(cls, parent_attr='parent', left_attr='lft', right_attr='rght',
             get_siblings(parent_attr, left_attr, tree_id_attr, level_attr))
     TreeManager(parent_attr, left_attr, right_attr, tree_id_attr,
                 level_attr).contribute_to_class(cls, tree_manager_attr)
+    setattr(cls, '_tree_manager', getattr(cls, tree_manager_attr))
 
 def get_ancestors(parent_attr, left_attr, right_attr, tree_id_attr):
     """

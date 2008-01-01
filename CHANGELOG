@@ -5,6 +5,9 @@ Django MPTT CHANGELOG
 Tue 1st Jan, 2008
 -----------------
 
+* Extracted some similar space-management queries out into the
+  ``close_gap`` and ``create_space`` methods in ``TreeManager``.
+
 * Implemented reparenting when a child node is assigned a different
   parent in the same tree.
 

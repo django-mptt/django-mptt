@@ -116,7 +116,12 @@ The following steps are taken when ``treeify`` is called to set up a
    methods which are available.
 
 4. A custom ``Manager`` is added to the ``Model`` class to handle
-   working with the tree of model instances.
+   working with the tree of model instances. The ``tree_manager_attr``
+   argument defines the attribute this manager will be publicly
+   accessible via.
+
+   A ``_tree_manager`` attribute is also set up to access this manager,
+   for internal use by Django MPTT.
 
    See `the TreeManager custom Manager`_ below for details about
    the operations available on this custom ``Manager``.
@@ -176,8 +181,18 @@ The following instance methods will be available on all instances of
 The ``TreeManager`` custom ``Manager``
 --------------------------------------
 
-At the moment, this manager only redefines the ``get_query_set`` method,
-such that the contents of any ``QuerySet`` created using this manager
-will be ordered based on the tree structure, with trees appearing in the
-order they were created and their items being ordered in a depth-first
-fashion within each tree.
+This manager redefines the ``get_query_set`` method, such that the
+contents of any ``QuerySet`` created using this manager will be ordered
+based on the tree structure, with trees appearing in the order they were
+created and their items being ordered in a depth-first fashion within
+each tree.
+
+The following tree management methods are available:
+
+* ``close_gap(size, target, tree_id)`` -- closes a gap of a certain size
+  after the given target point (a left or right value) in the tree with
+  the given id.
+
+* ``create_space(size, target, tree_id)`` -- creates a space of a
+  certain size after the given target point (a left or right value) in
+  the tree with the given id.
