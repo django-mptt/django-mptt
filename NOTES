@@ -22,7 +22,8 @@ of the tree when a ``Model`` instance has its parent changed.
 
 When the parent of a tree node is changed, its left, right, level and
 tree id may also be updated to keep the integrity of the tree structure
-intact.
+intact. In this case, we'll assume the node which was changed should
+become the last child of its parent.
 
 The following diagram depicts a representation of a nested set which
 we'll base some basic reparenting examples on - hopefully, by observing
@@ -162,3 +163,110 @@ function at some stage::
        right = right + [PARENT_RIGHT - 1],
        tree_id = [PARENT_TREE_ID]
    WHERE tree_id = [CURRENT_TREE_ID]
+
+Move Within Tree (Change Parent, Same Tree)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Original Tree::
+
+    __________________________________________________________________________
+   |  Root 1                                                                  |
+   |   ________________________________    ________________________________   |
+   |  |  Child 1.1                     |  |  Child 1.2                     |  |
+   |  |   ___________    ___________   |  |   ___________    ___________   |  |
+   |  |  |  C 1.1.1  |  |  C 1.1.2  |  |  |  |  C 1.2.1  |  |  C 1.2.2  |  |  |
+   1  2  3___________4  5___________6  7  8  9___________10 11__________12 13 14
+   |  |________________________________|  |________________________________|  |
+   |__________________________________________________________________________|
+
+C 1.2.2 -> Root 1::
+
+    ____________________________________________________________________________
+   |  Root 1                                                                    |
+   |   ________________________________    _________________    _____________   |
+   |  |  Child 1.1                     |  |  Child 1.2      |  |  Child 1.3  |  |
+   |  |   ___________    ___________   |  |   ___________   |  |             |  |
+   |  |  |  C 1.1.1  |  |  C 1.1.2  |  |  |  |  C 1.2.1  |  |  |             |  |
+   1  2  3___________4  5___________6  7  8  9___________10 11 12            13 14
+   |  |________________________________|  |_________________|  |_____________|  |
+   |____________________________________________________________________________|
+                                                            |________________|
+                                                                    |
+                                                               Affected area
+
+   old_left = 11, new_left = 12
+   old_right = 12, new_right = 13
+   left_right_change = 1
+   all other affected lefts and rights decreased by 2
+
+C 1.2.2 -> Child 1.1::
+
+    __________________________________________________________________________
+   |  Root 1                                                                  |
+   |   _______________________________________________    _________________   |
+   |  |  Child 1.1                                    |  |  Child 1.2      |  |
+   |  |   ___________    ___________    ___________   |  |   ___________   |  |
+   |  |  |  C 1.1.1  |  |  C 1.1.2  |  |  C 1.1.3  |  |  |  |  C 1.2.1  |  |  |
+   1  2  3___________4  5___________6  7___________8  9  10 11__________12 13 14
+   |  |_______________________________________________|  |_________________|  |
+   |__________________________________________________________________________|
+                                       |________________________________|
+                                                        |
+                                                   Affected area
+
+   old_left = 11, new_left = 7
+   old_right = 12, new_right = 8
+   left_right_change = -4
+   all other affected lefts and rights increased by 2
+
+C 1.1.2 -> Root 1::
+
+    ____________________________________________________________________________
+   |  Root 1                                                                    |
+   |   _________________    ________________________________    _____________   |
+   |  |  Child 1.1      |  |  Child 1.2                     |  |  Child 1.3  |  |
+   |  |   ___________   |  |   ___________    ___________   |  |             |  |
+   |  |  |  C 1.1.1  |  |  |  |  C 1.2.1  |  |  C 1.2.2  |  |  |             |  |
+   1  2  3___________4  5  6  7___________8  9___________10 11 12            13 14
+   |  |_________________|  |________________________________|  |_____________|  |
+   |____________________________________________________________________________|
+                        |____________________________________________________|
+                                                    |
+                                               Affected area
+
+   old_left = 5, new_left = 12
+   old_right = 6, new_right = 13
+   left_right_change = 7
+   all other affected lefts and rights decreased by 2
+
+Child 1.2 -> Child 1.1::
+
+    ______________________________________________________________________________
+   |  Root 1                                                                      |
+   |   ________________________________________________________________________   |
+   |  |  Child 1.1                                                             |  |
+   |  |   ___________    ___________    ____________________________________   |  |
+   |  |  |  C 1.1.1  |  |  C 1.1.2  |  |  C 1.1.3                           |  |  |
+   |  |  |           |  |           |  |   _____________    _____________   |  |  |
+   |  |  |           |  |           |  |  |  C 1.1.3.1  |  |  C 1.1.3.2  |  |  |  |
+   1  2  3           4  5           6  7  8_____________9  10____________11 12 13 14
+   |  |  |___________|  |___________|  |____________________________________|  |  |
+   |  |________________________________________________________________________|  |
+   |______________________________________________________________________________|
+                                       |_______________________________________|
+                                                          |
+                                                     Affected area
+
+   old_left = 8, new_left = 7
+   old_right = 13, new_right = 12
+   left_right_change = -1
+   all other affected lefts and rights increased by 6
+
+From the diagrams above, the area affected by moving a subtree within
+the same tree appears to be confined to the section of the tree between
+the subtree's lower and upper bounds of the subtree's old and new left
+and right values.
+
+Affected nodes which are not in the subtree being moved appear to be
+changed by the width of the subtree, with a sign inverse to that of the
+left_right_change.

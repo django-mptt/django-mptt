@@ -245,8 +245,78 @@ def pre_save(parent_attr, left_attr, right_attr, tree_id_attr, level_attr):
                             getattr(instance, level_attr) - level_change)
                     setattr(instance, tree_id_attr, new_tree_id)
                 else:
-                    # TODO Implement remaining reparenting scenarios
-                    pass
+                    # Check the validity of the new parent
+                    if (getattr(instance, left_attr)
+                        <= getattr(parent, left_attr)
+                        <= getattr(instance, right_attr)):
+                        raise InvalidParent(_('A node may not have its parent changed to itself or any of its descendants.'))
+
+                    tree_id = getattr(instance, tree_id_attr)
+                    node_left = getattr(instance, left_attr)
+                    node_right = getattr(instance, right_attr)
+
+                    if (getattr(parent, level_attr) !=
+                        getattr(old_parent, level_attr)):
+                        level_change_query = """
+                        UPDATE %(table)s
+                        SET %(level)s = %(level)s - %%s
+                        WHERE %(left)s >= %%s AND %(left)s <= %%s
+                          AND %(tree_id)s = %%s""" % {
+                            'table': db_table,
+                            'level': qn(opts.get_field(level_attr).column),
+                            'left': qn(opts.get_field(left_attr).column),
+                            'tree_id': qn(opts.get_field(tree_id_attr).column),
+                        }
+                        level_change = (getattr(instance, level_attr) -
+                                        getattr(parent, level_attr) - 1)
+                        cursor.execute(level_change_query, [level_change,
+                            node_left, node_right, tree_id])
+
+                    move_subtree_query = """
+                    UPDATE %(table)s
+                    SET %(left)s = CASE
+                        WHEN %(left)s >= %%s AND %(left)s <= %%s
+                          THEN %(left)s + %%s
+                        WHEN %(left)s >= %%s AND %(left)s <= %%s
+                          THEN %(left)s + %%s
+                        ELSE %(left)s END,
+                        %(right)s = CASE
+                        WHEN %(right)s >= %%s AND %(right)s <= %%s
+                          THEN %(right)s + %%s
+                        WHEN %(right)s >= %%s AND %(right)s <= %%s
+                          THEN %(right)s + %%s
+                        ELSE %(right)s END
+                    WHERE %(tree_id)s = %%s""" % {
+                        'table': db_table,
+                        'left': qn(opts.get_field(left_attr).column),
+                        'right': qn(opts.get_field(right_attr).column),
+                        'tree_id': qn(opts.get_field(tree_id_attr).column),
+                    }
+
+                    parent_right = getattr(parent, right_attr)
+                    subtree_width = node_right - node_left + 1
+                    new_left = parent_right - subtree_width
+                    new_right = parent_right - 1
+                    left_boundary = min(node_left, new_left)
+                    right_boundary = max(node_right, new_right)
+                    left_right_change = new_left - node_left
+                    gap_size = subtree_width
+                    if left_right_change > 0:
+                        gap_size = -gap_size
+
+                    cursor.execute(move_subtree_query, [
+                        node_left, node_right, left_right_change,
+                        left_boundary, right_boundary, gap_size,
+                        node_left, node_right, left_right_change,
+                        left_boundary, right_boundary, gap_size,
+                        tree_id])
+
+                    # The model instance is yet to be saved, so make sure its
+                    # new tree values are present.
+                    setattr(instance, left_attr, new_left)
+                    setattr(instance, right_attr, new_right)
+                    setattr(instance, level_attr,
+                            getattr(instance, level_attr) - level_change)
     return _pre_save
 
 def pre_delete(left_attr, right_attr, tree_id_attr):

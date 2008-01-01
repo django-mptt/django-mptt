@@ -177,6 +177,89 @@ InvalidParent: A root node may not have its parent changed to any node in its ow
 6 4 4 1 4 7
 8 6 4 2 5 6
 
+# Check that invalid parent errors are thrown appropriately when moving
+# a subtree within its tree.
+>>> rpg = Genre.objects.get(pk=rpg.pk)
+>>> rpg.parent = rpg
+>>> rpg.save()
+Traceback (most recent call last):
+    ...
+InvalidParent: A node may not have its parent changed to itself or any of its descendants.
+>>> trpg = Genre.objects.get(pk=trpg.pk)
+>>> rpg.parent = trpg
+>>> rpg.save()
+Traceback (most recent call last):
+    ...
+InvalidParent: A node may not have its parent changed to itself or any of its descendants.
+
+# Move a subtree up a level (position stays the same)
+>>> trpg = Genre.objects.get(pk=trpg.pk)
+>>> platformer_3d = Genre.objects.get(pk=platformer_3d.pk)
+>>> trpg.parent = platformer_3d
+>>> trpg.save()
+>>> print_tree_details([trpg])
+8 4 4 1 6 7
+>>> print_tree_details(Genre.tree.all())
+1 - 1 0 1 2
+2 - 3 0 1 6
+3 2 3 1 2 3
+5 2 3 1 4 5
+4 - 4 0 1 8
+7 4 4 1 2 3
+6 4 4 1 4 5
+8 4 4 1 6 7
+
+# Move a subtree down a level
+>>> arpg = Genre.objects.get(pk=arpg.pk)
+>>> rpg = Genre.objects.get(pk=rpg.pk)
+>>> arpg.parent = rpg
+>>> arpg.save()
+>>> print_tree_details([arpg])
+7 6 4 2 3 4
+>>> print_tree_details(Genre.tree.all())
+1 - 1 0 1 2
+2 - 3 0 1 6
+3 2 3 1 2 3
+5 2 3 1 4 5
+4 - 4 0 1 8
+6 4 4 1 2 5
+7 6 4 2 3 4
+8 4 4 1 6 7
+
+# Move a subtree with descendants down a level
+>>> rpg = Genre.objects.get(pk=rpg.pk)
+>>> trpg = Genre.objects.get(pk=trpg.pk)
+>>> rpg.parent = trpg
+>>> rpg.save()
+>>> print_tree_details([rpg])
+6 8 4 2 3 6
+>>> print_tree_details(Genre.tree.all())
+1 - 1 0 1 2
+2 - 3 0 1 6
+3 2 3 1 2 3
+5 2 3 1 4 5
+4 - 4 0 1 8
+8 4 4 1 2 7
+6 8 4 2 3 6
+7 6 4 3 4 5
+
+# Move a subtree with descendants up a level
+>>> rpg = Genre.objects.get(pk=rpg.pk)
+>>> platformer_3d = Genre.objects.get(pk=platformer_3d.pk)
+>>> rpg.parent = platformer_3d
+>>> rpg.save()
+>>> print_tree_details([rpg])
+6 4 4 1 4 7
+>>> print_tree_details(Genre.tree.all())
+1 - 1 0 1 2
+2 - 3 0 1 6
+3 2 3 1 2 3
+5 2 3 1 4 5
+4 - 4 0 1 8
+8 4 4 1 2 3
+6 4 4 1 4 7
+7 6 4 2 5 6
+
 # Deletion ####################################################################
 
 # Delete a node which has siblings
@@ -187,9 +270,9 @@ InvalidParent: A root node may not have its parent changed to any node in its ow
 2 - 3 0 1 4
 5 2 3 1 2 3
 4 - 4 0 1 8
-7 4 4 1 2 3
+8 4 4 1 2 3
 6 4 4 1 4 7
-8 6 4 2 5 6
+7 6 4 2 5 6
 
 # Delete a node which has descendants
 >>> rpg = Genre.objects.get(pk=rpg.pk)
@@ -199,7 +282,7 @@ InvalidParent: A root node may not have its parent changed to any node in its ow
 2 - 3 0 1 4
 5 2 3 1 2 3
 4 - 4 0 1 4
-7 4 4 1 2 3
+8 4 4 1 2 3
 
 # Delete a root node
 >>> platformer = Genre.objects.get(pk=platformer.pk)
@@ -207,7 +290,7 @@ InvalidParent: A root node may not have its parent changed to any node in its ow
 >>> print_tree_details(Genre.tree.all())
 1 - 1 0 1 2
 4 - 4 0 1 4
-7 4 4 1 2 3
+8 4 4 1 2 3
 """
 
 # TODO Fixtures won't work with Django MPTT unless the pre_save signal

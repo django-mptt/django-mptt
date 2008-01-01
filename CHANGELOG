@@ -5,6 +5,9 @@ Django MPTT CHANGELOG
 Tue 1st Jan, 2008
 -----------------
 
+* Implemented reparenting when a child node is assigned a different
+  parent in the same tree.
+
 * Implemented reparenting when a child node is assigned a parent in a
   different tree.
 
