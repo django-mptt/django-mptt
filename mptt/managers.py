@@ -168,6 +168,93 @@ class TreeManager(models.Manager):
         setattr(instance, self.tree_id_attr, new_tree_id)
         setattr(instance, self.parent_attr, parent)
 
+    def move_within_tree(self, instance, parent):
+        """
+        Moves a ``Model`` instance to a different parent within its
+        current tree.
+
+        The given ``instance`` will be modified to reflect its new tree state
+        in the database.
+        """
+        left = getattr(instance, self.left_attr)
+        right = getattr(instance, self.right_attr)
+        level = getattr(instance, self.level_attr)
+        tree_id = getattr(instance, self.tree_id_attr)
+        parent_level = getattr(parent, self.level_attr)
+        parent_left = getattr(parent, self.left_attr)
+        parent_right = getattr(parent, self.right_attr)
+
+        if left <= parent_left <= right:
+            raise InvalidParent(_('A node may not have its parent changed to itself or any of its descendants.'))
+
+        opts = self.model._meta
+        db_table = qn(opts.db_table)
+        cursor = connection.cursor()
+
+        if level != parent_level + 1:
+            level_change_query = """
+            UPDATE %(table)s
+            SET %(level)s = %(level)s - %%s
+            WHERE %(left)s >= %%s AND %(left)s <= %%s
+              AND %(tree_id)s = %%s""" % {
+                'table': db_table,
+                'level': qn(opts.get_field(self.level_attr).column),
+                'left': qn(opts.get_field(self.left_attr).column),
+                'tree_id': qn(opts.get_field(self.tree_id_attr).column),
+            }
+            level_change = level - parent_level - 1
+            cursor.execute(level_change_query, [level_change, left, right,
+                                                tree_id])
+
+        move_subtree_query = """
+        UPDATE %(table)s
+        SET %(left)s = CASE
+            WHEN %(left)s >= %%s AND %(left)s <= %%s
+              THEN %(left)s + %%s
+            WHEN %(left)s >= %%s AND %(left)s <= %%s
+              THEN %(left)s + %%s
+            ELSE %(left)s END,
+            %(right)s = CASE
+            WHEN %(right)s >= %%s AND %(right)s <= %%s
+              THEN %(right)s + %%s
+            WHEN %(right)s >= %%s AND %(right)s <= %%s
+              THEN %(right)s + %%s
+            ELSE %(right)s END,
+            %(parent)s = CASE WHEN %(pk)s = %%s THEN %%s ELSE %(parent)s END
+        WHERE %(tree_id)s = %%s""" % {
+            'table': db_table,
+            'left': qn(opts.get_field(self.left_attr).column),
+            'right': qn(opts.get_field(self.right_attr).column),
+            'parent': qn(opts.get_field(self.parent_attr).column),
+            'pk': qn(opts.pk.column),
+            'tree_id': qn(opts.get_field(self.tree_id_attr).column),
+        }
+
+        subtree_width = right - left + 1
+        new_left = parent_right - subtree_width
+        new_right = parent_right - 1
+        left_boundary = min(left, new_left)
+        right_boundary = max(right, new_right)
+        left_right_change = new_left - left
+        gap_size = subtree_width
+        if left_right_change > 0:
+            gap_size = -gap_size
+
+        cursor.execute(move_subtree_query, [
+            left, right, left_right_change,
+            left_boundary, right_boundary, gap_size,
+            left, right, left_right_change,
+            left_boundary, right_boundary, gap_size,
+            instance.pk, parent.pk,
+            tree_id])
+
+        # Update the instance to be consistent with the updated
+        # tree in the database.
+        setattr(instance, self.left_attr, new_left)
+        setattr(instance, self.right_attr, new_right)
+        setattr(instance, self.level_attr, level - level_change)
+        setattr(instance, self.parent_attr, parent)
+
     def _inter_tree_move(self, node, change_operator, level_change,
                          left_right_change, new_tree_id, parent_pk=None):
         """
