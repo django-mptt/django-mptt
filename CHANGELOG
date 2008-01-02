@@ -5,6 +5,10 @@ Django MPTT CHANGELOG
 Wed 2nd Jan, 2008
 -----------------
 
+* Extracted logic for moving a ``Model`` instance to a different parent
+  within its current tree from ``mptt.signals.pre_save`` into the
+  ``move_within_tree`` method in ``TreeManager``.
+
 * Extracted logic for moving a ``Model`` instance from one tree to
   another from ``mptt.signals.pre_save`` into the ``move_to_new_tree``
   method in ``TreeManager``.
