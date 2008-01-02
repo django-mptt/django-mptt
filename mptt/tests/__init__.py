@@ -1,5 +1,5 @@
 r"""
->>> from mptt.tests.models import Genre
+>>> from mptt.tests.models import Category, Genre
 
 >>> def print_tree_details(nodes):
 ...     print '\n'.join(['%s %s %s %s %s %s' % \
@@ -74,7 +74,7 @@ r"""
 >>> [g.name for g in platformer_3d.get_siblings(include_self=True)]
 [u'2D Platformer', u'3D Platformer', u'4D Platformer']
 
-# Reparenting #################################################################
+# Automatic Reparenting #######################################################
 
 Test that trees are in the appropriate state and that reparented items have the
 correct tree attributes defined, should they be required for use after a save.
@@ -291,6 +291,110 @@ InvalidParent: A node may not have its parent changed to itself or any of its de
 1 - 1 0 1 2
 4 - 4 0 1 4
 8 4 4 1 2 3
+
+# Moving Nodes Manually #######################################################
+>>> games = Category.objects.create(name='PC & Video Games')
+>>> wii = Category.objects.create(name='Nintendo Wii', parent=games)
+>>> wii_games = Category.objects.create(name='Games', parent=wii)
+>>> wii_hardware = Category.objects.create(name='Hardware & Accessories', parent=wii)
+>>> xbox360 = Category.objects.create(name='Xbox 360', parent=games)
+>>> xbox360_games = Category.objects.create(name='Games', parent=xbox360)
+>>> xbox360_hardware = Category.objects.create(name='Hardware & Accessories', parent=xbox360)
+>>> ps3 = Category.objects.create(name='PlayStation 3', parent=games)
+>>> ps3_games = Category.objects.create(name='Games', parent=ps3)
+>>> ps3_hardware = Category.objects.create(name='Hardware & Accessories', parent=ps3)
+>>> print_tree_details(Category.tree.all())
+1 - 1 0 1 20
+2 1 1 1 2 7
+3 2 1 2 3 4
+4 2 1 2 5 6
+5 1 1 1 8 13
+6 5 1 2 9 10
+7 5 1 2 11 12
+8 1 1 1 14 19
+9 8 1 2 15 16
+10 8 1 2 17 18
+
+>>> wii = Category.objects.get(pk=wii.pk)
+>>> Category.tree.make_root_node(wii)
+>>> print_tree_details([wii])
+2 - 2 0 1 6
+>>> print_tree_details(Category.tree.all())
+1 - 1 0 1 14
+5 1 1 1 2 7
+6 5 1 2 3 4
+7 5 1 2 5 6
+8 1 1 1 8 13
+9 8 1 2 9 10
+10 8 1 2 11 12
+2 - 2 0 1 6
+3 2 2 1 2 3
+4 2 2 1 4 5
+
+>>> games = Category.objects.get(pk=games.pk)
+>>> Category.tree.make_child_node(wii, games)
+>>> print_tree_details([wii])
+2 1 1 1 14 19
+>>> print_tree_details(Category.tree.all())
+1 - 1 0 1 20
+5 1 1 1 2 7
+6 5 1 2 3 4
+7 5 1 2 5 6
+8 1 1 1 8 13
+9 8 1 2 9 10
+10 8 1 2 11 12
+2 1 1 1 14 19
+3 2 1 2 15 16
+4 2 1 2 17 18
+
+>>> ps3 = Category.objects.get(pk=ps3.pk)
+>>> Category.tree.move_within_tree(wii, ps3)
+>>> print_tree_details([wii])
+2 8 1 2 13 18
+>>> print_tree_details(Category.tree.all())
+1 - 1 0 1 20
+5 1 1 1 2 7
+6 5 1 2 3 4
+7 5 1 2 5 6
+8 1 1 1 8 19
+9 8 1 2 9 10
+10 8 1 2 11 12
+2 8 1 2 13 18
+3 2 1 3 14 15
+4 2 1 3 16 17
+
+>>> ps3 = Category.objects.get(pk=ps3.pk)
+>>> Category.tree.make_root_node(ps3)
+>>> print_tree_details([ps3])
+8 - 2 0 1 12
+>>> print_tree_details(Category.tree.all())
+1 - 1 0 1 8
+5 1 1 1 2 7
+6 5 1 2 3 4
+7 5 1 2 5 6
+8 - 2 0 1 12
+9 8 2 1 2 3
+10 8 2 1 4 5
+2 8 2 1 6 11
+3 2 2 2 7 8
+4 2 2 2 9 10
+
+>>> wii = Category.objects.get(pk=wii.pk)
+>>> games = Category.objects.get(pk=games.pk)
+>>> Category.tree.move_to_new_tree(wii, games)
+>>> print_tree_details([wii])
+2 1 1 1 8 13
+>>> print_tree_details(Category.tree.all())
+1 - 1 0 1 14
+5 1 1 1 2 7
+6 5 1 2 3 4
+7 5 1 2 5 6
+2 1 1 1 8 13
+3 2 1 2 9 10
+4 2 1 2 11 12
+8 - 2 0 1 6
+9 8 2 1 2 3
+10 8 2 1 4 5
 """
 
 # TODO Fixtures won't work with Django MPTT unless the pre_save signal

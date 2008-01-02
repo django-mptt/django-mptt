@@ -231,8 +231,12 @@ class TreeManager(models.Manager):
         }
 
         subtree_width = right - left + 1
-        new_left = parent_right - subtree_width
-        new_right = parent_right - 1
+        if parent_right > right:
+            new_left = parent_right - subtree_width
+            new_right = parent_right - 1
+        else:
+            new_left = parent_right
+            new_right = parent_right + subtree_width - 1
         left_boundary = min(left, new_left)
         right_boundary = max(right, new_right)
         left_right_change = new_left - left
