@@ -183,6 +183,7 @@ class TreeManager(models.Manager):
         parent_level = getattr(parent, self.level_attr)
         parent_left = getattr(parent, self.left_attr)
         parent_right = getattr(parent, self.right_attr)
+        level_change = level - parent_level - 1
 
         if left <= parent_left <= right:
             raise InvalidParent(_('A node may not have its parent changed to itself or any of its descendants.'))
@@ -202,7 +203,6 @@ class TreeManager(models.Manager):
                 'left': qn(opts.get_field(self.left_attr).column),
                 'tree_id': qn(opts.get_field(self.tree_id_attr).column),
             }
-            level_change = level - parent_level - 1
             cursor.execute(level_change_query, [level_change, left, right,
                                                 tree_id])
 

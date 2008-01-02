@@ -5,6 +5,9 @@ Django MPTT CHANGELOG
 Wed 2nd Jan, 2008
 -----------------
 
+* Fixed a bug in ``TreeManager.move_within_tree`` when no level change
+  is required.
+
 * Fixed a bug in ``TreeManager.move_within_tree`` - it now takes into
   account whether or not the new parent's right value is greater than
   that of the node which is being moved.
