@@ -395,6 +395,23 @@ InvalidParent: A node may not have its parent changed to itself or any of its de
 8 - 2 0 1 6
 9 8 2 1 2 3
 10 8 2 1 4 5
+
+# Regression test for no level change being required
+>>> xbox360_games = Category.objects.get(pk=xbox360_games.pk)
+>>> Category.tree.move_within_tree(xbox360_games, wii)
+>>> print_tree_details([xbox360_games])
+6 2 1 2 11 12
+>>> print_tree_details(Category.tree.all())
+1 - 1 0 1 14
+5 1 1 1 2 5
+7 5 1 2 3 4
+2 1 1 1 6 13
+3 2 1 2 7 8
+4 2 1 2 9 10
+6 2 1 2 11 12
+8 - 2 0 1 6
+9 8 2 1 2 3
+10 8 2 1 4 5
 """
 
 # TODO Fixtures won't work with Django MPTT unless the pre_save signal
