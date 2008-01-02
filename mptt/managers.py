@@ -189,26 +189,18 @@ class TreeManager(models.Manager):
             raise InvalidParent(_('A node may not have its parent changed to itself or any of its descendants.'))
 
         opts = self.model._meta
-        db_table = qn(opts.db_table)
-        cursor = connection.cursor()
 
-        if level != parent_level + 1:
-            level_change_query = """
-            UPDATE %(table)s
-            SET %(level)s = %(level)s - %%s
-            WHERE %(left)s >= %%s AND %(left)s <= %%s
-              AND %(tree_id)s = %%s""" % {
-                'table': db_table,
-                'level': qn(opts.get_field(self.level_attr).column),
-                'left': qn(opts.get_field(self.left_attr).column),
-                'tree_id': qn(opts.get_field(self.tree_id_attr).column),
-            }
-            cursor.execute(level_change_query, [level_change, left, right,
-                                                tree_id])
-
+        # The level update must come before the left update to keep
+        # MySQL happy - left seems to refer to the updated value
+        # immediately after its update has been specified in the query
+        # with MySQL, but not with SQLite or Postgres.
         move_subtree_query = """
         UPDATE %(table)s
-        SET %(left)s = CASE
+        SET %(level)s = CASE
+            WHEN %(left)s >= %%s AND %(left)s <= %%s
+              THEN %(level)s - %%s
+            ELSE %(level)s END,
+            %(left)s = CASE
             WHEN %(left)s >= %%s AND %(left)s <= %%s
               THEN %(left)s + %%s
             WHEN %(left)s >= %%s AND %(left)s <= %%s
@@ -220,9 +212,13 @@ class TreeManager(models.Manager):
             WHEN %(right)s >= %%s AND %(right)s <= %%s
               THEN %(right)s + %%s
             ELSE %(right)s END,
-            %(parent)s = CASE WHEN %(pk)s = %%s THEN %%s ELSE %(parent)s END
+            %(parent)s = CASE
+            WHEN %(pk)s = %%s
+              THEN %%s
+            ELSE %(parent)s END
         WHERE %(tree_id)s = %%s""" % {
-            'table': db_table,
+            'table': qn(opts.db_table),
+            'level': qn(opts.get_field(self.level_attr).column),
             'left': qn(opts.get_field(self.left_attr).column),
             'right': qn(opts.get_field(self.right_attr).column),
             'parent': qn(opts.get_field(self.parent_attr).column),
@@ -244,7 +240,9 @@ class TreeManager(models.Manager):
         if left_right_change > 0:
             gap_size = -gap_size
 
+        cursor = connection.cursor()
         cursor.execute(move_subtree_query, [
+            left, right, level_change,
             left, right, left_right_change,
             left_boundary, right_boundary, gap_size,
             left, right, left_right_change,
