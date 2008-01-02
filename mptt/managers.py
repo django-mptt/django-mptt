@@ -88,27 +88,9 @@ class TreeManager(models.Manager):
 
         # Move the root node and its descendants, making the root node a
         # child node.
-        opts = self.model._meta
-        make_child_node_query = """
-        UPDATE %(table)s
-        SET %(level)s = %(level)s + %%s,
-            %(left)s = %(left)s + %%s,
-            %(right)s = %(right)s + %%s,
-            %(tree_id)s = %%s,
-            %(parent)s = CASE WHEN %(pk)s = %%s THEN %%s ELSE %(parent)s END
-        WHERE %(tree_id)s = %%s""" % {
-            'table': qn(opts.db_table),
-            'level': qn(opts.get_field(self.level_attr).column),
-            'left': qn(opts.get_field(self.left_attr).column),
-            'right': qn(opts.get_field(self.right_attr).column),
-            'tree_id': qn(opts.get_field(self.tree_id_attr).column),
-            'parent': qn(opts.get_field(self.parent_attr).column),
-            'pk': qn(opts.pk.column),
-        }
         level_change = getattr(parent, self.level_attr) + 1
-        cursor = connection.cursor()
-        cursor.execute(make_child_node_query, [level_change, target_right,
-            target_right, new_tree_id, root.pk, parent.pk, tree_id])
+        self._inter_tree_move(root, '+', level_change, target_right,
+                              new_tree_id, root.pk)
 
         # Update the former root node to be consistent with the updated
         # tree in the database.
@@ -131,30 +113,9 @@ class TreeManager(models.Manager):
         right = getattr(instance, self.right_attr)
         level = getattr(instance, self.level_attr)
         tree_id = getattr(instance, self.tree_id_attr)
-
-        opts = self.model._meta
-        make_root_node_query = """
-        UPDATE %(table)s
-        SET %(level)s = %(level)s - %%s,
-            %(left)s = %(left)s - %%s,
-            %(right)s = %(right)s - %%s,
-            %(tree_id)s = %%s,
-            %(parent)s = CASE WHEN %(pk)s = %%s THEN NULL ELSE %(parent)s END
-        WHERE %(left)s >= %%s AND %(left)s <= %%s
-          AND %(tree_id)s = %%s""" % {
-            'table': qn(opts.db_table),
-            'level': qn(opts.get_field(self.level_attr).column),
-            'left': qn(opts.get_field(self.left_attr).column),
-            'right': qn(opts.get_field(self.right_attr).column),
-            'tree_id': qn(opts.get_field(self.tree_id_attr).column),
-            'parent': qn(opts.get_field(self.parent_attr).column),
-            'pk': qn(opts.pk.column),
-        }
         new_tree_id = self.get_next_tree_id()
         left_right_change = left - 1
-        cursor = connection.cursor()
-        cursor.execute(make_root_node_query, (level, left_right_change,
-            left_right_change, new_tree_id, instance.pk, left, right, tree_id))
+        self._inter_tree_move(instance, '-', level, left_right_change, new_tree_id)
 
         # Close the gap left after the node was moved
         target_left = left - 1
@@ -169,6 +130,52 @@ class TreeManager(models.Manager):
         setattr(instance, self.level_attr, 0)
         setattr(instance, self.tree_id_attr, new_tree_id)
         setattr(instance, self.parent_attr, None)
+
+    def _inter_tree_move(self, node, change_operator, level_change,
+                         left_right_change, new_tree_id, parent_pk=None):
+        """
+        Handles moving a subtree which is headed by ``node`` from its
+        current tree to another tree, with the given set of changes
+        being applied to ``node`` and its descendants.
+
+        The operator used to apply change amounts given for
+        ``level_change`` and ``left_right_change`` must be specified by
+        ``change_operator``, so callers can perform required change
+        calculations in whichever manner (additive or subtractive) is
+        handiest for them.
+
+        If ``parent_pk`` is ``None``, this indicates that ``node`` is
+        being moved to a brand new tree as its root node, and will thus
+        have its parent field set to ``NULL``. Otherwise, ``none`` will
+        have ``parent_pk`` set for its parent field.
+        """
+        opts = self.model._meta
+        inter_tree_move_query = """
+        UPDATE %(table)s
+        SET %(level)s = %(level)s %(change_operator)s %%s,
+            %(left)s = %(left)s %(change_operator)s %%s,
+            %(right)s = %(right)s %(change_operator)s %%s,
+            %(tree_id)s = %%s,
+            %(parent)s = CASE WHEN %(pk)s = %%s THEN %(new_parent)s ELSE %(parent)s END
+        WHERE %(left)s >= %%s AND %(left)s <= %%s
+          AND %(tree_id)s = %%s""" % {
+            'table': qn(opts.db_table),
+            'change_operator': change_operator,
+            'level': qn(opts.get_field(self.level_attr).column),
+            'left': qn(opts.get_field(self.left_attr).column),
+            'right': qn(opts.get_field(self.right_attr).column),
+            'tree_id': qn(opts.get_field(self.tree_id_attr).column),
+            'parent': qn(opts.get_field(self.parent_attr).column),
+            'pk': qn(opts.pk.column),
+            'new_parent': parent_pk is None and 'NULL' or '%s',
+        }
+        params = [level_change, left_right_change, left_right_change,
+            new_tree_id, node.pk, getattr(node, self.left_attr),
+            getattr(node, self.right_attr), getattr(node, self.tree_id_attr)]
+        if parent_pk is not None:
+            params.insert(5, parent_pk)
+        cursor = connection.cursor()
+        cursor.execute(inter_tree_move_query, params)
 
     def _manage_space(self, size, target, tree_id, operator):
         """
