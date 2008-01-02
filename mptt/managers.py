@@ -68,7 +68,7 @@ class TreeManager(models.Manager):
         Transforms a ``Model`` instance which is the root node of a tree
         into a child of a given parent node in another tree.
 
-        The given instance will be modified to reflect its new tree
+        The given ``root`` will be modified to reflect its new tree
         state in the database.
         """
         left = getattr(root, self.left_attr)
@@ -90,7 +90,7 @@ class TreeManager(models.Manager):
         # child node.
         level_change = getattr(parent, self.level_attr) + 1
         self._inter_tree_move(root, '+', level_change, target_right,
-                              new_tree_id, root.pk)
+                              new_tree_id, parent.pk)
 
         # Update the former root node to be consistent with the updated
         # tree in the database.
@@ -106,7 +106,7 @@ class TreeManager(models.Manager):
         root node of a new tree, removing it and any descendants from
         the tree it currently occupies.
 
-        The given instance will be modified to reflect its new tree
+        The given ``instance`` will be modified to reflect its new tree
         state in the database.
         """
         left = getattr(instance, self.left_attr)
@@ -130,6 +130,43 @@ class TreeManager(models.Manager):
         setattr(instance, self.level_attr, 0)
         setattr(instance, self.tree_id_attr, new_tree_id)
         setattr(instance, self.parent_attr, None)
+
+    def move_to_new_tree(self, instance, parent):
+        """
+        Moves a ``Model`` instance from one tree to another, making it a
+        child of the given ``parent`` node, which is in a different tree.
+
+        The given ``instance`` will be modified to reflect its new tree state
+        in the database.
+        """
+        left = getattr(instance, self.left_attr)
+        right = getattr(instance, self.right_attr)
+        level = getattr(instance, self.level_attr)
+        tree_id = getattr(instance, self.tree_id_attr)
+        new_tree_id = getattr(parent, self.tree_id_attr)
+
+        # Make space for the subtree which will be moved
+        tree_width = right - left + 1
+        target_right = getattr(parent, self.right_attr) - 1
+        self.create_space(tree_width, target_right, new_tree_id)
+
+        # Move the subtree
+        level_change = level - getattr(parent, self.level_attr) - 1
+        left_right_change = left - getattr(parent, self.right_attr)
+        self._inter_tree_move(instance, '-', level_change, left_right_change,
+                              new_tree_id, parent.pk)
+
+        # Close the gap left by moving the subtree
+        target_left = left - 1
+        self.close_gap(tree_width, target_left, tree_id)
+
+        # Update the instance to be consistent with the updated
+        # tree in the database.
+        setattr(instance, self.left_attr, left - left_right_change)
+        setattr(instance, self.right_attr, right - left_right_change)
+        setattr(instance, self.level_attr, level - level_change)
+        setattr(instance, self.tree_id_attr, new_tree_id)
+        setattr(instance, self.parent_attr, parent)
 
     def _inter_tree_move(self, node, change_operator, level_change,
                          left_right_change, new_tree_id, parent_pk=None):
