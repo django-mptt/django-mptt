@@ -201,8 +201,8 @@ The following tree management methods are available:
   the ``Model`` being managed.
 
 * ``make_child_node(root, parent)`` -- transforms a ``Model`` instance
-  which is the root node of a tree into a child of a given parent node
-  in another tree.
+  which is the root node of a tree into a child of a given ``parent``
+  node in another tree.
 
   The given ``root`` will be modified to reflect its new tree state in
   the database.
@@ -210,6 +210,13 @@ The following tree management methods are available:
 * ``make_root_node(instance)`` -- transforms a ``Model`` instance which
   is a child node into the root node of a new tree, removing it and any
   descendants from the tree it currently occupies.
+
+  The given ``instance`` will be modified to reflect its new tree state
+  in the database.
+
+* ``move_to_new_tree(instance, parent)`` -- moves a ``Model`` instance
+  from one tree to another, making it a child of the given ``parent``
+  node, which is in a different tree.
 
   The given ``instance`` will be modified to reflect its new tree state
   in the database.
