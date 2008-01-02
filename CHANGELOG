@@ -2,6 +2,13 @@
 Django MPTT CHANGELOG
 =====================
 
+Wed 2nd Jan, 2008
+-----------------
+
+* Extracted some similar move-node-to-tree queries in ``TreeManager``'s
+  ``make_child_node`` and ``make_root_node`` methods out into a new
+  ``_inter_tree_move`` method.
+
 Tue 1st Jan, 2008
 -----------------
 
