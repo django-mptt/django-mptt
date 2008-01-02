@@ -60,7 +60,7 @@ def pre_save(parent_attr, left_attr, right_attr, tree_id_attr, level_attr):
                 elif old_parent is None:
                     # The node didn't used to have a parent and has been
                     # given one.
-                    instance._tree_manager.move_to_new_tree(instance, parent)
+                    instance._tree_manager.make_child_node(instance, parent)
                 elif (getattr(parent, tree_id_attr) !=
                       getattr(instance, tree_id_attr)):
                     # The node's parent was changed to a node in a
