@@ -4,7 +4,7 @@ Custom managers for working with trees of objects.
 from django.db import connection, models
 from django.utils.translation import ugettext as _
 
-from mptt.exceptions import InvalidParent
+from mptt.exceptions import InvalidTarget
 
 __all__ = ['TreeManager']
 
@@ -82,7 +82,7 @@ class TreeManager(models.Manager):
 
         # Ensure the new parent is valid
         if tree_id == new_tree_id:
-            raise InvalidParent(_('A root node may not have its parent changed to any node in its own tree.'))
+            raise InvalidTarget(_('A root node may not have its parent changed to any node in its own tree.'))
 
         # Create space for the tree which will be inserted
         self.create_space(tree_width, target_right, new_tree_id)
@@ -210,28 +210,75 @@ class TreeManager(models.Manager):
         setattr(instance, self.tree_id_attr, new_tree_id)
         setattr(instance, self.parent_attr, parent)
 
-    def move_within_tree(self, instance, parent):
+    def move_within_tree(self, node, target, position='last-child'):
         """
-        Moves a ``Model`` instance to a different parent within its
-        current tree.
+        Moves ``node`` within its current tree, relative to the given
+        ``target`` node as specified by ``position``.
 
-        The given ``instance`` will be modified to reflect its new tree state
-        in the database.
+        Valid values for ``position`` are ``'first-child'``,
+        ``'last-child'``, ``'left'`` or ``'right'``.
+
+        The node being moved will be modified to reflect its new tree
+        state in the database.
         """
-        left = getattr(instance, self.left_attr)
-        right = getattr(instance, self.right_attr)
-        level = getattr(instance, self.level_attr)
-        tree_id = getattr(instance, self.tree_id_attr)
-        parent_level = getattr(parent, self.level_attr)
-        parent_left = getattr(parent, self.left_attr)
-        parent_right = getattr(parent, self.right_attr)
-        level_change = level - parent_level - 1
+        left = getattr(node, self.left_attr)
+        right = getattr(node, self.right_attr)
+        level = getattr(node, self.level_attr)
+        subtree_width = right - left + 1
+        tree_id = getattr(node, self.tree_id_attr)
+        target_left = getattr(target, self.left_attr)
+        target_right = getattr(target, self.right_attr)
+        target_level = getattr(target, self.level_attr)
 
-        if left <= parent_left <= right:
-            raise InvalidParent(_('A node may not have its parent changed to itself or any of its descendants.'))
+        if position == 'last-child' or position == 'first-child':
+            if left <= target_left <= right:
+                raise InvalidTarget(_('A node may not be made a child of itself or any of its descendants.'))
+            if position == 'last-child':
+                if target_right > right:
+                    new_left = target_right - subtree_width
+                    new_right = target_right - 1
+                else:
+                    new_left = target_right
+                    new_right = target_right + subtree_width - 1
+            else:
+                if target_left > left:
+                    new_left = target_left - subtree_width + 1
+                    new_right = target_left
+                else:
+                    new_left = target_left + 1
+                    new_right = target_left + subtree_width
+            level_change = level - target_level - 1
+            parent = target
+        elif position == 'left' or position == 'right':
+            if left <= target_left <= right:
+                raise InvalidTarget(_('A node may not be made a sibling of itself or any of its descendants.'))
+            if target_left == 1:
+                raise InvalidTarget(_('A node may not be made a sibling of its root node.'))
+            if position == 'left':
+                if target_left > left:
+                    new_left = target_left - subtree_width
+                    new_right = target_left - 1
+                else:
+                    new_left = target_left
+                    new_right = target_left + subtree_width - 1
+            else:
+                if target_right > right:
+                    new_left = target_right - subtree_width + 1
+                    new_right = target_right
+                else:
+                    new_left = target_right + 1
+                    new_right = target_right + subtree_width
+            level_change = level - target_level
+            parent = getattr(target, self.parent_attr)
+
+        left_boundary = min(left, new_left)
+        right_boundary = max(right, new_right)
+        left_right_change = new_left - left
+        gap_size = subtree_width
+        if left_right_change > 0:
+            gap_size = -gap_size
 
         opts = self.model._meta
-
         # The level update must come before the left update to keep
         # MySQL happy - left seems to refer to the updated value
         # immediately after its update has been specified in the query
@@ -268,20 +315,6 @@ class TreeManager(models.Manager):
             'tree_id': qn(opts.get_field(self.tree_id_attr).column),
         }
 
-        subtree_width = right - left + 1
-        if parent_right > right:
-            new_left = parent_right - subtree_width
-            new_right = parent_right - 1
-        else:
-            new_left = parent_right
-            new_right = parent_right + subtree_width - 1
-        left_boundary = min(left, new_left)
-        right_boundary = max(right, new_right)
-        left_right_change = new_left - left
-        gap_size = subtree_width
-        if left_right_change > 0:
-            gap_size = -gap_size
-
         cursor = connection.cursor()
         cursor.execute(move_subtree_query, [
             left, right, level_change,
@@ -289,15 +322,15 @@ class TreeManager(models.Manager):
             left_boundary, right_boundary, gap_size,
             left, right, left_right_change,
             left_boundary, right_boundary, gap_size,
-            instance.pk, parent.pk,
+            node.pk, parent.pk,
             tree_id])
 
-        # Update the instance to be consistent with the updated
+        # Update the node to be consistent with the updated
         # tree in the database.
-        setattr(instance, self.left_attr, new_left)
-        setattr(instance, self.right_attr, new_right)
-        setattr(instance, self.level_attr, level - level_change)
-        setattr(instance, self.parent_attr, parent)
+        setattr(node, self.left_attr, new_left)
+        setattr(node, self.right_attr, new_right)
+        setattr(node, self.level_attr, level - level_change)
+        setattr(node, self.parent_attr, parent)
 
     def _inter_tree_move_and_close_gap(self, node, level_change,
             left_right_change, new_tree_id, gap_target_left, gap_size,

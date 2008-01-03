@@ -16,5 +16,9 @@ class Genre(models.Model):
     def __unicode__(self):
         return self.name
 
+class Node(models.Model):
+    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+
 treeify(Category)
 treeify(Genre)
+treeify(Node)

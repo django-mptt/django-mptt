@@ -231,8 +231,12 @@ The following tree management methods are available:
   The given ``instance`` will be modified to reflect its new tree state
   in the database.
 
-* ``move_within_tree(instance, parent)`` -- moves a ``Model`` instance
-  to a different parent within its current tree.
+* ``move_within_tree(node, target, position='first-child')`` --
+  moves ``node`` within its current tree, relative to the given
+  ``target`` node as specified by ``position``.
+  
+  Valid values for ``position`` are ``'first-child'``, ``'last-child'``,
+  ``'left'`` or ``'right'``.
 
-  The given ``instance`` will be modified to reflect its new tree state
+  The node being moved will be modified to reflect its new tree state
   in the database.

@@ -197,6 +197,7 @@ C 1.2.2 -> Root 1::
    old_left = 11, new_left = 12
    old_right = 12, new_right = 13
    left_right_change = 1
+   target_left = 1, target_right = 14
    all other affected lefts and rights decreased by 2
 
 C 1.2.2 -> Child 1.1::
@@ -217,6 +218,7 @@ C 1.2.2 -> Child 1.1::
    old_left = 11, new_left = 7
    old_right = 12, new_right = 8
    left_right_change = -4
+   target_left = 2, target_right = 7
    all other affected lefts and rights increased by 2
 
 C 1.1.2 -> Root 1::
@@ -237,6 +239,7 @@ C 1.1.2 -> Root 1::
    old_left = 5, new_left = 12
    old_right = 6, new_right = 13
    left_right_change = 7
+   target_left = 1, target_right = 14
    all other affected lefts and rights decreased by 2
 
 Child 1.2 -> Child 1.1::
@@ -260,6 +263,7 @@ Child 1.2 -> Child 1.1::
    old_left = 8, new_left = 7
    old_right = 13, new_right = 12
    left_right_change = -1
+   target_left = 2, target_right = 7
    all other affected lefts and rights increased by 6
 
 From the diagrams above, the area affected by moving a subtree within
@@ -270,3 +274,241 @@ and right values.
 Affected nodes which are not in the subtree being moved appear to be
 changed by the width of the subtree, with a sign inverse to that of the
 left_right_change.
+
+Node Movement
+-------------
+
+For automatic reparenting, we've been making the node which has had its
+parent changed the last child of its new parent node but, outside of
+that, we may want to position a node in other ways relative to a given
+target node, say to make it the target node's immediate sibling on
+either side or its first child.
+
+Drawing those trees was pretty tedious, so we'll use this kind of tree
+representation from now on, as seen in the tests. In order, the fields
+listed are: id, parent_id, tree_id, level, left, right::
+
+   1 - 1 0 1  14       1
+   2 1 1 1 2  7          2
+   3 2 1 2 3  4            3
+   4 2 1 2 5  6            4
+   5 1 1 1 8  13         5
+   6 5 1 2 9  10           6
+   7 5 1 2 11 12           7
+
+Same Tree, Children
+~~~~~~~~~~~~~~~~~~~
+
+Last Child Calculation (derived from previous trees)::
+
+   if target_right > right:
+       new_left = target_right - subtree_width
+       new_right = target_right - 1
+   else:
+       new_left = target_right
+       new_right = target_right + subtree_width - 1
+
+Moving "up" the tree::
+
+   1 - 1 0 1  14       1
+   2 1 1 1 2  9          2
+   7 2 1 2 3  4   =>       7
+   3 2 1 2 5  6            3
+   4 2 1 2 7  8            4
+   5 1 1 1 10 13         5
+   6 5 1 2 11 12           6
+
+   node = 7
+   target_node = 2
+   left = 11, right = 12
+   new_left = 3, new_right = 4
+   target_left = 2, target_right = 7
+   affected area = 3 to 12
+   all other affected lefts and rights increased by 2
+
+   1 - 1 0 1  14       1
+   2 1 1 1 2  13         2
+   5 2 1 2 3  8   =>       5
+   6 5 1 3 4  5              6
+   7 5 1 3 6  7              7
+   3 2 1 2 9  10           3
+   4 2 1 2 11 12           4
+
+   node = 5
+   target_node = 2
+   left = 8, right = 13
+   new_left = 3, new_right = 8
+   target_left = 2, target_right = 7
+   affected area = 3 to 13
+   all other affected lefts and rights increased by 6
+
+Moving "down" the tree::
+
+   1 - 1 0 1  14       1
+   2 1 1 1 2  5          2
+   3 2 1 2 3  4            3
+   5 1 1 1 6  13         5
+   4 5 1 2 7  8   =>       4
+   6 5 1 2 9  10           6
+   7 5 1 2 11 12           7
+
+   node = 4
+   target_node = 5
+   left = 5, right = 6
+   new_left = 7, new_right = 8
+   target_left = 8, target_right = 13
+   affected area = 5 to 8
+   all other affected lefts and rights decreased by 2
+
+   1 - 1 0 1  14       1
+   5 1 1 1 2  13         5
+   2 5 1 2 3  8   =>       2
+   3 2 1 3 4  5              3
+   4 2 1 3 6  7              4
+   6 5 1 2 9  10           6
+   7 5 1 2 11 12           7
+
+   node = 2
+   target_node = 5
+   left = 2, right = 9
+   new_left = 3, new_right = 8
+   target_left = 8, target_right = 13
+   affected area = 2 to 8
+   all other affected lefts and rights decreased by 6
+
+First Child Calculation::
+
+   if target_left > left:
+       new_left = target_left - subtree_width + 1
+       new_right = target_left
+   else:
+       new_left = target_left + 1
+       new_right = target_left + subtree_width
+
+Same Tree, Siblings
+~~~~~~~~~~~~~~~~~~~
+
+Moving "up" the tree::
+
+   1 - 1 0 1  14       1
+   2 1 1 1 2  9          2
+   3 2 1 2 3  4            3
+   7 2 1 2 5  6    =>      7
+   4 2 1 2 7  8            4
+   5 1 1 1 10 13         5
+   6 5 1 2 11 12           6
+
+   Left sibling:
+   node = 7
+   target_node = 4
+   left = 11, right = 12
+   new_left = 5, new_right = 6
+   target_left = 5, target_right = 6
+   affected area = 5 to 12
+   all other affected lefts and rights increased by 2
+
+   Right sibling:
+   node = 7
+   target_node = 3
+   left = 11, right = 12
+   new_left = 5, new_right = 6
+   target_left = 3, target_right = 4
+   affected area = 3 to 12
+   all other affected lefts and rights increased by 2
+
+   1 - 1 0 1  14       1
+   2 1 1 1 2  13         2
+   3 2 1 2 3  4            3
+   5 2 1 2 5  10    =>     5
+   6 5 1 3 6  7              6
+   7 5 1 3 8  9              7
+   4 2 1 2 11 12           4
+
+   Left sibling:
+   node = 5
+   target_node = 4
+   left = 8, right = 13
+   new_left = 5, new_right = 10
+   target_left = 5, target_right = 6
+   affected area = 5 to 13
+   all other affected lefts and rights increased by 6
+
+   Right sibling:
+   node = 5
+   target_node = 3
+   left = 8, right = 13
+   new_left = 5, new_right = 10
+   target_left = 3, target_right = 4
+   affected area = 3 to 13
+   all other affected lefts and rights increased by 6
+
+Moving "down" the tree::
+
+   1 - 1 0 1  14       1
+   2 1 1 1 2  5          2
+   4 2 1 2 3  4            4
+   5 1 1 1 6  13         5
+   6 5 1 2 7  8            6
+   3 5 1 2 9  10   =>      3
+   7 5 1 2 11 12           7
+
+   Left sibling:
+   node = 3
+   target_node = 7
+   left = 3, right = 4
+   new_left = 9, new_right = 10
+   target_left = 11, target_right = 12
+   affected area = 4 to 10
+   all other affected lefts and rights decreased by 2
+
+   Right sibling:
+   node = 3
+   target_node = 6
+   left = 3, right = 4
+   new_left = 9, new_right = 10
+   target_left = 9, target_right = 10
+   affected area = 4 to 10
+   all other affected lefts and rights decreased by 2
+
+   1 - 1 0 1  14       1
+   5 1 1 1 2  13         5
+   6 5 1 2 3  4            6
+   2 6 1 2 5  10    =>     2
+   3 2 1 3 6  7              3
+   4 2 1 3 8  9              4
+   7 5 1 2 11 12           7
+
+   Left sibling:
+   node = 2
+   target_node = 7
+   left = 2, right = 7
+   new_left = 5, new_right = 10
+   target_left = 11, target_right = 12
+   affected area = 2 to 10
+   all other affected lefts and rights decreased by 6
+
+   Right sibling:
+   node = 2
+   target_node = 6
+   left = 2, right = 7
+   new_left = 5, new_right = 10
+   target_left = 9, target_right = 10
+   affected area = 2 to 10
+   all other affected lefts and rights decreased by 6
+
+Derived Calculations::
+
+   Left sibling:
+   if target_left > left:
+       new_left = target_left - subtree_width
+       new_right = target_left - 1
+   else:
+       new_left = target_left
+       new_right = target_left + subtree_width - 1
+
+   if target_right > right:
+       new_left = target_right - subtree_width + 1
+       new_right = target_right
+   else:
+       new_left = target_right + 1
+       new_right = target_right + subtree_width

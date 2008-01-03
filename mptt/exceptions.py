@@ -2,8 +2,8 @@
 MPTT exceptions.
 """
 
-class InvalidParent(Exception):
+class InvalidTarget(Exception):
     """
-    An invalid parent was specified for a tree node.
+    An invalid node was specified as a target for a node move.
     """
     pass
