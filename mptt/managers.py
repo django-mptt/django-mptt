@@ -76,21 +76,44 @@ class TreeManager(models.Manager):
         level = getattr(root, self.level_attr)
         tree_id = getattr(root, self.tree_id_attr)
         new_tree_id = getattr(parent, self.tree_id_attr)
+        target_right = getattr(parent, self.right_attr) - 1
+        tree_width = right - left + 1
+        level_change = getattr(parent, self.level_attr) + 1
 
         # Ensure the new parent is valid
         if tree_id == new_tree_id:
             raise InvalidParent(_('A root node may not have its parent changed to any node in its own tree.'))
 
         # Create space for the tree which will be inserted
-        target_right = getattr(parent, self.right_attr) - 1
-        tree_width = right - left + 1
         self.create_space(tree_width, target_right, new_tree_id)
 
         # Move the root node and its descendants, making the root node a
         # child node.
-        level_change = getattr(parent, self.level_attr) + 1
-        self._inter_tree_move(root, '+', level_change, target_right,
-                              new_tree_id, parent.pk)
+        opts = self.model._meta
+        move_tree_query = """
+        UPDATE %(table)s
+        SET %(level)s = %(level)s + %%s,
+            %(left)s = %(left)s + %%s,
+            %(right)s = %(right)s + %%s,
+            %(tree_id)s = %%s,
+            %(parent)s = CASE
+                WHEN %(pk)s = %%s
+                    THEN %%s
+                ELSE %(parent)s END
+        WHERE %(left)s >= %%s AND %(left)s <= %%s
+          AND %(tree_id)s = %%s""" % {
+            'table': qn(opts.db_table),
+            'level': qn(opts.get_field(self.level_attr).column),
+            'left': qn(opts.get_field(self.left_attr).column),
+            'right': qn(opts.get_field(self.right_attr).column),
+            'tree_id': qn(opts.get_field(self.tree_id_attr).column),
+            'parent': qn(opts.get_field(self.parent_attr).column),
+            'pk': qn(opts.pk.column),
+        }
+        cursor = connection.cursor()
+        cursor.execute(move_tree_query, [level_change, target_right,
+            target_right, new_tree_id, root.pk, parent.pk, left, right,
+            tree_id])
 
         # Update the former root node to be consistent with the updated
         # tree in the database.
@@ -115,13 +138,11 @@ class TreeManager(models.Manager):
         tree_id = getattr(instance, self.tree_id_attr)
         new_tree_id = self.get_next_tree_id()
         left_right_change = left - 1
-        self._inter_tree_move(instance, '-', level, left_right_change, new_tree_id)
-
-        # Close the gap left after the node was moved
-        target_left = left - 1
+        gap_target_left = left - 1
         gap_size = right - left + 1
-        instance._tree_manager.close_gap(gap_size, target_left,
-                                         tree_id)
+
+        self._inter_tree_move_and_close_gap(instance, level,
+            left_right_change, new_tree_id, gap_target_left, gap_size)
 
         # Update the instance to be consistent with the updated
         # tree in the database.
@@ -153,12 +174,10 @@ class TreeManager(models.Manager):
         # Move the subtree
         level_change = level - getattr(parent, self.level_attr) - 1
         left_right_change = left - getattr(parent, self.right_attr)
-        self._inter_tree_move(instance, '-', level_change, left_right_change,
-                              new_tree_id, parent.pk)
-
-        # Close the gap left by moving the subtree
-        target_left = left - 1
-        self.close_gap(tree_width, target_left, tree_id)
+        gap_target_left = left - 1
+        self._inter_tree_move_and_close_gap(instance, level_change,
+            left_right_change, new_tree_id, gap_target_left, tree_width,
+            parent.pk)
 
         # Update the instance to be consistent with the updated
         # tree in the database.
@@ -197,25 +216,25 @@ class TreeManager(models.Manager):
         move_subtree_query = """
         UPDATE %(table)s
         SET %(level)s = CASE
-            WHEN %(left)s >= %%s AND %(left)s <= %%s
-              THEN %(level)s - %%s
-            ELSE %(level)s END,
+                WHEN %(left)s >= %%s AND %(left)s <= %%s
+                  THEN %(level)s - %%s
+                ELSE %(level)s END,
             %(left)s = CASE
-            WHEN %(left)s >= %%s AND %(left)s <= %%s
-              THEN %(left)s + %%s
-            WHEN %(left)s >= %%s AND %(left)s <= %%s
-              THEN %(left)s + %%s
-            ELSE %(left)s END,
+                WHEN %(left)s >= %%s AND %(left)s <= %%s
+                  THEN %(left)s + %%s
+                WHEN %(left)s >= %%s AND %(left)s <= %%s
+                  THEN %(left)s + %%s
+                ELSE %(left)s END,
             %(right)s = CASE
-            WHEN %(right)s >= %%s AND %(right)s <= %%s
-              THEN %(right)s + %%s
-            WHEN %(right)s >= %%s AND %(right)s <= %%s
-              THEN %(right)s + %%s
-            ELSE %(right)s END,
+                WHEN %(right)s >= %%s AND %(right)s <= %%s
+                  THEN %(right)s + %%s
+                WHEN %(right)s >= %%s AND %(right)s <= %%s
+                  THEN %(right)s + %%s
+                ELSE %(right)s END,
             %(parent)s = CASE
-            WHEN %(pk)s = %%s
-              THEN %%s
-            ELSE %(parent)s END
+                WHEN %(pk)s = %%s
+                  THEN %%s
+                ELSE %(parent)s END
         WHERE %(tree_id)s = %%s""" % {
             'table': qn(opts.db_table),
             'level': qn(opts.get_field(self.level_attr).column),
@@ -257,49 +276,72 @@ class TreeManager(models.Manager):
         setattr(instance, self.level_attr, level - level_change)
         setattr(instance, self.parent_attr, parent)
 
-    def _inter_tree_move(self, node, change_operator, level_change,
-                         left_right_change, new_tree_id, parent_pk=None):
+    def _inter_tree_move_and_close_gap(self, node, level_change,
+            left_right_change, new_tree_id, gap_target_left, gap_size,
+            parent_pk=None):
         """
         Handles moving a subtree which is headed by ``node`` from its
         current tree to another tree, with the given set of changes
-        being applied to ``node`` and its descendants.
-
-        The operator used to apply change amounts given for
-        ``level_change`` and ``left_right_change`` must be specified by
-        ``change_operator``, so callers can perform required change
-        calculations in whichever manner (additive or subtractive) is
-        handiest for them.
+        being applied to ``node`` and its descendants, closing the gap
+        left by moving the tree as it does so.
 
         If ``parent_pk`` is ``None``, this indicates that ``node`` is
         being moved to a brand new tree as its root node, and will thus
-        have its parent field set to ``NULL``. Otherwise, ``none`` will
+        have its parent field set to ``NULL``. Otherwise, ``node`` will
         have ``parent_pk`` set for its parent field.
         """
         opts = self.model._meta
         inter_tree_move_query = """
         UPDATE %(table)s
-        SET %(level)s = %(level)s %(change_operator)s %%s,
-            %(left)s = %(left)s %(change_operator)s %%s,
-            %(right)s = %(right)s %(change_operator)s %%s,
-            %(tree_id)s = %%s,
-            %(parent)s = CASE WHEN %(pk)s = %%s THEN %(new_parent)s ELSE %(parent)s END
-        WHERE %(left)s >= %%s AND %(left)s <= %%s
-          AND %(tree_id)s = %%s""" % {
+        SET %(level)s = CASE
+                WHEN %(left)s >= %%s AND %(left)s <= %%s
+                    THEN %(level)s - %%s
+                ELSE %(level)s END,
+            %(tree_id)s = CASE
+                WHEN %(left)s >= %%s AND %(left)s <= %%s
+                    THEN %%s
+                ELSE %(tree_id)s END,
+            %(left)s = CASE
+                WHEN %(left)s >= %%s AND %(left)s <= %%s
+                    THEN %(left)s - %%s
+                WHEN %(left)s > %%s
+                    THEN %(left)s - %%s
+                ELSE %(left)s END,
+            %(right)s = CASE
+                WHEN %(right)s >= %%s AND %(right)s <= %%s
+                    THEN %(right)s - %%s
+                WHEN %(right)s > %%s
+                    THEN %(right)s - %%s
+                ELSE %(right)s END,
+            %(parent)s = CASE
+                WHEN %(pk)s = %%s
+                    THEN %(new_parent)s
+                ELSE %(parent)s END
+        WHERE %(tree_id)s = %%s""" % {
             'table': qn(opts.db_table),
-            'change_operator': change_operator,
             'level': qn(opts.get_field(self.level_attr).column),
             'left': qn(opts.get_field(self.left_attr).column),
-            'right': qn(opts.get_field(self.right_attr).column),
             'tree_id': qn(opts.get_field(self.tree_id_attr).column),
+            'right': qn(opts.get_field(self.right_attr).column),
             'parent': qn(opts.get_field(self.parent_attr).column),
             'pk': qn(opts.pk.column),
             'new_parent': parent_pk is None and 'NULL' or '%s',
         }
-        params = [level_change, left_right_change, left_right_change,
-            new_tree_id, node.pk, getattr(node, self.left_attr),
-            getattr(node, self.right_attr), getattr(node, self.tree_id_attr)]
+
+        left = getattr(node, self.left_attr)
+        right = getattr(node, self.right_attr)
+        params = [
+            left, right, level_change,
+            left, right, new_tree_id,
+            left, right, left_right_change,
+            gap_target_left, gap_size,
+            left, right, left_right_change,
+            gap_target_left, gap_size,
+            node.pk,
+            getattr(node, self.tree_id_attr)
+        ]
         if parent_pk is not None:
-            params.insert(5, parent_pk)
+            params.insert(-1, parent_pk)
         cursor = connection.cursor()
         cursor.execute(inter_tree_move_query, params)
 
@@ -311,17 +353,22 @@ class TreeManager(models.Manager):
         opts = self.model._meta
         space_query = """
         UPDATE %(table)s
-        SET %%(col)s = %%(col)s %(operator)s %%%%s
-        WHERE %%(col)s > %%%%s
-          AND %(tree_id)s = %%%%s""" % {
+        SET %(left)s = CASE
+                WHEN %(left)s > %%s
+                    THEN %(left)s %(operator)s %%s
+                ELSE %(left)s END,
+            %(right)s = CASE
+                WHEN %(right)s > %%s
+                    THEN %(right)s %(operator)s %%s
+                ELSE %(right)s END
+        WHERE %(tree_id)s = %%s
+          AND (%(left)s > %%s OR %(right)s > %%s)""" % {
             'table': qn(opts.db_table),
+            'left': qn(opts.get_field(self.left_attr).column),
+            'right': qn(opts.get_field(self.right_attr).column),
             'operator': operator,
             'tree_id': qn(opts.get_field(self.tree_id_attr).column),
         }
         cursor = connection.cursor()
-        cursor.execute(space_query % {
-            'col': qn(opts.get_field(self.right_attr).column),
-        }, [size, target, tree_id])
-        cursor.execute(space_query % {
-            'col': qn(opts.get_field(self.left_attr).column),
-        }, [size, target, tree_id])
+        cursor.execute(space_query, [target, size, target, size, tree_id,
+                                     target, target])

@@ -2,6 +2,13 @@
 Django MPTT CHANGELOG
 =====================
 
+Thu 3rd Jan, 2008
+-----------------
+
+* Combined a number of SQL queries into single queries using ``CASE``
+  operators to reduce the overall number of queries required to move
+  tree nodes around.
+
 Wed 2nd Jan, 2008
 -----------------
 
