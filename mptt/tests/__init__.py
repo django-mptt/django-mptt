@@ -118,13 +118,13 @@ correct tree attributes defined, should they be required for use after a save.
 >>> rpg.save()
 Traceback (most recent call last):
     ...
-InvalidTarget: A root node may not have its parent changed to any node in its own tree.
+InvalidTarget: The target node must be in a different tree.
 >>> arpg = Genre.objects.get(pk=arpg.pk)
 >>> rpg.parent = arpg
 >>> rpg.save()
 Traceback (most recent call last):
     ...
-InvalidTarget: A root node may not have its parent changed to any node in its own tree.
+InvalidTarget: The target node must be in a different tree.
 
 # Make a tree a subtree of another tree
 >>> rpg = Genre.objects.get(pk=rpg.pk)
@@ -736,6 +736,8 @@ I guess we're covered :)
 7 5 1 2 11 12
 8 - 2 0 1 2
 
+# Moving child nodes between trees ############################################
+
 # Validate exceptions are raised appropriately
 >>> Node.tree.move_to_new_tree(c_1, c_1, position='first-child')
 Traceback (most recent call last):
@@ -831,6 +833,96 @@ ValueError: An invalid position was given: cheese.
 7 5 1 2 9 10
 3 5 1 2 11 12
 8 - 2 0 1 2
+
+# Moving a root node into another tree as a child node ########################
+
+# Validate exceptions are raised appropriately
+>>> Node.tree.make_child_node(c_1, new_root, position='first-child')
+Traceback (most recent call last):
+    ...
+ValueError: A root node must be given.
+>>> Node.tree.make_child_node(root, c_1, position='first-child')
+Traceback (most recent call last):
+    ...
+InvalidTarget: The target node must be in a different tree.
+>>> Node.tree.make_child_node(new_root, root, position='left')
+Traceback (most recent call last):
+    ...
+InvalidTarget: A node may not be made a sibling of a root node.
+>>> Node.tree.make_child_node(new_root, root, position='right')
+Traceback (most recent call last):
+    ...
+InvalidTarget: A node may not be made a sibling of a root node.
+>>> Node.tree.make_child_node(new_root, c_1, position='cheese')
+Traceback (most recent call last):
+    ...
+ValueError: An invalid position was given: cheese.
+
+>>> new_root = Node.objects.get(pk=new_root.pk)
+>>> c_2 = Node.objects.get(pk=c_2.pk)
+>>> Node.tree.make_child_node(new_root, c_2, position='first-child')
+>>> print_tree_details([new_root])
+8 5 1 2 5 6
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 16
+2 1 1 1 2 3
+5 1 1 1 4 15
+8 5 1 2 5 6
+4 5 1 2 7 8
+6 5 1 2 9 10
+7 5 1 2 11 12
+3 5 1 2 13 14
+
+>>> new_root = Node.objects.create()
+>>> root = Node.objects.get(pk=root.pk)
+>>> Node.tree.make_child_node(new_root, root, position='last-child')
+>>> print_tree_details([new_root])
+9 1 1 1 16 17
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 18
+2 1 1 1 2 3
+5 1 1 1 4 15
+8 5 1 2 5 6
+4 5 1 2 7 8
+6 5 1 2 9 10
+7 5 1 2 11 12
+3 5 1 2 13 14
+9 1 1 1 16 17
+
+>>> new_root = Node.objects.create()
+>>> c_2_1 = Node.objects.get(pk=c_2_1.pk)
+>>> Node.tree.make_child_node(new_root, c_2_1, position='left')
+>>> print_tree_details([new_root])
+10 5 1 2 9 10
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 20
+2 1 1 1 2 3
+5 1 1 1 4 17
+8 5 1 2 5 6
+4 5 1 2 7 8
+10 5 1 2 9 10
+6 5 1 2 11 12
+7 5 1 2 13 14
+3 5 1 2 15 16
+9 1 1 1 18 19
+
+>>> new_root = Node.objects.create()
+>>> c_1 = Node.objects.get(pk=c_1.pk)
+>>> Node.tree.make_child_node(new_root, c_1, position='right')
+>>> print_tree_details([new_root])
+11 1 1 1 4 5
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 22
+2 1 1 1 2 3
+11 1 1 1 4 5
+5 1 1 1 6 19
+8 5 1 2 7 8
+4 5 1 2 9 10
+10 5 1 2 11 12
+6 5 1 2 13 14
+7 5 1 2 15 16
+3 5 1 2 17 18
+9 1 1 1 20 21
 """
 
 # TODO Fixtures won't work with Django MPTT unless the pre_save signal

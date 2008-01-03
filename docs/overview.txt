@@ -182,10 +182,9 @@ The ``TreeManager`` custom ``Manager``
 --------------------------------------
 
 This manager redefines the ``get_query_set`` method, such that the
-contents of any ``QuerySet`` created using this manager will be ordered
-based on the tree structure, with trees appearing in the order they were
-created and their items being ordered in a depth-first fashion within
-each tree.
+contents of any ``QuerySet`` created using it will be ordered based on
+the tree structure, with trees appearing in the order they were created
+and their items being ordered in a depth-first fashion within each tree.
 
 The following tree management methods are available:
 
@@ -200,46 +199,28 @@ The following tree management methods are available:
 * ``get_next_tree_id()`` -- determines the next available tree id for
   the ``Model`` being managed.
 
-* ``make_child_node(root, parent)`` -- transforms a ``Model`` instance
-  which is the root node of a tree into a child of a given ``parent``
-  node in another tree.
+* ``make_child_node(root, target, position='last-child)`` -- moves
+  ``node`` (which must be a root node) to a different tree, inserting it
+  relative to the given ``target`` node in the new tree as specified by
+  ``position``.
 
-  The given ``root`` will be modified to reflect its new tree state in
+* ``make_root_node(node)`` -- removes ``node`` from its tree, making it
+  the root node of a new tree.
+
+* ``move_node(node, target, position='last-child')`` -- moves ``node``
+  based on ``target``, relative to ``position`` when appropriate, taking
+  care of calling the correct manager method to do so.
+
+  A ``target`` of ``None`` indicates that ``node`` should be
+  turned into a root node.
+
+  The given ``node`` will be modified to reflect its new tree state in
   the database.
 
-* ``make_root_node(instance)`` -- transforms a ``Model`` instance which
-  is a child node into the root node of a new tree, removing it and any
-  descendants from the tree it currently occupies.
-
-  The given ``instance`` will be modified to reflect its new tree state
-  in the database.
-
-* ``move_node(instance, new_parent)`` -- moves a ``Model`` instance to a
-  new parent, taking care of calling the appropriate manager method to
-  do so.
-
-  To remove the instance's parent, pass ``None`` for the ``new_parent``
-  argument.
-
-  The given ``instance`` will be modified to reflect its new tree
-  state in the database.
-
 * ``move_to_new_tree(node, target, position='last-child')`` -- moves
-  ``node`` to a different tree, inserting it relative to the  given
+  ``node`` to a different tree, inserting it relative to the given
   ``target`` node in the new tree as specified by ``position``.
-
-  Valid values for ``position`` are ``'first-child'``,
-  ``'last-child'``, ``'left'`` or ``'right'``.
-
-  The node being moved will be modified to reflect its new tree
-  state in the database.
 
 * ``move_within_tree(node, target, position='last-child')`` --
   moves ``node`` within its current tree, relative to the given
   ``target`` node as specified by ``position``.
-  
-  Valid values for ``position`` are ``'first-child'``, ``'last-child'``,
-  ``'left'`` or ``'right'``.
-
-  The node being moved will be modified to reflect its new tree state
-  in the database.

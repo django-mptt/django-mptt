@@ -63,10 +63,11 @@ class TreeManager(models.Manager):
         row = cursor.fetchone()
         return row[0] and (row[0] + 1) or 1
 
-    def make_child_node(self, root, parent):
+    def make_child_node(self, root, target, position='last-child'):
         """
-        Transforms a ``Model`` instance which is the root node of a tree
-        into a child of a given parent node in another tree.
+        Moves ``node`` (which must be a root node) to a different tree,
+        inserting it relative to the given ``target`` node in the new
+        tree as specified by ``position``.
 
         The given ``root`` will be modified to reflect its new tree
         state in the database.
@@ -75,26 +76,30 @@ class TreeManager(models.Manager):
         right = getattr(root, self.right_attr)
         level = getattr(root, self.level_attr)
         tree_id = getattr(root, self.tree_id_attr)
-        new_tree_id = getattr(parent, self.tree_id_attr)
-        target_right = getattr(parent, self.right_attr) - 1
+        new_tree_id = getattr(target, self.tree_id_attr)
         tree_width = right - left + 1
-        level_change = getattr(parent, self.level_attr) + 1
+
+        # Ensure we've been given a root
+        if level > 0:
+            raise ValueError(_('A root node must be given.'))
 
         # Ensure the new parent is valid
         if tree_id == new_tree_id:
-            raise InvalidTarget(_('A root node may not have its parent changed to any node in its own tree.'))
+            raise InvalidTarget(_('The target node must be in a different tree.'))
+
+        space_target, level_change, left_right_change, parent = \
+            self._calculate_inter_tree_move_values(root, target, position)
 
         # Create space for the tree which will be inserted
-        self.create_space(tree_width, target_right, new_tree_id)
+        self.create_space(tree_width, space_target, new_tree_id)
 
-        # Move the root node and its descendants, making the root node a
-        # child node.
+        # Move the root node, making it a child node.
         opts = self.model._meta
         move_tree_query = """
         UPDATE %(table)s
-        SET %(level)s = %(level)s + %%s,
-            %(left)s = %(left)s + %%s,
-            %(right)s = %(right)s + %%s,
+        SET %(level)s = %(level)s - %%s,
+            %(left)s = %(left)s - %%s,
+            %(right)s = %(right)s - %%s,
             %(tree_id)s = %%s,
             %(parent)s = CASE
                 WHEN %(pk)s = %%s
@@ -111,69 +116,73 @@ class TreeManager(models.Manager):
             'pk': qn(opts.pk.column),
         }
         cursor = connection.cursor()
-        cursor.execute(move_tree_query, [level_change, target_right,
-            target_right, new_tree_id, root.pk, parent.pk, left, right,
+        cursor.execute(move_tree_query, [level_change, left_right_change,
+            left_right_change, new_tree_id, root.pk, parent.pk, left, right,
             tree_id])
 
         # Update the former root node to be consistent with the updated
         # tree in the database.
-        setattr(root, self.left_attr, left + target_right)
-        setattr(root, self.right_attr, right + target_right)
-        setattr(root, self.level_attr, level + level_change)
+        setattr(root, self.left_attr, left - left_right_change)
+        setattr(root, self.right_attr, right - left_right_change)
+        setattr(root, self.level_attr, level - level_change)
         setattr(root, self.tree_id_attr, new_tree_id)
         setattr(root, self.parent_attr, parent)
 
-    def make_root_node(self, instance):
+    def make_root_node(self, node):
         """
-        Transforms a ``Model`` instance which is a child node into the
-        root node of a new tree, removing it and any descendants from
-        the tree it currently occupies.
+        Removes ``node`` from its tree, making it the root node of a new
+        tree.
 
-        The given ``instance`` will be modified to reflect its new tree
+        The given ``node`` will be modified to reflect its new tree
         state in the database.
         """
-        left = getattr(instance, self.left_attr)
-        right = getattr(instance, self.right_attr)
-        level = getattr(instance, self.level_attr)
-        tree_id = getattr(instance, self.tree_id_attr)
+        left = getattr(node, self.left_attr)
+        right = getattr(node, self.right_attr)
+        level = getattr(node, self.level_attr)
+        tree_id = getattr(node, self.tree_id_attr)
         new_tree_id = self.get_next_tree_id()
         left_right_change = left - 1
         gap_target_left = left - 1
         gap_size = right - left + 1
 
-        self._inter_tree_move_and_close_gap(instance, level,
-            left_right_change, new_tree_id, gap_target_left, gap_size)
+        self._inter_tree_move_and_close_gap(node, level, left_right_change,
+                                            new_tree_id, gap_target_left,
+                                            gap_size)
 
-        # Update the instance to be consistent with the updated
+        # Update the node to be consistent with the updated
         # tree in the database.
-        setattr(instance, self.left_attr, left - left_right_change)
-        setattr(instance, self.right_attr, right - left_right_change)
-        setattr(instance, self.level_attr, 0)
-        setattr(instance, self.tree_id_attr, new_tree_id)
-        setattr(instance, self.parent_attr, None)
+        setattr(node, self.left_attr, left - left_right_change)
+        setattr(node, self.right_attr, right - left_right_change)
+        setattr(node, self.level_attr, 0)
+        setattr(node, self.tree_id_attr, new_tree_id)
+        setattr(node, self.parent_attr, None)
 
-    def move_node(self, instance, new_parent):
+    def move_node(self, node, target, position='last-child'):
         """
-        Moves a ``Model`` instance to a new parent, taking care of
-        calling the appropriate manager method to do so.
+        Moves ``node`` based on ``target``, relative to ``position``
+        when appropriate, taking care of calling the appropriate manager
+        method to do so.
 
-        To remove the instance's parent, pass ``None`` for the
-        ``new_parent`` argument.
+        A ``target`` of ``None`` indicates that ``node`` should be
+        turned into a root node.
 
-        The given ``instance`` will be modified to reflect its new tree
+        Valid values for ``position`` are ``'first-child'``,
+        ``'last-child'``, ``'left'`` or ``'right'``.
+
+        The given ``node`` will be modified to reflect its new tree
         state in the database.
         """
-        if new_parent is None:
-            self.make_root_node(instance)
+        if target is None:
+            self.make_root_node(node)
         else:
-            parent = getattr(instance, self.parent_attr)
+            parent = getattr(node, self.parent_attr)
             if parent is None:
-                self.make_child_node(instance, new_parent)
-            elif (getattr(new_parent, self.tree_id_attr) !=
-                  getattr(instance, self.tree_id_attr)):
-                self.move_to_new_tree(instance, new_parent)
+                self.make_child_node(node, target, position)
+            elif (getattr(target, self.tree_id_attr) !=
+                  getattr(node, self.tree_id_attr)):
+                self.move_to_new_tree(node, target, position)
             else:
-                self.move_within_tree(instance, new_parent)
+                self.move_within_tree(node, target, position)
 
     def move_to_new_tree(self, node, target, position='last-child'):
         """
@@ -181,10 +190,7 @@ class TreeManager(models.Manager):
         given ``target`` node in the new tree as specified by
         ``position``.
 
-        Valid values for ``position`` are ``'first-child'``,
-        ``'last-child'``, ``'left'`` or ``'right'``.
-
-        The node being moved will be modified to reflect its new tree
+        The given ``node`` will be modified to reflect its new tree
         state in the database.
         """
         left = getattr(node, self.left_attr)
@@ -199,27 +205,10 @@ class TreeManager(models.Manager):
         if tree_id == new_tree_id:
             raise InvalidTarget(_('The target node must be in a different tree.'))
 
-        if position == 'last-child' or position == 'first-child':
-            if position == 'last-child':
-                space_target = target_right - 1
-            else:
-                space_target = target_left
-            level_change = level - target_level - 1
-            parent = target
-        elif position == 'left' or position == 'right':
-            if target_left == 1:
-                raise InvalidTarget(_('A node may not be made a sibling of a root node.'))
-            if position == 'left':
-                space_target = target_left - 1
-            else:
-                space_target = target_right
-            level_change = level - target_level
-            parent = getattr(target, self.parent_attr)
-        else:
-            raise ValueError(_('An invalid position was given: %s.') % position)
+        space_target, level_change, left_right_change, parent = \
+            self._calculate_inter_tree_move_values(node, target, position)
 
         tree_width = right - left + 1
-        left_right_change = left - space_target - 1
         gap_target_left = left - 1
 
         # Make space for the subtree which will be moved
@@ -242,10 +231,7 @@ class TreeManager(models.Manager):
         Moves ``node`` within its current tree, relative to the given
         ``target`` node as specified by ``position``.
 
-        Valid values for ``position`` are ``'first-child'``,
-        ``'last-child'``, ``'left'`` or ``'right'``.
-
-        The node being moved will be modified to reflect its new tree
+        The given ``node`` will be modified to reflect its new tree
         state in the database.
         """
         left = getattr(node, self.left_attr)
@@ -360,6 +346,41 @@ class TreeManager(models.Manager):
         setattr(node, self.right_attr, new_right)
         setattr(node, self.level_attr, level - level_change)
         setattr(node, self.parent_attr, parent)
+
+    def _calculate_inter_tree_move_values(self, node, target, position):
+        """
+        Calculates values required when moving ``node`` into the
+        ``target``, positioning it relative to ``target`` as specified
+        by ``position``.
+        """
+        left = getattr(node, self.left_attr)
+        level = getattr(node, self.level_attr)
+        target_left = getattr(target, self.left_attr)
+        target_right = getattr(target, self.right_attr)
+        target_level = getattr(target, self.level_attr)
+
+        if position == 'last-child' or position == 'first-child':
+            if position == 'last-child':
+                space_target = target_right - 1
+            else:
+                space_target = target_left
+            level_change = level - target_level - 1
+            parent = target
+        elif position == 'left' or position == 'right':
+            if target_left == 1:
+                raise InvalidTarget(_('A node may not be made a sibling of a root node.'))
+            if position == 'left':
+                space_target = target_left - 1
+            else:
+                space_target = target_right
+            level_change = level - target_level
+            parent = getattr(target, self.parent_attr)
+        else:
+            raise ValueError(_('An invalid position was given: %s.') % position)
+
+        left_right_change = left - space_target - 1
+
+        return space_target, level_change, left_right_change, parent
 
     def _inter_tree_move_and_close_gap(self, node, level_change,
             left_right_change, new_tree_id, gap_target_left, gap_size,
