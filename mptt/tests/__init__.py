@@ -74,6 +74,9 @@ r"""
 >>> [g.name for g in platformer_3d.get_siblings(include_self=True)]
 [u'2D Platformer', u'3D Platformer', u'4D Platformer']
 
+# The move_to method will be used in a few places in the tests which
+# follow to verify that it calls the TreeManger correctly.
+
 # Automatic Reparenting #######################################################
 
 Test that trees are in the appropriate state and that reparented items have the
@@ -111,7 +114,7 @@ correct tree attributes defined, should they be required for use after a save.
 5 2 3 1 4 5
 4 - 4 0 1 2
 
-# Check that invalid parent errors are thrown appropriately when giving
+# Check that exceptions are raised appropriately when giving
 # a root node a parent.
 >>> rpg = Genre.objects.get(pk=rpg.pk)
 >>> rpg.parent = rpg
@@ -177,20 +180,20 @@ InvalidTarget: The target node must be in a different tree.
 6 4 4 1 4 7
 8 6 4 2 5 6
 
-# Check that invalid parent errors are thrown appropriately when moving
+# Check that exceptions are raised appropriately when moving
 # a subtree within its tree.
 >>> rpg = Genre.objects.get(pk=rpg.pk)
 >>> rpg.parent = rpg
 >>> rpg.save()
 Traceback (most recent call last):
     ...
-InvalidTarget: A node may not be made a child of itself or any of its descendants.
+InvalidMove: A node may not be made a child of itself or any of its descendants.
 >>> trpg = Genre.objects.get(pk=trpg.pk)
 >>> rpg.parent = trpg
 >>> rpg.save()
 Traceback (most recent call last):
     ...
-InvalidTarget: A node may not be made a child of itself or any of its descendants.
+InvalidMove: A node may not be made a child of itself or any of its descendants.
 
 # Move a subtree up a level (position stays the same)
 >>> trpg = Genre.objects.get(pk=trpg.pk)
@@ -316,7 +319,7 @@ InvalidTarget: A node may not be made a child of itself or any of its descendant
 10 8 1 2 17 18
 
 >>> wii = Category.objects.get(pk=wii.pk)
->>> Category.tree.make_root_node(wii)
+>>> wii.move_to(None)
 >>> print_tree_details([wii])
 2 - 2 0 1 6
 >>> print_tree_details(Category.tree.all())
@@ -437,23 +440,23 @@ InvalidTarget: A node may not be made a child of itself or any of its descendant
 >>> Node.tree.move_within_tree(root, root, position='first-child')
 Traceback (most recent call last):
     ...
-InvalidTarget: A node may not be made a child of itself or any of its descendants.
+InvalidMove: A node may not be made a child of itself or any of its descendants.
 >>> Node.tree.move_within_tree(c_1, c_1_1, position='last-child')
 Traceback (most recent call last):
     ...
-InvalidTarget: A node may not be made a child of itself or any of its descendants.
+InvalidMove: A node may not be made a child of itself or any of its descendants.
 >>> Node.tree.move_within_tree(root, root, position='right')
 Traceback (most recent call last):
     ...
-InvalidTarget: A node may not be made a sibling of itself or any of its descendants.
+InvalidMove: A node may not be made a sibling of itself or any of its descendants.
 >>> Node.tree.move_within_tree(c_1, c_1_1, position='left')
 Traceback (most recent call last):
     ...
-InvalidTarget: A node may not be made a sibling of itself or any of its descendants.
+InvalidMove: A node may not be made a sibling of itself or any of its descendants.
 >>> Node.tree.move_within_tree(c_1_2, root, position='right')
 Traceback (most recent call last):
     ...
-InvalidTarget: A node may not be made a sibling of its root node.
+InvalidMove: A node may not be made a sibling of its root node.
 >>> Node.tree.move_within_tree(c_1, c_2, position='cheese')
 Traceback (most recent call last):
     ...
@@ -476,7 +479,7 @@ ValueError: An invalid position was given: cheese.
 
 # Undo the move using right
 >>> c_2_1 = Node.objects.get(pk=c_2_1.pk)
->>> Node.tree.move_within_tree(c_2_2, c_2_1, 'right')
+>>> c_2_2.move_to(c_2_1, 'right')
 >>> print_tree_details([c_2_2])
 7 5 1 2 11 12
 >>> print_tree_details(Node.tree.all())
@@ -746,11 +749,11 @@ InvalidTarget: The target node must be in a different tree.
 >>> Node.tree.move_to_new_tree(c_1, new_root, position='left')
 Traceback (most recent call last):
     ...
-InvalidTarget: A node may not be made a sibling of a root node.
+InvalidMove: A node may not be made a sibling of a root node.
 >>> Node.tree.move_to_new_tree(c_1, new_root, position='right')
 Traceback (most recent call last):
     ...
-InvalidTarget: A node may not be made a sibling of a root node.
+InvalidMove: A node may not be made a sibling of a root node.
 >>> Node.tree.move_to_new_tree(c_1, new_root, position='cheese')
 Traceback (most recent call last):
     ...
@@ -758,7 +761,7 @@ ValueError: An invalid position was given: cheese.
 
 # Move using default (last-child)
 >>> c_2 = Node.objects.get(pk=c_2.pk)
->>> Node.tree.move_to_new_tree(c_2, new_root)
+>>> c_2.move_to(new_root)
 >>> print_tree_details([c_2])
 5 8 2 1 2 7
 >>> print_tree_details(Node.tree.all())
@@ -848,11 +851,11 @@ InvalidTarget: The target node must be in a different tree.
 >>> Node.tree.make_child_node(new_root, root, position='left')
 Traceback (most recent call last):
     ...
-InvalidTarget: A node may not be made a sibling of a root node.
+InvalidMove: A node may not be made a sibling of a root node.
 >>> Node.tree.make_child_node(new_root, root, position='right')
 Traceback (most recent call last):
     ...
-InvalidTarget: A node may not be made a sibling of a root node.
+InvalidMove: A node may not be made a sibling of a root node.
 >>> Node.tree.make_child_node(new_root, c_1, position='cheese')
 Traceback (most recent call last):
     ...
@@ -860,7 +863,7 @@ ValueError: An invalid position was given: cheese.
 
 >>> new_root = Node.objects.get(pk=new_root.pk)
 >>> c_2 = Node.objects.get(pk=c_2.pk)
->>> Node.tree.make_child_node(new_root, c_2, position='first-child')
+>>> new_root.move_to(c_2, position='first-child')
 >>> print_tree_details([new_root])
 8 5 1 2 5 6
 >>> print_tree_details(Node.tree.all())

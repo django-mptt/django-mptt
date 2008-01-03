@@ -13,8 +13,7 @@ from django.dispatch import dispatcher
 from mptt.signals import pre_delete, pre_save
 from mptt.managers import TreeManager
 
-__all__ = ['treeify', 'get_ancestors', 'get_descendants',
-           'get_descendant_count']
+__all__ = ['treeify']
 
 def treeify(cls, parent_attr='parent', left_attr='lft', right_attr='rght',
             tree_id_attr='tree_id', level_attr='level',
@@ -54,8 +53,10 @@ def treeify(cls, parent_attr='parent', left_attr='lft', right_attr='rght',
             get_descendant_count(left_attr, right_attr))
     setattr(cls, 'get_siblings',
             get_siblings(parent_attr, left_attr, tree_id_attr, level_attr))
-    TreeManager(parent_attr, left_attr, right_attr, tree_id_attr,
-                level_attr).contribute_to_class(cls, tree_manager_attr)
+    setattr(cls, 'move_to', move_to)
+    if not hasattr(cls, tree_manager_attr):
+        TreeManager(parent_attr, left_attr, right_attr, tree_id_attr,
+                    level_attr).contribute_to_class(cls, tree_manager_attr)
     setattr(cls, '_tree_manager', getattr(cls, tree_manager_attr))
 
 def get_ancestors(parent_attr, left_attr, right_attr, tree_id_attr):
@@ -144,3 +145,10 @@ def get_siblings(parent_attr, left_attr, tree_id_attr, level_attr):
             queryset = queryset.exclude(pk=instance.pk)
         return queryset
     return _get_siblings
+
+def move_to(instance, target, position='first-child'):
+    """
+    Convenience method for calling ``TreeManager.move_to`` with a
+    ``Model`` instance.
+    """
+    instance._tree_manager.move_node(instance, target, position)
