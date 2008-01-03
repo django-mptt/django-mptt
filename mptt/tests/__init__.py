@@ -454,6 +454,10 @@ InvalidTarget: A node may not be made a sibling of itself or any of its descenda
 Traceback (most recent call last):
     ...
 InvalidTarget: A node may not be made a sibling of its root node.
+>>> Node.tree.move_within_tree(c_1, c_2, position='cheese')
+Traceback (most recent call last):
+    ...
+ValueError: An invalid position was given: cheese.
 
 # Move up the tree using first-child
 >>> c_2_2 = Node.objects.get(pk=c_2_2.pk)
@@ -716,6 +720,117 @@ left        | Y  | Y  | Y  | Y
 right       | Y  | Y  | Y  | Y
 
 I guess we're covered :)
+
+#######################
+# Inter-Tree Movement #
+#######################
+
+>>> new_root = Node.objects.create()
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 14
+2 1 1 1 2 7
+3 2 1 2 3 4
+4 2 1 2 5 6
+5 1 1 1 8 13
+6 5 1 2 9 10
+7 5 1 2 11 12
+8 - 2 0 1 2
+
+# Validate exceptions are raised appropriately
+>>> Node.tree.move_to_new_tree(c_1, c_1, position='first-child')
+Traceback (most recent call last):
+    ...
+InvalidTarget: The target node must be in a different tree.
+>>> Node.tree.move_to_new_tree(c_1, new_root, position='left')
+Traceback (most recent call last):
+    ...
+InvalidTarget: A node may not be made a sibling of a root node.
+>>> Node.tree.move_to_new_tree(c_1, new_root, position='right')
+Traceback (most recent call last):
+    ...
+InvalidTarget: A node may not be made a sibling of a root node.
+>>> Node.tree.move_to_new_tree(c_1, new_root, position='cheese')
+Traceback (most recent call last):
+    ...
+ValueError: An invalid position was given: cheese.
+
+# Move using default (last-child)
+>>> c_2 = Node.objects.get(pk=c_2.pk)
+>>> Node.tree.move_to_new_tree(c_2, new_root)
+>>> print_tree_details([c_2])
+5 8 2 1 2 7
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 8
+2 1 1 1 2 7
+3 2 1 2 3 4
+4 2 1 2 5 6
+8 - 2 0 1 8
+5 8 2 1 2 7
+6 5 2 2 3 4
+7 5 2 2 5 6
+
+# Move using left
+>>> c_1_1 = Node.objects.get(pk=c_1_1.pk)
+>>> c_2 = Node.objects.get(pk=c_2.pk)
+>>> Node.tree.move_to_new_tree(c_1_1, c_2, position='left')
+>>> print_tree_details([c_1_1])
+3 8 2 1 2 3
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 6
+2 1 1 1 2 5
+4 2 1 2 3 4
+8 - 2 0 1 10
+3 8 2 1 2 3
+5 8 2 1 4 9
+6 5 2 2 5 6
+7 5 2 2 7 8
+
+# Move using first-child
+>>> c_1_2 = Node.objects.get(pk=c_1_2.pk)
+>>> c_2 = Node.objects.get(pk=c_2.pk)
+>>> Node.tree.move_to_new_tree(c_1_2, c_2, position='first-child')
+>>> print_tree_details([c_1_2])
+4 5 2 2 5 6
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 4
+2 1 1 1 2 3
+8 - 2 0 1 12
+3 8 2 1 2 3
+5 8 2 1 4 11
+4 5 2 2 5 6
+6 5 2 2 7 8
+7 5 2 2 9 10
+
+# Move using right
+>>> c_2 = Node.objects.get(pk=c_2.pk)
+>>> c_1 = Node.objects.get(pk=c_1.pk)
+>>> Node.tree.move_to_new_tree(c_2, c_1, position='right')
+>>> print_tree_details([c_2])
+5 1 1 1 4 11
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 12
+2 1 1 1 2 3
+5 1 1 1 4 11
+4 5 1 2 5 6
+6 5 1 2 7 8
+7 5 1 2 9 10
+8 - 2 0 1 4
+3 8 2 1 2 3
+
+# Move using last-child
+>>> c_1_1 = Node.objects.get(pk=c_1_1.pk)
+>>> Node.tree.move_to_new_tree(c_1_1, c_2, position='last-child')
+>>> print_tree_details([c_1_1])
+3 5 1 2 11 12
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 14
+2 1 1 1 2 3
+5 1 1 1 4 13
+4 5 1 2 5 6
+6 5 1 2 7 8
+7 5 1 2 9 10
+3 5 1 2 11 12
+8 - 2 0 1 2
 """
 
 # TODO Fixtures won't work with Django MPTT unless the pre_save signal
