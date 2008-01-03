@@ -6,8 +6,6 @@ its tree attributes.
 from django.db import connection
 from django.utils.translation import ugettext as _
 
-from mptt.exceptions import InvalidParent
-
 __all__ = ['pre_save', 'pre_delete']
 
 qn = connection.ops.quote_name

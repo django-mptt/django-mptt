@@ -1,5 +1,5 @@
 r"""
->>> from mptt.tests.models import Category, Genre
+>>> from mptt.tests.models import Category, Genre, Node
 
 >>> def print_tree_details(nodes):
 ...     print '\n'.join(['%s %s %s %s %s %s' % \
@@ -118,13 +118,13 @@ correct tree attributes defined, should they be required for use after a save.
 >>> rpg.save()
 Traceback (most recent call last):
     ...
-InvalidParent: A root node may not have its parent changed to any node in its own tree.
+InvalidTarget: A root node may not have its parent changed to any node in its own tree.
 >>> arpg = Genre.objects.get(pk=arpg.pk)
 >>> rpg.parent = arpg
 >>> rpg.save()
 Traceback (most recent call last):
     ...
-InvalidParent: A root node may not have its parent changed to any node in its own tree.
+InvalidTarget: A root node may not have its parent changed to any node in its own tree.
 
 # Make a tree a subtree of another tree
 >>> rpg = Genre.objects.get(pk=rpg.pk)
@@ -184,13 +184,13 @@ InvalidParent: A root node may not have its parent changed to any node in its ow
 >>> rpg.save()
 Traceback (most recent call last):
     ...
-InvalidParent: A node may not have its parent changed to itself or any of its descendants.
+InvalidTarget: A node may not be made a child of itself or any of its descendants.
 >>> trpg = Genre.objects.get(pk=trpg.pk)
 >>> rpg.parent = trpg
 >>> rpg.save()
 Traceback (most recent call last):
     ...
-InvalidParent: A node may not have its parent changed to itself or any of its descendants.
+InvalidTarget: A node may not be made a child of itself or any of its descendants.
 
 # Move a subtree up a level (position stays the same)
 >>> trpg = Genre.objects.get(pk=trpg.pk)
@@ -412,6 +412,310 @@ InvalidParent: A node may not have its parent changed to itself or any of its de
 8 - 2 0 1 6
 9 8 2 1 2 3
 10 8 2 1 4 5
+
+#######################
+# Intra-Tree Movement #
+#######################
+
+>>> root = Node.objects.create()
+>>> c_1 = Node.objects.create(parent=root)
+>>> c_1_1 = Node.objects.create(parent=c_1)
+>>> c_1_2 = Node.objects.create(parent=c_1)
+>>> c_2 = Node.objects.create(parent=root)
+>>> c_2_1 = Node.objects.create(parent=c_2)
+>>> c_2_2 = Node.objects.create(parent=c_2)
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 14
+2 1 1 1 2 7
+3 2 1 2 3 4
+4 2 1 2 5 6
+5 1 1 1 8 13
+6 5 1 2 9 10
+7 5 1 2 11 12
+
+# Validate exceptions are raised appropriately
+>>> Node.tree.move_within_tree(root, root, position='first-child')
+Traceback (most recent call last):
+    ...
+InvalidTarget: A node may not be made a child of itself or any of its descendants.
+>>> Node.tree.move_within_tree(c_1, c_1_1, position='last-child')
+Traceback (most recent call last):
+    ...
+InvalidTarget: A node may not be made a child of itself or any of its descendants.
+>>> Node.tree.move_within_tree(root, root, position='right')
+Traceback (most recent call last):
+    ...
+InvalidTarget: A node may not be made a sibling of itself or any of its descendants.
+>>> Node.tree.move_within_tree(c_1, c_1_1, position='left')
+Traceback (most recent call last):
+    ...
+InvalidTarget: A node may not be made a sibling of itself or any of its descendants.
+>>> Node.tree.move_within_tree(c_1_2, root, position='right')
+Traceback (most recent call last):
+    ...
+InvalidTarget: A node may not be made a sibling of its root node.
+
+# Move up the tree using first-child
+>>> c_2_2 = Node.objects.get(pk=c_2_2.pk)
+>>> c_1 = Node.objects.get(pk=c_1.pk)
+>>> Node.tree.move_within_tree(c_2_2, c_1, 'first-child')
+>>> print_tree_details([c_2_2])
+7 2 1 2 3 4
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 14
+2 1 1 1 2 9
+7 2 1 2 3 4
+3 2 1 2 5 6
+4 2 1 2 7 8
+5 1 1 1 10 13
+6 5 1 2 11 12
+
+# Undo the move using right
+>>> c_2_1 = Node.objects.get(pk=c_2_1.pk)
+>>> Node.tree.move_within_tree(c_2_2, c_2_1, 'right')
+>>> print_tree_details([c_2_2])
+7 5 1 2 11 12
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 14
+2 1 1 1 2 7
+3 2 1 2 3 4
+4 2 1 2 5 6
+5 1 1 1 8 13
+6 5 1 2 9 10
+7 5 1 2 11 12
+
+# Move up the tree with descendants using first-child
+>>> c_2 = Node.objects.get(pk=c_2.pk)
+>>> c_1 = Node.objects.get(pk=c_1.pk)
+>>> Node.tree.move_within_tree(c_2, c_1, 'first-child')
+>>> print_tree_details([c_2])
+5 2 1 2 3 8
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 14
+2 1 1 1 2 13
+5 2 1 2 3 8
+6 5 1 3 4 5
+7 5 1 3 6 7
+3 2 1 2 9 10
+4 2 1 2 11 12
+
+# Undo the move using right
+>>> c_1 = Node.objects.get(pk=c_1.pk)
+>>> Node.tree.move_within_tree(c_2, c_1, 'right')
+>>> print_tree_details([c_2])
+5 1 1 1 8 13
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 14
+2 1 1 1 2 7
+3 2 1 2 3 4
+4 2 1 2 5 6
+5 1 1 1 8 13
+6 5 1 2 9 10
+7 5 1 2 11 12
+
+COVERAGE    | U1 | U> | D1 | D>
+------------+----+----+----+----
+first-child | Y  | Y  |    |
+last-child  |    |    |    |
+left        |    |    |    |
+right       |    |    | Y  | Y
+
+# Move down the tree using first-child
+>>> c_1_2 = Node.objects.get(pk=c_1_2.pk)
+>>> c_2 = Node.objects.get(pk=c_2.pk)
+>>> Node.tree.move_within_tree(c_1_2, c_2, 'first-child')
+>>> print_tree_details([c_1_2])
+4 5 1 2 7 8
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 14
+2 1 1 1 2 5
+3 2 1 2 3 4
+5 1 1 1 6 13
+4 5 1 2 7 8
+6 5 1 2 9 10
+7 5 1 2 11 12
+
+# Undo the move using last-child
+>>> c_1 = Node.objects.get(pk=c_1.pk)
+>>> Node.tree.move_within_tree(c_1_2, c_1, 'last-child')
+>>> print_tree_details([c_1_2])
+4 2 1 2 5 6
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 14
+2 1 1 1 2 7
+3 2 1 2 3 4
+4 2 1 2 5 6
+5 1 1 1 8 13
+6 5 1 2 9 10
+7 5 1 2 11 12
+
+# Move down the tree with descendants using first-child
+>>> c_1 = Node.objects.get(pk=c_1.pk)
+>>> c_2 = Node.objects.get(pk=c_2.pk)
+>>> Node.tree.move_within_tree(c_1, c_2, 'first-child')
+>>> print_tree_details([c_1])
+2 5 1 2 3 8
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 14
+5 1 1 1 2 13
+2 5 1 2 3 8
+3 2 1 3 4 5
+4 2 1 3 6 7
+6 5 1 2 9 10
+7 5 1 2 11 12
+
+# Undo the move using left
+>>> c_2 = Node.objects.get(pk=c_2.pk)
+>>> Node.tree.move_within_tree(c_1, c_2, 'left')
+>>> print_tree_details([c_1])
+2 1 1 1 2 7
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 14
+2 1 1 1 2 7
+3 2 1 2 3 4
+4 2 1 2 5 6
+5 1 1 1 8 13
+6 5 1 2 9 10
+7 5 1 2 11 12
+
+COVERAGE    | U1 | U> | D1 | D>
+------------+----+----+----+----
+first-child | Y  | Y  | Y  | Y
+last-child  | Y  |    |    |
+left        |    | Y  |    |
+right       |    |    | Y  | Y
+
+# Move up the tree using right
+>>> c_2_2 = Node.objects.get(pk=c_2_2.pk)
+>>> c_1_1 = Node.objects.get(pk=c_1_1.pk)
+>>> Node.tree.move_within_tree(c_2_2, c_1_1, 'right')
+>>> print_tree_details([c_2_2])
+7 2 1 2 5 6
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 14
+2 1 1 1 2 9
+3 2 1 2 3 4
+7 2 1 2 5 6
+4 2 1 2 7 8
+5 1 1 1 10 13
+6 5 1 2 11 12
+
+# Undo the move using last-child
+>>> c_2 = Node.objects.get(pk=c_2.pk)
+>>> Node.tree.move_within_tree(c_2_2, c_2, 'last-child')
+>>> print_tree_details([c_2_2])
+7 5 1 2 11 12
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 14
+2 1 1 1 2 7
+3 2 1 2 3 4
+4 2 1 2 5 6
+5 1 1 1 8 13
+6 5 1 2 9 10
+7 5 1 2 11 12
+
+# Move up the tree with descendants using right
+>>> c_2 = Node.objects.get(pk=c_2.pk)
+>>> c_1_1 = Node.objects.get(pk=c_1_1.pk)
+>>> Node.tree.move_within_tree(c_2, c_1_1, 'right')
+>>> print_tree_details([c_2])
+5 2 1 2 5 10
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 14
+2 1 1 1 2 13
+3 2 1 2 3 4
+5 2 1 2 5 10
+6 5 1 3 6 7
+7 5 1 3 8 9
+4 2 1 2 11 12
+
+# Undo the move using last-child
+>>> root = Node.objects.get(pk=root.pk)
+>>> Node.tree.move_within_tree(c_2, root, 'last-child')
+>>> print_tree_details([c_2])
+5 1 1 1 8 13
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 14
+2 1 1 1 2 7
+3 2 1 2 3 4
+4 2 1 2 5 6
+5 1 1 1 8 13
+6 5 1 2 9 10
+7 5 1 2 11 12
+
+COVERAGE    | U1 | U> | D1 | D>
+------------+----+----+----+----
+first-child | Y  | Y  | Y  | Y
+last-child  | Y  |    | Y  | Y
+left        |    | Y  |    |
+right       | Y  | Y  | Y  | Y
+
+# Move down the tree with descendants using left
+>>> c_1 = Node.objects.get(pk=c_1.pk)
+>>> c_2_2 = Node.objects.get(pk=c_2_2.pk)
+>>> Node.tree.move_within_tree(c_1, c_2_2, 'left')
+>>> print_tree_details([c_1])
+2 5 1 2 5 10
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 14
+5 1 1 1 2 13
+6 5 1 2 3 4
+2 5 1 2 5 10
+3 2 1 3 6 7
+4 2 1 3 8 9
+7 5 1 2 11 12
+
+# Undo the move using first-child
+>>> root = Node.objects.get(pk=root.pk)
+>>> Node.tree.move_within_tree(c_1, root, 'first-child')
+>>> print_tree_details([c_1])
+2 1 1 1 2 7
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 14
+2 1 1 1 2 7
+3 2 1 2 3 4
+4 2 1 2 5 6
+5 1 1 1 8 13
+6 5 1 2 9 10
+7 5 1 2 11 12
+
+# Move down the tree using left
+>>> c_1_1 = Node.objects.get(pk=c_1_1.pk)
+>>> c_2_2 = Node.objects.get(pk=c_2_2.pk)
+>>> Node.tree.move_within_tree(c_1_1, c_2_2, 'left')
+>>> print_tree_details([c_1_1])
+3 5 1 2 9 10
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 14
+2 1 1 1 2 5
+4 2 1 2 3 4
+5 1 1 1 6 13
+6 5 1 2 7 8
+3 5 1 2 9 10
+7 5 1 2 11 12
+
+# Undo the move using left
+>>> c_1_2 = Node.objects.get(pk=c_1_2.pk)
+>>> Node.tree.move_within_tree(c_1_1,  c_1_2, 'left')
+>>> print_tree_details([c_1_1])
+3 2 1 2 3 4
+>>> print_tree_details(Node.tree.all())
+1 - 1 0 1 14
+2 1 1 1 2 7
+3 2 1 2 3 4
+4 2 1 2 5 6
+5 1 1 1 8 13
+6 5 1 2 9 10
+7 5 1 2 11 12
+
+COVERAGE    | U1 | U> | D1 | D>
+------------+----+----+----+----
+first-child | Y  | Y  | Y  | Y
+last-child  | Y  | Y  | Y  | Y
+left        | Y  | Y  | Y  | Y
+right       | Y  | Y  | Y  | Y
+
+I guess we're covered :)
 """
 
 # TODO Fixtures won't work with Django MPTT unless the pre_save signal

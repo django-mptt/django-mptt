@@ -5,6 +5,10 @@ Django MPTT CHANGELOG
 Thu 3rd Jan, 2008
 -----------------
 
+* Implemented a ``position`` argument for
+  ``TreeManager.move_within_tree``. The node being moved can now be made
+  a sibling, first child or last child  of the target node.
+
 * Added a ``move_node`` method to ``TreeManager``, to take care of
   automatically calling the appropriate node movement manager method.
 
