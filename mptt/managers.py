@@ -4,7 +4,7 @@ Custom managers for working with trees of objects.
 from django.db import connection, models
 from django.utils.translation import ugettext as _
 
-from mptt.exceptions import InvalidTarget
+from mptt.exceptions import InvalidMove, InvalidTarget
 
 __all__ = ['TreeManager']
 
@@ -83,7 +83,7 @@ class TreeManager(models.Manager):
         if level > 0:
             raise ValueError(_('A root node must be given.'))
 
-        # Ensure the new parent is valid
+        # Ensure the target node is valid
         if tree_id == new_tree_id:
             raise InvalidTarget(_('The target node must be in a different tree.'))
 
@@ -93,7 +93,7 @@ class TreeManager(models.Manager):
         # Create space for the tree which will be inserted
         self.create_space(tree_width, space_target, new_tree_id)
 
-        # Move the root node, making it a child node.
+        # Move the root node, making it a child node
         opts = self.model._meta
         move_tree_query = """
         UPDATE %(table)s
@@ -245,7 +245,7 @@ class TreeManager(models.Manager):
 
         if position == 'last-child' or position == 'first-child':
             if left <= target_left <= right:
-                raise InvalidTarget(_('A node may not be made a child of itself or any of its descendants.'))
+                raise InvalidMove(_('A node may not be made a child of itself or any of its descendants.'))
             if position == 'last-child':
                 if target_right > right:
                     new_left = target_right - subtree_width
@@ -264,9 +264,9 @@ class TreeManager(models.Manager):
             parent = target
         elif position == 'left' or position == 'right':
             if left <= target_left <= right:
-                raise InvalidTarget(_('A node may not be made a sibling of itself or any of its descendants.'))
+                raise InvalidMove(_('A node may not be made a sibling of itself or any of its descendants.'))
             if target_left == 1:
-                raise InvalidTarget(_('A node may not be made a sibling of its root node.'))
+                raise InvalidMove(_('A node may not be made a sibling of its root node.'))
             if position == 'left':
                 if target_left > left:
                     new_left = target_left - subtree_width
@@ -368,7 +368,7 @@ class TreeManager(models.Manager):
             parent = target
         elif position == 'left' or position == 'right':
             if target_left == 1:
-                raise InvalidTarget(_('A node may not be made a sibling of a root node.'))
+                raise InvalidMove(_('A node may not be made a sibling of a root node.'))
             if position == 'left':
                 space_target = target_left - 1
             else:

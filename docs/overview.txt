@@ -8,14 +8,63 @@ instances.
 
 .. _`Django`: http://www.djangoproject.com
 
+.. contents::
+
+What is Modified Preorder Tree Traversal?
+-----------------------------------------
+
+MPTT is a technique for storing hierarchical data in a database in a
+manner which makes tree retrieval operations such as fetching complete
+trees, item ancestors and item descendants very efficient.
+
+The trade-off for this efficiency is that performing inserts and moving
+items around is more involved, as there's some extra work required to
+keep the tree structure in a good state at all times.
+
+Here are a couple of articles about MPTT to whet your appetite:
+
+    * `Storing Hierarchical Data in a Database`_
+    * `Managing Hierarchical Data in MySQL`_
+
+.. _`Storing Hierarchical Data in a Database`: http://www.sitepoint.com/print/hierarchical-data-database
+.. _`Managing Hierarchical Data in MySQL`: http://dev.mysql.com/tech-resources/articles/hierarchical-data.html
+
+
+Django MPTT Features
+--------------------
+
+* The tree structure is automatically managed when you create or delete
+  MPTT ``Model`` instances. New instances are added as the last child of
+  their parent if they have one, otherwise they become the root of a new
+  tree.
+
+* MPTT ``Model`` instances have methods for retrieving their ancestors,
+  siblings and descendants from the database, determining the number
+  of descendants they have (which does not involve a database hit with
+  MPTT) and moving them around the tree.
+
+* The tree structure is automatically updated when you change a
+  ``Model`` instance's parent - modified instances are moved so they are
+  the last child of their new parent.
+
+  This allows basic management of the tree using the parent field
+  available to you in the ``django.contrib.admin`` application and in
+  ``newforms`` forms generated using the ``ModelForm`` class.
+
+* The custom ``TreeManager`` manager which is added to all MPTT
+  ``Model`` classes provides tree management operations which can be
+  used to move any node in the tree (and its descendants) to an
+  arbitrary point in the tree.
+
+
 Setting up a ``Model`` class for MPTT
 -------------------------------------
 
 The ``mptt.models`` module contains a ``treeify`` function, which users
 can call to set a ``Model`` class up for MPTT. This function takes as
-its arguments the ``Model`` class itself and attribute names for certain
-fields which are required in order to manage the database table for the
-``Model`` as a tree.
+its arguments the ``Model`` class itself and, optionally, attribute
+names for the set of fields which are required in order to manage the
+database table for the ``Model`` as a tree.
 
 The following argument is required:
 
@@ -47,8 +96,8 @@ dynamically:
   Defaults to ``'rght'``.
 
 * ``tree_id_attr`` -- the name of an attribute which contains the tree
-  id, which should be a ``PositiveIntegerField``. Defaults to
-  ``'tree_id'``.
+  id of each node, which should be a ``PositiveIntegerField``. Defaults
+  to ``'tree_id'``.
 
   Items which do not have a parent are considered to be "root" nodes in
   the tree and will be allocated a new tree id. All descendants of root
@@ -62,14 +111,17 @@ dynamically:
   immediate children would have have a level of ``1``.
 
 * ``tree_manager_attr`` -- the name of an attribute which should
-  reference a custom ``Manager`` which handles working with trees of
+  reference a custom ``Manager`` which is used to work with trees of
   ``Model`` instances. Defaults to ``'tree'``.
+
+For more details on how these arguments are used to set up a ``Model``
+class, see `MPTT setup details`_.
 
 .. _`minimal example usage`:
 
-Mimimal example usage is given below, where the ``Model`` class being
-set up for MPTT is suitable for use with the default arguments of
-``treeify``::
+A mimimal example usage of ``treeify`` is given below, where the
+``Model`` class being set up for MPTT is suitable for use with the
+default arguments of ``treeify``::
 
    from django.db import models
 
@@ -81,74 +133,9 @@ set up for MPTT is suitable for use with the default arguments of
 
    treeify(Genre)
 
-MPTT setup details
-~~~~~~~~~~~~~~~~~~
 
-The following steps are taken when ``treeify`` is called to set up a
-``Model`` class for MPTT:
-
-1. If the ``Model`` class does not have fields defined with names
-   matching any of the attribute names given for the ``left_attr``,
-   ``right_attr``, ``tree_id_attr`` or ``level_attr`` arguments, the
-   following field is dynamically added to the model for each missing
-   field::
-
-      models.PositiveIntegerField(db_index=True, editable=False)
-
-   As such, if all of these fields are left to be dynamically added, the
-   tree structure is effectively invisible to the
-   ``django.contrib.admin`` application and any ``newforms`` forms
-   generated using the ``ModelForm`` class, if these are being used with
-   the ``Model`` in question.
-
-2. Signal receiving functions are registered for the built-in
-   ``pre_save`` and ``pre_delete`` signals which are fired when a
-   ``Model`` instance is about to be saved or deleted, respectively.
-
-   These functions take care of managing MPTT fields when a ``Model``
-   instance is about to be created or deleted.
-
-3. Additional instance methods are added to the ``Model`` class to
-   retrieve information related to ``Model`` instances, based on the
-   tree structure.
-
-   See `additional instance methods`_ below for details about the new
-   methods which are available.
-
-4. A custom ``Manager`` is added to the ``Model`` class to handle
-   working with the tree of model instances. The ``tree_manager_attr``
-   argument defines the attribute this manager will be publicly
-   accessible via.
-
-   A ``_tree_manager`` attribute is also set up to access this manager,
-   for internal use by Django MPTT.
-
-   See `the TreeManager custom Manager`_ below for details about
-   the operations available on this custom ``Manager``.
-
-Dynamic field creation vs. Explicitly defining MPTT fields
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-As the `minimal example usage`_ above demonstrates, ``Model`` classes
-which do not have any field names which clash with the default arguments
-to the ``treeify`` function need not contain any details about MPTT
-fields at all in their class definition.
-
-One of the goals of this application is that authors should not have to
-worry about or use MPTT fields directly in order to reap the benefits of
-the functionality their existence enables.
-
-While dynamically added MPTT fields can be used in inner ``Meta`` and
-``Admin`` classes, it is recommended that models in which these fields
-will be used elsewhere in the class definition should implement the
-fields themselves for clarity - it's already bad enough that we're
-dynamically adding fields without your model definitions using fields
-which don't appear to exist.
-
-Salt to taste, your mileage may vary, etc. etc.
-
-Additional instance methods
----------------------------
+``Model`` instance methods
+--------------------------
 
 The following instance methods will be available on all instances of
 ``Model`` classes set up for MPTT:
@@ -177,6 +164,62 @@ The following instance methods will be available on all instances of
 
   If ``include_self`` is ``True``, the ``QuerySet`` will also include
   the model instance itself.
+
+* ``move_to(target, position)`` -- moves the model instance elsewhere in
+  the tree based on ``target`` and ``position`` (when appropriate).
+
+  .. note::
+     Is is assumed that when you call this method, the tree fields in
+     the instance you've called it on, and in any ``target`` instance passed
+     in, reflect the current state of the database.
+
+     Modifying the tree fields manually before calling this method or
+     using tree fields which are out of sync with the database can
+     result in the tree structure being put into an inaccurate state.
+
+  If ``target`` is another model instance, it will be used to determine
+  the type of movement which needs to take place, and will be used as
+  the basis for positioning the model when it is moved, in combination
+  with the ``position`` argument.
+
+  A ``target`` of ``None`` indicates that the model instance should be
+  turned into a root node. The ``position`` argument is disregarded in
+  this case.
+
+  Valid values for the ``position`` argument and their effects on
+  movement are:
+
+     ``'first-child'``
+        The instance being moved should have ``target`` set as its new
+        parent and be placed as its *first* child in the tree structure.
+
+     ``'last-child'``
+        The instance being moved should have ``target`` set as its new
+        parent and be placed as its *last* child in the tree structure.
+
+     ``'left'``
+        The instance being moved should have ``target``'s parent set as
+        its new parent and should be placed *directly before* ``target``
+        in the tree structure.
+
+     ``'right'``
+        The instance being moved should have ``target``'s parent set as
+        its new parent and should be placed *directly after* ``target``
+        in the tree structure.
+
+  A ``ValueError`` will be raised if an invalid value is given for the
+  ``position`` argument.
+
+  Note that some of the moves you could attempt to make with this are
+  invalid - for example, trying to make an instance be its own its own
+  child or the child of one of its descendants. In these cases, a
+  ``mptt.exceptions.InvalidMove`` exception will be raised.
+
+  The instance itself will be also modified as a result of this call, to
+  reflect the state of its updated tree fields in the database, so it's
+  safe to go on to save it or use its tree fields after you've called
+  this method.
+
 
 The ``TreeManager`` custom ``Manager``
 --------------------------------------
@@ -224,3 +267,72 @@ The following tree management methods are available:
 * ``move_within_tree(node, target, position='last-child')`` --
   moves ``node`` within its current tree, relative to the given
   ``target`` node as specified by ``position``.
+
+
+MPTT setup details
+------------------
+
+The following steps are taken when ``treeify`` is called to set up a
+``Model`` class for MPTT:
+
+1. If the ``Model`` class does not have fields defined with names
+   matching any of the attribute names given for the ``left_attr``,
+   ``right_attr``, ``tree_id_attr`` or ``level_attr`` arguments, the
+   following field is dynamically added to the model for each missing
+   field::
+
+      models.PositiveIntegerField(db_index=True, editable=False)
+
+   As such, if all of these fields are left to be dynamically added, the
+   tree structure is effectively invisible to the
+   ``django.contrib.admin`` application and any ``newforms`` forms
+   generated using the ``ModelForm`` class, if these are being used with
+   the ``Model`` in question.
+
+2. Signal receiving functions are registered for the built-in
+   ``pre_save`` and ``pre_delete`` signals which are fired when a
+   ``Model`` instance is about to be saved or deleted, respectively.
+
+   These functions take care of managing MPTT fields when a ``Model``
+   instance is about to be created or deleted and automatically
+   adjusting tree details when an instance is saved after having its
+   parent changed.
+
+3. Additional instance methods are added to the ``Model`` class to
+   retrieve information related to ``Model`` instances based on the
+   tree structure and to move the instance around the tree.
+
+   See `model instance methods`_ for details about the new methods which
+   are available.
+
+4. A custom ``Manager`` is added to the ``Model`` class to handle
+   working with the tree of model instances. The ``tree_manager_attr``
+   argument defines the attribute this manager will be publicly
+   accessible via.
+
+   A ``_tree_manager`` attribute is also set up to access this manager,
+   for internal use by Django MPTT.
+
+   See `the TreeManager custom Manager`_ for details about the tree
+   operations available via this custom ``Manager``.
+
+Dynamic field creation vs. explicitly defining MPTT fields
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As the `minimal example usage`_ above demonstrates, ``Model`` classes
+which do not have field names which clash with the default arguments to
+the ``treeify`` function need not contain any details about MPTT
+fields at all in their class definition.
+
+One of the goals of this application is that authors should not have to
+worry about setting up or using MPTT fields directly in order to reap
+the benefits of the functionality their existence enables.
+
+While dynamically added MPTT fields can be used in inner ``Meta`` and
+``Admin`` classes, it is recommended that models which will use these
+fields elsewhere in the class definition should implement the fields
+themselves for clarity - it's already bad enough that we're dynamically
+adding fields without your model definitions using fields which don't
+appear to exist.
+
+Salt to taste, your mileage may vary, etc. etc.

@@ -5,6 +5,15 @@ Django MPTT CHANGELOG
 Thu 3rd Jan, 2008
 -----------------
 
+* Updated documentation with latest changes, a high level overview of
+  features and more details about node movement. Moved detailed
+  information about MPTT setup internals to the end of the document.
+
+* Reworked exceptions - ``InvalidMove`` is now raised when an invalid
+  move is attempted.
+
+* Added a ``move_to`` convenience method to ``Model`` instances.
+
 * Implemented the ``position`` argument for ``make_child_node`` and
   ``move_node`` in ``TreeManager``. The node movement API can now be
   used to move any node to an arbitrary point in any tree.
@@ -81,9 +90,9 @@ Mon 31st Dec, 2007
 Sun 30th Dec, 2007
 ------------------
 
-* Implemented reparenting when a model instance is transformed into a
-  root node by having its parent removed.
+* Implemented reparenting when a ``Model`` instance is transformed into
+  a root node by having its parent removed.
 
-* Added tests for creation, model instance methods and deletion.
+* Added tests for creation, ``Model`` instance methods and deletion.
 
-* Added a ``get_siblings`` method to model instances.
+* Added a ``get_siblings`` method to ``Model`` instances.
