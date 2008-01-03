@@ -5,6 +5,9 @@ Django MPTT CHANGELOG
 Thu 3rd Jan, 2008
 -----------------
 
+* Added a ``move_node`` method to ``TreeManager``, to take care of
+  automatically calling the appropriate node movement manager method.
+
 * Combined a number of SQL queries into single queries using ``CASE``
   operators to reduce the overall number of queries required to move
   tree nodes around.

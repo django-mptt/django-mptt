@@ -214,6 +214,16 @@ The following tree management methods are available:
   The given ``instance`` will be modified to reflect its new tree state
   in the database.
 
+* ``move_node(instance, new_parent)`` -- moves a ``Model`` instance to a
+  new parent, taking care of calling the appropriate manager method to
+  do so.
+
+  To remove the instance's parent, pass ``None`` for the ``new_parent``
+  argument.
+
+  The given ``instance`` will be modified to reflect its new tree
+  state in the database.
+
 * ``move_to_new_tree(instance, parent)`` -- moves a ``Model`` instance
   from one tree to another, making it a child of the given ``parent``
   node, which is in a different tree.
