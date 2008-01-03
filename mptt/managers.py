@@ -152,6 +152,29 @@ class TreeManager(models.Manager):
         setattr(instance, self.tree_id_attr, new_tree_id)
         setattr(instance, self.parent_attr, None)
 
+    def move_node(self, instance, new_parent):
+        """
+        Moves a ``Model`` instance to a new parent, taking care of
+        calling the appropriate manager method to do so.
+
+        To remove the instance's parent, pass ``None`` for the
+        ``new_parent`` argument.
+
+        The given ``instance`` will be modified to reflect its new tree
+        state in the database.
+        """
+        if new_parent is None:
+            self.make_root_node(instance)
+        else:
+            parent = getattr(instance, self.parent_attr)
+            if parent is None:
+                self.make_child_node(instance, new_parent)
+            elif (getattr(new_parent, self.tree_id_attr) !=
+                  getattr(instance, self.tree_id_attr)):
+                self.move_to_new_tree(instance, new_parent)
+            else:
+                self.move_within_tree(instance, new_parent)
+
     def move_to_new_tree(self, instance, parent):
         """
         Moves a ``Model`` instance from one tree to another, making it a
