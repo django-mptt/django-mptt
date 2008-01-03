@@ -26,11 +26,8 @@ def pre_save(parent_attr, left_attr, right_attr, tree_id_attr, level_attr):
         If this is an existing instance and its parent has been changed,
         performs reparenting.
         """
-        opts = instance._meta
         parent = getattr(instance, parent_attr)
         if not instance.pk:
-            cursor = connection.cursor()
-            db_table = qn(opts.db_table)
             if parent:
                 target_right = getattr(parent, right_attr) - 1
                 tree_id = getattr(parent, tree_id_attr)
@@ -52,8 +49,6 @@ def pre_save(parent_attr, left_attr, right_attr, tree_id_attr, level_attr):
             old_parent = getattr(instance._default_manager.get(pk=instance.pk),
                                  parent_attr)
             if parent != old_parent:
-                cursor = connection.cursor()
-                db_table = qn(opts.db_table)
                 if parent is None:
                     # The node used to have a parent, but it was removed
                     instance._tree_manager.make_root_node(instance)
