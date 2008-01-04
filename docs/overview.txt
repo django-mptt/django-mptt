@@ -11,7 +11,7 @@ instances.
 .. contents::
 
 What is Modified Preorder Tree Traversal?
------------------------------------------
+=========================================
 
 MPTT is a technique for storing hierarchical data in a database in a
 manner which makes tree retrieval operations such as fetching complete
@@ -31,7 +31,7 @@ Here are a couple of articles about MPTT to whet your appetite:
 
 
 Django MPTT Features
---------------------
+====================
 
 * The tree structure is automatically managed when you create or delete
   MPTT ``Model`` instances. New instances are added as the last child of
@@ -56,9 +56,11 @@ Django MPTT Features
   used to move any node in the tree (and its descendants) to an
   arbitrary point in the tree.
 
+* Utilities for working with tree items in templates.
+
 
 Setting up a ``Model`` class for MPTT
--------------------------------------
+=====================================
 
 The ``mptt.models`` module contains a ``treeify`` function, which users
 can call to set a ``Model`` class up for MPTT. This function takes as
@@ -135,7 +137,7 @@ default arguments of ``treeify``::
 
 
 ``Model`` instance methods
---------------------------
+==========================
 
 The following instance methods will be available on all instances of
 ``Model`` classes set up for MPTT:
@@ -222,7 +224,7 @@ The following instance methods will be available on all instances of
 
 
 The ``TreeManager`` custom ``Manager``
---------------------------------------
+======================================
 
 This manager redefines the ``get_query_set`` method, such that the
 contents of any ``QuerySet`` created using it will be ordered based on
@@ -269,8 +271,69 @@ The following tree management methods are available:
   ``target`` node as specified by ``position``.
 
 
+Template tags and filters
+=========================
+
+The ``mptt.templatetags.mptt_tags`` module defines template tags and
+filters for working with trees of ``Model`` instances.
+
+To use these, you must add ``mptt`` to your project's ``INSTALLED_APPS``
+setting, then you can load the tag module in your templates using
+``{% load mptt_tags %}``
+
+Tag reference
+-------------
+
+full_tree_for_model
+~~~~~~~~~~~~~~~~~~~
+
+Populates a template variable with a ``QuerySet`` containing the full
+tree for a given model.
+
+Usage::
+
+    {% full_tree_for_model [model] as [varname] %}
+
+The model is specified in ``[appname].[modelname]`` format.
+
+Example::
+
+    {% full_tree_for_model tests.Genre as genres %}
+
+Filter reference
+----------------
+
+tree_info
+~~~~~~~~~
+
+Given a list of tree items, produces doubles of a tree item and a
+``dict`` containing information about the tree structure around the
+item, with the following contents:
+
+   new_level
+      ``True`` if the current item is the start of a new level in the
+      tree, ``False`` otherwise.
+
+   closed_levels
+      A list of levels which end after the current item. This will be an
+      empty list if the next item is at the same level as the current
+      item.
+
+Using this filter with unpacking in a ``{% for %}`` tag, you should have
+enough information about the tree structure to create a hierarchical
+representation of the tree.
+
+Example::
+
+   {% for genre,tree in genres|tree_info %}
+   {% if tree.new_level %}<ul><li>{% else %}</li><li>{% endif %}
+   {{ genre.name }}
+   {% for level in tree.closed_levels %}</li></ul>{% endfor %}
+   {% endfor %}
+
+
 MPTT setup details
-------------------
+==================
 
 The following steps are taken when ``treeify`` is called to set up a
 ``Model`` class for MPTT:
@@ -317,7 +380,7 @@ The following steps are taken when ``treeify`` is called to set up a
    operations available via this custom ``Manager``.
 
 Dynamic field creation vs. explicitly defining MPTT fields
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------------------
 
 As the `minimal example usage`_ above demonstrates, ``Model`` classes
 which do not have field names which clash with the default arguments to

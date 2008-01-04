@@ -2,6 +2,12 @@
 Django MPTT CHANGELOG
 =====================
 
+Fri 4th Jan, 2008
+-----------------
+
+* Added a ``tree_info`` template filter and a ``full_tree_for_model``
+  template tag.
+
 Thu 3rd Jan, 2008
 -----------------
 
