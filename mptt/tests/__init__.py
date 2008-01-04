@@ -137,13 +137,13 @@ correct tree attributes defined, should they be required for use after a save.
 >>> rpg.save()
 Traceback (most recent call last):
     ...
-InvalidMove: A node may not be made a child of itself or any of its descendants.
+InvalidMove: A node may not be made a child of itself.
 >>> arpg = Genre.objects.get(pk=arpg.pk)
 >>> rpg.parent = arpg
 >>> rpg.save()
 Traceback (most recent call last):
     ...
-InvalidMove: A node may not be made a child of itself or any of its descendants.
+InvalidMove: A node may not be made a child of any of its descendants.
 
 # Make a tree a subtree of another tree
 >>> rpg = Genre.objects.get(pk=rpg.pk)
@@ -203,13 +203,13 @@ InvalidMove: A node may not be made a child of itself or any of its descendants.
 >>> rpg.save()
 Traceback (most recent call last):
     ...
-InvalidMove: A node may not be made a child of itself or any of its descendants.
+InvalidMove: A node may not be made a child of itself.
 >>> trpg = Genre.objects.get(pk=trpg.pk)
 >>> rpg.parent = trpg
 >>> rpg.save()
 Traceback (most recent call last):
     ...
-InvalidMove: A node may not be made a child of itself or any of its descendants.
+InvalidMove: A node may not be made a child of any of its descendants.
 
 # Move a subtree up a level (position stays the same)
 >>> trpg = Genre.objects.get(pk=trpg.pk)
@@ -462,23 +462,26 @@ True
 7 5 1 2 11 12
 
 # Validate exceptions are raised appropriately
+>>> root = Node.objects.get(pk=root.pk)
 >>> Node.tree.move_node(root, root, position='first-child')
 Traceback (most recent call last):
     ...
-InvalidMove: A node may not be made a child of itself or any of its descendants.
+InvalidMove: A node may not be made a child of itself.
+>>> c_1 = Node.objects.get(pk=c_1.pk)
+>>> c_1_1 = Node.objects.get(pk=c_1_1.pk)
 >>> Node.tree.move_node(c_1, c_1_1, position='last-child')
 Traceback (most recent call last):
     ...
-InvalidMove: A node may not be made a child of itself or any of its descendants.
-
-FIXME Node.tree.move_node(root, root, position='right')
+InvalidMove: A node may not be made a child of any of its descendants.
+>>> Node.tree.move_node(root, root, position='right')
 Traceback (most recent call last):
     ...
-InvalidMove: A node may not be made a sibling of itself or any of its descendants.
-FIXME Node.tree.move_node(c_1, c_1_1, position='left')
+InvalidMove: A node may not be made a sibling of itself.
+>>> c_2 = Node.objects.get(pk=c_2.pk)
+>>> Node.tree.move_node(c_1, c_1_1, position='left')
 Traceback (most recent call last):
     ...
-InvalidMove: A node may not be made a sibling of itself or any of its descendants.
+InvalidMove: A node may not be made a sibling of any of its descendants.
 >>> Node.tree.move_node(c_1, c_2, position='cheese')
 Traceback (most recent call last):
     ...
@@ -847,7 +850,7 @@ I guess we're covered :)
 >>> Node.tree.move_node(root, c_1, position='first-child')
 Traceback (most recent call last):
     ...
-InvalidMove: A node may not be made a child of itself or any of its descendants.
+InvalidMove: A node may not be made a child of any of its descendants.
 >>> Node.tree.move_node(new_root, c_1, position='cheese')
 Traceback (most recent call last):
     ...
@@ -918,6 +921,19 @@ ValueError: An invalid position was given: cheese.
 7 5 1 2 15 16
 3 5 1 2 17 18
 9 1 1 1 20 21
+
+# Making nodes siblings of root nodes #########################################
+
+# Validate exceptions are raised appropriately
+>>> root = Node.objects.get(pk=root.pk)
+>>> Node.tree.move_node(root, root, position='left')
+Traceback (most recent call last):
+    ...
+InvalidMove: A node may not be made a sibling of itself.
+>>> Node.tree.move_node(root, root, position='right')
+Traceback (most recent call last):
+    ...
+InvalidMove: A node may not be made a sibling of itself.
 """
 
 # TODO Fixtures won't work with Django MPTT unless the pre_save signal
