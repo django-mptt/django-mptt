@@ -36,13 +36,18 @@ Installation
 Downloading
 -----------
 
-There are two options for downloading - one is to download the latest
-packaged version from http://code.google.com/p/django-mptt/ and
-unpack it. Inside is a script called ``setup.py``. Enter this command::
+Download the latest packaged version from
+http://code.google.com/p/django-mptt/ and unpack it. Inside is a script
+called ``setup.py``. Enter this command::
 
    python setup.py install
 
 ...and the package will install automatically.
+
+A Windows installer is also available - just download and launch it to
+install the application. An uninstaller will also be created for the
+application, accessible through Add/Remove Programs in your Control
+Panel.
 
 Alternatively, the application's source code can be obtained by
 performing a `Subversion`_ checkout. For example, the following command
@@ -79,6 +84,10 @@ That's it!
 
 Django MPTT feature overview
 ============================
+
+* Simple registration of ``Model`` classes for MPTT - fields required
+  specifically for the MPTT tree structure will be added dynamically if
+  not present in a given ``Model``.
 
 * A tree structure is automatically managed when you create or delete
   MPTT ``Model`` instances. New instances are added as the last child of
@@ -259,9 +268,9 @@ The following instance methods will be available on all instances of
   A ``ValueError`` will be raised if an invalid value is given for the
   ``position`` argument.
 
-  Note that some of the moves you could attempt to make with this are
-  invalid - for example, trying to make an instance be its own its own
-  child or the child of one of its descendants. In these cases, a
+  Note that some of the moves you could attempt to make with this method
+  are invalid - for example, trying to make an instance be its own its
+  own child or the child of one of its descendants. In these cases, a
   ``mptt.exceptions.InvalidMove`` exception will be raised.
 
   The instance itself will be also modified as a result of this call, to
@@ -456,7 +465,7 @@ Running the tests
 The ``mptt.tests`` package is set up as an application which holds a
 test settings module and defines models for use in testing MPTT. You can
 run the tests from the command-line using the ``django-admin.py``
-script,specifying that the test settings module should be used:
+script,specifying that the test settings module should be used::
 
    django-admin.py test --settings=mptt.tests.settings
 
