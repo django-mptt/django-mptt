@@ -222,12 +222,14 @@ The following instance methods will be available on all instances of
 
   If ``include_self`` is ``True``, the ``QuerySet`` will also include
   the model instance itself.
-  
+
 * ``is_child_node()`` -- returns ``True`` if the model instance is a
   child node, ``False`` otherwise.
-  
+
 * ``is_root_node()`` -- returns ``True`` if the model instance is a root
   node, ``False`` otherwise.
+
+.. _`move_to documentation`:
 
 * ``move_to(target, position)`` -- moves the model instance elsewhere in
   the tree based on ``target`` and ``position`` (when appropriate).
@@ -295,42 +297,17 @@ and their items being ordered in a depth-first fashion within each tree.
 
 The following tree management methods are available:
 
-* ``close_gap(size, target, tree_id)`` -- closes a gap of a certain size
-  after the given target point (a left or right value) in the tree with
-  the given id.
-
-* ``create_space(size, target, tree_id)`` -- creates a space of a
-  certain size after the given target point (a left or right value) in
-  the tree with the given id.
-
-* ``get_next_tree_id()`` -- determines the next available tree id for
-  the ``Model`` being managed.
-
-* ``make_child_node(root, target, position='last-child)`` -- moves
-  ``node`` (which must be a root node) to a different tree, inserting it
-  relative to the given ``target`` node in the new tree as specified by
-  ``position``.
-
-* ``make_root_node(node)`` -- removes ``node`` from its tree, making it
-  the root node of a new tree.
-
 * ``move_node(node, target, position='last-child')`` -- moves ``node``
-  based on ``target``, relative to ``position`` when appropriate, taking
-  care of calling the correct manager method to do so.
+  based on ``target``, relative to ``position`` when appropriate.
 
-  A ``target`` of ``None`` indicates that ``node`` should be
-  turned into a root node.
+  A ``target`` of ``None`` indicates that ``node`` should be removed
+  from its current position and turned into a root node. If ``node`` is
+  a root node in this case, no action will be taken.
 
   The given ``node`` will be modified to reflect its new tree state in
   the database.
 
-* ``move_to_new_tree(node, target, position='last-child')`` -- moves
-  ``node`` to a different tree, inserting it relative to the given
-  ``target`` node in the new tree as specified by ``position``.
-
-* ``move_within_tree(node, target, position='last-child')`` --
-  moves ``node`` within its current tree, relative to the given
-  ``target`` node as specified by ``position``.
+  For more details, see the `move_to documentation`_ above.
 
 
 Template tags and filters
