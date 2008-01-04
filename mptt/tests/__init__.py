@@ -2,9 +2,12 @@ r"""
 >>> from mptt.tests.models import Category, Genre, Node
 
 >>> def print_tree_details(nodes):
+...     m = nodes[0]._tree_manager
 ...     print '\n'.join(['%s %s %s %s %s %s' % \
-...                     (n.pk, n.parent_id or '-', n.tree_id, n.level, n.lft, n.rght) \
-...                     for n in nodes])
+...                      (n.pk, getattr(n, '%s_id' % m.parent_attr) or '-',
+...                       getattr(n, m.tree_id_attr), getattr(n, m.level_attr),
+...                       getattr(n, m.left_attr), getattr(n, m.right_attr)) \
+...                      for n in nodes])
 
 # Creation ####################################################################
 >>> action = Genre.objects.create(name='Action')
