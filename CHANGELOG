@@ -11,25 +11,24 @@ Fri 4th Jan, 2008
 -----------------
 
 * Made ``InvalidMove`` exceptions more granular - they now report on an
-  invalid move was attempted with the target node itself or with one of
-  its descendants.
+  invalid move being attempted with the target node itself or with one
+  of its descendants.
 
 * Started implementing moving of nodes to be siblings of roots. This is
-  a special case due to our use of a tree id, so it's dealt with in
-  ``move_node``.
+  a special case due to our use of a tree id, so it's detected and dealt
+  with as early as possible in ``move_node``.
 
-  As a result, no other node movement implementation methods have to
-  check for this special case - they can be sure they'll never have to
-  handle a root sibling move, as ``move_node`` will never give them one
-  to deal with.
+  As a result, none of the other node movement implementation methods
+  have to check for this special case - they can be sure they'll never
+  have to handle a root sibling move when ``move_node`` is being used.
 
-* Simplified the node movement API - ``move_node`` is now the only
-  public means of moving a node, as it can figure out what to do based
-  on the node and target it's given.
+* Simplified the node movement API - ``move_node`` is now
+  ``TreeManager``'s only public means of moving a node, as it can figure
+  out what to do based on the node and target given.
 
   This simplifies implementation somewhat, as the methods which actually
-  do the moving can trust their caller with the arguments which were
-  given.
+  do the moving can trust their caller with the types of nodes which
+  were given when it matters.
 
 * Added ``is_root_node`` and ``is_child_node`` methods to ``Model``
   instances.
