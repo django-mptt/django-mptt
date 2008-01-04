@@ -228,10 +228,8 @@ class TreeManager(models.Manager):
         true siblings, so making an item a sibling of a root node is a
         special case.
         """
-        if target_root.is_child_node():
-            raise ValueError(_('A root node must be given.'))
-
-        target_tree_id = getattr(target_root, self.tree_id_attr)
+        if node == target_root:
+            raise InvalidMove(_('A node may not be made a sibling of itself.'))
 
         opts = self.model._meta
         space_query = """
@@ -243,6 +241,7 @@ class TreeManager(models.Manager):
             'tree_id': qn(opts.get_field(self.tree_id_attr).column),
         }
 
+        target_tree_id = getattr(target_root, self.tree_id_attr)
         if position == 'left':
             space_target = target_tree_id - 1
             new_tree_id = target_tree_id
@@ -266,6 +265,7 @@ class TreeManager(models.Manager):
                 'table': qn(opts.db_table),
                 'tree_id': qn(opts.get_field(self.tree_id_attr).column),
             }, [getattr(node, self.tree_id_attr), new_tree_id])
+            setattr(node, self.tree_id_attr, new_tree_id)
 
     def _manage_space(self, size, target, tree_id, operator):
         """
@@ -364,8 +364,10 @@ class TreeManager(models.Manager):
         target_level = getattr(target, self.level_attr)
 
         if position == 'last-child' or position == 'first-child':
-            if left <= target_left <= right:
-                raise InvalidMove(_('A node may not be made a child of itself or any of its descendants.'))
+            if node == target:
+                raise InvalidMove(_('A node may not be made a child of itself.'))
+            elif left < target_left < right:
+                raise InvalidMove(_('A node may not be made a child of any of its descendants.'))
             if position == 'last-child':
                 if target_right > right:
                     new_left = target_right - width
@@ -383,8 +385,10 @@ class TreeManager(models.Manager):
             level_change = level - target_level - 1
             parent = target
         elif position == 'left' or position == 'right':
-            if left <= target_left <= right:
-                raise InvalidMove(_('A node may not be made a sibling of itself or any of its descendants.'))
+            if node == target:
+                raise InvalidMove(_('A node may not be made a sibling of itself.'))
+            elif left < target_left < right:
+                raise InvalidMove(_('A node may not be made a sibling of any of its descendants.'))
             if position == 'left':
                 if target_left > left:
                     new_left = target_left - width
@@ -481,8 +485,10 @@ class TreeManager(models.Manager):
         new_tree_id = getattr(target, self.tree_id_attr)
         width = right - left + 1
 
-        if tree_id == new_tree_id:
-            raise InvalidMove(_('A node may not be made a child of itself or any of its descendants.'))
+        if root == target:
+            raise InvalidMove(_('A node may not be made a child of itself.'))
+        elif tree_id == new_tree_id:
+            raise InvalidMove(_('A node may not be made a child of any of its descendants.'))
 
         space_target, level_change, left_right_change, parent = \
             self._calculate_inter_tree_move_values(root, target, position)

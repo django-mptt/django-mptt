@@ -10,6 +10,10 @@ Trunk Changes
 Fri 4th Jan, 2008
 -----------------
 
+* Made ``InvalidMove`` exceptions more granular - they now report on an
+  invalid move was attempted with the target node itself or with one of
+  its descendants.
+
 * Started implementing moving of nodes to be siblings of roots. This is
   a special case due to our use of a tree id, so it's dealt with in
   ``move_node``.
