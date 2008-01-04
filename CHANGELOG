@@ -4,6 +4,15 @@ Django MPTT CHANGELOG
 
 .. contents::
 
+Trunk Changes
+=============
+
+Fri 4th Jan, 2008
+-----------------
+
+* Added ``is_root_node`` and ``is_child_node`` methods to ``Model``
+  instances.
+
 Version 0.1
 ===========
 
