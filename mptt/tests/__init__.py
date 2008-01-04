@@ -137,13 +137,13 @@ correct tree attributes defined, should they be required for use after a save.
 >>> rpg.save()
 Traceback (most recent call last):
     ...
-InvalidTarget: The target node must be in a different tree.
+InvalidMove: A node may not be made a child of itself or any of its descendants.
 >>> arpg = Genre.objects.get(pk=arpg.pk)
 >>> rpg.parent = arpg
 >>> rpg.save()
 Traceback (most recent call last):
     ...
-InvalidTarget: The target node must be in a different tree.
+InvalidMove: A node may not be made a child of itself or any of its descendants.
 
 # Make a tree a subtree of another tree
 >>> rpg = Genre.objects.get(pk=rpg.pk)
@@ -351,7 +351,7 @@ InvalidMove: A node may not be made a child of itself or any of its descendants.
 4 2 2 1 4 5
 
 >>> games = Category.objects.get(pk=games.pk)
->>> Category.tree.make_child_node(wii, games)
+>>> Category.tree.move_node(wii, games)
 >>> print_tree_details([wii])
 2 1 1 1 14 19
 >>> print_tree_details(Category.tree.all())
@@ -367,7 +367,7 @@ InvalidMove: A node may not be made a child of itself or any of its descendants.
 4 2 1 2 17 18
 
 >>> ps3 = Category.objects.get(pk=ps3.pk)
->>> Category.tree.move_within_tree(wii, ps3)
+>>> Category.tree.move_node(wii, ps3)
 >>> print_tree_details([wii])
 2 8 1 2 13 18
 >>> print_tree_details(Category.tree.all())
@@ -383,7 +383,7 @@ InvalidMove: A node may not be made a child of itself or any of its descendants.
 4 2 1 3 16 17
 
 >>> ps3 = Category.objects.get(pk=ps3.pk)
->>> Category.tree.make_root_node(ps3)
+>>> Category.tree.move_node(ps3, None)
 >>> print_tree_details([ps3])
 8 - 2 0 1 12
 >>> print_tree_details(Category.tree.all())
@@ -400,7 +400,7 @@ InvalidMove: A node may not be made a child of itself or any of its descendants.
 
 >>> wii = Category.objects.get(pk=wii.pk)
 >>> games = Category.objects.get(pk=games.pk)
->>> Category.tree.move_to_new_tree(wii, games)
+>>> Category.tree.move_node(wii, games)
 >>> print_tree_details([wii])
 2 1 1 1 8 13
 >>> print_tree_details(Category.tree.all())
@@ -417,7 +417,7 @@ InvalidMove: A node may not be made a child of itself or any of its descendants.
 
 # Regression test for no level change being required
 >>> xbox360_games = Category.objects.get(pk=xbox360_games.pk)
->>> Category.tree.move_within_tree(xbox360_games, wii)
+>>> Category.tree.move_node(xbox360_games, wii)
 >>> print_tree_details([xbox360_games])
 6 2 1 2 11 12
 >>> print_tree_details(Category.tree.all())
@@ -453,27 +453,24 @@ InvalidMove: A node may not be made a child of itself or any of its descendants.
 7 5 1 2 11 12
 
 # Validate exceptions are raised appropriately
->>> Node.tree.move_within_tree(root, root, position='first-child')
+>>> Node.tree.move_node(root, root, position='first-child')
 Traceback (most recent call last):
     ...
 InvalidMove: A node may not be made a child of itself or any of its descendants.
->>> Node.tree.move_within_tree(c_1, c_1_1, position='last-child')
+>>> Node.tree.move_node(c_1, c_1_1, position='last-child')
 Traceback (most recent call last):
     ...
 InvalidMove: A node may not be made a child of itself or any of its descendants.
->>> Node.tree.move_within_tree(root, root, position='right')
+
+FIXME Node.tree.move_node(root, root, position='right')
 Traceback (most recent call last):
     ...
 InvalidMove: A node may not be made a sibling of itself or any of its descendants.
->>> Node.tree.move_within_tree(c_1, c_1_1, position='left')
+FIXME Node.tree.move_node(c_1, c_1_1, position='left')
 Traceback (most recent call last):
     ...
 InvalidMove: A node may not be made a sibling of itself or any of its descendants.
->>> Node.tree.move_within_tree(c_1_2, root, position='right')
-Traceback (most recent call last):
-    ...
-InvalidMove: A node may not be made a sibling of its root node.
->>> Node.tree.move_within_tree(c_1, c_2, position='cheese')
+>>> Node.tree.move_node(c_1, c_2, position='cheese')
 Traceback (most recent call last):
     ...
 ValueError: An invalid position was given: cheese.
@@ -481,7 +478,7 @@ ValueError: An invalid position was given: cheese.
 # Move up the tree using first-child
 >>> c_2_2 = Node.objects.get(pk=c_2_2.pk)
 >>> c_1 = Node.objects.get(pk=c_1.pk)
->>> Node.tree.move_within_tree(c_2_2, c_1, 'first-child')
+>>> Node.tree.move_node(c_2_2, c_1, 'first-child')
 >>> print_tree_details([c_2_2])
 7 2 1 2 3 4
 >>> print_tree_details(Node.tree.all())
@@ -510,7 +507,7 @@ ValueError: An invalid position was given: cheese.
 # Move up the tree with descendants using first-child
 >>> c_2 = Node.objects.get(pk=c_2.pk)
 >>> c_1 = Node.objects.get(pk=c_1.pk)
->>> Node.tree.move_within_tree(c_2, c_1, 'first-child')
+>>> Node.tree.move_node(c_2, c_1, 'first-child')
 >>> print_tree_details([c_2])
 5 2 1 2 3 8
 >>> print_tree_details(Node.tree.all())
@@ -524,7 +521,7 @@ ValueError: An invalid position was given: cheese.
 
 # Undo the move using right
 >>> c_1 = Node.objects.get(pk=c_1.pk)
->>> Node.tree.move_within_tree(c_2, c_1, 'right')
+>>> Node.tree.move_node(c_2, c_1, 'right')
 >>> print_tree_details([c_2])
 5 1 1 1 8 13
 >>> print_tree_details(Node.tree.all())
@@ -546,7 +543,7 @@ right       |    |    | Y  | Y
 # Move down the tree using first-child
 >>> c_1_2 = Node.objects.get(pk=c_1_2.pk)
 >>> c_2 = Node.objects.get(pk=c_2.pk)
->>> Node.tree.move_within_tree(c_1_2, c_2, 'first-child')
+>>> Node.tree.move_node(c_1_2, c_2, 'first-child')
 >>> print_tree_details([c_1_2])
 4 5 1 2 7 8
 >>> print_tree_details(Node.tree.all())
@@ -560,7 +557,7 @@ right       |    |    | Y  | Y
 
 # Undo the move using last-child
 >>> c_1 = Node.objects.get(pk=c_1.pk)
->>> Node.tree.move_within_tree(c_1_2, c_1, 'last-child')
+>>> Node.tree.move_node(c_1_2, c_1, 'last-child')
 >>> print_tree_details([c_1_2])
 4 2 1 2 5 6
 >>> print_tree_details(Node.tree.all())
@@ -575,7 +572,7 @@ right       |    |    | Y  | Y
 # Move down the tree with descendants using first-child
 >>> c_1 = Node.objects.get(pk=c_1.pk)
 >>> c_2 = Node.objects.get(pk=c_2.pk)
->>> Node.tree.move_within_tree(c_1, c_2, 'first-child')
+>>> Node.tree.move_node(c_1, c_2, 'first-child')
 >>> print_tree_details([c_1])
 2 5 1 2 3 8
 >>> print_tree_details(Node.tree.all())
@@ -589,7 +586,7 @@ right       |    |    | Y  | Y
 
 # Undo the move using left
 >>> c_2 = Node.objects.get(pk=c_2.pk)
->>> Node.tree.move_within_tree(c_1, c_2, 'left')
+>>> Node.tree.move_node(c_1, c_2, 'left')
 >>> print_tree_details([c_1])
 2 1 1 1 2 7
 >>> print_tree_details(Node.tree.all())
@@ -611,7 +608,7 @@ right       |    |    | Y  | Y
 # Move up the tree using right
 >>> c_2_2 = Node.objects.get(pk=c_2_2.pk)
 >>> c_1_1 = Node.objects.get(pk=c_1_1.pk)
->>> Node.tree.move_within_tree(c_2_2, c_1_1, 'right')
+>>> Node.tree.move_node(c_2_2, c_1_1, 'right')
 >>> print_tree_details([c_2_2])
 7 2 1 2 5 6
 >>> print_tree_details(Node.tree.all())
@@ -625,7 +622,7 @@ right       |    |    | Y  | Y
 
 # Undo the move using last-child
 >>> c_2 = Node.objects.get(pk=c_2.pk)
->>> Node.tree.move_within_tree(c_2_2, c_2, 'last-child')
+>>> Node.tree.move_node(c_2_2, c_2, 'last-child')
 >>> print_tree_details([c_2_2])
 7 5 1 2 11 12
 >>> print_tree_details(Node.tree.all())
@@ -640,7 +637,7 @@ right       |    |    | Y  | Y
 # Move up the tree with descendants using right
 >>> c_2 = Node.objects.get(pk=c_2.pk)
 >>> c_1_1 = Node.objects.get(pk=c_1_1.pk)
->>> Node.tree.move_within_tree(c_2, c_1_1, 'right')
+>>> Node.tree.move_node(c_2, c_1_1, 'right')
 >>> print_tree_details([c_2])
 5 2 1 2 5 10
 >>> print_tree_details(Node.tree.all())
@@ -654,7 +651,7 @@ right       |    |    | Y  | Y
 
 # Undo the move using last-child
 >>> root = Node.objects.get(pk=root.pk)
->>> Node.tree.move_within_tree(c_2, root, 'last-child')
+>>> Node.tree.move_node(c_2, root, 'last-child')
 >>> print_tree_details([c_2])
 5 1 1 1 8 13
 >>> print_tree_details(Node.tree.all())
@@ -676,7 +673,7 @@ right       | Y  | Y  | Y  | Y
 # Move down the tree with descendants using left
 >>> c_1 = Node.objects.get(pk=c_1.pk)
 >>> c_2_2 = Node.objects.get(pk=c_2_2.pk)
->>> Node.tree.move_within_tree(c_1, c_2_2, 'left')
+>>> Node.tree.move_node(c_1, c_2_2, 'left')
 >>> print_tree_details([c_1])
 2 5 1 2 5 10
 >>> print_tree_details(Node.tree.all())
@@ -690,7 +687,7 @@ right       | Y  | Y  | Y  | Y
 
 # Undo the move using first-child
 >>> root = Node.objects.get(pk=root.pk)
->>> Node.tree.move_within_tree(c_1, root, 'first-child')
+>>> Node.tree.move_node(c_1, root, 'first-child')
 >>> print_tree_details([c_1])
 2 1 1 1 2 7
 >>> print_tree_details(Node.tree.all())
@@ -705,7 +702,7 @@ right       | Y  | Y  | Y  | Y
 # Move down the tree using left
 >>> c_1_1 = Node.objects.get(pk=c_1_1.pk)
 >>> c_2_2 = Node.objects.get(pk=c_2_2.pk)
->>> Node.tree.move_within_tree(c_1_1, c_2_2, 'left')
+>>> Node.tree.move_node(c_1_1, c_2_2, 'left')
 >>> print_tree_details([c_1_1])
 3 5 1 2 9 10
 >>> print_tree_details(Node.tree.all())
@@ -719,7 +716,7 @@ right       | Y  | Y  | Y  | Y
 
 # Undo the move using left
 >>> c_1_2 = Node.objects.get(pk=c_1_2.pk)
->>> Node.tree.move_within_tree(c_1_1,  c_1_2, 'left')
+>>> Node.tree.move_node(c_1_1,  c_1_2, 'left')
 >>> print_tree_details([c_1_1])
 3 2 1 2 3 4
 >>> print_tree_details(Node.tree.all())
@@ -757,24 +754,6 @@ I guess we're covered :)
 
 # Moving child nodes between trees ############################################
 
-# Validate exceptions are raised appropriately
->>> Node.tree.move_to_new_tree(c_1, c_1, position='first-child')
-Traceback (most recent call last):
-    ...
-InvalidTarget: The target node must be in a different tree.
->>> Node.tree.move_to_new_tree(c_1, new_root, position='left')
-Traceback (most recent call last):
-    ...
-InvalidMove: A node may not be made a sibling of a root node.
->>> Node.tree.move_to_new_tree(c_1, new_root, position='right')
-Traceback (most recent call last):
-    ...
-InvalidMove: A node may not be made a sibling of a root node.
->>> Node.tree.move_to_new_tree(c_1, new_root, position='cheese')
-Traceback (most recent call last):
-    ...
-ValueError: An invalid position was given: cheese.
-
 # Move using default (last-child)
 >>> c_2 = Node.objects.get(pk=c_2.pk)
 >>> c_2.move_to(new_root)
@@ -793,7 +772,7 @@ ValueError: An invalid position was given: cheese.
 # Move using left
 >>> c_1_1 = Node.objects.get(pk=c_1_1.pk)
 >>> c_2 = Node.objects.get(pk=c_2.pk)
->>> Node.tree.move_to_new_tree(c_1_1, c_2, position='left')
+>>> Node.tree.move_node(c_1_1, c_2, position='left')
 >>> print_tree_details([c_1_1])
 3 8 2 1 2 3
 >>> print_tree_details(Node.tree.all())
@@ -809,7 +788,7 @@ ValueError: An invalid position was given: cheese.
 # Move using first-child
 >>> c_1_2 = Node.objects.get(pk=c_1_2.pk)
 >>> c_2 = Node.objects.get(pk=c_2.pk)
->>> Node.tree.move_to_new_tree(c_1_2, c_2, position='first-child')
+>>> Node.tree.move_node(c_1_2, c_2, position='first-child')
 >>> print_tree_details([c_1_2])
 4 5 2 2 5 6
 >>> print_tree_details(Node.tree.all())
@@ -825,7 +804,7 @@ ValueError: An invalid position was given: cheese.
 # Move using right
 >>> c_2 = Node.objects.get(pk=c_2.pk)
 >>> c_1 = Node.objects.get(pk=c_1.pk)
->>> Node.tree.move_to_new_tree(c_2, c_1, position='right')
+>>> Node.tree.move_node(c_2, c_1, position='right')
 >>> print_tree_details([c_2])
 5 1 1 1 4 11
 >>> print_tree_details(Node.tree.all())
@@ -840,7 +819,7 @@ ValueError: An invalid position was given: cheese.
 
 # Move using last-child
 >>> c_1_1 = Node.objects.get(pk=c_1_1.pk)
->>> Node.tree.move_to_new_tree(c_1_1, c_2, position='last-child')
+>>> Node.tree.move_node(c_1_1, c_2, position='last-child')
 >>> print_tree_details([c_1_1])
 3 5 1 2 11 12
 >>> print_tree_details(Node.tree.all())
@@ -856,23 +835,11 @@ ValueError: An invalid position was given: cheese.
 # Moving a root node into another tree as a child node ########################
 
 # Validate exceptions are raised appropriately
->>> Node.tree.make_child_node(c_1, new_root, position='first-child')
+>>> Node.tree.move_node(root, c_1, position='first-child')
 Traceback (most recent call last):
     ...
-ValueError: A root node must be given.
->>> Node.tree.make_child_node(root, c_1, position='first-child')
-Traceback (most recent call last):
-    ...
-InvalidTarget: The target node must be in a different tree.
->>> Node.tree.make_child_node(new_root, root, position='left')
-Traceback (most recent call last):
-    ...
-InvalidMove: A node may not be made a sibling of a root node.
->>> Node.tree.make_child_node(new_root, root, position='right')
-Traceback (most recent call last):
-    ...
-InvalidMove: A node may not be made a sibling of a root node.
->>> Node.tree.make_child_node(new_root, c_1, position='cheese')
+InvalidMove: A node may not be made a child of itself or any of its descendants.
+>>> Node.tree.move_node(new_root, c_1, position='cheese')
 Traceback (most recent call last):
     ...
 ValueError: An invalid position was given: cheese.
@@ -894,7 +861,7 @@ ValueError: An invalid position was given: cheese.
 
 >>> new_root = Node.objects.create()
 >>> root = Node.objects.get(pk=root.pk)
->>> Node.tree.make_child_node(new_root, root, position='last-child')
+>>> Node.tree.move_node(new_root, root, position='last-child')
 >>> print_tree_details([new_root])
 9 1 1 1 16 17
 >>> print_tree_details(Node.tree.all())
@@ -910,7 +877,7 @@ ValueError: An invalid position was given: cheese.
 
 >>> new_root = Node.objects.create()
 >>> c_2_1 = Node.objects.get(pk=c_2_1.pk)
->>> Node.tree.make_child_node(new_root, c_2_1, position='left')
+>>> Node.tree.move_node(new_root, c_2_1, position='left')
 >>> print_tree_details([new_root])
 10 5 1 2 9 10
 >>> print_tree_details(Node.tree.all())
@@ -927,7 +894,7 @@ ValueError: An invalid position was given: cheese.
 
 >>> new_root = Node.objects.create()
 >>> c_1 = Node.objects.get(pk=c_1.pk)
->>> Node.tree.make_child_node(new_root, c_1, position='right')
+>>> Node.tree.move_node(new_root, c_1, position='right')
 >>> print_tree_details([new_root])
 11 1 1 1 4 5
 >>> print_tree_details(Node.tree.all())
