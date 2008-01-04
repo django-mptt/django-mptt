@@ -142,12 +142,9 @@ class TreeManager(models.Manager):
         tree_id = getattr(node, self.tree_id_attr)
         new_tree_id = self.get_next_tree_id()
         left_right_change = left - 1
-        gap_target_left = left - 1
-        gap_size = right - left + 1
 
         self._inter_tree_move_and_close_gap(node, level, left_right_change,
-                                            new_tree_id, gap_target_left,
-                                            gap_size)
+                                            new_tree_id)
 
         # Update the node to be consistent with the updated
         # tree in the database.
@@ -209,14 +206,12 @@ class TreeManager(models.Manager):
             self._calculate_inter_tree_move_values(node, target, position)
 
         tree_width = right - left + 1
-        gap_target_left = left - 1
 
         # Make space for the subtree which will be moved
         self.create_space(tree_width, space_target, new_tree_id)
         # Move the subtree
         self._inter_tree_move_and_close_gap(node, level_change,
-            left_right_change, new_tree_id, gap_target_left, tree_width,
-            parent.pk)
+            left_right_change, new_tree_id, parent.pk)
 
         # Update the node to be consistent with the updated
         # tree in the database.
@@ -383,8 +378,7 @@ class TreeManager(models.Manager):
         return space_target, level_change, left_right_change, parent
 
     def _inter_tree_move_and_close_gap(self, node, level_change,
-            left_right_change, new_tree_id, gap_target_left, gap_size,
-            parent_pk=None):
+            left_right_change, new_tree_id, parent_pk=None):
         """
         Handles moving a subtree which is headed by ``node`` from its
         current tree to another tree, with the given set of changes
@@ -436,6 +430,8 @@ class TreeManager(models.Manager):
 
         left = getattr(node, self.left_attr)
         right = getattr(node, self.right_attr)
+        gap_size = right - left + 1
+        gap_target_left = left - 1
         params = [
             left, right, level_change,
             left, right, new_tree_id,
