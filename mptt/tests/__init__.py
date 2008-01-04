@@ -44,6 +44,10 @@ r"""
 [u'Role-playing Game']
 >>> [g.name for g in action.get_siblings(include_self=True)]
 [u'Action', u'Role-playing Game']
+>>> action.is_root_node()
+True
+>>> action.is_child_node()
+False
 
 >>> platformer = Genre.objects.get(pk=platformer.pk)
 >>> [g.name for g in platformer.get_ancestors()]
@@ -60,6 +64,10 @@ r"""
 []
 >>> [g.name for g in platformer.get_siblings(include_self=True)]
 [u'Platformer']
+>>> platformer.is_root_node()
+False
+>>> platformer.is_child_node()
+True
 
 >>> platformer_3d = Genre.objects.get(pk=platformer_3d.pk)
 >>> [g.name for g in platformer_3d.get_ancestors()]
@@ -76,6 +84,11 @@ r"""
 [u'2D Platformer', u'4D Platformer']
 >>> [g.name for g in platformer_3d.get_siblings(include_self=True)]
 [u'2D Platformer', u'3D Platformer', u'4D Platformer']
+>>> platformer_3d.is_root_node()
+False
+>>> platformer_3d.is_child_node()
+True
+
 
 # The move_to method will be used in a few places in the tests which
 # follow to verify that it calls the TreeManger correctly.

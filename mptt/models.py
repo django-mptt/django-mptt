@@ -53,6 +53,8 @@ def treeify(cls, parent_attr='parent', left_attr='lft', right_attr='rght',
             get_descendant_count(left_attr, right_attr))
     setattr(cls, 'get_siblings',
             get_siblings(parent_attr, left_attr, tree_id_attr, level_attr))
+    setattr(cls, 'is_child_node', is_child_node(left_attr))
+    setattr(cls, 'is_root_node', is_root_node(left_attr))
     setattr(cls, 'move_to', move_to)
     if not hasattr(cls, tree_manager_attr):
         TreeManager(parent_attr, left_attr, right_attr, tree_id_attr,
@@ -145,6 +147,32 @@ def get_siblings(parent_attr, left_attr, tree_id_attr, level_attr):
             queryset = queryset.exclude(pk=instance.pk)
         return queryset
     return _get_siblings
+
+def is_child_node(left_attr):
+    """
+    Creates a function which determines if a model instance is a child
+    node.
+    """
+    def _is_child_node(instance):
+        """
+        Returns ``True`` if this model instance is a child node,
+        ``False`` otherwise.
+        """
+        return getattr(instance, left_attr) > 1
+    return _is_child_node
+
+def is_root_node(left_attr):
+    """
+    Creates a function which determines if a model instance is a root
+    node.
+    """
+    def _is_root_node(instance):
+        """
+        Returns ``True`` if this model instance is a root node,
+        ``False`` otherwise.
+        """
+        return getattr(instance, left_attr) == 1
+    return _is_root_node
 
 def move_to(instance, target, position='first-child'):
     """

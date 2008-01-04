@@ -222,6 +222,12 @@ The following instance methods will be available on all instances of
 
   If ``include_self`` is ``True``, the ``QuerySet`` will also include
   the model instance itself.
+  
+* ``is_child_node()`` -- returns ``True`` if the model instance is a
+  child node, ``False`` otherwise.
+  
+* ``is_root_node()`` -- returns ``True`` if the model instance is a root
+  node, ``False`` otherwise.
 
 * ``move_to(target, position)`` -- moves the model instance elsewhere in
   the tree based on ``target`` and ``position`` (when appropriate).

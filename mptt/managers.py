@@ -80,7 +80,7 @@ class TreeManager(models.Manager):
         tree_width = right - left + 1
 
         # Ensure we've been given a root
-        if level > 0:
+        if root.is_child_node():
             raise ValueError(_('A root node must be given.'))
 
         # Ensure the target node is valid
@@ -265,7 +265,7 @@ class TreeManager(models.Manager):
         elif position == 'left' or position == 'right':
             if left <= target_left <= right:
                 raise InvalidMove(_('A node may not be made a sibling of itself or any of its descendants.'))
-            if target_left == 1:
+            if target.is_root_node():
                 raise InvalidMove(_('A node may not be made a sibling of its root node.'))
             if position == 'left':
                 if target_left > left:
@@ -367,7 +367,7 @@ class TreeManager(models.Manager):
             level_change = level - target_level - 1
             parent = target
         elif position == 'left' or position == 'right':
-            if target_left == 1:
+            if target.is_root_node():
                 raise InvalidMove(_('A node may not be made a sibling of a root node.'))
             if position == 'left':
                 space_target = target_left - 1
