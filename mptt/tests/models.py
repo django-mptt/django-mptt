@@ -21,4 +21,5 @@ class Node(models.Model):
 
 treeify(Category)
 treeify(Genre)
-treeify(Node)
+treeify(Node, left_attr='does', right_attr='zis', level_attr='madness',
+        tree_id_attr='work')
