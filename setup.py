@@ -53,7 +53,7 @@ else:
     version = "%d.%d" % version_tuple[:2]
 
 setup(
-    name = 'Django MPTT',
+    name = 'django-mptt',
     description = 'Utilities for implementing Modified Preorder Tree Traversal with your Django Models and working with trees of Model instances',
     version = version,
     author = 'Jonathan Buchanan',
