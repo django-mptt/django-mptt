@@ -48,7 +48,12 @@ def pre_save(parent_attr, left_attr, right_attr, tree_id_attr, level_attr):
                                  parent_attr)
             if parent != old_parent:
                 setattr(instance, parent_attr, old_parent)
-                instance.move_to(parent, position='last-child')
+                try:
+                    instance.move_to(parent, position='last-child')
+                finally:
+                    # Make sure the instance's new parent is always
+                    # restored on the way out
+                    setattr(instance, parent_attr, parent)
     return _pre_save
 
 def pre_delete(left_attr, right_attr, tree_id_attr):

@@ -1,4 +1,5 @@
 r"""
+>>> from mptt.exceptions import InvalidMove
 >>> from mptt.tests.models import Category, Genre, Node
 
 >>> def print_tree_details(nodes):
@@ -88,7 +89,6 @@ True
 False
 >>> platformer_3d.is_child_node()
 True
-
 
 # The move_to method will be used in a few places in the tests which
 # follow to verify that it calls the TreeManger correctly.
@@ -278,6 +278,15 @@ InvalidMove: A node may not be made a child of itself or any of its descendants.
 8 4 4 1 2 3
 6 4 4 1 4 7
 7 6 4 2 5 6
+
+# New parent is still set when an error occurs
+>>> arpg = Genre.objects.get(pk=arpg.pk)
+>>> rpg.parent = arpg
+>>> try:
+...     rpg.save()
+... except InvalidMove:
+...     print rpg.parent == arpg
+True
 
 # Deletion ####################################################################
 
