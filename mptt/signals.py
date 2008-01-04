@@ -29,7 +29,7 @@ def pre_save(parent_attr, left_attr, right_attr, tree_id_attr, level_attr):
             if parent:
                 target_right = getattr(parent, right_attr) - 1
                 tree_id = getattr(parent, tree_id_attr)
-                instance._tree_manager.create_space(2, target_right, tree_id)
+                instance._tree_manager._create_space(2, target_right, tree_id)
                 setattr(instance, left_attr, target_right + 1)
                 setattr(instance, right_attr, target_right + 2)
                 setattr(instance, tree_id_attr, tree_id)
@@ -38,7 +38,7 @@ def pre_save(parent_attr, left_attr, right_attr, tree_id_attr, level_attr):
                 setattr(instance, left_attr, 1)
                 setattr(instance, right_attr, 2)
                 setattr(instance, tree_id_attr,
-                        instance._tree_manager.get_next_tree_id())
+                        instance._tree_manager._get_next_tree_id())
                 setattr(instance, level_attr, 0)
         else:
             # TODO Is it possible to track the original parent so we
@@ -47,22 +47,8 @@ def pre_save(parent_attr, left_attr, right_attr, tree_id_attr, level_attr):
             old_parent = getattr(instance._default_manager.get(pk=instance.pk),
                                  parent_attr)
             if parent != old_parent:
-                if parent is None:
-                    # The node used to have a parent, but it was removed
-                    instance._tree_manager.make_root_node(instance)
-                elif old_parent is None:
-                    # The node didn't used to have a parent and has been
-                    # given one.
-                    instance._tree_manager.make_child_node(instance, parent)
-                elif (getattr(parent, tree_id_attr) !=
-                      getattr(instance, tree_id_attr)):
-                    # The node's parent was changed to a node in a
-                    # different tree.
-                    instance._tree_manager.move_to_new_tree(instance, parent)
-                else:
-                    # The node's parent was changed to another node in
-                    # its current tree.
-                    instance._tree_manager.move_within_tree(instance, parent)
+                setattr(instance, parent_attr, old_parent)
+                instance.move_to(parent, position='last-child')
     return _pre_save
 
 def pre_delete(left_attr, right_attr, tree_id_attr):
@@ -81,5 +67,5 @@ def pre_delete(left_attr, right_attr, tree_id_attr):
                       getattr(instance, left_attr) + 1)
         target_right = getattr(instance, right_attr)
         tree_id = getattr(instance, tree_id_attr)
-        instance._tree_manager.close_gap(tree_width, target_right, tree_id)
+        instance._tree_manager._close_gap(tree_width, target_right, tree_id)
     return _pre_delete
