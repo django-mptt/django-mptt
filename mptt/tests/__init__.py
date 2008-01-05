@@ -1,6 +1,6 @@
 r"""
 >>> from mptt.exceptions import InvalidMove
->>> from mptt.tests.models import Category, Genre, Node
+>>> from mptt.tests.models import Category, Genre, Node, Tree
 
 >>> def print_tree_details(nodes):
 ...     m = nodes[0]._tree_manager
@@ -943,6 +943,157 @@ InvalidMove: A node may not be made a sibling of itself.
 Traceback (most recent call last):
     ...
 InvalidMove: A node may not be made a sibling of itself.
+
+>>> r1 = Tree.objects.create()
+>>> c1_1 = Tree.objects.create(parent=r1)
+>>> c1_1_1 = Tree.objects.create(parent=c1_1)
+>>> r2 = Tree.objects.create()
+>>> c2_1 = Tree.objects.create(parent=r2)
+>>> c2_1_1 = Tree.objects.create(parent=c2_1)
+>>> r3 = Tree.objects.create()
+>>> c3_1 = Tree.objects.create(parent=r3)
+>>> c3_1_1 = Tree.objects.create(parent=c3_1)
+>>> print_tree_details(Tree.tree.all())
+1 - 1 0 1 6
+2 1 1 1 2 5
+3 2 1 2 3 4
+4 - 2 0 1 6
+5 4 2 1 2 5
+6 5 2 2 3 4
+7 - 3 0 1 6
+8 7 3 1 2 5
+9 8 3 2 3 4
+
+# Target < root node, left sibling
+>>> r1 = Tree.objects.get(pk=r1.pk)
+>>> r2 = Tree.objects.get(pk=r2.pk)
+>>> r2.move_to(r1, 'left')
+>>> print_tree_details([r2])
+4 - 1 0 1 6
+>>> print_tree_details(Tree.tree.all())
+4 - 1 0 1 6
+5 4 1 1 2 5
+6 5 1 2 3 4
+1 - 2 0 1 6
+2 1 2 1 2 5
+3 2 2 2 3 4
+7 - 3 0 1 6
+8 7 3 1 2 5
+9 8 3 2 3 4
+
+# Target > root node, left sibling
+>>> r3 = Tree.objects.get(pk=r3.pk)
+>>> r2.move_to(r3, 'left')
+>>> print_tree_details([r2])
+4 - 2 0 1 6
+>>> print_tree_details(Tree.tree.all())
+1 - 1 0 1 6
+2 1 1 1 2 5
+3 2 1 2 3 4
+4 - 2 0 1 6
+5 4 2 1 2 5
+6 5 2 2 3 4
+7 - 3 0 1 6
+8 7 3 1 2 5
+9 8 3 2 3 4
+
+# Target < root node, right sibling
+>>> r1 = Tree.objects.get(pk=r1.pk)
+>>> r3 = Tree.objects.get(pk=r3.pk)
+>>> r3.move_to(r1, 'right')
+>>> print_tree_details([r3])
+7 - 2 0 1 6
+>>> print_tree_details(Tree.tree.all())
+1 - 1 0 1 6
+2 1 1 1 2 5
+3 2 1 2 3 4
+7 - 2 0 1 6
+8 7 2 1 2 5
+9 8 2 2 3 4
+4 - 3 0 1 6
+5 4 3 1 2 5
+6 5 3 2 3 4
+
+# Target > root node, right sibling
+>>> r1 = Tree.objects.get(pk=r1.pk)
+>>> r2 = Tree.objects.get(pk=r2.pk)
+>>> r1.move_to(r2, 'right')
+>>> print_tree_details([r1])
+1 - 3 0 1 6
+>>> print_tree_details(Tree.tree.all())
+7 - 1 0 1 6
+8 7 1 1 2 5
+9 8 1 2 3 4
+4 - 2 0 1 6
+5 4 2 1 2 5
+6 5 2 2 3 4
+1 - 3 0 1 6
+2 1 3 1 2 5
+3 2 3 2 3 4
+
+# No-op, root left sibling
+>>> r2 = Tree.objects.get(pk=r2.pk)
+>>> r2.move_to(r1, 'left')
+>>> print_tree_details([r2])
+4 - 2 0 1 6
+>>> print_tree_details(Tree.tree.all())
+7 - 1 0 1 6
+8 7 1 1 2 5
+9 8 1 2 3 4
+4 - 2 0 1 6
+5 4 2 1 2 5
+6 5 2 2 3 4
+1 - 3 0 1 6
+2 1 3 1 2 5
+3 2 3 2 3 4
+
+# No-op, root right sibling
+>>> r1.move_to(r2, 'right')
+>>> print_tree_details([r1])
+1 - 3 0 1 6
+>>> print_tree_details(Tree.tree.all())
+7 - 1 0 1 6
+8 7 1 1 2 5
+9 8 1 2 3 4
+4 - 2 0 1 6
+5 4 2 1 2 5
+6 5 2 2 3 4
+1 - 3 0 1 6
+2 1 3 1 2 5
+3 2 3 2 3 4
+
+# Child node, left sibling
+>>> c3_1 = Tree.objects.get(pk=c3_1.pk)
+>>> c3_1.move_to(r1, 'left')
+>>> print_tree_details([c3_1])
+8 - 3 0 1 4
+>>> print_tree_details(Tree.tree.all())
+7 - 1 0 1 2
+4 - 2 0 1 6
+5 4 2 1 2 5
+6 5 2 2 3 4
+8 - 3 0 1 4
+9 8 3 1 2 3
+1 - 4 0 1 6
+2 1 4 1 2 5
+3 2 4 2 3 4
+
+# Child node, right sibling
+>>> r3 = Tree.objects.get(pk=r3.pk)
+>>> c1_1 = Tree.objects.get(pk=c1_1.pk)
+>>> c1_1.move_to(r3, 'right')
+>>> print_tree_details([c1_1])
+2 - 2 0 1 4
+>>> print_tree_details(Tree.tree.all())
+7 - 1 0 1 2
+2 - 2 0 1 4
+3 2 2 1 2 3
+4 - 3 0 1 6
+5 4 3 1 2 5
+6 5 3 2 3 4
+8 - 4 0 1 4
+9 8 4 1 2 3
+1 - 5 0 1 2
 """
 
 # TODO Fixtures won't work with Django MPTT unless the pre_save signal

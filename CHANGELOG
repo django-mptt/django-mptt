@@ -10,6 +10,8 @@ Trunk Changes
 Sat 5th Jan, 2008
 -----------------
 
+* Finished implementing moving of nodes to be siblings of roots.
+
 * Added ``get_next_sibling`` and ``get_previous_sibling`` methods to
   ``Model`` instances.
 

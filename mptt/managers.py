@@ -55,7 +55,7 @@ class TreeManager(models.Manager):
             if node.is_child_node():
                 self._make_child_root_node(node)
         elif target.is_root_node() and position in ['left', 'right']:
-            self._make_sibling_of_root(node, target, position)
+            self._make_sibling_of_root_node(node, target, position)
         else:
             if node.is_root_node():
                 self._move_root_node(node, target, position)
@@ -221,50 +221,87 @@ class TreeManager(models.Manager):
         setattr(node, self.tree_id_attr, new_tree_id)
         setattr(node, self.parent_attr, None)
 
-    def _make_sibling_of_root(self, node, target_root, position):
+    def _make_sibling_of_root_node(self, node, target_root, position):
         """
         Since we use tree ids to reduce the number of rows affected by
         tree mangement during insertion and deletion, root nodes are not
-        true siblings, so making an item a sibling of a root node is a
-        special case.
+        true siblings; thus, making an item a sibling of a root node is
+        a special case which involves shuffling tree ids around.
         """
         if node == target_root:
             raise InvalidMove(_('A node may not be made a sibling of itself.'))
 
         opts = self.model._meta
-        space_query = """
-        UPDATE %(table)s
-        SET %(tree_id)s = %(tree_id)s + 1
-        WHERE %(tree_id)s > %%s
-        """ % {
-            'table': qn(opts.db_table),
-            'tree_id': qn(opts.get_field(self.tree_id_attr).column),
-        }
-
+        tree_id = getattr(node, self.tree_id_attr)
         target_tree_id = getattr(target_root, self.tree_id_attr)
-        if position == 'left':
-            space_target = target_tree_id - 1
-            new_tree_id = target_tree_id
-        elif position == 'right':
-            space_target = target_tree_id
-            new_tree_id = target_tree_id + 1
-        else:
-            raise ValueError(_('An invalid position was given: %s.') % position)
-
-        cursor = connection.cursor()
-        cursor.execute(space_query, space_target)
 
         if node.is_child_node():
-            self._make_child_root_node(node, new_tree_id)
-        else:
-            cursor.execute("""
+            if position == 'left':
+                space_target = target_tree_id - 1
+                new_tree_id = target_tree_id
+            elif position == 'right':
+                space_target = target_tree_id
+                new_tree_id = target_tree_id + 1
+            else:
+                raise ValueError(_('An invalid position was given: %s.') % position)
+
+            space_query = """
             UPDATE %(table)s
-            SET %(tree_id)s = %%s
-            WHERE %(tree_id)s = %%s
-            """ % {
+            SET %(tree_id)s = %(tree_id)s + 1
+            WHERE %(tree_id)s > %%s""" % {
                 'table': qn(opts.db_table),
                 'tree_id': qn(opts.get_field(self.tree_id_attr).column),
-            }, [getattr(node, self.tree_id_attr), new_tree_id])
+            }
+            cursor = connection.cursor()
+            cursor.execute(space_query, [space_target])
+            if tree_id > space_target:
+                # The node's tree id has been incremented in the
+                # database - this change must be reflected in the node
+                # object for the method call below to operate on the
+                # correct tree.
+                setattr(node, self.tree_id_attr, tree_id + 1)
+            self._make_child_root_node(node, new_tree_id)
+        else:
+            if position == 'left':
+                if target_tree_id > tree_id:
+                    left_sibling = target_root.get_previous_sibling()
+                    if node == left_sibling:
+                        return
+                    new_tree_id = getattr(left_sibling, self.tree_id_attr)
+                    lower_bound, upper_bound = tree_id, new_tree_id
+                    shift = -1
+                else:
+                    new_tree_id = target_tree_id
+                    lower_bound, upper_bound = new_tree_id, tree_id
+                    shift = 1
+            elif position == 'right':
+                if target_tree_id > tree_id:
+                    new_tree_id = target_tree_id
+                    lower_bound, upper_bound = tree_id, target_tree_id
+                    shift = -1
+                else:
+                    right_sibling = target_root.get_next_sibling()
+                    if node == right_sibling:
+                        return
+                    new_tree_id = getattr(right_sibling, self.tree_id_attr)
+                    lower_bound, upper_bound = new_tree_id, tree_id
+                    shift = 1
+            else:
+                raise ValueError(_('An invalid position was given: %s.') % position)
+
+            root_sibling_query = """
+            UPDATE %(table)s
+            SET %(tree_id)s = CASE
+                WHEN %(tree_id)s = %%s
+                    THEN %%s
+                ELSE %(tree_id)s + %%s END
+            WHERE %(tree_id)s >= %%s AND %(tree_id)s <= %%s""" % {
+                'table': qn(opts.db_table),
+                'tree_id': qn(opts.get_field(self.tree_id_attr).column),
+            }
+            cursor = connection.cursor()
+            cursor.execute(root_sibling_query, [tree_id, new_tree_id, shift,
+                                                lower_bound, upper_bound])
             setattr(node, self.tree_id_attr, new_tree_id)
 
     def _manage_space(self, size, target, tree_id, operator):
