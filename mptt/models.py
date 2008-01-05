@@ -51,10 +51,15 @@ def treeify(cls, parent_attr='parent', left_attr='lft', right_attr='rght',
             get_descendants(left_attr, right_attr, tree_id_attr))
     setattr(cls, 'get_descendant_count',
             get_descendant_count(left_attr, right_attr))
+    setattr(cls, 'get_next_sibling',
+            get_next_sibling(parent_attr, left_attr, right_attr, tree_id_attr))
+    setattr(cls, 'get_previous_sibling',
+            get_previous_sibling(parent_attr, left_attr, right_attr,
+                                 tree_id_attr))
     setattr(cls, 'get_siblings',
-            get_siblings(parent_attr, left_attr, tree_id_attr, level_attr))
-    setattr(cls, 'is_child_node', is_child_node(left_attr))
-    setattr(cls, 'is_root_node', is_root_node(left_attr))
+            get_siblings(parent_attr, left_attr, tree_id_attr))
+    setattr(cls, 'is_child_node', is_child_node)
+    setattr(cls, 'is_root_node', is_root_node(parent_attr))
     setattr(cls, 'move_to', move_to)
     if not hasattr(cls, tree_manager_attr):
         TreeManager(parent_attr, left_attr, right_attr, tree_id_attr,
@@ -121,7 +126,69 @@ def get_descendant_count(left_attr, right_attr):
         return (getattr(instance, right_attr) - getattr(instance, left_attr) - 1) / 2
     return _get_descendant_count
 
-def get_siblings(parent_attr, left_attr, tree_id_attr, level_attr):
+def get_previous_sibling(parent_attr, left_attr, right_attr, tree_id_attr):
+    """
+    Creates a function which retrieves the previous sibling of a model
+    instance which has the given tree attributes.
+    """
+    def _get_previous_sibling(instance):
+        """
+        Returns this model instance's previous sibling in the tree, or
+        ``None`` if it doesn't have a previous sibling.
+        """
+        if instance.is_root_node():
+            filters = {
+                '%s__isnull' % parent_attr: True,
+                '%s__lt' % tree_id_attr: getattr(instance, tree_id_attr),
+            }
+            order_by = '-%s' % tree_id_attr
+        else:
+            filters = {
+                 parent_attr: getattr(instance, '%s_id' % parent_attr),
+                '%s__lt' % right_attr: getattr(instance, left_attr),
+            }
+            order_by = '-%s' % right_attr
+
+        sibling = None
+        try:
+            sibling = instance._default_manager.filter(**filters).order_by(order_by)[0]
+        except IndexError:
+            pass
+        return sibling
+    return _get_previous_sibling
+
+def get_next_sibling(parent_attr, left_attr, right_attr, tree_id_attr):
+    """
+    Creates a function which retrieves the next sibling of a model
+    instance which has the given tree attributes.
+    """
+    def _get_next_sibling(instance):
+        """
+        Returns this model instance's next sibling in the tree, or
+        ``None`` if it doesn't have a next sibling.
+        """
+        if instance.is_root_node():
+            filters = {
+                '%s__isnull' % parent_attr: True,
+                '%s__gt' % tree_id_attr: getattr(instance, tree_id_attr),
+            }
+            order_by = tree_id_attr
+        else:
+            filters = {
+                 parent_attr: getattr(instance, '%s_id' % parent_attr),
+                '%s__gt' % left_attr: getattr(instance, right_attr),
+            }
+            order_by = left_attr
+
+        sibling = None
+        try:
+            sibling = instance._default_manager.filter(**filters).order_by(order_by)[0]
+        except IndexError:
+            pass
+        return sibling
+    return _get_next_sibling
+
+def get_siblings(parent_attr, left_attr, tree_id_attr):
     """
     Creates a function which retrieves siblings of a model instance
     which has the given tree attributes.
@@ -135,48 +202,42 @@ def get_siblings(parent_attr, left_attr, tree_id_attr, level_attr):
         If ``include_self`` is ``True``, the ``QuerySet`` will also
         include this model instance.
         """
-        if getattr(instance, level_attr) == 0:
+        if instance.is_root_node():
             queryset = instance._default_manager.filter(**{
-                level_attr: 0
+                '%s__isnull' % parent_attr: True,
             }).order_by(tree_id_attr)
         else:
             queryset = instance._default_manager.filter(**{
-                parent_attr: getattr(instance, '%s_id' % parent_attr)
+                parent_attr: getattr(instance, '%s_id' % parent_attr),
             }).order_by(left_attr)
         if not include_self:
             queryset = queryset.exclude(pk=instance.pk)
         return queryset
     return _get_siblings
 
-def is_child_node(left_attr):
+def is_child_node(instance):
     """
-    Creates a function which determines if a model instance is a child
-    node.
+    Returns ``True`` if this model instance is a child node, ``False``
+    otherwise.
     """
-    def _is_child_node(instance):
-        """
-        Returns ``True`` if this model instance is a child node,
-        ``False`` otherwise.
-        """
-        return getattr(instance, left_attr) > 1
-    return _is_child_node
+    return not instance.is_root_node()
 
-def is_root_node(left_attr):
+def is_root_node(parent_attr):
     """
-    Creates a function which determines if a model instance is a root
-    node.
+    Creates a function which determines if a model instance which has
+    the given tree attributes is a root node.
     """
     def _is_root_node(instance):
         """
         Returns ``True`` if this model instance is a root node,
         ``False`` otherwise.
         """
-        return getattr(instance, left_attr) == 1
+        return getattr(instance, '%s_id' % parent_attr) is None
     return _is_root_node
 
 def move_to(instance, target, position='first-child'):
     """
-    Convenience method for calling ``TreeManager.move_to`` with a
-    ``Model`` instance.
+    Convenience method for calling ``TreeManager.move_to`` with this
+    model instance.
     """
     instance._tree_manager.move_node(instance, target, position)
