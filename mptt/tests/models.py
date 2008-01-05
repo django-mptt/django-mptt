@@ -19,7 +19,11 @@ class Genre(models.Model):
 class Node(models.Model):
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
 
+class Tree(models.Model):
+    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+
 treeify(Category)
 treeify(Genre)
 treeify(Node, left_attr='does', right_attr='zis', level_attr='madness',
         tree_id_attr='work')
+treeify(Tree)
