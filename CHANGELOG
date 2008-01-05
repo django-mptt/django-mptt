@@ -7,6 +7,12 @@ Django MPTT CHANGELOG
 Trunk Changes
 =============
 
+Sat 5th Jan, 2008
+-----------------
+
+* Added ``get_next_sibling`` and ``get_previous_sibling`` methods to
+  ``Model`` instances.
+
 Fri 4th Jan, 2008
 -----------------
 

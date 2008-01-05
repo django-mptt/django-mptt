@@ -41,6 +41,9 @@ r"""
 [u'Action', u'Platformer', u'2D Platformer', u'3D Platformer', u'4D Platformer']
 >>> action.get_descendant_count()
 4
+>>> action.get_previous_sibling()
+>>> action.get_next_sibling()
+<Genre: Role-playing Game>
 >>> [g.name for g in action.get_siblings()]
 [u'Role-playing Game']
 >>> [g.name for g in action.get_siblings(include_self=True)]
@@ -61,6 +64,8 @@ False
 [u'Platformer', u'2D Platformer', u'3D Platformer', u'4D Platformer']
 >>> platformer.get_descendant_count()
 3
+>>> platformer.get_previous_sibling()
+>>> platformer.get_next_sibling()
 >>> [g.name for g in platformer.get_siblings()]
 []
 >>> [g.name for g in platformer.get_siblings(include_self=True)]
@@ -81,6 +86,10 @@ True
 [u'3D Platformer']
 >>> platformer_3d.get_descendant_count()
 0
+>>> platformer_3d.get_previous_sibling()
+<Genre: 2D Platformer>
+>>> platformer_3d.get_next_sibling()
+<Genre: 4D Platformer>
 >>> [g.name for g in platformer_3d.get_siblings()]
 [u'2D Platformer', u'4D Platformer']
 >>> [g.name for g in platformer_3d.get_siblings(include_self=True)]

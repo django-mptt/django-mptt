@@ -216,6 +216,13 @@ The following instance methods will be available on all instances of
   model instance has, based on its left and right tree node edge
   indicators. As such, this does not incur any database access.
 
+* ``get_next_sibling()`` -- returns the model instance's next sibling
+  in the tree, or ``None`` if it doesn't have a next sibling.
+
+* ``get_previous_sibling()`` -- returns the model instance's previous
+  sibling in the tree, or ``None`` if it doesn't have a previous
+  sibling.
+
 * ``get_siblings(include_self=False)`` -- creates a ``QuerySet``
   containing siblings of the model instance. Root nodes are considered
   to be siblings of other root nodes.
