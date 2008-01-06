@@ -21,14 +21,21 @@ The trade-off for this efficiency is that performing inserts and moving
 items around is more involved, as there's some extra work required to
 keep the tree structure in a good state at all times.
 
-Here are a couple of articles about MPTT to whet your appetite:
+Here are a few articles about MPTT to whet your appetite and provide
+details about how the technique itself works:
 
+    * `Trees in SQL`_
     * `Storing Hierarchical Data in a Database`_
     * `Managing Hierarchical Data in MySQL`_
 
+In particular, these articles should help you understand the two most
+important fields in MPTT - the left and right edge indicators. Other
+fields involved in Django MPTT's implementation of the technique are
+discusssed in `tree structure` below.
+
+.. _`Trees in SQL`: http://www.intelligententerprise.com/001020/celko.jhtml
 .. _`Storing Hierarchical Data in a Database`: http://www.sitepoint.com/print/hierarchical-data-database
 .. _`Managing Hierarchical Data in MySQL`: http://dev.mysql.com/tech-resources/articles/hierarchical-data.html
-
 
 Installation
 ============
@@ -380,6 +387,82 @@ Example::
 
 Technical details
 =================
+
+Tree structure
+--------------
+
+In addition to the left and right identifiers which form the core of how
+MPTT works and the parent field, Django MPTT has the following
+additional fields on each tree node.
+
+Tree id
+~~~~~~~
+
+**A unique identifier assigned to each root node and inherited by all its
+descendants.**
+
+This identifier is the means by which Django MPTT implements multiple
+root nodes.
+
+Since we can use it to identify all nodes which belong to a particular
+tree, the subtree headed by each root node can have its edge indicators
+starting at ``1`` - as long as tree operations are constrained to the
+appropriate tree id(s), we don't have to worry about overlapping of left
+and right edge indicator values with those of nodes in other trees.
+
+This approach limits the number of rows affected when making space to
+insert new nodes and removing gaps left by deleted nodes.
+
+Root node ordering
+++++++++++++++++++
+
+This field also defines the order in which root nodes are retrieved when
+you create a ``QuerySet`` using ``TreeManager``, which by default
+orders the resulting ``QuerySet`` by tree id, then left edge indicator
+(for depth-first ordering).
+
+When a new root node is created, it is assigned the next-largest tree id
+available, so by default root nodes (and thus their subtrees) are
+displayed in the order they were created.
+
+Movement and volatility
++++++++++++++++++++++++
+
+Since root node ordering is defined by tree id, it can also be used to
+implement movement of other nodes as siblings of a target root node.
+
+When you use the node movement API to move a node to be a sibling of a
+root node, tree ids are shuffled around to acheive the new ordering
+required. Given this, you should consider the tree id to be
+**volatile**, so it's recommended that you don't use tree id in your
+applications to identify particular trees.
+
+Since *every* node has a tree id, movement of a node to be a sibling of
+a root node can potentially result in a large number of rows being
+modified, as the further away the node you're moving is from its target
+location, the larger the number of rows affected - every node with a
+tree id between that of the node being moved and the target root node
+will require its tree id to be modified.
+
+Level
+~~~~~
+
+**The level (or "depth") at which a node sits in the tree.**
+
+Root nodes are level ``0``, their immediate children are level ``1``,
+*their* immediate children are level ``2`` and so on...
+
+This field is purely denormalisation for convenience. It avoids the need
+to examine the tree structure to determine the level of a particular
+node and makes queries which need to take depth into account easier to
+implement using Django's ORM. For example, limiting the number of levels
+of nodes which are retrieved for the whole tree or any subtree::
+
+   # Retrieve root nodes and their immediate children only
+   SomeModel.tree.filter(level__lte=1)
+
+   # Retrieve descendants of a node up to two levels below it
+   node.get_descendants().filter(level__lte=node.level + 2)
 
 MPTT setup process
 ------------------
