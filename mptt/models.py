@@ -81,7 +81,7 @@ def get_ancestors(parent_attr, left_attr, right_attr, tree_id_attr):
         argument will reverse the ordering (immediate parent first, root
         ancestor last).
         """
-        if getattr(instance, parent_attr) is None:
+        if instance.is_root_node():
             return instance._default_manager.none()
         else:
             return instance._default_manager.filter(**{
@@ -104,6 +104,9 @@ def get_descendants(left_attr, right_attr, tree_id_attr):
         If ``include_self`` is ``True``, the ``QuerySet`` will also
         include this model instance.
         """
+        if not include_self and not instance.get_descendant_count():
+            return instance._default_manager.none()
+
         filters = {tree_id_attr: getattr(instance, tree_id_attr)}
         if include_self:
             filters['%s__range' % left_attr] = (getattr(instance, left_attr),
