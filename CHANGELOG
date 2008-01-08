@@ -10,6 +10,9 @@ Trunk Changes
 Tue 8th Jan, 2008
 -----------------
 
+* ``TreeManager.move_node`` now calls
+  ``transaction.commit_unless_managed()`` before it returns.
+
 * Documented the ``mptt.utils`` and ``mptt.queries`` modules.
 
 * Split related item count queries out into ``mptt.queries``, with
