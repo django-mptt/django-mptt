@@ -1,7 +1,7 @@
 """
 Custom managers for working with trees of objects.
 """
-from django.db import connection, models
+from django.db import connection, models, transaction
 from django.utils.translation import ugettext as _
 
 from mptt.exceptions import InvalidMove
@@ -65,6 +65,7 @@ class TreeManager(models.Manager):
                 self._move_root_node(node, target, position)
             else:
                 self._move_child_node(node, target, position)
+        transaction.commit_unless_managed()
 
     def _calculate_inter_tree_move_values(self, node, target, position):
         """
