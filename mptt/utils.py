@@ -4,11 +4,9 @@ trees.
 """
 import itertools
 
-from django.db import connection
+from mptt import queries
 
 __all__ = ['previous_current_next', 'tree_item_iterator', 'drilldown_for_node']
-
-qn = connection.ops.quote_name
 
 def previous_current_next(items):
     """
@@ -51,25 +49,6 @@ def tree_item_iterator(items):
             closed_levels = range(current.level, next.level, -1)
         yield current, {'new_level': new_level, 'closed_levels': closed_levels}
 
-count_subquery = """(
-    SELECT COUNT(*)
-    FROM %(rel_table)s
-    WHERE %(mptt_fk)s = %(mpttry_table)s.%(mptt_pk)s
-)"""
-
-cumulative_count_subquery = """(
-    SELECT COUNT(*)
-    FROM %(rel_table)s
-    WHERE %(mptt_fk)s IN
-    (
-        SELECT m2.%(mptt_pk)s
-        FROM %(mptt_table)s m2
-        WHERE m2.%(tree_id)s = %(mptt_table)s.%(tree_id)s
-          AND m2.%(left)s BETWEEN %(mptt_table)s.%(left)s
-                              AND %(mptt_table)s.%(right)s
-    )
-)"""
-
 def drilldown_tree_for_node(node, rel_cls=None, rel_field=None, count_attr=None,
                             cumulative=False):
     """
@@ -81,40 +60,27 @@ def drilldown_tree_for_node(node, rel_cls=None, rel_field=None, count_attr=None,
     is related to the node's class, for the purpose of adding related
     item counts to the node's children:
 
-       ``rel_cls``
-          A ``Model`` class which has a relation to the node's class.
+    ``rel_cls``
+       A ``Model`` class which has a relation to the node's class.
 
-       ``rel_field``
-          The name of the field in ``rel_cls`` which holds the relation
-          to the node's class.
+    ``rel_field``
+       The name of the field in ``rel_cls`` which holds the relation
+       to the node's class.
 
-       ``count_attr``
-          The name of an attribute which should be added to each item in
-          the drilldown tree, containing a count of how many instances
-          of ``rel_cls`` are related to it through ``rel_field``.
+    ``count_attr``
+       The name of an attribute which should be added to each item in
+       the drilldown tree, containing a count of how many instances
+       of ``rel_cls`` are related to it through ``rel_field``.
 
-       ``cumulative``
-          If ``True``, the count will be for items related to the child
-          node and all of its descendants.
-
+    ``cumulative``
+       If ``True``, the count will be for items related to the child
+       node and all of its descendants.
     """
     children = node.get_children()
     if rel_cls is not None and rel_field is not None and count_attr is not None:
-        query_formatting_dict = {
-            'rel_table': qn(rel_cls._meta.db_table),
-            'mptt_fk': qn(rel_cls._meta.get_field(rel_field).column),
-            'mptt_table': qn(node._meta.db_table),
-            'mptt_pk': qn(node._meta.pk.column),
-        }
-        if cumulative:
-            tree = node._tree_manager
-            query_formatting_dict.update({
-                'tree_id': qn(node._meta.get_field(tree.tree_id_attr).column),
-                'left': qn(node._meta.get_field(tree.left_attr).column),
-                'right': qn(node._meta.get_field(tree.right_attr).column),
-            })
-            subquery = cumulative_count_subquery % query_formatting_dict
-        else:
-            subquery = count_subquery % query_formatting_dict
-        children = children.extra(select={count_attr: subquery})
+        subquery_func = (cumulative and queries.create_cumulative_count_subquery
+                                     or queries.create_count_subquery)
+        children = children.extra(select={
+            count_attr: subquery_func(node, rel_cls, rel_field),
+        })
     return itertools.chain(node.get_ancestors(), [node], children)

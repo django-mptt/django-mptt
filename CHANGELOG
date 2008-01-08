@@ -10,6 +10,12 @@ Trunk Changes
 Tue 8th Jan, 2008
 -----------------
 
+* Documented the ``mptt.utils`` and ``mptt.queries`` modules.
+
+* Split related item count queries out into ``mptt.queries``, with
+  functions to create them given MPTT ``Model`` and related ``Model``
+  information.
+
 * Added a ``drilldown_tree_for_node`` template tag.
 
 Mon 7th Jan, 2008
