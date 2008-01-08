@@ -9,6 +9,7 @@ instances.
 .. _`Django`: http://www.djangoproject.com
 
 .. contents::
+   :depth: 3
 
 What is Modified Preorder Tree Traversal?
 =========================================
@@ -406,8 +407,8 @@ Examples::
    {% drilldown_tree_for_node genre as drilldown count tests.Game.genre in game_count %}
    {% drilldown_tree_for_node genre as drilldown cumulative count tests.Game.genre in game_count %}
 
-See `more template tag examples`_ for an example of how to render a
-drilldown tree as a nested list.
+See `template tag examples`_ for an example of how to render a drilldown
+tree as a nested list.
 
 Filter reference
 ----------------
@@ -440,8 +441,8 @@ Example::
    {% for level in structure.closed_levels %}</li></ul>{% endfor %}
    {% endfor %}
 
-More template tag examples
---------------------------
+Template tag examples
+---------------------
 
 An example of the ``drilldown_tree_for_node`` tag and the ``tree_info``
 filter being used together to render a drilldown menu for a node, with
@@ -459,6 +460,167 @@ children::
       {% endifequal %}
       {% for level in structure.closed_levels %}</li></ul>{% endfor %}
    {% endfor %}
+
+
+Utilities
+=========
+
+A number of the utilities used to implement certain features in Django
+MPTT are suitable for reuse in your own applications, should the need
+arise.
+
+List/tree utilities
+-------------------
+
+The ``mptt.utils`` module contains the following functions for working
+with and creating lists of ``Model`` instance which represent trees.
+
+``previous_current_next()``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+From http://www.wordaligned.org/articles/zippy-triples-served-with-python
+
+Creates an iterator which returns (previous, current, next) triples,
+with ``None`` filling in when there is no previous or next available.
+
+This function is useful if you want to step through a tree one item at a
+time and you need to refer to the previous or next item in the tree. It
+is used in the implementation of `tree_item_iterator()`_.
+
+Required arguments
+++++++++++++++++++
+
+``items``
+   A list or other iterable item.
+
+``tree_item_iterator()``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+This function is used to implement the `tree_info`_ template filter,
+yielding two-tuples of (tree item, tree structure information dict).
+
+See the `tree_info`_ documentation for more information.
+
+Required arguments
+++++++++++++++++++
+
+``items``
+   A list or iterable of ``Model`` instances which represent a tree.
+
+``drilldown_tree_for_node()``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This function is used in the implementation of the
+`drilldown_tree_for_node`_ template tag.
+
+It creates an iterable which yields ``Model`` instances representing a
+drilldown tree for a given node.
+
+A drilldown tree consists of a node's ancestors, itself and its
+immediate children, all in tree order.
+
+Optional arguments may be given to specify details of a relationship
+between the given node's class and another ``Model`` class , for the
+purpose of adding related item counts to the node's children.
+
+Required arguments
+++++++++++++++++++
+
+``node``
+   An MPTT ``Model`` instance which represents a node in a tree.
+
+Optional arguments
+++++++++++++++++++
+
+``rel_cls``
+   A ``Model`` class which has a relation to the node's class.
+
+``rel_field``
+   The name of the field in ``rel_cls`` which holds the relation to the
+   node's class.
+
+``count_attr``
+   The name of an attribute which should be added to each child of the
+   node in the drilldown tree (if any), containing a count of how many
+   instances of ``rel_cls`` are related to it through ``rel_field``.
+
+``cumulative``
+   If ``True``, the count will be for items related to the child
+   node *and* all of its descendants. Defaults to ``False``.
+
+Query utilities
+---------------
+
+The ``mptt.queries`` module contains the following functions for
+creating common MPTT-related queries.
+
+``create_count_subquery()``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Creates a SQL subquery for use with the ``select`` argument of the
+Django ORM's ``extra`` method, for adding an attribute to tree items
+which holds a count of items related to each tree item.
+
+Required arguments
+++++++++++++++++++
+
+``mptt_cls``
+   An MPTT ``Model`` class or instance.
+
+``rel_cls``
+   A ``Model`` class which has a relation to ``mptt_cls``.
+
+``rel_field``
+   The name of the field in ``rel_cls`` which holds the relation
+   to ``mptt_cls``.
+
+``create_cumulative_count_subquery()``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Creates a SQL subquery for use with the ``select`` argument of the
+Django ORM's ``extra`` method, for adding an attribute to tree items
+which holds a count of items related to each tree item and its
+descendants.
+
+Required arguments
+++++++++++++++++++
+
+``mptt_cls``
+   An MPTT ``Model`` class or instance.
+
+``rel_cls``
+   A ``Model`` class which has a relation to ``mptt_cls``.
+
+``rel_field``
+   The name of the field in ``rel_cls`` which holds the relation
+   to ``mptt_cls``.
+
+Example usage
+~~~~~~~~~~~~~
+
+In the following examples, we have ``Category`` and ``Question`` models.
+``Question`` has a ``category`` field which is a ``ForeignKey`` to
+``Category``.
+
+Retrieving a list of root Categories which have a ``question_count``
+attribute containing the number of Questions associated with each root
+and all of its descendants::
+
+   cumulative_count_subquery = \
+       create_cumulative_count_subquery(Category, Question, 'category')
+   roots = Category.objects.filter(parent__isnull=True).extra(select={
+       'question_count': cumulative_count_subquery,
+   }).order_by('name')
+
+Retrieving a list of child Categories which have a ``question_count``
+attribute containing the number of Questions associated with each of
+them::
+
+   node = Category.objects.get(name='Some Category')
+   count_subquery = create_count_subquery(Category, Question, 'category')
+   childen = node.get_children().extra(select={
+       'question_count': count_subquery,
+   }).order_by('name')
 
 
 Technical details
