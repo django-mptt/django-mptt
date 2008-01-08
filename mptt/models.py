@@ -47,6 +47,8 @@ def treeify(cls, parent_attr='parent', left_attr='lft', right_attr='rght',
                        signal=signals.pre_delete, sender=cls, weak=False)
     setattr(cls, 'get_ancestors',
             get_ancestors(parent_attr, left_attr, right_attr, tree_id_attr))
+    setattr(cls, 'get_children',
+            get_children(parent_attr, left_attr))
     setattr(cls, 'get_descendants',
             get_descendants(left_attr, right_attr, tree_id_attr))
     setattr(cls, 'get_descendant_count',
@@ -59,6 +61,7 @@ def treeify(cls, parent_attr='parent', left_attr='lft', right_attr='rght',
     setattr(cls, 'get_siblings',
             get_siblings(parent_attr, left_attr, tree_id_attr))
     setattr(cls, 'is_child_node', is_child_node)
+    setattr(cls, 'is_leaf_node', is_leaf_node)
     setattr(cls, 'is_root_node', is_root_node(parent_attr))
     setattr(cls, 'move_to', move_to)
     if not hasattr(cls, tree_manager_attr):
@@ -73,8 +76,8 @@ def get_ancestors(parent_attr, left_attr, right_attr, tree_id_attr):
     """
     def _get_ancestors(instance, ascending=False):
         """
-        Creates a ``QuerySet`` containing all the ancestors of this
-        model instance.
+        Creates a ``QuerySet`` containing the ancestors of this model
+        instance.
 
         This defaults to being in descending order (root ancestor first,
         immediate parent last); passing ``True`` for the ``ascending``
@@ -91,6 +94,29 @@ def get_ancestors(parent_attr, left_attr, right_attr, tree_id_attr):
             }).order_by('%s%s' % ({True: '-', False: ''}[ascending], left_attr))
     return _get_ancestors
 
+def get_children(parent_attr, left_attr):
+    """
+    Creates a function which retrieves the immediate children of a model
+    instance which has the given tree attributes.
+    """
+    def _get_children(instance):
+        """
+        Creates a ``QuerySet`` containing the immediate children of this
+        model instance, in tree order.
+
+        The benefit of using this method over the reverse relation
+        provided by the ORM to the instance's children is that a
+        database query can be avoided in the case where the instance is
+        a leaf node (it has no children).
+        """
+        if instance.is_leaf_node():
+            return instance._default_manager.none()
+
+        return instance._default_manager.filter(**{
+            parent_attr: instance,
+        }).order_by(left_attr)
+    return _get_children
+
 def get_descendants(left_attr, right_attr, tree_id_attr):
     """
     Creates a function which retrieves descendants of a model
@@ -99,12 +125,12 @@ def get_descendants(left_attr, right_attr, tree_id_attr):
     def _get_descendants(instance, include_self=False):
         """
         Creates a ``QuerySet`` containing descendants of this model
-        instance.
+        instance, in tree order.
 
         If ``include_self`` is ``True``, the ``QuerySet`` will also
         include this model instance.
         """
-        if not include_self and not instance.get_descendant_count():
+        if not include_self and instance.is_leaf_node():
             return instance._default_manager.none()
 
         filters = {tree_id_attr: getattr(instance, tree_id_attr)}
@@ -224,6 +250,13 @@ def is_child_node(instance):
     otherwise.
     """
     return not instance.is_root_node()
+
+def is_leaf_node(instance):
+    """
+    Returns ``True`` if this model instance is a leaf node (it has no
+    children), ``False`` otherwise.
+    """
+    return not instance.get_descendant_count()
 
 def is_root_node(parent_attr):
     """

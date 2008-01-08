@@ -35,6 +35,8 @@ r"""
 []
 >>> [g.name for g in action.get_ancestors(ascending=True)]
 []
+>>> [g.name for g in action.get_children()]
+[u'Platformer']
 >>> [g.name for g in action.get_descendants()]
 [u'Platformer', u'2D Platformer', u'3D Platformer', u'4D Platformer']
 >>> [g.name for g in action.get_descendants(include_self=True)]
@@ -52,12 +54,16 @@ r"""
 True
 >>> action.is_child_node()
 False
+>>> action.is_leaf_node()
+False
 
 >>> platformer = Genre.objects.get(pk=platformer.pk)
 >>> [g.name for g in platformer.get_ancestors()]
 [u'Action']
 >>> [g.name for g in platformer.get_ancestors(ascending=True)]
 [u'Action']
+>>> [g.name for g in platformer.get_children()]
+[u'2D Platformer', u'3D Platformer', u'4D Platformer']
 >>> [g.name for g in platformer.get_descendants()]
 [u'2D Platformer', u'3D Platformer', u'4D Platformer']
 >>> [g.name for g in platformer.get_descendants(include_self=True)]
@@ -74,12 +80,16 @@ False
 False
 >>> platformer.is_child_node()
 True
+>>> platformer.is_leaf_node()
+False
 
 >>> platformer_3d = Genre.objects.get(pk=platformer_3d.pk)
 >>> [g.name for g in platformer_3d.get_ancestors()]
 [u'Action', u'Platformer']
 >>> [g.name for g in platformer_3d.get_ancestors(ascending=True)]
 [u'Platformer', u'Action']
+>>> [g.name for g in platformer_3d.get_children()]
+[]
 >>> [g.name for g in platformer_3d.get_descendants()]
 []
 >>> [g.name for g in platformer_3d.get_descendants(include_self=True)]
@@ -97,6 +107,8 @@ True
 >>> platformer_3d.is_root_node()
 False
 >>> platformer_3d.is_child_node()
+True
+>>> platformer_3d.is_leaf_node()
 True
 
 # The move_to method will be used in a few places in the tests which
