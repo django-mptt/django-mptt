@@ -7,6 +7,11 @@ Django MPTT CHANGELOG
 Trunk Changes
 =============
 
+Tue 8th Jan, 2008
+-----------------
+
+* Added a ``drilldown_tree_for_node`` template tag.
+
 Mon 7th Jan, 2008
 -----------------
 
