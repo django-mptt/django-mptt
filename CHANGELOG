@@ -7,6 +7,18 @@ Django MPTT CHANGELOG
 Trunk Changes
 =============
 
+Mon 7th Jan, 2008
+-----------------
+
+* Added ``get_children`` and ``is_leaf_node`` methods to ``Model``
+  instances.
+
+Sun 6th Jan, 2008
+-----------------
+
+* Added some technical details about the tree structure to the
+  documentation.
+
 Sat 5th Jan, 2008
 -----------------
 

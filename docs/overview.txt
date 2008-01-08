@@ -206,15 +206,23 @@ The following instance methods will be available on all instances of
 ``Model`` classes set up for MPTT:
 
 * ``get_ancestors(ascending=False)`` -- creates a ``QuerySet``
-  containing all the ancestors of the model instance.
+  containing the ancestors of the model instance.
 
   These default to being in descending order (root ancestor first,
   immediate parent last); passing ``True`` for the ``ascending``
   argument will reverse the ordering (immediate parent first, root
   ancestor last).
 
+* ``get_children()`` -- creates a ``QuerySet`` containing the immediate
+  children of the model instance, in tree order.
+
+  The benefit of using this method over the reverse relation provided
+  by the ORM to the instance's children is that a database query can be
+  avoided in the case where the instance is a leaf node (it has no
+  children).
+
 * ``get_descendants(include_self=False)`` -- creates a ``QuerySet``
-  containing descendants of the model instance.
+  containing descendants of the model instance, in tree order.
 
   If ``include_self`` is ``True``, the ``QuerySet`` will also include
   the model instance itself.
@@ -239,6 +247,9 @@ The following instance methods will be available on all instances of
 
 * ``is_child_node()`` -- returns ``True`` if the model instance is a
   child node, ``False`` otherwise.
+
+* ``is_leaf_node()`` -- returns ``True`` if the model instance is a leaf
+  node (it has no children), ``False`` otherwise.
 
 * ``is_root_node()`` -- returns ``True`` if the model instance is a root
   node, ``False`` otherwise.
