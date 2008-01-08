@@ -465,15 +465,14 @@ children::
 Utilities
 =========
 
-A number of the utilities used to implement certain features in Django
-MPTT are suitable for reuse in your own applications, should the need
-arise.
+A number of the utilities used to implement features in Django MPTT are
+suitable for reuse in your own applications, should the need arise.
 
 List/tree utilities
 -------------------
 
 The ``mptt.utils`` module contains the following functions for working
-with and creating lists of ``Model`` instance which represent trees.
+with and creating lists of ``Model`` instances which represent trees.
 
 ``previous_current_next()``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -533,11 +532,11 @@ Optional arguments
 ++++++++++++++++++
 
 ``rel_cls``
-   A ``Model`` class which has a relation to the node's class.
+   A ``Model`` class which has a relationship to the node's class.
 
 ``rel_field``
-   The name of the field in ``rel_cls`` which holds the relation to the
-   node's class.
+   The name of the field in ``rel_cls`` which holds the relationship
+   to the node's class.
 
 ``count_attr``
    The name of an attribute which should be added to each child of the
@@ -558,7 +557,7 @@ creating common MPTT-related queries.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Creates a SQL subquery for use with the ``select`` argument of the
-Django ORM's ``extra`` method, for adding an attribute to tree items
+Django ORM's `extra method`_, for adding an attribute to tree items
 which holds a count of items related to each tree item.
 
 Required arguments
@@ -578,7 +577,7 @@ Required arguments
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Creates a SQL subquery for use with the ``select`` argument of the
-Django ORM's ``extra`` method, for adding an attribute to tree items
+Django ORM's `extra method`_, for adding an attribute to tree items
 which holds a count of items related to each tree item and its
 descendants.
 
@@ -618,9 +617,11 @@ them::
 
    node = Category.objects.get(name='Some Category')
    count_subquery = create_count_subquery(Category, Question, 'category')
-   childen = node.get_children().extra(select={
+   children = node.get_children().extra(select={
        'question_count': count_subquery,
    }).order_by('name')
+
+.. _`extra method`: http://www.djangoproject.com/documentation/db-api/#extra-select-none-where-none-params-none-tables-none
 
 
 Technical details
