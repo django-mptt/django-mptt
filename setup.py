@@ -63,6 +63,7 @@ setup(
     data_files = data_files,
     classifiers = ['Development Status :: 4 - Beta',
                    'Environment :: Web Environment',
+                   'Framework :: Django',
                    'Intended Audience :: Developers',
                    'License :: OSI Approved :: BSD License',
                    'Operating System :: OS Independent',
