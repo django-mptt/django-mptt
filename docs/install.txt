@@ -1,0 +1,89 @@
+==========================
+How to install Django MPTT
+==========================
+
+.. admonition:: About this document
+
+   This document describes how to install Django MPTT and use it in your
+   Django applications.
+
+.. contents::
+   :depth: 3
+
+Installing an official release
+==============================
+
+Official releases are made available from
+http://code.google.com/p/django-mptt/
+
+Source distribution
+-------------------
+
+Download the .zip distribution file and unpack it. Inside is a script
+named ``setup.py``. Enter this command::
+
+   python setup.py install
+
+...and the package will install automatically.
+
+Windows installer
+-----------------
+
+A Windows installer is also made available - download the .exe
+distribution file and launch it to install the application.
+
+An uninstaller will also be created, accessible through Add/Remove
+Programs in your Control Panel.
+
+
+Installing the development version
+==================================
+
+Alternatively, if you'd like to update Django MPTT occasionally to pick
+up the latest bug fixes and enhancements before they make it into an
+offical release, perform a `Subversion`_ checkout instead. The following
+command will check the application's development branch out to an
+``mptt-trunk`` directory::
+
+   svn checkout http://django-mptt.googlecode.com/svn/trunk/ mptt-trunk
+
+Add the resulting folder to your `PYTHONPATH`_ or symlink (`junction`_,
+if you're on Windows) the ``mptt`` directory inside it into a directory
+which is on your PYTHONPATH, such as your Python installation's
+``site-packages`` directory.
+
+You can verify that the application is available on your PYTHONPATH by
+opening a Python interpreter and entering the following commands::
+
+   >>> import mptt
+   >>> mptt.VERSION
+   (0, 2, 'pre')
+
+When you want to update your copy of the Django MPTT source code, run the
+command ``svn update`` from within the ``mptt-trunk`` directory.
+
+.. caution::
+
+   The development version may contain bugs which are not present in the
+   release version and introduce backwards-incompatible changes.
+
+   If you're tracking trunk, keep an eye on the `CHANGELOG`_ and the
+   `backwards-incompatible changes wiki page`_ before you update your
+   copy of the source code.
+
+.. _`Subversion`: http://subversion.tigris.org
+.. _`PYTHONPATH`: http://docs.python.org/tut/node8.html#SECTION008110000000000000000
+.. _`junction`: http://www.microsoft.com/technet/sysinternals/FileAndDisk/Junction.mspx
+.. _`CHANGELOG`: http://django-mptt.googlecode.com/svn/trunk/CHANGELOG
+.. _`backwards-incompatible changes wiki page`: http://code.google.com/p/django-mptt/wiki/BackwardsIncompatibleChanges
+
+
+Using Django MPTT in your applications
+======================================
+
+Once you've installed Django MPTT and want to use it in your Django
+applications, do the following:
+
+   1. Put ``'mptt'`` in your ``INSTALLED_APPS`` setting.
+
+That's it!
