@@ -73,7 +73,7 @@ opening a Python interpreter and entering the following commands::
 
    >>> import mptt
    >>> mptt.VERSION
-   (0, 1, None)
+   (0, 2, 'pre')
 
 .. _`Subversion`: http://subversion.tigris.org
 .. _`PYTHONPATH`: http://docs.python.org/tut/node8.html#SECTION008110000000000000000
@@ -120,7 +120,8 @@ Django MPTT feature overview
   used to move any node in the tree (and its descendants) to an
   arbitrary point in the tree.
 
-* Utilities for working with tree items in templates.
+* Template tags and filters for working with trees of items in
+  templates.
 
 
 Setting up a ``Model`` class for MPTT
@@ -711,7 +712,15 @@ MPTT setup process
 The following steps are taken when ``treeify`` is called to set up a
 ``Model`` class for MPTT:
 
-1. If the ``Model`` class does not have fields defined with names
+1. The arguments to ``treeify`` which specify the tree attributes for
+   the class are added to its ``Options``, which are stored in
+   ``_meta``.
+
+   By doing this, we can access details of the class' tree attributes
+   given the class or any instance of it, which ensures these attributes
+   are always available when we need them.
+
+2. If the ``Model`` class does not have fields defined with names
    matching any of the attribute names given for the ``left_attr``,
    ``right_attr``, ``tree_id_attr`` or ``level_attr`` arguments, the
    following field is dynamically added to the model for each missing
@@ -725,18 +734,9 @@ The following steps are taken when ``treeify`` is called to set up a
    generated using the ``ModelForm`` class, if these are being used with
    the ``Model`` in question.
 
-2. Signal receiving functions are registered for the built-in
-   ``pre_save`` and ``pre_delete`` signals which are fired when a
-   ``Model`` instance is about to be saved or deleted, respectively.
-
-   These functions take care of managing MPTT fields when a ``Model``
-   instance is about to be created or deleted and automatically
-   adjusting tree details when an instance is saved after having its
-   parent changed.
-
 3. Additional instance methods are added to the ``Model`` class to
    retrieve information related to ``Model`` instances based on the
-   tree structure and to move the instance around the tree.
+   tree structure, and to move the instance around the tree.
 
    See `model instance methods`_ for details about the new methods which
    are available.
@@ -751,6 +751,15 @@ The following steps are taken when ``treeify`` is called to set up a
 
    See `the TreeManager custom Manager`_ for details about the tree
    operations available via this custom ``Manager``.
+
+5. Signal receiving functions are registered for the built-in
+   ``pre_save`` and ``pre_delete`` signals which are fired when a
+   ``Model`` instance is about to be saved or deleted, respectively.
+
+   These functions take care of managing MPTT fields when a ``Model``
+   instance is about to be created or deleted and automatically
+   adjusting tree details when an instance is saved after having its
+   parent changed.
 
 Dynamic field creation vs. explicitly defining MPTT fields
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

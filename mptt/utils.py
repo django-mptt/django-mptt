@@ -41,12 +41,18 @@ def tree_item_iterator(items):
           be an empty list if the next item is at the same level as the
           current item.
     """
+    opts = None
     for previous, current, next in previous_current_next(items):
-        new_level = previous is None and True or previous.level < current.level
+        if opts is None:
+            opts = current._meta
+        current_level = getattr(current, opts.level_attr)
+        new_level = (previous is None and True
+                     or getattr(previous, opts.level_attr) < current_level)
         if next is None:
-            closed_levels = range(current.level, -1, -1)
+            closed_levels = range(current_level, -1, -1)
         else:
-            closed_levels = range(current.level, next.level, -1)
+            closed_levels = range(current_level,
+                                  getattr(next, opts.level_attr), -1)
         yield current, {'new_level': new_level, 'closed_levels': closed_levels}
 
 def drilldown_tree_for_node(node, rel_cls=None, rel_field=None, count_attr=None,

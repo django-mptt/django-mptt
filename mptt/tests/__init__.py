@@ -3,11 +3,11 @@ r"""
 >>> from mptt.tests.models import Category, Genre, Node, Tree
 
 >>> def print_tree_details(nodes):
-...     m = nodes[0]._tree_manager
+...     opts = nodes[0]._meta
 ...     print '\n'.join(['%s %s %s %s %s %s' % \
-...                      (n.pk, getattr(n, '%s_id' % m.parent_attr) or '-',
-...                       getattr(n, m.tree_id_attr), getattr(n, m.level_attr),
-...                       getattr(n, m.left_attr), getattr(n, m.right_attr)) \
+...                      (n.pk, getattr(n, '%s_id' % opts.parent_attr) or '-',
+...                       getattr(n, opts.tree_id_attr), getattr(n, opts.level_attr),
+...                       getattr(n, opts.left_attr), getattr(n, opts.right_attr)) \
 ...                      for n in nodes])
 
 # Creation ####################################################################

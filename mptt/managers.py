@@ -18,7 +18,8 @@ class TreeManager(models.Manager):
                  level_attr):
         """
         Tree attributes for the model being managed are held as
-        attributes of this manager for later use.
+        attributes of this manager for later use, since it will be using
+        them a **lot**.
         """
         super(TreeManager, self).__init__()
         self.parent_attr = parent_attr
