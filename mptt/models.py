@@ -113,7 +113,7 @@ def get_descendants(self, include_self=False):
     include this model instance.
     """
     if not include_self and self.is_leaf_node():
-        return self._default_manager.none()
+        return self._tree_manager.none()
 
     opts = self._meta
     filters = {opts.tree_id_attr: getattr(self, opts.tree_id_attr)}

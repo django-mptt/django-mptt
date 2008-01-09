@@ -324,6 +324,28 @@ and their items being ordered in a depth-first fashion within each tree.
 
 The following tree management methods are available:
 
+* ``add_related_count(queryset, rel_cls, rel_field, count_attr, cumulative=False)``
+  -- adds a related item count to a given ``QuerySet`` using its
+  `extra method`_, for a ``Model`` class which has a relation to this
+  ``Manager``'s ``Model`` class.
+
+  ``rel_cls``
+     A ``Model`` class which has a relation to this `Manager``'s
+     ``Model`` class.
+
+  ``rel_field``
+     The name of the field in ``rel_cls`` which holds the
+     relation.
+
+  ``count_attr``
+     The name of an attribute which should be added to each item in
+     this ``QuerySet``, containing a count of how many instances
+     of ``rel_cls`` are related to it through ``rel_field``.
+
+  ``cumulative``
+     If ``True``, the count will be for each item and all of its
+     descendants, otherwise it will be for each item itself.
+
 * ``move_node(node, target, position='last-child')`` -- moves ``node``
   based on ``target``, relative to ``position`` when appropriate.
 
@@ -336,8 +358,33 @@ The following tree management methods are available:
 
   For more details, see the `move_to documentation`_ above.
 
-* ``root_nodes()`` -- creates a ``QuerySet`` containing root nodes, in
-  tree id order.
+* ``root_nodes()`` -- creates a ``QuerySet`` containing root nodes.
+
+.. _`extra method`: http://www.djangoproject.com/documentation/db-api/#extra-select-none-where-none-params-none-tables-none
+
+Example usage
+-------------
+
+In the following examples, we have ``Category`` and ``Question`` models.
+``Question`` has a ``category`` field which is a ``ForeignKey`` to
+``Category``.
+
+Retrieving a list of root Categories which have a ``question_count``
+attribute containing the number of Questions associated with each root
+and all of its descendants::
+
+   roots = Category.tree.add_related_count(Category.tree.root_nodes(), Question,
+                                           'category', 'question_counts',
+                                           cumulative=True)
+
+Retrieving a list of child Categories which have a ``question_count``
+attribute containing the number of Questions associated with each of
+them::
+
+   node = Category.objects.get(name='Some Category')
+   children = Category.tree.add_related_count(node.get_children(), Question,
+                                              'category', 'question_counts')
+
 
 Template tags and filters
 =========================
@@ -549,82 +596,6 @@ Optional arguments
 ``cumulative``
    If ``True``, the count will be for items related to the child
    node *and* all of its descendants. Defaults to ``False``.
-
-Query utilities
----------------
-
-The ``mptt.queries`` module contains the following functions for
-creating common MPTT-related queries.
-
-``create_count_subquery()``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Creates a SQL subquery for use with the ``select`` argument of the
-Django ORM's `extra method`_, for adding an attribute to tree items
-which holds a count of items related to each tree item.
-
-Required arguments
-++++++++++++++++++
-
-``mptt_cls``
-   An MPTT ``Model`` class or instance.
-
-``rel_cls``
-   A ``Model`` class which has a relation to ``mptt_cls``.
-
-``rel_field``
-   The name of the field in ``rel_cls`` which holds the relation
-   to ``mptt_cls``.
-
-``create_cumulative_count_subquery()``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Creates a SQL subquery for use with the ``select`` argument of the
-Django ORM's `extra method`_, for adding an attribute to tree items
-which holds a count of items related to each tree item and its
-descendants.
-
-Required arguments
-++++++++++++++++++
-
-``mptt_cls``
-   An MPTT ``Model`` class or instance.
-
-``rel_cls``
-   A ``Model`` class which has a relation to ``mptt_cls``.
-
-``rel_field``
-   The name of the field in ``rel_cls`` which holds the relation
-   to ``mptt_cls``.
-
-Example usage
-~~~~~~~~~~~~~
-
-In the following examples, we have ``Category`` and ``Question`` models.
-``Question`` has a ``category`` field which is a ``ForeignKey`` to
-``Category``.
-
-Retrieving a list of root Categories which have a ``question_count``
-attribute containing the number of Questions associated with each root
-and all of its descendants::
-
-   cumulative_count_subquery = \
-       create_cumulative_count_subquery(Category, Question, 'category')
-   roots = Category.objects.filter(parent__isnull=True).extra(select={
-       'question_count': cumulative_count_subquery,
-   }).order_by('name')
-
-Retrieving a list of child Categories which have a ``question_count``
-attribute containing the number of Questions associated with each of
-them::
-
-   node = Category.objects.get(name='Some Category')
-   count_subquery = create_count_subquery(Category, Question, 'category')
-   children = node.get_children().extra(select={
-       'question_count': count_subquery,
-   }).order_by('name')
-
-.. _`extra method`: http://www.djangoproject.com/documentation/db-api/#extra-select-none-where-none-params-none-tables-none
 
 
 Technical details

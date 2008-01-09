@@ -4,8 +4,6 @@ trees.
 """
 import itertools
 
-from mptt import queries
-
 __all__ = ['previous_current_next', 'tree_item_iterator', 'drilldown_for_node']
 
 def previous_current_next(items):
@@ -74,19 +72,17 @@ def drilldown_tree_for_node(node, rel_cls=None, rel_field=None, count_attr=None,
        to the node's class.
 
     ``count_attr``
-       The name of an attribute which should be added to each item in
+       The name of an attribute which should be added to each child in
        the drilldown tree, containing a count of how many instances
-       of ``rel_cls`` are related to it through ``rel_field``.
+       of ``rel_cls`` are related through ``rel_field``.
 
     ``cumulative``
-       If ``True``, the count will be for items related to the child
-       node and all of its descendants.
+       If ``True``, the count will be for each child and all of its
+       descendants, otherwise it will be for each child itself.
     """
-    children = node.get_children()
-    if rel_cls is not None and rel_field is not None and count_attr is not None:
-        subquery_func = (cumulative and queries.create_cumulative_count_subquery
-                                     or queries.create_count_subquery)
-        children = children.extra(select={
-            count_attr: subquery_func(node, rel_cls, rel_field),
-        })
+    if rel_cls and rel_field and count_attr:
+        children = node._tree_manager.add_related_count(
+            node.get_children(), rel_cls, rel_field, count_attr, cumulative)
+    else:
+        children = node.get_children()
     return itertools.chain(node.get_ancestors(), [node], children)

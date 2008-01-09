@@ -10,6 +10,25 @@ __all__ = ['TreeManager']
 
 qn = connection.ops.quote_name
 
+COUNT_SUBQUERY = """(
+    SELECT COUNT(*)
+    FROM %(rel_table)s
+    WHERE %(mptt_fk)s = %(mptt_table)s.%(mptt_pk)s
+)"""
+
+CUMULATIVE_COUNT_SUBQUERY = """(
+    SELECT COUNT(*)
+    FROM %(rel_table)s
+    WHERE %(mptt_fk)s IN
+    (
+        SELECT m2.%(mptt_pk)s
+        FROM %(mptt_table)s m2
+        WHERE m2.%(tree_id)s = %(mptt_table)s.%(tree_id)s
+          AND m2.%(left)s BETWEEN %(mptt_table)s.%(left)s
+                              AND %(mptt_table)s.%(right)s
+    )
+)"""
+
 class TreeManager(models.Manager):
     """
     A manager for working with trees of objects.
@@ -27,6 +46,52 @@ class TreeManager(models.Manager):
         self.right_attr = right_attr
         self.tree_id_attr = tree_id_attr
         self.level_attr = level_attr
+
+    def add_related_count(self, queryset, rel_cls, rel_field, count_attr,
+                          cumulative=False):
+        """
+        Adds a related item count to a given ``QuerySet`` using its
+        ``extra`` method, for a ``Model`` class which has a relation to
+        this ``Manager``'s ``Model`` class.
+
+        Arguments:
+
+        ``rel_cls``
+           A ``Model`` class which has a relation to this `Manager``'s
+           ``Model`` class.
+
+        ``rel_field``
+           The name of the field in ``rel_cls`` which holds the
+           relation.
+
+        ``count_attr``
+           The name of an attribute which should be added to each item in
+           this ``QuerySet``, containing a count of how many instances
+           of ``rel_cls`` are related to it through ``rel_field``.
+
+        ``cumulative``
+           If ``True``, the count will be for each item and all of its
+           descendants, otherwise it will be for each item itself.
+        """
+        opts = self.model._meta
+        if cumulative:
+            subquery = CUMULATIVE_COUNT_SUBQUERY % {
+                'rel_table': qn(rel_cls._meta.db_table),
+                'mptt_fk': qn(rel_cls._meta.get_field(rel_field).column),
+                'mptt_table': qn(opts.db_table),
+                'mptt_pk': qn(opts.pk.column),
+                'tree_id': qn(opts.get_field(self.tree_id_attr).column),
+                'left': qn(opts.get_field(self.left_attr).column),
+                'right': qn(opts.get_field(self.right_attr).column),
+            }
+        else:
+            subquery = COUNT_SUBQUERY % {
+                'rel_table': qn(rel_cls._meta.db_table),
+                'mptt_fk': qn(rel_cls._meta.get_field(rel_field).column),
+                'mptt_table': qn(opts.db_table),
+                'mptt_pk': qn(opts.pk.column),
+            }
+        return queryset.extra(select={count_attr: subquery})
 
     def get_query_set(self):
         """
@@ -70,7 +135,7 @@ class TreeManager(models.Manager):
 
     def root_nodes(self):
         """
-        Creates a ``QuerySet`` containing root nodes, in tree id order.
+        Creates a ``QuerySet`` containing root nodes.
         """
         return self.filter(**{'%s__isnull' % self.parent_attr: True})
 
