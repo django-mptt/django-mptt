@@ -67,6 +67,12 @@ class TreeManager(models.Manager):
                 self._move_child_node(node, target, position)
         transaction.commit_unless_managed()
 
+    def root_nodes(self):
+        """
+        Creates a ``QuerySet`` containing root nodes, in tree id order.
+        """
+        return self.filter(**{'%s__isnull' % self.parent_attr: True})
+
     def _calculate_inter_tree_move_values(self, node, target, position):
         """
         Calculates values required when moving ``node`` relative to

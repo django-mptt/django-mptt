@@ -29,6 +29,11 @@ r"""
 7 6 2 1 2 3
 8 6 2 1 4 5
 
+# TreeManager Methods #########################################################
+
+>>> [g.name for g in Genre.tree.root_nodes()]
+[u'Action', u'Role-playing Game']
+
 # Model Instance Methods ######################################################
 >>> action = Genre.objects.get(pk=action.pk)
 >>> [g.name for g in action.get_ancestors()]
@@ -112,7 +117,7 @@ True
 True
 
 # The move_to method will be used in a few places in the tests which
-# follow to verify that it calls the TreeManger correctly.
+# follow to verify that it calls the TreeManager correctly.
 
 # Automatic Reparenting #######################################################
 

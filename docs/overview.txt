@@ -335,6 +335,8 @@ The following tree management methods are available:
 
   For more details, see the `move_to documentation`_ above.
 
+* ``root_nodes()`` -- creates a ``QuerySet`` containing root nodes, in
+  tree id order.
 
 Template tags and filters
 =========================
