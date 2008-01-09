@@ -62,13 +62,12 @@ def create_cumulative_count_subquery(mptt_cls, rel_cls, rel_field):
        to ``mptt_cls``.
     """
     opts = mptt_cls._meta
-    tree = mptt_cls._tree_manager
     return cumulative_count_subquery % {
         'rel_table': qn(rel_cls._meta.db_table),
         'mptt_fk': qn(rel_cls._meta.get_field(rel_field).column),
         'mptt_table': qn(opts.db_table),
         'mptt_pk': qn(opts.pk.column),
-        'tree_id': qn(opts.get_field(tree.tree_id_attr).column),
-        'left': qn(opts.get_field(tree.left_attr).column),
-        'right': qn(opts.get_field(tree.right_attr).column),
+        'tree_id': qn(opts.get_field(opts.tree_id_attr).column),
+        'left': qn(opts.get_field(opts.left_attr).column),
+        'right': qn(opts.get_field(opts.right_attr).column),
     }
