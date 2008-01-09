@@ -10,6 +10,10 @@ Trunk Changes
 Wed 9th Jan, 2008
 -----------------
 
+* Removed ``mptt.queries`` - the functionality it could be used to
+  manually implement is now provided by a new ``add_related_count()``
+  method in ``TreeManager``.
+
 * Tree attributes are now held to ``Model`` class' ``Options``
   (i.e. ``_meta``). This allowed a lot of refactoring, as these
   attributes no longer need to be passed around or taken from the
