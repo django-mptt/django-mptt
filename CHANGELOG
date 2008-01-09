@@ -10,6 +10,8 @@ Trunk Changes
 Wed 9th Jan, 2008
 -----------------
 
+* Created ``mptt.forms``, with ``MoveNodeForm``.
+
 * Removed ``mptt.queries`` - the functionality it could be used to
   manually implement is now provided by a new ``add_related_count()``
   method in ``TreeManager``.
