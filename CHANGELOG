@@ -7,10 +7,15 @@ Django MPTT CHANGELOG
 Trunk Changes
 =============
 
+Wed 9th Jan, 2008
+-----------------
+
+* Added a ``root_nodes()`` method to ``TreeManager``.
+
 Tue 8th Jan, 2008
 -----------------
 
-* ``TreeManager.move_node`` now calls
+* ``TreeManager.move_node()`` now calls
   ``transaction.commit_unless_managed()`` before it returns.
 
 * Documented the ``mptt.utils`` and ``mptt.queries`` modules.
@@ -24,7 +29,7 @@ Tue 8th Jan, 2008
 Mon 7th Jan, 2008
 -----------------
 
-* Added ``get_children`` and ``is_leaf_node`` methods to ``Model``
+* Added ``get_children()`` and ``is_leaf_node()`` methods to ``Model``
   instances.
 
 Sun 6th Jan, 2008
@@ -38,8 +43,8 @@ Sat 5th Jan, 2008
 
 * Finished implementing moving of nodes to be siblings of roots.
 
-* Added ``get_next_sibling`` and ``get_previous_sibling`` methods to
-  ``Model`` instances.
+* Added ``get_next_sibling()`` and ``get_previous_sibling()`` methods
+  to ``Model`` instances.
 
 Fri 4th Jan, 2008
 -----------------
@@ -50,13 +55,13 @@ Fri 4th Jan, 2008
 
 * Started implementing moving of nodes to be siblings of roots. This is
   a special case due to our use of a tree id, so it's detected and dealt
-  with as early as possible in ``move_node``.
+  with as early as possible in ``move_node()``.
 
   As a result, none of the other node movement implementation methods
   have to check for this special case - they can be sure they'll never
   have to handle a root sibling move when ``move_node`` is being used.
 
-* Simplified the node movement API - ``move_node`` is now
+* Simplified the node movement API - ``move_node()`` is now
   ``TreeManager``'s only public means of moving a node, as it can figure
   out what to do based on the node and target given.
 
@@ -64,7 +69,7 @@ Fri 4th Jan, 2008
   do the moving can trust their caller with the types of nodes which
   were given when it matters.
 
-* Added ``is_root_node`` and ``is_child_node`` methods to ``Model``
+* Added ``is_root_node()`` and ``is_child_node()`` methods to ``Model``
   instances.
 
 Version 0.1
@@ -88,20 +93,20 @@ Thu 3rd Jan, 2008
 * Reworked exceptions - ``InvalidMove`` is now raised when an invalid
   move is attempted.
 
-* Added a ``move_to`` convenience method to ``Model`` instances.
+* Added a ``move_to()`` convenience method to ``Model`` instances.
 
-* Implemented the ``position`` argument for ``make_child_node`` and
-  ``move_node`` in ``TreeManager``. The node movement API can now be
+* Implemented the ``position`` argument for ``make_child_node()`` and
+  ``move_node()`` in ``TreeManager``. The node movement API can now be
   used to move any node to an arbitrary point in any tree.
 
 * Implemented the ``position`` argument for
-  ``TreeManager.move_to_new_tree``.
+  ``TreeManager.move_to_new_tree()``.
 
 * Implemented a ``position`` argument for
-  ``TreeManager.move_within_tree``. The node being moved can now be made
-  a sibling, first child or last child of the target node.
+  ``TreeManager.move_within_tree()``. The node being moved can now be
+  made a sibling, first child or last child of the target node.
 
-* Added a ``move_node`` method to ``TreeManager``, to take care of
+* Added a ``move_node()`` method to ``TreeManager``, to take care of
   automatically calling the appropriate node movement manager method.
 
 * Combined a number of SQL queries into single queries using ``CASE``
@@ -111,10 +116,10 @@ Thu 3rd Jan, 2008
 Wed 2nd Jan, 2008
 -----------------
 
-* Fixed a bug in ``TreeManager.move_within_tree`` when no level change
+* Fixed a bug in ``TreeManager.move_within_tree()`` when no level change
   is required.
 
-* Fixed a bug in ``TreeManager.move_within_tree`` - it now takes into
+* Fixed a bug in ``TreeManager.move_within_tree()`` - it now takes into
   account whether or not the new parent's right value is greater than
   that of the node which is being moved.
 
@@ -122,34 +127,34 @@ Wed 2nd Jan, 2008
   methods.
 
 * Extracted logic for moving a ``Model`` instance to a different parent
-  within its current tree from ``mptt.signals.pre_save`` into the
-  ``move_within_tree`` method in ``TreeManager``.
+  within its current tree from ``mptt.signals.pre_save()`` into the
+  ``move_within_tree()`` method in ``TreeManager``.
 
 * Extracted logic for moving a ``Model`` instance from one tree to
-  another from ``mptt.signals.pre_save`` into the ``move_to_new_tree``
-  method in ``TreeManager``.
+  another from ``mptt.signals.pre_save()`` into the
+  ``move_to_new_tree()`` method in ``TreeManager``.
 
 * Extracted some similar move-node-to-tree queries in ``TreeManager``'s
-  ``make_child_node`` and ``make_root_node`` methods out into a new
-  ``_inter_tree_move`` method.
+  ``make_child_node()`` and ``make_root_node()`` methods out into a new
+  ``_inter_tree_move()`` method.
 
 Tue 1st Jan, 2008
 -----------------
 
 * Extracted logic for turning a ``Model`` instance which is the root
-  node of a tree into a child of a given parent node in another tree from
-  ``mptt.signals.pre_save`` into the ``make_child_node`` method in
-  ``TreeManager``.
+  node of a tree into a child of a given parent node in another tree
+  from ``mptt.signals.pre_save()`` into the ``make_child_node()`` method
+  in ``TreeManager``.
 
 * Extracted logic for turning a ``Model`` instance which is a child node
   into the root node of a new tree from ``mptt.signals.pre_save`` into
-  the ``make_root_node`` method in ``TreeManager``.
+  the ``make_root_node()`` method in ``TreeManager``.
 
 * Removed ``mptt.signals._get_next_tree_id``; added a
-  ``get_next_tree_id`` method to ``TreeManager`` to replace it.
+  ``get_next_tree_id()`` method to ``TreeManager`` to replace it.
 
 * Extracted some similar space-management queries out into the
-  ``close_gap`` and ``create_space`` methods in ``TreeManager``.
+  ``close_gap()`` and ``create_space()`` methods in ``TreeManager``.
 
 * Implemented reparenting when a child node is assigned a different
   parent in the same tree.
@@ -171,4 +176,4 @@ Sun 30th Dec, 2007
 
 * Added tests for creation, ``Model`` instance methods and deletion.
 
-* Added a ``get_siblings`` method to ``Model`` instances.
+* Added a ``get_siblings()`` method to ``Model`` instances.
