@@ -29,6 +29,54 @@ r"""
 7 6 2 1 2 3
 8 6 2 1 4 5
 
+# Utilities ###################################################################
+>>> from mptt.utils import previous_current_next, tree_item_iterator, drilldown_tree_for_node
+
+>>> for p,c,n in previous_current_next(Genre.tree.all()):
+...     print (p,c,n)
+(None, <Genre: Action>, <Genre: Platformer>)
+(<Genre: Action>, <Genre: Platformer>, <Genre: 2D Platformer>)
+(<Genre: Platformer>, <Genre: 2D Platformer>, <Genre: 3D Platformer>)
+(<Genre: 2D Platformer>, <Genre: 3D Platformer>, <Genre: 4D Platformer>)
+(<Genre: 3D Platformer>, <Genre: 4D Platformer>, <Genre: Role-playing Game>)
+(<Genre: 4D Platformer>, <Genre: Role-playing Game>, <Genre: Action RPG>)
+(<Genre: Role-playing Game>, <Genre: Action RPG>, <Genre: Tactical RPG>)
+(<Genre: Action RPG>, <Genre: Tactical RPG>, None)
+
+>>> for i,s in tree_item_iterator(Genre.tree.all()):
+...     print (i, s['new_level'], s['closed_levels'])
+(<Genre: Action>, True, [])
+(<Genre: Platformer>, True, [])
+(<Genre: 2D Platformer>, True, [])
+(<Genre: 3D Platformer>, False, [])
+(<Genre: 4D Platformer>, False, [2, 1])
+(<Genre: Role-playing Game>, False, [])
+(<Genre: Action RPG>, True, [])
+(<Genre: Tactical RPG>, False, [1, 0])
+
+>>> for i,s in tree_item_iterator(Genre.tree.all(), ancestors=True):
+...     print (i, s['new_level'], s['ancestors'], s['closed_levels'])
+(<Genre: Action>, True, [], [])
+(<Genre: Platformer>, True, [u'Action'], [])
+(<Genre: 2D Platformer>, True, [u'Action', u'Platformer'], [])
+(<Genre: 3D Platformer>, False, [u'Action', u'Platformer'], [])
+(<Genre: 4D Platformer>, False, [u'Action', u'Platformer'], [2, 1])
+(<Genre: Role-playing Game>, False, [], [])
+(<Genre: Action RPG>, True, [u'Role-playing Game'], [])
+(<Genre: Tactical RPG>, False, [u'Role-playing Game'], [1, 0])
+
+>>> action = Genre.objects.get(pk=action.pk)
+>>> [item.name for item in drilldown_tree_for_node(action)]
+[u'Action', u'Platformer']
+
+>>> platformer = Genre.objects.get(pk=platformer.pk)
+>>> [item.name for item in drilldown_tree_for_node(platformer)]
+[u'Action', u'Platformer', u'2D Platformer', u'3D Platformer', u'4D Platformer']
+
+>>> platformer_3d = Genre.objects.get(pk=platformer_3d.pk)
+>>> [item.name for item in drilldown_tree_for_node(platformer_3d)]
+[u'Action', u'Platformer', u'3D Platformer']
+
 # TreeManager Methods #########################################################
 
 >>> Genre.tree.root_node(action.tree_id)
