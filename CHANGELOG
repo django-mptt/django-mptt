@@ -7,8 +7,19 @@ Django MPTT CHANGELOG
 Trunk Changes
 =============
 
+Thu 10th Jan, 2008
+------------------
+
+* The ``tree_info`` template filter now accepts an optional argument to
+  specify other tree structure information which should be made
+  available.
+
+* Added a ``tree_path`` template filter.
+
 Wed 9th Jan, 2008
 -----------------
+
+* Split documentation into multiple files.
 
 * Created ``mptt.forms``, with ``MoveNodeForm``.
 

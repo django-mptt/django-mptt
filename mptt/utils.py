@@ -2,6 +2,7 @@
 Utilities for working with lists of ``Model`` instances which represent
 trees.
 """
+import copy
 import itertools
 
 __all__ = ['previous_current_next', 'tree_item_iterator', 'drilldown_for_node']
@@ -24,34 +25,78 @@ def previous_current_next(items):
         pass
     return itertools.izip(previous, current, next)
 
-def tree_item_iterator(items):
+def tree_item_iterator(items, ancestors=False):
     """
-    Given a list of tree items, produces doubles of a tree item and a
-    ``dict`` containing information about the tree structure around the
-    item, with the following contents:
+    Given a list of tree items, iterates over the list, generating
+    two-tuples of the current tree item and a ``dict`` containing
+    information about the tree structure around the item, with the
+    following keys:
 
-       new_level
+       ``'new_level'`
           ``True`` if the current item is the start of a new level in
           the tree, ``False`` otherwise.
 
-       closed_levels
+       ``'closed_levels'``
           A list of levels which end after the current item. This will
           be an empty list if the next item is at the same level as the
           current item.
+
+    If ``ancestors`` is ``True``, the following key will also be
+    available:
+
+       ``'ancestors'``
+          A list of unicode representations of the ancestors of the
+          current node, in descending order (root node first, immediate
+          parent last).
+
+          For example: given the sample tree below, the contents of the
+          list which would be available under the ``'ancestors'`` key
+          are given on the right::
+
+             Books                    ->  []
+                Sci-fi                ->  [u'Books']
+                   Dystopian Futures  ->  [u'Books', u'Sci-fi']
+
     """
+    structure = {}
     opts = None
     for previous, current, next in previous_current_next(items):
         if opts is None:
             opts = current._meta
+
         current_level = getattr(current, opts.level_attr)
-        new_level = (previous is None and True
-                     or getattr(previous, opts.level_attr) < current_level)
-        if next is None:
-            closed_levels = range(current_level, -1, -1)
+        if previous:
+            structure['new_level'] = (getattr(previous,
+                                              opts.level_attr) < current_level)
+            if ancestors:
+                # If the previous node was the end of any number of
+                # levels, remove the appropriate number of ancestors
+                # from the list.
+                if structure['closed_levels']:
+                    structure['ancestors'] = \
+                        structure['ancestors'][:-len(structure['closed_levels'])]
+                # If the current node is the start of a new level, add its
+                # parent to the ancestors list.
+                if structure['new_level']:
+                    structure['ancestors'].append(unicode(previous))
         else:
-            closed_levels = range(current_level,
-                                  getattr(next, opts.level_attr), -1)
-        yield current, {'new_level': new_level, 'closed_levels': closed_levels}
+            structure['new_level'] = True
+            if ancestors:
+                # Set up the ancestors list on the first item
+                structure['ancestors'] = []
+
+        if next:
+            structure['closed_levels'] = range(current_level,
+                                               getattr(next,
+                                                       opts.level_attr), -1)
+        else:
+            # All remaining levels need to be closed
+            structure['closed_levels'] = range(current_level, -1, -1)
+
+        # FIXME Things go a bit crazy in Django templates if we don't
+        #       return a deep copy of the structure dict. Investigate to
+        #       see if this is a template bug, known or otherwise.
+        yield current, copy.deepcopy(structure)
 
 def drilldown_tree_for_node(node, rel_cls=None, rel_field=None, count_attr=None,
                             cumulative=False):

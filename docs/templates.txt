@@ -90,18 +90,36 @@ Filter reference
 ``tree_info``
 ~~~~~~~~~~~~~
 
-Given a list of tree items, produces doubles of a tree item and a
-``dict`` containing information about the tree structure around the
-item, with the following contents:
+Given a list of tree items, iterates over the list, generating
+two-tuples of the current tree item and a ``dict`` containing
+information about the tree structure around the item, with the following
+keys:
 
-   new_level
-      ``True`` if the current item is the start of a new level in the
-      tree, ``False`` otherwise.
+   ``'new_level'`
+      ``True`` if the current item is the start of a new level in
+      the tree, ``False`` otherwise.
 
-   closed_levels
-      A list of levels which end after the current item. This will be an
-      empty list if the next item is at the same level as the current
-      item.
+   ``'closed_levels'``
+      A list of levels which end after the current item. This will
+      be an empty list if the next item's level is the same as or
+      greater than the level of the current item.
+
+An optional argument can be provided to specify extra details about the
+structure which should appear in the ``dict``. This should be a
+comma-separated list of feature names. The valid feature names are:
+
+   ancestors
+      Adds a list of unicode representations of the ancestors of the
+      current node, in descending order (root node first, immediate
+      parent last), under the key ``'ancestors'``.
+
+      For example: given the sample tree below, the contents of the list
+      which would be available under the ``'ancestors'`` key are given
+      on the right::
+
+         Books                    ->  []
+            Sci-fi                ->  [u'Books']
+               Dystopian Futures  ->  [u'Books', u'Sci-fi']
 
 Using this filter with unpacking in a ``{% for %}`` tag, you should have
 enough information about the tree structure to create a hierarchical
@@ -114,6 +132,21 @@ Example::
    {{ genre.name }}
    {% for level in structure.closed_levels %}</li></ul>{% endfor %}
    {% endfor %}
+
+``tree_path``
+~~~~~~~~~~~~~
+
+Creates a tree path represented by a list of items by joining the items
+with a separator, which can be provided as an optional argument,
+defaulting to ``' :: '``.
+
+Each path item will be coerced to unicode, so a list of model instances
+may be given if required.
+
+Example::
+
+    {{ some_list|tree_path }}
+    {{ some_node.get_ancestors|tree_path:" > " }}
 
 Template tag examples
 ---------------------
@@ -134,3 +167,18 @@ children::
       {% endifequal %}
       {% for level in structure.closed_levels %}</li></ul>{% endfor %}
    {% endfor %}
+
+An example of the``tree_info`` (with its optional argument) and
+``tree_path`` filters being used together to create a multiple select
+which doesn't contain root nodes and displays the full path to each
+option's node::
+
+   <select name="classifiers" multiple="multiple" size="10">
+   {% for node,structure in classifiers|tree_info:"ancestors" %}
+   {% if node.is_child_node %}
+   <option value="{{ node.pk }}">
+   {{ structure.ancestors|tree_path }} :: {{ node }}
+   </option>
+   {% endif %}
+   {% endfor %}
+   </select>
