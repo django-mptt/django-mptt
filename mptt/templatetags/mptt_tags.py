@@ -5,6 +5,7 @@ represent trees.
 from django import template
 from django.db.models import get_model
 from django.db.models.fields import FieldDoesNotExist
+from django.utils.encoding import force_unicode
 
 from mptt.utils import tree_item_iterator, drilldown_tree_for_node
 
@@ -138,7 +139,7 @@ def do_drilldown_tree_for_node(parser, token):
     else:
         return DrilldownTreeForNodeNode(bits[1], bits[3])
 
-def tree_info(items):
+def tree_info(items, features=None):
     """
     Given a list of tree items, produces doubles of a tree item and a
     ``dict`` containing information about the tree structure around the
@@ -166,8 +167,30 @@ def tree_info(items):
        {% endfor %}
 
     """
-    return tree_item_iterator(items)
+    kwargs = {}
+    if features:
+        feature_names = features.split(',')
+        if 'ancestors' in feature_names:
+            kwargs['ancestors'] = True
+    return tree_item_iterator(items, **kwargs)
+
+def tree_path(items, separator=' :: '):
+    """
+    Creates a tree path represented by a list of ``items`` by joining
+    the items with a ``separator``.
+
+    Each path item will be coerced to unicode, so a list of model
+    instances may be given if required.
+
+    Example::
+
+       {{ some_list|tree_path }}
+       {{ some_node.get_ancestors|tree_path:" > " }}
+
+    """
+    return separator.join([force_unicode(i) for i in items])
 
 register.tag('full_tree_for_model', do_full_tree_for_model)
 register.tag('drilldown_tree_for_node', do_drilldown_tree_for_node)
 register.filter('tree_info', tree_info)
+register.filter('tree_path', tree_path)

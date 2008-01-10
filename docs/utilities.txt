@@ -39,7 +39,7 @@ Required arguments
 ------------------------
 
 This function is used to implement the ``tree_info`` template filter,
-yielding two-tuples of (tree item, tree structure information dict).
+yielding two-tuples of (tree item, tree structure information ``dict``).
 
 See the ``tree_info`` documentation for more information.
 
@@ -48,6 +48,15 @@ Required arguments
 
 ``items``
    A list or iterable of model instances which represent a tree.
+
+Optional arguments
+~~~~~~~~~~~~~~~~~~
+
+``ancestors``
+   Boolean. If ``True``, a list of unicode representations of the
+   ancestors of the current node, in descending order (root node first,
+   immediate parent last), will be added to the tree structure
+   information ``dict` under the key ``'ancestors'``.
 
 ``drilldown_tree_for_node()``
 -----------------------------
