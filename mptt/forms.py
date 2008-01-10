@@ -7,7 +7,9 @@ from mptt.exceptions import InvalidMove
 
 class MoveNodeForm(forms.Form):
     """
-    A basic form for moving a node around its tree.
+    A form which allows the user to move a given node from one location
+    in its tree to another, with optional restriction of the nodes which
+    are valid target nodes for the move.
     """
     POSITION_FIRST_CHILD = 'first-child'
     POSITION_LAST_CHILD = 'last-child'
@@ -27,19 +29,28 @@ class MoveNodeForm(forms.Form):
 
     def __init__(self, node, *args, **kwargs):
         """
-        A ``valid_targets`` keyword argument can be used to provide a
-        ``QuerySet`` of valid targets for the move - for example, if you
-        want to restrict the node to moving within its own tree, pass a
-        ``QuerySet`` containing everything in the node's tree except
-        itself and its descendants (to prevent invalid moves) and the
-        root node (as a user could choose to make the node a sibling of
-        the root node).
+        The ``node`` to be moved must be provided. The following keyword
+        arguments are also accepted::
 
-        If ``valid_targets`` is not provided, the list of valid targets
-        will consist of everything in the tree for the node's class
-        apart from the node itself and any descendants.
+        ``valid_targets``
+           Specifies a ``QuerySet`` of valid targets for the move. If
+           not provided, valid targets will consist of everything other
+           node of the same type, apart from the node itself and any
+           descendants.
+
+           For example, if you want to restrict the node to moving
+           within its own tree, pass a ``QuerySet`` containing
+           everything in the node's tree except itself and its
+           descendants (to prevent invalid moves) and the root node (as
+           a user could choose to make the node a sibling of the root
+           node).
+
+        ``target_select_size``
+           The size of the select element used for the target node.
+           Defaults to ``10``.
         """
         valid_targets = kwargs.pop('valid_targets', None)
+        target_select_size = kwargs.pop('target_select_size', 10)
         super(MoveNodeForm, self).__init__(*args, **kwargs)
         self.node = node
         opts = node._meta
@@ -54,6 +65,7 @@ class MoveNodeForm(forms.Form):
             [(target.pk, '%s %s' % ('---' * getattr(target, opts.level_attr),
                                     unicode(target)))
              for target in valid_targets]
+        self.fields['target'].widget.attrs['size'] = target_select_size
 
     def save(self):
         """
