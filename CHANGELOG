@@ -10,6 +10,10 @@ Trunk Changes
 Thu 10th Jan, 2008
 ------------------
 
+* Documented ``MoveNodeForm`` in ``docs/forms.txt``.
+
+* Added a ``target_select_size`` argument to ``MoveNodeForm``.
+
 * Added a ``root_node()`` method to ``TreeManager``.
 
 * Added ``get_root()`` method to ``Model`` instances.
