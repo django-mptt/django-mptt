@@ -236,6 +236,9 @@ The following manager methods are available:
      If ``True``, the count will be for each item and all of its
      descendants, otherwise it will be for each item itself.
 
+* ``get_root(tree_id)`` -- returns the root node of tree with the given
+  id.
+
 * ``move_node(node, target, position='last-child')`` -- moves ``node``
   based on ``target``, relative to ``position`` when appropriate.
 

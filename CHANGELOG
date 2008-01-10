@@ -10,6 +10,8 @@ Trunk Changes
 Thu 10th Jan, 2008
 ------------------
 
+* Added a ``root_node()`` method to ``TreeManager``.
+
 * Added ``get_root()`` method to ``Model`` instances.
 
 * The ``tree_info`` template filter now accepts an optional argument to

@@ -57,7 +57,7 @@ implement movement of other nodes as siblings of a target root node.
 When you use the node movement API to move a node to be a sibling of a
 root node, tree ids are shuffled around to acheive the new ordering
 required. Given this, you should consider the tree id to be
-**volatile**, so it's recommended that you don't use tree id in your
+**volatile**, so it's recommended that you don't store tree ids in your
 applications to identify particular trees.
 
 Since *every* node has a tree id, movement of a node to be a sibling of

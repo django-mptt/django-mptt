@@ -191,10 +191,10 @@ def get_root(self):
         return self
 
     opts = self._meta
-    return self._default_manager.filter(**{
+    return self._default_manager.get(**{
         opts.tree_id_attr: getattr(self, opts.tree_id_attr),
         '%s__isnull' % opts.parent_attr: True,
-    })[0]
+    })
 
 def get_siblings(self, include_self=False):
     """
