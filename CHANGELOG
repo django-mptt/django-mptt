@@ -10,6 +10,8 @@ Trunk Changes
 Thu 10th Jan, 2008
 ------------------
 
+* Added ``get_root()`` method to ``Model`` instances.
+
 * The ``tree_info`` template filter now accepts an optional argument to
   specify other tree structure information which should be made
   available.

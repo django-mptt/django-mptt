@@ -51,6 +51,8 @@ r"""
 >>> action.get_previous_sibling()
 >>> action.get_next_sibling()
 <Genre: Role-playing Game>
+>>> action.get_root()
+<Genre: Action>
 >>> [g.name for g in action.get_siblings()]
 [u'Role-playing Game']
 >>> [g.name for g in action.get_siblings(include_self=True)]
@@ -77,6 +79,8 @@ False
 3
 >>> platformer.get_previous_sibling()
 >>> platformer.get_next_sibling()
+>>> platformer.get_root()
+<Genre: Action>
 >>> [g.name for g in platformer.get_siblings()]
 []
 >>> [g.name for g in platformer.get_siblings(include_self=True)]
@@ -105,6 +109,8 @@ False
 <Genre: 2D Platformer>
 >>> platformer_3d.get_next_sibling()
 <Genre: 4D Platformer>
+>>> platformer_3d.get_root()
+<Genre: Action>
 >>> [g.name for g in platformer_3d.get_siblings()]
 [u'2D Platformer', u'4D Platformer']
 >>> [g.name for g in platformer_3d.get_siblings(include_self=True)]

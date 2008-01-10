@@ -125,6 +125,8 @@ you set them up for MPTT:
   sibling in the tree, or ``None`` if it doesn't have a previous
   sibling.
 
+* ``get_root()`` -- returns the root node of the model instance's tree.
+
 * ``get_siblings(include_self=False)`` -- creates a ``QuerySet``
   containing siblings of the model instance. Root nodes are considered
   to be siblings of other root nodes.

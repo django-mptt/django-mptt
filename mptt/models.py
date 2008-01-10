@@ -54,6 +54,7 @@ def treeify(cls, parent_attr='parent', left_attr='lft', right_attr='rght',
     setattr(cls, 'get_descendant_count', get_descendant_count)
     setattr(cls, 'get_next_sibling', get_next_sibling)
     setattr(cls, 'get_previous_sibling', get_previous_sibling)
+    setattr(cls, 'get_root', get_root)
     setattr(cls, 'get_siblings', get_siblings)
     setattr(cls, 'is_child_node', is_child_node)
     setattr(cls, 'is_leaf_node', is_leaf_node)
@@ -181,6 +182,19 @@ def get_previous_sibling(self):
     except IndexError:
         pass
     return sibling
+
+def get_root(self):
+    """
+    Returns the root node of this model instance's tree.
+    """
+    if self.is_root_node():
+        return self
+
+    opts = self._meta
+    return self._default_manager.filter(**{
+        opts.tree_id_attr: getattr(self, opts.tree_id_attr),
+        '%s__isnull' % opts.parent_attr: True,
+    })[0]
 
 def get_siblings(self, include_self=False):
     """
