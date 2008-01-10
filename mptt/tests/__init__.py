@@ -31,6 +31,15 @@ r"""
 
 # TreeManager Methods #########################################################
 
+>>> Genre.tree.root_node(action.tree_id)
+<Genre: Action>
+>>> Genre.tree.root_node(rpg.tree_id)
+<Genre: Role-playing Game>
+>>> Genre.tree.root_node(3)
+Traceback (most recent call last):
+    ...
+DoesNotExist: Genre matching query does not exist.
+
 >>> [g.name for g in Genre.tree.root_nodes()]
 [u'Action', u'Role-playing Game']
 

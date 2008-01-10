@@ -133,6 +133,15 @@ class TreeManager(models.Manager):
                 self._move_child_node(node, target, position)
         transaction.commit_unless_managed()
 
+    def root_node(self, tree_id):
+        """
+        Returns the root node of the tree with the given id.
+        """
+        return self.get(**{
+            self.tree_id_attr: tree_id,
+            '%s__isnull' % self.parent_attr: True,
+        })
+
     def root_nodes(self):
         """
         Creates a ``QuerySet`` containing root nodes.
