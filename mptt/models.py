@@ -9,30 +9,33 @@ use directly to set their model up for Modified Preorder Tree Traversal.
 from django.db import models
 from django.db.models import signals
 from django.dispatch import dispatcher
+from django.utils.translation import ugettext as _
 
 from mptt.signals import pre_delete, pre_save
 from mptt.managers import TreeManager
 
 __all__ = ['treeify']
 
-def treeify(cls, parent_attr='parent', left_attr='lft', right_attr='rght',
+class AlreadySetUp(Exception):
+    """
+    An attempt was made to set up a model for MPTT more than once.
+    """
+    pass
+
+registry = []
+
+def treeify(model, parent_attr='parent', left_attr='lft', right_attr='rght',
             tree_id_attr='tree_id', level_attr='level',
             tree_manager_attr='tree'):
     """
-    Sets the given model class up for Modified Preorder Tree Traversal,
-    which involves:
-
-    1. Adding tree options to the ``Options`` for the model class, which
-       are stored in ``_meta``.
-    2. If any of the specified tree fields -- ``left_attr``,
-       ``right_attr``, ``tree_id_attr`` and ``level_attr`` -- do not
-       exist, adding them to the model class dynamically.
-    3. Adding tree related instance methods to the model class.
-    4. Adding a custom tree ``Manager`` to the model class.
-    5. Registering ``pre_save`` and ``pre_delete`` signal receiving
-       functions to manage tree field contents.
+    Sets the given model class up for Modified Preorder Tree Traversal.
     """
-    opts = cls._meta
+    if model in registry:
+        raise AlreadySetUp(_('The model %s has already been set up for MPTT.') % model.__name__)
+    registry.append(model)
+
+    # Add tree options to the model's Options
+    opts = model._meta
     setattr(opts, 'parent_attr', parent_attr)
     setattr(opts, 'right_attr', right_attr)
     setattr(opts, 'left_attr', left_attr)
@@ -46,27 +49,32 @@ def treeify(cls, parent_attr='parent', left_attr='lft', right_attr='rght',
             opts.get_field(attr)
         except models.FieldDoesNotExist:
             models.PositiveIntegerField(
-                db_index=True, editable=False).contribute_to_class(cls, attr)
+                db_index=True, editable=False).contribute_to_class(model, attr)
 
-    setattr(cls, 'get_ancestors', get_ancestors)
-    setattr(cls, 'get_children', get_children)
-    setattr(cls, 'get_descendants', get_descendants)
-    setattr(cls, 'get_descendant_count', get_descendant_count)
-    setattr(cls, 'get_next_sibling', get_next_sibling)
-    setattr(cls, 'get_previous_sibling', get_previous_sibling)
-    setattr(cls, 'get_root', get_root)
-    setattr(cls, 'get_siblings', get_siblings)
-    setattr(cls, 'is_child_node', is_child_node)
-    setattr(cls, 'is_leaf_node', is_leaf_node)
-    setattr(cls, 'is_root_node', is_root_node)
-    setattr(cls, 'move_to', move_to)
+    # Add tree methods for model instances
+    setattr(model, 'get_ancestors', get_ancestors)
+    setattr(model, 'get_children', get_children)
+    setattr(model, 'get_descendants', get_descendants)
+    setattr(model, 'get_descendant_count', get_descendant_count)
+    setattr(model, 'get_next_sibling', get_next_sibling)
+    setattr(model, 'get_previous_sibling', get_previous_sibling)
+    setattr(model, 'get_root', get_root)
+    setattr(model, 'get_siblings', get_siblings)
+    setattr(model, 'is_child_node', is_child_node)
+    setattr(model, 'is_leaf_node', is_leaf_node)
+    setattr(model, 'is_root_node', is_root_node)
+    setattr(model, 'move_to', move_to)
 
+    # Add a custom tree manager
     TreeManager(parent_attr, left_attr, right_attr, tree_id_attr,
-                level_attr).contribute_to_class(cls, tree_manager_attr)
-    setattr(cls, '_tree_manager', getattr(cls, tree_manager_attr))
+                level_attr).contribute_to_class(model, tree_manager_attr)
+    setattr(model, '_tree_manager', getattr(model, tree_manager_attr))
 
-    dispatcher.connect(pre_save, signal=signals.pre_save, sender=cls)
-    dispatcher.connect(pre_delete, signal=signals.pre_delete, sender=cls)
+    # Set up signal receivers to manage the tree when instances of the
+    # model are about to be created, have their parent changed or be
+    # deleted.
+    dispatcher.connect(pre_save, signal=signals.pre_save, sender=model)
+    dispatcher.connect(pre_delete, signal=signals.pre_delete, sender=model)
 
 def get_ancestors(self, ascending=False):
     """

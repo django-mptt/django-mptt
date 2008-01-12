@@ -47,7 +47,7 @@ class TreeManager(models.Manager):
         self.tree_id_attr = tree_id_attr
         self.level_attr = level_attr
 
-    def add_related_count(self, queryset, rel_cls, rel_field, count_attr,
+    def add_related_count(self, queryset, rel_model, rel_field, count_attr,
                           cumulative=False):
         """
         Adds a related item count to a given ``QuerySet`` using its
@@ -56,18 +56,18 @@ class TreeManager(models.Manager):
 
         Arguments:
 
-        ``rel_cls``
+        ``rel_model``
            A ``Model`` class which has a relation to this `Manager``'s
            ``Model`` class.
 
         ``rel_field``
-           The name of the field in ``rel_cls`` which holds the
+           The name of the field in ``rel_model`` which holds the
            relation.
 
         ``count_attr``
            The name of an attribute which should be added to each item in
            this ``QuerySet``, containing a count of how many instances
-           of ``rel_cls`` are related to it through ``rel_field``.
+           of ``rel_model`` are related to it through ``rel_field``.
 
         ``cumulative``
            If ``True``, the count will be for each item and all of its
@@ -76,8 +76,8 @@ class TreeManager(models.Manager):
         opts = self.model._meta
         if cumulative:
             subquery = CUMULATIVE_COUNT_SUBQUERY % {
-                'rel_table': qn(rel_cls._meta.db_table),
-                'mptt_fk': qn(rel_cls._meta.get_field(rel_field).column),
+                'rel_table': qn(rel_model._meta.db_table),
+                'mptt_fk': qn(rel_model._meta.get_field(rel_field).column),
                 'mptt_table': qn(opts.db_table),
                 'mptt_pk': qn(opts.pk.column),
                 'tree_id': qn(opts.get_field(self.tree_id_attr).column),
@@ -86,8 +86,8 @@ class TreeManager(models.Manager):
             }
         else:
             subquery = COUNT_SUBQUERY % {
-                'rel_table': qn(rel_cls._meta.db_table),
-                'mptt_fk': qn(rel_cls._meta.get_field(rel_field).column),
+                'rel_table': qn(rel_model._meta.db_table),
+                'mptt_fk': qn(rel_model._meta.get_field(rel_field).column),
                 'mptt_table': qn(opts.db_table),
                 'mptt_pk': qn(opts.pk.column),
             }

@@ -88,56 +88,8 @@ of nodes which are retrieved for the whole tree or any subtree::
    node.get_descendants().filter(level__lte=node.level + 2)
 
 
-MPTT setup process
-==================
-
-The following steps are taken when ``treeify`` is called to set up a
-Django model for MPTT:
-
-1. The arguments to ``treeify`` which specify the tree attributes for
-   the class are added to its ``Options``, which are stored in
-   ``_meta``.
-
-   By doing this, we can access details of the class' tree attributes
-   given the class or any instance of it, which ensures these attributes
-   are always available when we need them.
-
-2. If the model does not have fields defined with names matching any of
-   the attribute names given for the ``left_attr``, ``right_attr``,
-   ``tree_id_attr`` or ``level_attr`` arguments, the following field is
-   dynamically added to the model where missing::
-
-      models.PositiveIntegerField(db_index=True, editable=False)
-
-   As such, if all of these fields are left to be dynamically added, the
-   tree structure is effectively invisible to the
-   ``django.contrib.admin`` application and any ``newforms`` forms
-   generated using the ``ModelForm`` class, if these are being used with
-   the model in question.
-
-3. Additional instance methods are added to the model class to
-   retrieve information related to model instances based on the
-   tree structure, and to move the instance around the tree.
-
-4. A custom manager is added to the model class to handle
-   working with the tree of model instances. The ``tree_manager_attr``
-   argument defines the attribute this manager will be publicly
-   accessible via.
-
-   A ``_tree_manager`` attribute is also set up to access this manager,
-   for internal use by Django MPTT.
-
-5. Signal receiving functions are registered for the built-in
-   ``pre_save`` and ``pre_delete`` signals which are fired when a
-   model instance is about to be saved or deleted, respectively.
-
-   These functions take care of managing MPTT fields when a model
-   instance is about to be created or deleted and automatically
-   adjusting tree details when an instance is saved after having its
-   parent changed.
-
 Dynamic field creation vs. explicitly defining MPTT fields
-----------------------------------------------------------
+==========================================================
 
 Model classes which do not have field names which clash with the default
 arguments to the ``treeify`` function need not contain any details about

@@ -10,6 +10,12 @@ r"""
 ...                       getattr(n, opts.left_attr), getattr(n, opts.right_attr)) \
 ...                      for n in nodes])
 
+>>> from mptt.models import treeify
+>>> treeify(Genre)
+Traceback (most recent call last):
+    ...
+AlreadySetUp: The model Genre is already set up for MPTT.
+
 # Creation ####################################################################
 >>> action = Genre.objects.create(name='Action')
 >>> platformer = Genre.objects.create(name='Platformer', parent=action)
