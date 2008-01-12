@@ -1,6 +1,6 @@
-===============================
-Working with trees in templates
-===============================
+==================================
+Working with trees in ``newforms``
+==================================
 
 .. admonition:: About this document
 
