@@ -29,14 +29,14 @@ for scheme in INSTALL_SCHEMES.values():
 # an easy way to do this.
 packages, data_files = [], []
 root_dir = os.path.dirname(__file__)
-cliq_dir = os.path.join(root_dir, 'mptt')
+mptt_dir = os.path.join(root_dir, 'mptt')
 pieces = fullsplit(root_dir)
 if pieces[-1] == '':
     len_root_dir = len(pieces) - 1
 else:
     len_root_dir = len(pieces)
 
-for dirpath, dirnames, filenames in os.walk(cliq_dir):
+for dirpath, dirnames, filenames in os.walk(mptt_dir):
     # Ignore dirnames that start with '.'
     for i, dirname in enumerate(dirnames):
         if dirname.startswith('.'): del dirnames[i]
