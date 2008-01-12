@@ -10,6 +10,9 @@ Trunk Changes
 Sat 12th Jan, 2008
 ------------------
 
+* BACKWARDS-INCOMPATIBLE CHANGE - model registration is now handled by
+  ``mptt.register`` instead of ``mptt.models.treeify``.
+
 * An exception is now raised if you call ``treeify`` on the same
   ``Model`` class twice.
 
@@ -97,9 +100,10 @@ Fri 4th Jan, 2008
   have to check for this special case - they can be sure they'll never
   have to handle a root sibling move when ``move_node`` is being used.
 
-* Simplified the node movement API - ``move_node()`` is now
-  ``TreeManager``'s only public means of moving a node, as it can figure
-  out what to do based on the node and target given.
+* BACKWARDS-INCOMPATIBLE CHANGE - Simplified the node movement API -
+  ``move_node()`` is now ``TreeManager``'s only public means of moving a
+  node, as it can figure out what to do based on the node and target
+  given.
 
   This simplifies implementation somewhat, as the methods which actually
   do the moving can trust their caller with the types of nodes which

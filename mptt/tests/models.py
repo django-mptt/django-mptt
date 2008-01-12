@@ -1,6 +1,6 @@
 from django.db import models
 
-from mptt.models import treeify
+import mptt
 
 class Category(models.Model):
     name = models.CharField(max_length=50)
@@ -22,8 +22,8 @@ class Node(models.Model):
 class Tree(models.Model):
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
 
-treeify(Category)
-treeify(Genre)
-treeify(Node, left_attr='does', right_attr='zis', level_attr='madness',
-        tree_id_attr='work')
-treeify(Tree)
+mptt.register(Category)
+mptt.register(Genre)
+mptt.register(Node, left_attr='does', right_attr='zis', level_attr='madness',
+              tree_id_attr='work')
+mptt.register(Tree)
