@@ -56,7 +56,7 @@ Feature overview
 * Simple registration of Django model classes for MPTT - fields required
   specifically for the tree structure will be added dynamically if
   necessary.
-  
+
   In the simplest case, it's possible to use MPTT with your own models
   without adding a single line of MPTT-related code to them.
 
@@ -83,6 +83,8 @@ Feature overview
   provides tree management operations which, among other things, can be
   used to move any node in a tree (and its descendants) to an arbitrary
   point elsewhere in the tree.
+
+* ``newforms`` components for working with trees in forms.
 
 * Utility functions for working with trees of models.
 

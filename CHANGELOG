@@ -7,6 +7,12 @@ Django MPTT CHANGELOG
 Trunk Changes
 =============
 
+Sat 12th Jan, 2008
+------------------
+
+* An exception is now raised if you call ``treeify`` on the same
+  ``Model`` class twice.
+
 Thu 10th Jan, 2008
 ------------------
 

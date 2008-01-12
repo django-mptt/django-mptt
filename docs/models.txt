@@ -5,7 +5,8 @@ Models and Managers
 .. admonition:: About this document
 
    This document describes the changes Django MPTT makes to your Django
-   model classes so you can work with model instances as trees.
+   model classes and the custom tree manager it provides, so you can
+   easily work with model instances as trees.
 
 .. contents::
    :depth: 3
@@ -18,6 +19,18 @@ can call to set a Django model up for MPTT. This function takes as its
 arguments the model class itself and, optionally, attribute names for
 the set of fields which are required in order to manage the database
 table for the model as a tree.
+
+.. admonition:: ``treeify`` and ``syncdb``
+
+   As discussed further below, the ``treeify`` function will add new
+   fields to your models if certain required tree fields are not
+   present.
+
+   As such, you must have the call to ``treeify`` in place **before**
+   you use Django's ``syncdb`` management command to create tables for
+   any models you wish to set up for MPTT, otherwise you will have to
+   recreate those tables so the appropriate tree columns are in place in
+   the database.
 
 The following argument is required:
 
