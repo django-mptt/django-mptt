@@ -14,23 +14,23 @@ Models and Managers
 Setting up a Django model for MPTT
 ==================================
 
-The ``mptt.models`` module contains a ``treeify`` function, which users
-can call to set a Django model up for MPTT. This function takes as its
+The ``mptt`` module contains a ``register`` function, which users can
+call to set a Django model up for MPTT. This function takes as its
 arguments the model class itself and, optionally, attribute names for
 the set of fields which are required in order to manage the database
 table for the model as a tree.
 
-.. admonition:: ``treeify`` and ``syncdb``
+.. admonition:: ``mptt.register`` and ``syncdb``
 
-   As discussed further below, the ``treeify`` function will add new
-   fields to your models if certain required tree fields are not
+   As discussed further below, the ``mptt.register`` function will add
+   new fields to your models if certain required tree fields are not
    present.
 
-   As such, you must have the call to ``treeify`` in place **before**
-   you use Django's ``syncdb`` management command to create tables for
-   any models you wish to set up for MPTT, otherwise you will have to
-   recreate those tables so the appropriate tree columns are in place in
-   the database.
+   As such, unless you are manually setting up all required tree fields
+   in your models, you must have the call to ``mptt.register`` in place
+   **before** you use Django's ``syncdb`` management command to create
+   tables. Otherwise, you will have to recreate tables so the
+   appropriate tree columns are in place in the database.
 
 The following argument is required:
 
@@ -84,19 +84,19 @@ class, see the technical details documentation.
 
 .. _`minimal example usage`:
 
-A mimimal example usage of ``treeify`` is given below, where the
+A mimimal example usage of ``mptt.register`` is given below, where the
 model being set up for MPTT is suitable for use with the default
 arguments::
 
    from django.db import models
 
-   from mptt.models import treeify
+   import mptt
 
    class Genre(models.Model):
        name = models.CharField(max_length=50, unique=True)
        parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
 
-   treeify(Genre)
+   mptt.register(Genre)
 
 
 Model instance methods added by Django MPTT
@@ -220,7 +220,7 @@ The ``TreeManager`` custom manager
 A custom manager, ``TreeManager`` is also added to your Django models
 when you set them up for MPTT - the attribute this manager can be
 accessed through is specified by the ``tree_manager_attr`` argument to
-``treeify``.
+``mptt.register``.
 
 Any ``QuerySet`` created with this manager will be ordered based on the
 tree structure, with root nodes appearing in tree id order and and their
