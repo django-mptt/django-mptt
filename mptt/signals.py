@@ -12,34 +12,24 @@ qn = connection.ops.quote_name
 
 def pre_save(instance):
     """
-    If this is a new instance, sets tree fields  before it is added
-    to the database, updating other nodes' edge indicators to make
-    room if neccessary.
+    If this is a new instance and its left and right edge indicators
+    have not already been set, sets tree fields up before it is inserted
+    into the database, making room in the tree structure if neccessary.
 
     If this is an existing instance and its parent has been changed,
-    performs reparenting.
+    performs reparenting in the tree structure.
     """
     opts = instance._meta
     parent = getattr(instance, opts.parent_attr)
     if not instance.pk:
-        if getattr(instance, opts.left_attr) and getattr(instance, opts.right_attr):
+        if (getattr(instance, opts.left_attr) and
+            getattr(instance, opts.right_attr)):
             # This instance has already been set up for insertion.
             pass
         elif parent:
-            target_right = getattr(parent, opts.right_attr) - 1
-            tree_id = getattr(parent, opts.tree_id_attr)
-            instance._tree_manager._create_space(2, target_right, tree_id)
-            setattr(instance, opts.left_attr, target_right + 1)
-            setattr(instance, opts.right_attr, target_right + 2)
-            setattr(instance, opts.tree_id_attr, tree_id)
-            setattr(instance, opts.level_attr,
-                    getattr(parent, opts.level_attr) + 1)
+            instance.insert_at(parent, position='last-child')
         else:
-            setattr(instance, opts.left_attr, 1)
-            setattr(instance, opts.right_attr, 2)
-            setattr(instance, opts.tree_id_attr,
-                    instance._tree_manager._get_next_tree_id())
-            setattr(instance, opts.level_attr, 0)
+            instance.insert_at(None)
     else:
         # TODO Is it possible to track the original parent so we
         #      don't have to look it up again on each save after the
