@@ -21,7 +21,7 @@ registry = []
 
 def register(model, parent_attr='parent', left_attr='lft', right_attr='rght',
              tree_id_attr='tree_id', level_attr='level',
-             tree_manager_attr='tree'):
+             tree_manager_attr='tree', order_insertion_by=None):
     """
     Sets the given model class up for Modified Preorder Tree Traversal.
     """
@@ -31,12 +31,13 @@ def register(model, parent_attr='parent', left_attr='lft', right_attr='rght',
 
     # Add tree options to the model's Options
     opts = model._meta
-    setattr(opts, 'parent_attr', parent_attr)
-    setattr(opts, 'right_attr', right_attr)
-    setattr(opts, 'left_attr', left_attr)
-    setattr(opts, 'tree_id_attr', tree_id_attr)
-    setattr(opts, 'level_attr', level_attr)
-    setattr(opts, 'tree_manager_attr', tree_manager_attr)
+    opts.parent_attr = parent_attr
+    opts.right_attr = right_attr
+    opts.left_attr = left_attr
+    opts.tree_id_attr = tree_id_attr
+    opts.level_attr = level_attr
+    opts.tree_manager_attr = tree_manager_attr
+    opts.order_insertion_by = order_insertion_by
 
     # Add tree fields if they do not exist
     for attr in [left_attr, right_attr, tree_id_attr, level_attr]:

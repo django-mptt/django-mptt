@@ -11,20 +11,19 @@ Models and Managers
 .. contents::
    :depth: 3
 
-Setting up a Django model for MPTT
-==================================
+``mptt.register`` - setting up a Django model for MPTT
+======================================================
 
 The ``mptt`` module contains a ``register`` function, which users can
 call to set a Django model up for MPTT. This function takes as its
-arguments the model class itself and, optionally, attribute names for
-the set of fields which are required in order to manage the database
-table for the model as a tree.
+arguments the model class itself and additional options related to
+working with the model as a tree.
 
 .. admonition:: ``mptt.register`` and ``syncdb``
 
-   As discussed further below, the ``mptt.register`` function will add
-   new fields to your models if certain required tree fields are not
-   present.
+   As discussed further below, the ``mptt.register`` function will
+   dynamically add new fields to your models if certain required tree
+   fields are not present.
 
    As such, unless you are manually setting up all required tree fields
    in your models, you must have the call to ``mptt.register`` in place
@@ -34,59 +33,70 @@ table for the model as a tree.
 
 The following argument is required:
 
-* ``cls`` -- the model class which is to be set up for MPTT.
+``model``
+   The model class which is to be set up for MPTT.
 
 All remaining arguments are optional, but you should take care to
-specify appropriate attribute names where the default attribute names
-do not fit with your model class' definition:
+specify appropriate fields names where the default field names do not
+fit with your model class' definition:
 
-* ``parent_attr`` -- the name of an attribute which relates the
-  model back to itself such that each instance can be a child of
-  another instance. Defaults to ``'parent'``.
+``parent_attr``
+   The name of a field which relates the model back to itself such that
+   each instance can be a child of another instance. Defaults to
+   ``'parent'``.
 
-  Users are responsible for setting this field up on the model class,
-  which can be done like so::
+   Users are responsible for setting this field up on the model class,
+   which can be done like so::
 
-     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+      parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
 
-For the following four arguments, if fields with the given attribute
-names do not exist, they will be added to the model dynamically:
+For the following four arguments, if fields with the given names do not
+exist, they will be added to the model dynamically:
 
-* ``left_attr`` -- the name of an attribute which contains the left tree
-  node edge indicator, which should be a ``PositiveIntegerField``.
-  Defaults to ``'lft'``.
+``left_attr``
+   The name of a field which contains the left tree node edge indicator,
+   which should be a ``PositiveIntegerField``. Defaults to ``'lft'``.
 
-* ``right_attr`` -- the name of an attribute which contains the right
-  tree node edge indicator, which should be a ``PositiveIntegerField``.
-  Defaults to ``'rght'``.
+``right_attr``
+   The name of a field which contains the right tree node edge
+   indicator, which should be a ``PositiveIntegerField``. Defaults to
+   ``'rght'``.
 
-* ``tree_id_attr`` -- the name of an attribute which contains the tree
-  id of each node, which should be a ``PositiveIntegerField``. Defaults
-  to ``'tree_id'``.
+``tree_id_attr``
+   The name of a field which contains the tree id of each node, which
+   should be a ``PositiveIntegerField``. Defaults to ``'tree_id'``.
 
-  Items which do not have a parent are considered to be "root" nodes in
-  the tree and will be allocated a new tree id. All descendants of root
-  nodes will be given the same tree id as their root node.
+   Items which do not have a parent are considered to be "root" nodes in
+   the tree and will be allocated a new tree id. All descendants of root
+   nodes will be given the same tree id as their root node.
 
-* ``level_attr`` -- the name of an attribute which contains the
-  (zero-based) level at which an item sits in the tree, which should be
-  a ``PositiveIntegerField``. Defaults to ``'level'``.
+``level_attr``
+   The name of a field which contains the (zero-based) level at which an
+   item sits in the tree, which should be a ``PositiveIntegerField``.
+   Defaults to ``'level'``.
 
-  For example, root nodes would have a level of ``0`` and their
-  immediate children would have have a level of ``1``.
+   For example, root nodes would have a level of ``0`` and their
+   immediate children would have have a level of ``1``.
 
-* ``tree_manager_attr`` -- the name of an attribute which should
-  reference a custom manager which is used to work with trees of
-  model instances. Defaults to ``'tree'``.
+``tree_manager_attr``
+   The name of an attribute which will hold a custom manager which is
+   used to work with trees of model instances. Defaults to ``'tree'``.
 
-For more details on how these arguments are used to set up a model
-class, see the technical details documentation.
+``order_insertion_by``
+   The name of a field which should define ordering when new tree nodes
+   are being inserted or existing nodes are being reparented. Defaults
+   to ``None``.
+
+   Note that this will require an extra database query to determine
+   where nodes should be positioned when they are being saved. This
+   option is handy if you're maintaining mostly static structures, such
+   as trees of categories, which should always be in alphabetical order.
 
 .. _`minimal example usage`:
 
 A mimimal example usage of ``mptt.register`` is given below, where the
 model being set up for MPTT is suitable for use with the default
-arguments::
+arguments which specify fields and the tree manager attribute::
 
    from django.db import models
 
@@ -96,7 +106,7 @@ arguments::
        name = models.CharField(max_length=50, unique=True)
        parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
 
-   mptt.register(Genre)
+   mptt.register(Genre, order_insertion_by='name')
 
 
 Model instance methods added by Django MPTT

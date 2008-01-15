@@ -39,8 +39,8 @@ discusssed in the technical details documentation.
 .. _`Managing Hierarchical Data in MySQL`: http://dev.mysql.com/tech-resources/articles/hierarchical-data.html
 
 
-Whats is Django MPTT?
-=====================
+What is Django MPTT?
+====================
 
 Django MPTT is a reusable/standalone Django application which aims to
 make it easy for you to use Modified Preorder Tree Traversal with your
@@ -61,28 +61,32 @@ Feature overview
   without adding a single line of MPTT-related code to them.
 
 * The tree structure is automatically managed when you create or delete
-  MPTT model instances. New instances are added as the last child of
-  their parent if they have one, otherwise they become the root of a new
-  tree.
+  MPTT model instances. By default, new instances are added as the last
+  child of their parent if they have one, otherwise they become the root
+  of a new tree.
 
-* MPTT model instances gain methods for changing their position in the
-  tree, retrieving their ancestors, siblings and descendants from
-  the database, determining the number of descendants they have
-  (which does not involve a database hit with MPTT) and other tree
-  operations.
+* Methods are added to MPTT model instances for changing their position
+  in the tree, retrieving their ancestors, siblings and descendants,
+  determining the number of descendants they have (which does not
+  involve a database hit with MPTT) and other tree-related operations.
 
 * The tree structure is automatically updated when you change a
-  model instance's parent - modified instances are moved so they are
-  the last child of their new parent.
+  model instance's parent - by default, modified instances are moved so
+  they are the last child of their new parent.
 
   This allows basic management of the tree using the parent field
   available to you in the ``django.contrib.admin`` application and in
   ``newforms`` forms generated using the ``ModelForm`` class.
 
+* You can specify that a particular field in your model is used for
+  ordering when inserting new model instances or automatically
+  reparenting model instances which have had their parent changed.
+
 * A custom ``TreeManager`` manager, added to all MPTT model classes,
   provides tree management operations which, among other things, can be
   used to move any node in a tree (and its descendants) to an arbitrary
-  point elsewhere in the tree.
+  point elsewhere in the tree, or to insert new nodes at any point in
+  the tree.
 
 * ``newforms`` components for working with trees in forms.
 
