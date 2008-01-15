@@ -150,6 +150,13 @@ def get_siblings(self, include_self=False):
         queryset = queryset.exclude(pk=self.pk)
     return queryset
 
+def insert_at(self, target, position='first-child', commit=False):
+    """
+    Convenience method for calling ``TreeManager.insert_node`` with this
+    model instance.
+    """
+    self._tree_manager.insert_node(self, target, position, commit)
+
 def is_child_node(self):
     """
     Returns ``True`` if this model instance is a child node, ``False``
@@ -173,7 +180,7 @@ def is_root_node(self):
 
 def move_to(self, target, position='first-child'):
     """
-    Convenience method for calling ``TreeManager.move_to`` with this
+    Convenience method for calling ``TreeManager.move_node`` with this
     model instance.
     """
     self._tree_manager.move_node(self, target, position)

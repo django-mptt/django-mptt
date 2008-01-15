@@ -22,7 +22,10 @@ def pre_save(instance):
     opts = instance._meta
     parent = getattr(instance, opts.parent_attr)
     if not instance.pk:
-        if parent:
+        if getattr(instance, opts.left_attr) and getattr(instance, opts.right_attr):
+            # This instance has already been set up for insertion.
+            pass
+        elif parent:
             target_right = getattr(parent, opts.right_attr) - 1
             tree_id = getattr(parent, opts.tree_id_attr)
             instance._tree_manager._create_space(2, target_right, tree_id)

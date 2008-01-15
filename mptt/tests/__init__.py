@@ -1,6 +1,6 @@
 r"""
 >>> from mptt.exceptions import InvalidMove
->>> from mptt.tests.models import Category, Genre, Node, Tree
+>>> from mptt.tests.models import Category, Genre, Insert, Node, Tree
 
 >>> def print_tree_details(nodes):
 ...     opts = nodes[0]._meta
@@ -1180,6 +1180,141 @@ InvalidMove: A node may not be made a sibling of itself.
 8 - 4 0 1 4
 9 8 4 1 2 3
 1 - 5 0 1 2
+
+# Insertion of positioned nodes ###############################################
+>>> r1 = Insert.objects.create()
+>>> r2 = Insert.objects.create()
+>>> r3 = Insert.objects.create()
+>>> print_tree_details(Insert.tree.all())
+1 - 1 0 1 2
+2 - 2 0 1 2
+3 - 3 0 1 2
+
+>>> r2 = Insert.objects.get(pk=r2.pk)
+>>> c1 = Insert()
+>>> c1 = Insert.tree.insert_node(c1, r2, commit=True)
+>>> print_tree_details([c1])
+4 2 2 1 2 3
+>>> print_tree_details(Insert.tree.all())
+1 - 1 0 1 2
+2 - 2 0 1 4
+4 2 2 1 2 3
+3 - 3 0 1 2
+
+>>> c1.insert_at(r2)
+Traceback (most recent call last):
+    ...
+ValueError: Cannot insert a node which has already been saved.
+
+# First child
+>>> r2 = Insert.objects.get(pk=r2.pk)
+>>> c2 = Insert()
+>>> c2 = Insert.tree.insert_node(c2, r2, position='first-child', commit=True)
+>>> print_tree_details([c2])
+5 2 2 1 2 3
+>>> print_tree_details(Insert.tree.all())
+1 - 1 0 1 2
+2 - 2 0 1 6
+5 2 2 1 2 3
+4 2 2 1 4 5
+3 - 3 0 1 2
+
+# Left
+>>> c1 = Insert.objects.get(pk=c1.pk)
+>>> c3 = Insert()
+>>> c3 = Insert.tree.insert_node(c3, c1, position='left', commit=True)
+>>> print_tree_details([c3])
+6 2 2 1 4 5
+>>> print_tree_details(Insert.tree.all())
+1 - 1 0 1 2
+2 - 2 0 1 8
+5 2 2 1 2 3
+6 2 2 1 4 5
+4 2 2 1 6 7
+3 - 3 0 1 2
+
+# Right
+>>> c4 = Insert()
+>>> c4 = Insert.tree.insert_node(c4, c3, position='right', commit=True)
+>>> print_tree_details([c4])
+7 2 2 1 6 7
+>>> print_tree_details(Insert.tree.all())
+1 - 1 0 1 2
+2 - 2 0 1 10
+5 2 2 1 2 3
+6 2 2 1 4 5
+7 2 2 1 6 7
+4 2 2 1 8 9
+3 - 3 0 1 2
+
+# Last child
+>>> r2 = Insert.objects.get(pk=r2.pk)
+>>> c5 = Insert()
+>>> c5 = Insert.tree.insert_node(c5, r2, position='last-child', commit=True)
+>>> print_tree_details([c5])
+8 2 2 1 10 11
+>>> print_tree_details(Insert.tree.all())
+1 - 1 0 1 2
+2 - 2 0 1 12
+5 2 2 1 2 3
+6 2 2 1 4 5
+7 2 2 1 6 7
+4 2 2 1 8 9
+8 2 2 1 10 11
+3 - 3 0 1 2
+
+# Left sibling of root
+>>> r2 = Insert.objects.get(pk=r2.pk)
+>>> r4 = Insert()
+>>> r4 = Insert.tree.insert_node(r4, r2, position='left', commit=True)
+>>> print_tree_details([r4])
+9 - 2 0 1 2
+>>> print_tree_details(Insert.tree.all())
+1 - 1 0 1 2
+9 - 2 0 1 2
+2 - 3 0 1 12
+5 2 3 1 2 3
+6 2 3 1 4 5
+7 2 3 1 6 7
+4 2 3 1 8 9
+8 2 3 1 10 11
+3 - 4 0 1 2
+
+# Right sibling of root
+>>> r2 = Insert.objects.get(pk=r2.pk)
+>>> r5 = Insert()
+>>> r5 = Insert.tree.insert_node(r5, r2, position='right', commit=True)
+>>> print_tree_details([r5])
+10 - 4 0 1 2
+>>> print_tree_details(Insert.tree.all())
+1 - 1 0 1 2
+9 - 2 0 1 2
+2 - 3 0 1 12
+5 2 3 1 2 3
+6 2 3 1 4 5
+7 2 3 1 6 7
+4 2 3 1 8 9
+8 2 3 1 10 11
+10 - 4 0 1 2
+3 - 5 0 1 2
+
+# Last root
+>>> r6 = Insert()
+>>> r6 = Insert.tree.insert_node(r6, None, commit=True)
+>>> print_tree_details([r6])
+11 - 6 0 1 2
+>>> print_tree_details(Insert.tree.all())
+1 - 1 0 1 2
+9 - 2 0 1 2
+2 - 3 0 1 12
+5 2 3 1 2 3
+6 2 3 1 4 5
+7 2 3 1 6 7
+4 2 3 1 8 9
+8 2 3 1 10 11
+10 - 4 0 1 2
+3 - 5 0 1 2
+11 - 6 0 1 2
 """
 
 # TODO Fixtures won't work with Django MPTT unless the pre_save signal

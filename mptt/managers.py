@@ -102,6 +102,66 @@ class TreeManager(models.Manager):
         return super(TreeManager, self).get_query_set().order_by(
             self.tree_id_attr, self.left_attr)
 
+    def insert_node(self, node, target, position='last-child',
+                    commit=False):
+        """
+        Sets up the tree state for ``node`` (which has not yet been
+        inserted into in the database) so it will be positioned relative
+        to a given ``target`` node as specified by ``position`` (when
+        appropriate) it is inserted, with any neccessary space already
+        having been made for it.
+
+        A ``target`` of ``None`` indicates that ``node`` should be
+        the last root node.
+
+        If ``commit`` is ``True``, ``node``'s ``save()`` method will be
+        called before it is returned.
+        """
+        if node.pk:
+            raise ValueError(_('Cannot insert a node which has already been saved.'))
+
+        if target is None:
+            setattr(node, self.left_attr, 1)
+            setattr(node, self.right_attr, 2)
+            setattr(node, self.level_attr, 0)
+            setattr(node, self.tree_id_attr, self._get_next_tree_id())
+            setattr(node, self.parent_attr, None)
+        elif target.is_root_node() and position in ['left', 'right']:
+            target_tree_id = getattr(target, self.tree_id_attr)
+            if position == 'left':
+                tree_id = target_tree_id
+                space_target = target_tree_id - 1
+            else:
+                tree_id = target_tree_id + 1
+                space_target = target_tree_id
+
+            self._create_tree_space(space_target)
+
+            setattr(node, self.left_attr, 1)
+            setattr(node, self.right_attr, 2)
+            setattr(node, self.level_attr, 0)
+            setattr(node, self.tree_id_attr, tree_id)
+            setattr(node, self.parent_attr, None)
+        else:
+            setattr(node, self.left_attr, 0)
+            setattr(node, self.level_attr, 0)
+
+            space_target, level, left, parent = \
+                self._calculate_inter_tree_move_values(node, target, position)
+            tree_id = getattr(parent, self.tree_id_attr)
+
+            self._create_space(2, space_target, tree_id)
+
+            setattr(node, self.left_attr, -left)
+            setattr(node, self.right_attr, -left + 1)
+            setattr(node, self.level_attr, -level)
+            setattr(node, self.tree_id_attr, tree_id)
+            setattr(node, self.parent_attr, parent)
+
+        if commit:
+            node.save()
+        return node
+
     def move_node(self, node, target, position='last-child'):
         """
         Moves ``node`` relative to a given ``target`` node as specified
@@ -192,6 +252,21 @@ class TreeManager(models.Manager):
         point in the tree identified by ``tree_id``.
         """
         self._manage_space(size, target, tree_id)
+
+    def _create_tree_space(self, target_tree_id):
+        """
+        Creates space for a new tree by incrementing all tree ids
+        greater than ``target_tree_id``.
+        """
+        opts = self.model._meta
+        cursor = connection.cursor()
+        cursor.execute("""
+        UPDATE %(table)s
+        SET %(tree_id)s = %(tree_id)s + 1
+        WHERE %(tree_id)s > %%s""" % {
+            'table': qn(opts.db_table),
+            'tree_id': qn(opts.get_field(self.tree_id_attr).column),
+        }, [target_tree_id])
 
     def _get_next_tree_id(self):
         """
@@ -335,15 +410,7 @@ class TreeManager(models.Manager):
             else:
                 raise ValueError(_('An invalid position was given: %s.') % position)
 
-            space_query = """
-            UPDATE %(table)s
-            SET %(tree_id)s = %(tree_id)s + 1
-            WHERE %(tree_id)s > %%s""" % {
-                'table': qn(opts.db_table),
-                'tree_id': qn(opts.get_field(self.tree_id_attr).column),
-            }
-            cursor = connection.cursor()
-            cursor.execute(space_query, [space_target])
+            self._create_tree_space(space_target)
             if tree_id > space_target:
                 # The node's tree id has been incremented in the
                 # database - this change must be reflected in the node
