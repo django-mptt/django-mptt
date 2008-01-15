@@ -1,11 +1,12 @@
 """
-Utilities for working with lists of ``Model`` instances which represent
+Utilities for working with lists of model instances which represent
 trees.
 """
 import copy
 import itertools
 
-__all__ = ['previous_current_next', 'tree_item_iterator', 'drilldown_for_node']
+__all__ = ('previous_current_next', 'tree_item_iterator',
+           'drilldown_tree_for_node')
 
 def previous_current_next(items):
     """
@@ -93,9 +94,9 @@ def tree_item_iterator(items, ancestors=False):
             # All remaining levels need to be closed
             structure['closed_levels'] = range(current_level, -1, -1)
 
-        # FIXME Things go a bit crazy in Django templates if we don't
-        #       return a deep copy of the structure dict. Investigate to
-        #       see if this is a template bug, known or otherwise.
+        # Return a deep copy of the structure dict so this function can
+        # be used in situations where the iterator is consumed
+        # immediately.
         yield current, copy.deepcopy(structure)
 
 def drilldown_tree_for_node(node, rel_cls=None, rel_field=None, count_attr=None,

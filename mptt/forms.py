@@ -1,9 +1,14 @@
+"""
+Form components for working with trees.
+"""
 from django import newforms as forms
 from django.newforms.forms import NON_FIELD_ERRORS
 from django.newforms.util import ErrorList
 from django.utils.translation import ugettext_lazy as _
 
 from mptt.exceptions import InvalidMove
+
+__all__ = ('MoveNodeForm',)
 
 class MoveNodeForm(forms.Form):
     """
