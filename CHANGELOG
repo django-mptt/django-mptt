@@ -10,6 +10,8 @@ Trunk Changes
 Tue 15th Jan, 2008
 ------------------
 
+* Updated ``signals.pre_save()`` to use ``Model.insert_at()``.
+
 * Added an ``insert_at()`` convenience method to ``Model`` instances.
 
 * Added an ``insert_node()`` method to ``TreeManager`` for positioning
