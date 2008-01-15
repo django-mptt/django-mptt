@@ -147,6 +147,14 @@ you set them up for MPTT:
   If ``include_self`` is ``True``, the ``QuerySet`` will also include
   the model instance itself.
 
+* ``insert_at(target, position='first-child', commit=False)`` --
+  positions the model instance (which must not yet have been inserted
+  into the database) in the tree based on ``target`` and ``position``
+  (when appropriate).
+
+  If ``commit`` is True, the model instance's ``save()`` method will be
+  called before the instance is returned.
+
 * ``is_child_node()`` -- returns ``True`` if the model instance is a
   child node, ``False`` otherwise.
 
@@ -158,8 +166,9 @@ you set them up for MPTT:
 
 .. _`move_to documentation`:
 
-* ``move_to(target, position)`` -- moves the model instance elsewhere in
-  the tree based on ``target`` and ``position`` (when appropriate).
+* ``move_to(target, position='first-child')`` -- moves the model
+  instance elsewhere in the tree based on ``target`` and ``position``
+  (when appropriate).
 
   .. note::
      Is is assumed that when you call this method, the tree fields in
@@ -251,6 +260,19 @@ The following manager methods are available:
 
 * ``get_root(tree_id)`` -- returns the root node of tree with the given
   id.
+
+* ``insert_node(node, target, position='last-child', commit=False)`` --
+  sets up the tree state for ``node`` (which has not yet been inserted
+  into in the database) so it will be positioned relative to a given
+  ``target`` node as specified by ``position`` (when appropriate) when
+  it is inserted, with any neccessary space already having been made for
+  it.
+
+  A ``target`` of ``None`` indicates that ``node`` should be the last
+  root node.
+
+  If ``commit`` is ``True``, ``node``'s ``save()`` method will be
+  called before it is returned.
 
 * ``move_node(node, target, position='last-child')`` -- moves ``node``
   based on ``target``, relative to ``position`` when appropriate.

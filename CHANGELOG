@@ -7,6 +7,14 @@ Django MPTT CHANGELOG
 Trunk Changes
 =============
 
+Tue 15th Jan, 2008
+------------------
+
+* Added an ``insert_at()`` convenience method to ``Model`` instances.
+
+* Added an ``insert_node()`` method to ``TreeManager`` for positioning
+  of nodes which haven't yet been inserted into the database.
+
 Sat 12th Jan, 2008
 ------------------
 

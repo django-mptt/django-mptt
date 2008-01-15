@@ -16,6 +16,9 @@ class Genre(models.Model):
     def __unicode__(self):
         return self.name
 
+class Insert(models.Model):
+    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+
 class Node(models.Model):
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
 
@@ -24,6 +27,7 @@ class Tree(models.Model):
 
 mptt.register(Category)
 mptt.register(Genre)
+mptt.register(Insert)
 mptt.register(Node, left_attr='does', right_attr='zis', level_attr='madness',
               tree_id_attr='work')
 mptt.register(Tree)
