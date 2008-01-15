@@ -10,6 +10,10 @@ Trunk Changes
 Tue 15th Jan, 2008
 ------------------
 
+* Added ``order_insertion_by`` argument to ``mptt.register`` and
+  implemented automatic ordering in ``pre_save`` when this argument was
+  given for the ``Model`` class of the node being saved.
+
 * Updated ``signals.pre_save()`` to use ``Model.insert_at()``.
 
 * Added an ``insert_at()`` convenience method to ``Model`` instances.

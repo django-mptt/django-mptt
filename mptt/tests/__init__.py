@@ -1,6 +1,6 @@
 r"""
 >>> from mptt.exceptions import InvalidMove
->>> from mptt.tests.models import Category, Genre, Insert, Node, Tree
+>>> from mptt.tests.models import Category, Genre, Insert, Node, OrderedInsertion, Tree
 
 >>> def print_tree_details(nodes):
 ...     opts = nodes[0]._meta
@@ -1315,6 +1315,98 @@ ValueError: Cannot insert a node which has already been saved.
 10 - 4 0 1 2
 3 - 5 0 1 2
 11 - 6 0 1 2
+
+# order_insertion_by insertion ################################################
+>>> r1 = OrderedInsertion.objects.create(name='games')
+
+# Root ordering
+>>> r2 = OrderedInsertion.objects.create(name='food')
+>>> print_tree_details(OrderedInsertion.tree.all())
+2 - 1 0 1 2
+1 - 2 0 1 2
+
+# Same name - insert after
+>>> r3 = OrderedInsertion.objects.create(name='food')
+>>> print_tree_details(OrderedInsertion.tree.all())
+2 - 1 0 1 2
+3 - 2 0 1 2
+1 - 3 0 1 2
+
+>>> c1 = OrderedInsertion.objects.create(name='zoo', parent=r3)
+>>> print_tree_details(OrderedInsertion.tree.all())
+2 - 1 0 1 2
+3 - 2 0 1 4
+4 3 2 1 2 3
+1 - 3 0 1 2
+
+>>> r3 = OrderedInsertion.objects.get(pk=r3.pk)
+>>> c2 = OrderedInsertion.objects.create(name='monkey', parent=r3)
+>>> print_tree_details(OrderedInsertion.tree.all())
+2 - 1 0 1 2
+3 - 2 0 1 6
+5 3 2 1 2 3
+4 3 2 1 4 5
+1 - 3 0 1 2
+
+>>> r3 = OrderedInsertion.objects.get(pk=r3.pk)
+>>> c3 = OrderedInsertion.objects.create(name='animal', parent=r3)
+>>> print_tree_details(OrderedInsertion.tree.all())
+2 - 1 0 1 2
+3 - 2 0 1 8
+6 3 2 1 2 3
+5 3 2 1 4 5
+4 3 2 1 6 7
+1 - 3 0 1 2
+
+# order_insertion_by reparenting ##############################################
+
+# Root -> child
+>>> r1 = OrderedInsertion.objects.get(pk=r1.pk)
+>>> r3 = OrderedInsertion.objects.get(pk=r3.pk)
+>>> r1.parent = r3
+>>> r1.save()
+>>> print_tree_details(OrderedInsertion.tree.all())
+2 - 1 0 1 2
+3 - 2 0 1 10
+6 3 2 1 2 3
+1 3 2 1 4 5
+5 3 2 1 6 7
+4 3 2 1 8 9
+
+# Child -> root
+>>> c3 = OrderedInsertion.objects.get(pk=c3.pk)
+>>> c3.parent = None
+>>> c3.save()
+>>> print_tree_details(OrderedInsertion.tree.all())
+6 - 1 0 1 2
+2 - 2 0 1 2
+3 - 3 0 1 8
+1 3 3 1 2 3
+5 3 3 1 4 5
+4 3 3 1 6 7
+
+# Child -> child
+>>> c1 = OrderedInsertion.objects.get(pk=c1.pk)
+>>> c1.parent = c3
+>>> c1.save()
+>>> print_tree_details(OrderedInsertion.tree.all())
+6 - 1 0 1 4
+4 6 1 1 2 3
+2 - 2 0 1 2
+3 - 3 0 1 6
+1 3 3 1 2 3
+5 3 3 1 4 5
+>>> c3 = OrderedInsertion.objects.get(pk=c3.pk)
+>>> c2 = OrderedInsertion.objects.get(pk=c2.pk)
+>>> c2.parent = c3
+>>> c2.save()
+>>> print_tree_details(OrderedInsertion.tree.all())
+6 - 1 0 1 6
+5 6 1 1 2 3
+4 6 1 1 4 5
+2 - 2 0 1 2
+3 - 3 0 1 4
+1 3 3 1 2 3
 """
 
 # TODO Fixtures won't work with Django MPTT unless the pre_save signal
