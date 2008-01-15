@@ -6,6 +6,6 @@ class InvalidMove(Exception):
     """
     An invalid node move was attempted.
 
-    For example, attempting to make any node a sibling of a root node.
+    For example, attempting to make a node a child of itself.
     """
     pass

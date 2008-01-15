@@ -1,14 +1,10 @@
 """
-Functions which create signal receiving functions dealing with Modified
-Preorder Tree Traversal related logic for a model, given the names of
-its tree attributes.
+Signal receiving functions which handle Modified Preorder Tree Traversal
+related logic when model instances are about to be saved or deleted.
 """
-from django.db import connection
 from django.utils.translation import ugettext as _
 
-__all__ = ['pre_save', 'pre_delete']
-
-qn = connection.ops.quote_name
+__all__ = ('pre_save', 'pre_delete')
 
 def _get_ordered_insertion_target(node, parent):
     """

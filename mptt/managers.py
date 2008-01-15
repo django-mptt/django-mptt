@@ -1,12 +1,12 @@
 """
-Custom managers for working with trees of objects.
+A custom manager for working with trees of objects.
 """
 from django.db import connection, models, transaction
 from django.utils.translation import ugettext as _
 
 from mptt.exceptions import InvalidMove
 
-__all__ = ['TreeManager']
+__all__ = ('TreeManager',)
 
 qn = connection.ops.quote_name
 

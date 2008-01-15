@@ -1,6 +1,6 @@
 """
-Template tags for working with lists of ``Model`` instances which
-represent trees.
+Template tags for working with lists of model instances which represent
+trees.
 """
 from django import template
 from django.db.models import get_model
