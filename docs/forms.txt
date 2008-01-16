@@ -4,8 +4,9 @@ Working with trees in ``newforms``
 
 .. admonition:: About this document
 
-   This document contains details about the tools Django MPTT provides
-   for working with trees using Django's excellent `newforms`_ library.
+   This document contains details about the components Django MPTT
+   provides for working with trees using Django's excellent `newforms`_
+   library.
 
 .. _`newforms`: http://www.djangoproject.com/documentation/newforms/
 
@@ -15,7 +16,7 @@ Working with trees in ``newforms``
 Forms
 =====
 
-The following custom forms are provided in the ``mptt.forms`` package.
+The following custom form is provided in the ``mptt.forms`` package.
 
 ``MoveNodeForm``
 ----------------
