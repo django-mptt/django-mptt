@@ -7,7 +7,7 @@ from mptt import models
 from mptt.signals import pre_delete, pre_save
 from mptt.managers import TreeManager
 
-VERSION = (0, 2, None)
+VERSION = (0, 3, 'pre')
 
 __all__ = ('register',)
 
