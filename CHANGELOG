@@ -7,6 +7,11 @@ Django MPTT CHANGELOG
 Trunk Changes
 =============
 
+Version 0.2.1
+=============
+
+Quick fix for installation with ``setup.py``.
+
 Version 0.2
 ===========
 
