@@ -57,7 +57,7 @@ opening a Python interpreter and entering the following commands::
 
    >>> import mptt
    >>> mptt.VERSION
-   (0, 2, 'pre')
+   (0, 3, 'pre')
 
 When you want to update your copy of the Django MPTT source code, run the
 command ``svn update`` from within the ``mptt-trunk`` directory.
@@ -85,5 +85,8 @@ Once you've installed Django MPTT and want to use it in your Django
 applications, do the following:
 
    1. Put ``'mptt'`` in your ``INSTALLED_APPS`` setting.
+   2. Place appropriate calls to the ``mptt.register`` function in your
+      model modules, for any models you wish to use with MPTT. See the
+      models documentation for more information.
 
 That's it!
