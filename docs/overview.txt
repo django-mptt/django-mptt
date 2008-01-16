@@ -72,7 +72,7 @@ Feature overview
   available to you in the ``django.contrib.admin`` application and in
   ``newforms`` forms generated using the ``ModelForm`` class.
 
-* To override the defaults insertion/reparenting positions mentioned
+* To override the default insertion/reparenting positions mentioned
   above, you can specify that a particular field in your model is used
   for ordering when inserting or automatically reparenting model
   instances.

@@ -95,7 +95,7 @@ two-tuples of the current tree item and a ``dict`` containing
 information about the tree structure around the item, with the following
 keys:
 
-   ``'new_level'`
+   ``'new_level'``
       ``True`` if the current item is the start of a new level in
       the tree, ``False`` otherwise.
 
