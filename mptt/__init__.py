@@ -1,12 +1,3 @@
-from django.db.models import signals as model_signals
-from django.db.models import FieldDoesNotExist, PositiveIntegerField
-from django.dispatch import dispatcher
-from django.utils.translation import ugettext as _
-
-from mptt import models
-from mptt.signals import pre_delete, pre_save
-from mptt.managers import TreeManager
-
 VERSION = (0, 3, 'pre')
 
 __all__ = ('register',)
@@ -25,6 +16,15 @@ def register(model, parent_attr='parent', left_attr='lft', right_attr='rght',
     """
     Sets the given model class up for Modified Preorder Tree Traversal.
     """
+    from django.db.models import signals as model_signals
+    from django.db.models import FieldDoesNotExist, PositiveIntegerField
+    from django.dispatch import dispatcher
+    from django.utils.translation import ugettext as _
+
+    from mptt import models
+    from mptt.signals import pre_delete, pre_save
+    from mptt.managers import TreeManager
+
     if model in registry:
         raise AlreadyRegistered(_('The model %s has already been registered.') % model.__name__)
     registry.append(model)
