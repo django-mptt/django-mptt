@@ -322,3 +322,21 @@ them::
    node = Category.objects.get(name='Some Category')
    children = Category.tree.add_related_count(node.get_children(), Question,
                                               'category', 'question_counts')
+
+
+A note about fixtures
+=====================
+
+As detailed in http://code.djangoproject.com/ticket/5422 - the ``raw``
+argument accepted by ``Model.save()`` is not currently passed along when
+the ``pre_save`` signal dispatched, so Django MPTT does not currently
+work with `fixtures`_ out of the box on Django's SVN trunk, as it has no
+way of determining when it *shouldn't* modify the data which is about to
+be saved.
+
+However, Django MPTT's ``pre_save`` signal receiver still checks for the
+presence of a ``raw`` keyword argument, so if you *need* to use
+fixtures, you can apply the small patch in the above ticket to your own
+version of Django for the time being.
+
+.. _`fixtures`: http://www.djangoproject.com/documentation/django-admin/#loaddata-fixture-fixture
