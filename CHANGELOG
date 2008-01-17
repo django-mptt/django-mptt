@@ -7,6 +7,15 @@ Django MPTT CHANGELOG
 Trunk Changes
 =============
 
+Thu 17th Jan, 2008
+------------------
+
+* The ``pre_save`` signal receiver now checks for the presence of a
+  ``raw`` argument, for the benefit of anyone who needs to use fixtures
+  with Django MPTT and is willing to apply the small patch in
+  http://code.djangoproject.com/ticket/5422 to their own checkout of
+  Django.
+
 Version 0.2.1
 =============
 

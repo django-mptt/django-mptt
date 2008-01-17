@@ -39,7 +39,7 @@ def _get_ordered_insertion_target(node, parent):
             pass
     return right_sibling
 
-def pre_save(instance):
+def pre_save(instance, **kwargs):
     """
     If this is a new node, sets tree fields up before it is inserted
     into the database, making room in the tree structure as neccessary,
@@ -56,7 +56,19 @@ def pre_save(instance):
     In either case, if the node's class has its ``order_insertion_by``
     tree option set, the node will be inserted or moved to the
     appropriate position to maintain ordering by the specified field.
+
+    .. note::
+       The ``raw`` argument accepted by ``Model.save()`` is not
+       currently passed along when the ``pre_save`` signal is
+       dispatched, but we check for it anyway for the benefit of people
+       who need to use fixtures and are willing to apply the patch in
+       ticket http://code.djangoproject.com/ticket/5422 to their own
+       version of Django.
+
     """
+    if kwargs.get('raw'):
+        return
+
     opts = instance._meta
     parent = getattr(instance, opts.parent_attr)
     if not instance.pk:
