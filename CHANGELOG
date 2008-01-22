@@ -7,6 +7,12 @@ Django MPTT CHANGELOG
 Trunk Changes
 =============
 
+Tue 22nd Jan, 2008
+------------------
+
+* Tests were moved so they're not run when applications which use Django
+  MPTT are tested.
+
 Thu 17th Jan, 2008
 ------------------
 
