@@ -1,6 +1,7 @@
 r"""
+>>> from datetime import date
 >>> from mptt.exceptions import InvalidMove
->>> from mptt.tests.models import Category, Genre, Insert, Node, OrderedInsertion, Tree
+>>> from mptt.tests.models import Category, Genre, Insert, MultiOrder, Node, OrderedInsertion, Tree
 
 >>> def print_tree_details(nodes):
 ...     opts = nodes[0]._meta
@@ -1407,6 +1408,76 @@ ValueError: Cannot insert a node which has already been saved.
 2 - 2 0 1 2
 3 - 3 0 1 4
 1 3 3 1 2 3
+
+# Insertion of positioned nodes, multiple ordering criteria ###################
+>>> r1 = MultiOrder.objects.create(name='fff', size=20, date=date(2008, 1, 1))
+
+# Root nodes - ordering by subsequent fields
+>>> r2 = MultiOrder.objects.create(name='fff', size=10, date=date(2009, 1, 1))
+>>> print_tree_details(MultiOrder.tree.all())
+2 - 1 0 1 2
+1 - 2 0 1 2
+
+>>> r3 = MultiOrder.objects.create(name='fff', size=20, date=date(2007, 1, 1))
+>>> print_tree_details(MultiOrder.tree.all())
+2 - 1 0 1 2
+3 - 2 0 1 2
+1 - 3 0 1 2
+
+>>> r4 = MultiOrder.objects.create(name='fff', size=20, date=date(2008, 1, 1))
+>>> print_tree_details(MultiOrder.tree.all())
+2 - 1 0 1 2
+3 - 2 0 1 2
+1 - 3 0 1 2
+4 - 4 0 1 2
+
+>>> r5 = MultiOrder.objects.create(name='fff', size=20, date=date(2007, 1, 1))
+>>> print_tree_details(MultiOrder.tree.all())
+2 - 1 0 1 2
+3 - 2 0 1 2
+5 - 3 0 1 2
+1 - 4 0 1 2
+4 - 5 0 1 2
+
+>>> r6 = MultiOrder.objects.create(name='aaa', size=999, date=date(2010, 1, 1))
+>>> print_tree_details(MultiOrder.tree.all())
+6 - 1 0 1 2
+2 - 2 0 1 2
+3 - 3 0 1 2
+5 - 4 0 1 2
+1 - 5 0 1 2
+4 - 6 0 1 2
+
+# Child nodes
+>>> r1 = MultiOrder.objects.get(pk=r1.pk)
+>>> c1 = MultiOrder.objects.create(parent=r1, name='hhh', size=10, date=date(2009, 1, 1))
+>>> print_tree_details(MultiOrder.tree.filter(tree_id=r1.tree_id))
+1 - 5 0 1 4
+7 1 5 1 2 3
+
+>>> r1 = MultiOrder.objects.get(pk=r1.pk)
+>>> c2 = MultiOrder.objects.create(parent=r1, name='hhh', size=20, date=date(2008, 1, 1))
+>>> print_tree_details(MultiOrder.tree.filter(tree_id=r1.tree_id))
+1 - 5 0 1 6
+7 1 5 1 2 3
+8 1 5 1 4 5
+
+>>> r1 = MultiOrder.objects.get(pk=r1.pk)
+>>> c3 = MultiOrder.objects.create(parent=r1, name='hhh', size=15, date=date(2008, 1, 1))
+>>> print_tree_details(MultiOrder.tree.filter(tree_id=r1.tree_id))
+1 - 5 0 1 8
+7 1 5 1 2 3
+9 1 5 1 4 5
+8 1 5 1 6 7
+
+>>> r1 = MultiOrder.objects.get(pk=r1.pk)
+>>> c4 = MultiOrder.objects.create(parent=r1, name='hhh', size=15, date=date(2008, 1, 1))
+>>> print_tree_details(MultiOrder.tree.filter(tree_id=r1.tree_id))
+1 - 5 0 1 10
+7 1 5 1 2 3
+9 1 5 1 4 5
+10 1 5 1 6 7
+8 1 5 1 8 9
 """
 
 # TODO Fixtures won't work with Django MPTT unless the pre_save signal

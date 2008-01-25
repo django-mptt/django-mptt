@@ -2,15 +2,43 @@
 Signal receiving functions which handle Modified Preorder Tree Traversal
 related logic when model instances are about to be saved or deleted.
 """
+import operator
+
+from django.db.models.query import Q
 from django.utils.translation import ugettext as _
 
 __all__ = ('pre_save', 'pre_delete')
 
+def _insertion_target_filters(node, order_insertion_by):
+    """
+    Creates a filter which matches suitable right siblings for ``node``,
+    where insertion should maintain ordering according to the list of
+    fields in ``order_insertion_by``.
+
+    For example, given an ``order_insertion_by`` of
+    ``['field1', 'field2', 'field3']``, the resulting filter should
+    correspond to the following SQL::
+
+       field1 > %s
+       OR (field1 = %s AND field2 > %s)
+       OR (field1 = %s AND field2 = %s AND field3 > %s)
+
+    """
+    fields = []
+    filters = []
+    for field in order_insertion_by:
+        value = getattr(node, field)
+        filters.append(reduce(operator.and_, [Q(**{f: v}) for f, v in fields] +
+                                             [Q(**{'%s__gt' % field: value})]))
+        fields.append((field, value))
+    return reduce(operator.or_, filters)
+
 def _get_ordered_insertion_target(node, parent):
     """
     Attempts to retrieve a suitable right sibling for ``node``
-    underneath ``parent`` so that ordering by the field specified by
-    the node's class' ``order_insertion_by`` field is maintained.
+    underneath ``parent`` (which may be ``None`` in the case of root
+    nodes) so that ordering by the fields specified by the node's class'
+    ``order_insertion_by`` option is maintained.
 
     Returns ``None`` if no suitable sibling can be found.
     """
@@ -19,21 +47,21 @@ def _get_ordered_insertion_target(node, parent):
     # the node will always be its last child.
     if parent is None or parent.get_descendant_count() > 0:
         opts = node._meta
-        filters = {'%s__gt' % opts.order_insertion_by: getattr(node, opts.order_insertion_by)}
-        order_by = [opts.order_insertion_by]
+        order_by = opts.order_insertion_by[:]
+        filters = _insertion_target_filters(node, order_by)
         if parent:
-            filters[opts.parent_attr] = parent
+            filters = filters & Q(**{opts.parent_attr: parent})
             # Fall back on tree ordering if multiple child nodes have
-            # the same name.
+            # the same values.
             order_by.append(opts.left_attr)
         else:
-            filters['%s__isnull' % opts.parent_attr] = True
+            filters = filters & Q(**{'%s__isnull' % opts.parent_attr: True})
             # Fall back on tree id ordering if multiple root nodes have
-            # the same name.
+            # the same values.
             order_by.append(opts.tree_id_attr)
         try:
-            right_sibling = node._default_manager.filter(
-                **filters).order_by(*order_by)[0]
+            right_sibling = \
+                node._default_manager.filter(filters).order_by(*order_by)[0]
         except IndexError:
             # No suitable right sibling could be found
             pass

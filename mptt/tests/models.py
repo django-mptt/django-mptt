@@ -19,6 +19,15 @@ class Genre(models.Model):
 class Insert(models.Model):
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
 
+class MultiOrder(models.Model):
+    name = models.CharField(max_length=50)
+    size = models.PositiveIntegerField()
+    date = models.DateField()
+    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+
+    def __unicode__(self):
+        return self.name
+
 class Node(models.Model):
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
 
@@ -35,7 +44,8 @@ class Tree(models.Model):
 mptt.register(Category)
 mptt.register(Genre)
 mptt.register(Insert)
+mptt.register(MultiOrder, order_insertion_by=['name', 'size', 'date'])
 mptt.register(Node, left_attr='does', right_attr='zis', level_attr='madness',
               tree_id_attr='work')
-mptt.register(OrderedInsertion, order_insertion_by='name')
+mptt.register(OrderedInsertion, order_insertion_by=['name'])
 mptt.register(Tree)
