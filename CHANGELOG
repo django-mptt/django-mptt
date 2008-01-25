@@ -7,6 +7,13 @@ Django MPTT CHANGELOG
 Trunk Changes
 =============
 
+Fri 25th Jan, 2008
+------------------
+
+* BACKWARDS-INCOMPATIBLE CHANGE - the ``order_insertion_by`` argument
+  to ``mptt.register`` must now be a list or other iterable of field
+  names.
+
 Tue 22nd Jan, 2008
 ------------------
 

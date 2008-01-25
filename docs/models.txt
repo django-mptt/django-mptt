@@ -83,9 +83,12 @@ exist, they will be added to the model dynamically:
    used to work with trees of model instances. Defaults to ``'tree'``.
 
 ``order_insertion_by``
-   The name of a field which should define ordering when new tree nodes
-   are being inserted or existing nodes are being reparented. Defaults
-   to ``None``.
+   A list of field names which should define ordering when new tree
+   nodes are being inserted or existing nodes are being reparented, with
+   the most significant ordering field name first. Defaults to ``[]``.
+
+   It is assumed that any field identified as defining ordering will
+   never be ``NULL`` in the database.
 
    Note that this will require an extra database query to determine
    where nodes should be positioned when they are being saved. This
@@ -106,7 +109,7 @@ arguments which specify fields and the tree manager attribute::
        name = models.CharField(max_length=50, unique=True)
        parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
 
-   mptt.register(Genre, order_insertion_by='name')
+   mptt.register(Genre, order_insertion_by=['name'])
 
 
 Model instance methods added by Django MPTT
