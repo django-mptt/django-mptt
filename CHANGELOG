@@ -7,6 +7,11 @@ Django MPTT CHANGELOG
 Trunk Changes
 =============
 
+Mon 12th May, 2008
+------------------
+
+* Added ``position_choices`` argument to ``mptt.forms.MoveNodeForm``.
+
 Fri 25th Jan, 2008
 ------------------
 
