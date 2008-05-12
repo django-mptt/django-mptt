@@ -80,6 +80,10 @@ Optional arguments:
    If provided, this keyword argument will be used to set the size of
    the select used for the target node. Defaults to ``10``.
 
+``position_choices``
+   A tuple of allowed position choices and their descriptions. Defaults
+   to ``MoveNodeForm.DEFAULT_POSITION_CHOICES``.
+
 ``save()`` method
 ~~~~~~~~~~~~~~~~~
 

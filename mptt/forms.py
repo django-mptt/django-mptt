@@ -21,7 +21,7 @@ class MoveNodeForm(forms.Form):
     POSITION_LEFT = 'left'
     POSITION_RIGHT = 'right'
 
-    POSITION_CHOICES = (
+    DEFAULT_POSITION_CHOICES = (
         (POSITION_FIRST_CHILD, _('First child')),
         (POSITION_LAST_CHILD, _('Last child')),
         (POSITION_LEFT, _('Left sibling')),
@@ -29,8 +29,7 @@ class MoveNodeForm(forms.Form):
     )
 
     target   = forms.ModelChoiceField(queryset=None)
-    position = forms.ChoiceField(choices=POSITION_CHOICES,
-                                 initial=POSITION_FIRST_CHILD)
+    position = forms.ChoiceField(choices=DEFAULT_POSITION_CHOICES)
 
     def __init__(self, node, *args, **kwargs):
         """
@@ -53,9 +52,14 @@ class MoveNodeForm(forms.Form):
         ``target_select_size``
            The size of the select element used for the target node.
            Defaults to ``10``.
+
+        ``position_choices``
+           A tuple of allowed position choices and their descriptions.
+           Defaults to ``MoveNodeForm.DEFAULT_POSITION_CHOICES``.
         """
         valid_targets = kwargs.pop('valid_targets', None)
         target_select_size = kwargs.pop('target_select_size', 10)
+        position_choices = kwargs.pop('position_choices', None)
         super(MoveNodeForm, self).__init__(*args, **kwargs)
         self.node = node
         opts = node._meta
@@ -71,6 +75,8 @@ class MoveNodeForm(forms.Form):
                                     unicode(target)))
              for target in valid_targets]
         self.fields['target'].widget.attrs['size'] = target_select_size
+        if position_choices:
+            self.fields['position_choices'].choices = position_choices
 
     def save(self):
         """
