@@ -18,7 +18,6 @@ def register(model, parent_attr='parent', left_attr='lft', right_attr='rght',
     """
     from django.db.models import signals as model_signals
     from django.db.models import FieldDoesNotExist, PositiveIntegerField
-    from django.dispatch import dispatcher
     from django.utils.translation import ugettext as _
 
     from mptt import models
