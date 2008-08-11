@@ -136,7 +136,7 @@ def pre_save(instance, **kwargs):
                 # restored on the way out in case of errors.
                 setattr(instance, opts.parent_attr, parent)
 
-def pre_delete(instance):
+def pre_delete(instance, **kwargs):
     """
     Updates tree node edge indicators which will by affected by the
     deletion of the given model instance and any descendants it may
