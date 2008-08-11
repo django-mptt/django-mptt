@@ -70,5 +70,5 @@ def register(model, parent_attr='parent', left_attr='lft', right_attr='rght',
     # Set up signal receivers to manage the tree when instances of the
     # model are about to be created, have their parent changed or be
     # deleted.
-    dispatcher.connect(pre_save, signal=model_signals.pre_save, sender=model)
-    dispatcher.connect(pre_delete, signal=model_signals.pre_delete, sender=model)
+    model_signals.pre_save.connect(pre_save, sender=model)
+    model_signals.pre_delete.connect(pre_delete, sender=model)
