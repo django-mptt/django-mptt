@@ -21,10 +21,13 @@ AlreadyRegistered: The model Genre has already been registered.
 >>> action = Genre.objects.create(name='Action')
 >>> platformer = Genre.objects.create(name='Platformer', parent=action)
 >>> platformer_2d = Genre.objects.create(name='2D Platformer', parent=platformer)
+>>> platformer = Genre.objects.get(pk=platformer.pk)
 >>> platformer_3d = Genre.objects.create(name='3D Platformer', parent=platformer)
+>>> platformer = Genre.objects.get(pk=platformer.pk)
 >>> platformer_4d = Genre.objects.create(name='4D Platformer', parent=platformer)
 >>> rpg = Genre.objects.create(name='Role-playing Game')
 >>> arpg = Genre.objects.create(name='Action RPG', parent=rpg)
+>>> rpg = Genre.objects.get(pk=rpg.pk)
 >>> trpg = Genre.objects.create(name='Tactical RPG', parent=rpg)
 >>> print_tree_details(Genre.tree.all())
 1 - 1 0 1 10
@@ -420,12 +423,17 @@ True
 >>> games = Category.objects.create(name='PC & Video Games')
 >>> wii = Category.objects.create(name='Nintendo Wii', parent=games)
 >>> wii_games = Category.objects.create(name='Games', parent=wii)
+>>> wii = Category.objects.get(pk=wii.pk)
 >>> wii_hardware = Category.objects.create(name='Hardware & Accessories', parent=wii)
+>>> games = Category.objects.get(pk=games.pk)
 >>> xbox360 = Category.objects.create(name='Xbox 360', parent=games)
 >>> xbox360_games = Category.objects.create(name='Games', parent=xbox360)
+>>> xbox360 = Category.objects.get(pk=xbox360.pk)
 >>> xbox360_hardware = Category.objects.create(name='Hardware & Accessories', parent=xbox360)
+>>> games = Category.objects.get(pk=games.pk)
 >>> ps3 = Category.objects.create(name='PlayStation 3', parent=games)
 >>> ps3_games = Category.objects.create(name='Games', parent=ps3)
+>>> ps3 = Category.objects.get(pk=ps3.pk)
 >>> ps3_hardware = Category.objects.create(name='Hardware & Accessories', parent=ps3)
 >>> print_tree_details(Category.tree.all())
 1 - 1 0 1 20
@@ -544,9 +552,12 @@ True
 >>> root = Node.objects.create()
 >>> c_1 = Node.objects.create(parent=root)
 >>> c_1_1 = Node.objects.create(parent=c_1)
+>>> c_1 = Node.objects.get(pk=c_1.pk)
 >>> c_1_2 = Node.objects.create(parent=c_1)
+>>> root = Node.objects.get(pk=root.pk)
 >>> c_2 = Node.objects.create(parent=root)
 >>> c_2_1 = Node.objects.create(parent=c_2)
+>>> c_2 = Node.objects.get(pk=c_2.pk)
 >>> c_2_2 = Node.objects.create(parent=c_2)
 >>> print_tree_details(Node.tree.all())
 1 - 1 0 1 14
@@ -1479,14 +1490,3 @@ ValueError: Cannot insert a node which has already been saved.
 10 1 5 1 6 7
 8 1 5 1 8 9
 """
-
-# TODO Fixtures won't work with Django MPTT unless the pre_save signal
-#      is given the ``save()`` method's ``raw`` argument, so we know not
-#      to attempt any tree processing.
-#
-#      http://code.djangoproject.com/ticket/5422 has a patch for this.
-#
-#      Once this change is available, we can think about using the more
-#      appropriate ``django.tests.TestCase`` with fixtures for testing
-#      specific features without having a knock-on effect on other
-#      tests.
