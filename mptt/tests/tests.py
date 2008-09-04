@@ -21,10 +21,13 @@ AlreadyRegistered: The model Genre has already been registered.
 >>> action = Genre.objects.create(name='Action')
 >>> platformer = Genre.objects.create(name='Platformer', parent=action)
 >>> platformer_2d = Genre.objects.create(name='2D Platformer', parent=platformer)
+>>> platformer = Genre.objects.get(pk=2)
 >>> platformer_3d = Genre.objects.create(name='3D Platformer', parent=platformer)
+>>> platformer = Genre.objects.get(pk=2)
 >>> platformer_4d = Genre.objects.create(name='4D Platformer', parent=platformer)
 >>> rpg = Genre.objects.create(name='Role-playing Game')
 >>> arpg = Genre.objects.create(name='Action RPG', parent=rpg)
+>>> rpg = Genre.objects.get(pk=6)
 >>> trpg = Genre.objects.create(name='Tactical RPG', parent=rpg)
 >>> print_tree_details(Genre.tree.all())
 1 - 1 0 1 10
@@ -35,7 +38,9 @@ AlreadyRegistered: The model Genre has already been registered.
 6 - 2 0 1 6
 7 6 2 1 2 3
 8 6 2 1 4 5
+"""
 
+"""
 # Utilities ###################################################################
 >>> from mptt.utils import previous_current_next, tree_item_iterator, drilldown_tree_for_node
 
