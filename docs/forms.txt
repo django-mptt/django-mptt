@@ -1,17 +1,84 @@
-==================================
-Working with trees in ``newforms``
-==================================
+======================================
+Working with trees in ``django.forms``
+======================================
 
 .. admonition:: About this document
 
    This document contains details about the components Django MPTT
-   provides for working with trees using Django's excellent `newforms`_
+   provides for working with trees using Django's excellent `forms`_
    library.
 
-.. _`newforms`: http://www.djangoproject.com/documentation/newforms/
+.. _`newforms`: http://docs.djangoproject.com/en/dev/topics/forms/
 
 .. contents::
    :depth: 3
+
+
+Fields
+======
+
+The following custom form fields are provided in the ``mptt.forms``
+package.
+
+``TreeNodeChoiceField``
+-----------------------
+
+A subclass of `ModelChoiceField`_ which represents the tree level of
+each node when generating option labels.
+
+For example, where a form which used a ``ModelChoiceField``::
+
+   category = ModelChoiceField(queryset=Category.tree.all())
+
+...would result in a select with the following options::
+
+   ---------
+   Root 1
+   Child 1.1
+   Child 1.1.1
+   Root 2
+   Child 2.1
+   Child 2.1.1
+
+Using a ``TreeNodeChoiceField`` instead::
+
+   category = TreeNodeChoiceField(queryset=Category.tree.all())
+
+...would result in a select with the following options::
+
+   Root 1
+   --- Child 1.1
+   ------ Child 1.1.1
+   Root 2
+   --- Child 2.1
+   ------ Child 2.1.1
+
+The text used to indicate a tree level can by customised by providing a
+``level_indicator`` argument::
+
+   category = TreeNodeChoiceField(queryset=Category.tree.all(),
+                                  level_indicator=u'+--')
+
+...which for this example would result in a select with the following
+options::
+
+   Root 1
+   +-- Child 1.1
+   +--+-- Child 1.1.1
+   Root 2
+   +-- Child 2.1
+   +--+-- Child 2.1.1
+
+.. _`ModelChoiceField`: http://docs.djangoproject.com/en/dev/ref/forms/fields/#django.forms.ModelChoiceField
+
+``TreeNodePositionField``
+-------------------------
+
+A subclass of `ChoiceField`_ whose choices default to the valid arguments
+for the `move_to method`_.
+
+.. _`ChoiceField`: http://docs.djangoproject.com/en/dev/ref/forms/fields/#choicefield
+
 
 Forms
 =====
@@ -23,35 +90,22 @@ The following custom form is provided in the ``mptt.forms`` package.
 
 A form which allows the user to move a given node from one location in
 its tree to another, with optional restriction of the nodes which are
-valid target nodes for the move.
+valid target nodes for the `move_to method`
 
 Fields
 ~~~~~~
 
 The form contains the following fields:
 
-* ``target`` -- a ``ModelChoiceField`` for selecting the target node for
-  the node movement.
+* ``target`` -- a ``TreeNodeChoiceField`` for selecting the target node
+  for the node movement.
 
   Target nodes will be displayed as a single ``<select>`` with its
   ``size`` attribute set, so the user can scroll through the target
-  nodes without having to open the dropdown list first. The select's
-  options will show the tree structure of the valid target nodes like
-  so::
+  nodes without having to open the dropdown list first.
 
-     Root 1
-     --- Child 1.1
-     ------ Child 1.1.1
-     Root 2
-     --- Child 2.1
-     --- Child 2.2
-
-* ``position`` -- a ``ChoiceField`` for selecting the position of the
-  node movement, related to the target node.
-
-  Its options correspond to the valid values for the ``position``
-  argument for the ``move_to`` method Django MTTP adds to model
-  instances.
+* ``position`` -- a ``TreeNodePositionField`` for selecting the position
+  of the node movement, related to the target node.
 
 Construction
 ~~~~~~~~~~~~
@@ -81,8 +135,11 @@ Optional arguments:
    the select used for the target node. Defaults to ``10``.
 
 ``position_choices``
-   A tuple of allowed position choices and their descriptions. Defaults
-   to ``MoveNodeForm.DEFAULT_POSITION_CHOICES``.
+   A tuple of allowed position choices and their descriptions.
+
+``level_indicator``
+   A string which will be used to represent a single tree level in the
+   target options.
 
 ``save()`` method
 ~~~~~~~~~~~~~~~~~
@@ -129,3 +186,5 @@ A sample view which shows basic usage of the form is provided below::
            'category': category,
            'category_tree': Category.tree.all(),
        })
+
+.. _`move_to method`: models.html#move-to-target-position-first-child
