@@ -70,7 +70,7 @@ Feature overview
 
   This allows basic management of the tree using the parent field
   available to you in the ``django.contrib.admin`` application and in
-  ``newforms`` forms generated using the ``ModelForm`` class.
+  ``django.forms`` forms generated using the ``ModelForm`` class.
 
 * To override the default insertion/reparenting positions mentioned
   above, you can specify that a particular field in your model is used
@@ -91,7 +91,7 @@ Feature overview
   point elsewhere in the tree, or to insert new nodes at any point in
   the tree.
 
-* ``newforms`` components for working with trees in forms.
+* ``django.forms`` components for working with trees in forms.
 
 * Utility functions for working with trees of models.
 
