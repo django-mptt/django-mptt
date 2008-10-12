@@ -11,6 +11,7 @@ Models and Managers
 .. contents::
    :depth: 3
 
+
 ``mptt.register`` - setting up a Django model for MPTT
 ======================================================
 
@@ -118,122 +119,155 @@ Model instance methods added by Django MPTT
 The following instance methods will be added to your Django models when
 you set them up for MPTT:
 
-* ``get_ancestors(ascending=False)`` -- creates a ``QuerySet``
-  containing the ancestors of the model instance.
+``get_ancestors(ascending=False)``
+----------------------------------
 
-  These default to being in descending order (root ancestor first,
-  immediate parent last); passing ``True`` for the ``ascending``
-  argument will reverse the ordering (immediate parent first, root
-  ancestor last).
+creates a ``QuerySet`` containing the ancestors of the model instance.
 
-* ``get_children()`` -- creates a ``QuerySet`` containing the immediate
-  children of the model instance, in tree order.
+These default to being in descending order (root ancestor first,
+immediate parent last); passing ``True`` for the ``ascending`` argument
+will reverse the ordering (immediate parent first, root ancestor last).
 
-  The benefit of using this method over the reverse relation provided
-  by the ORM to the instance's children is that a database query can be
-  avoided in the case where the instance is a leaf node (it has no
-  children).
+``get_children()``
+------------------
 
-* ``get_descendants(include_self=False)`` -- creates a ``QuerySet``
-  containing descendants of the model instance, in tree order.
+Creates a ``QuerySet`` containing the immediate children of the model
+instance, in tree order.
 
-  If ``include_self`` is ``True``, the ``QuerySet`` will also include
-  the model instance itself.
+The benefit of using this method over the reverse relation provided by
+the ORM to the instance's children is that a database query can be
+avoided in the case where the instance is a leaf node (it has no
+children).
 
-* ``get_descendant_count()`` -- returns the number of descendants the
-  model instance has, based on its left and right tree node edge
-  indicators. As such, this does not incur any database access.
+``get_descendants(include_self=False)``
+---------------------------------------
 
-* ``get_next_sibling()`` -- returns the model instance's next sibling
-  in the tree, or ``None`` if it doesn't have a next sibling.
+Creates a ``QuerySet`` containing descendants of the model instance, in
+tree order.
 
-* ``get_previous_sibling()`` -- returns the model instance's previous
-  sibling in the tree, or ``None`` if it doesn't have a previous
-  sibling.
+If ``include_self`` is ``True``, the ``QuerySet`` will also include the
+model instance itself.
 
-* ``get_root()`` -- returns the root node of the model instance's tree.
+``get_descendant_count()``
+--------------------------
 
-* ``get_siblings(include_self=False)`` -- creates a ``QuerySet``
-  containing siblings of the model instance. Root nodes are considered
-  to be siblings of other root nodes.
+Returns the number of descendants the model instance has, based on its
+left and right tree node edge indicators. As such, this does not incur
+any database access.
 
-  If ``include_self`` is ``True``, the ``QuerySet`` will also include
-  the model instance itself.
+``get_next_sibling()``
+----------------------
 
-* ``insert_at(target, position='first-child', commit=False)`` --
-  positions the model instance (which must not yet have been inserted
-  into the database) in the tree based on ``target`` and ``position``
-  (when appropriate).
+Returns the model instance's next sibling in the tree, or ``None`` if it
+doesn't have a next sibling.
 
-  If ``commit`` is True, the model instance's ``save()`` method will be
-  called before the instance is returned.
+``get_previous_sibling()``
+--------------------------
 
-* ``is_child_node()`` -- returns ``True`` if the model instance is a
-  child node, ``False`` otherwise.
+Returns the model instance's previous sibling in the tree, or ``None``
+if it doesn't have a previous sibling.
 
-* ``is_leaf_node()`` -- returns ``True`` if the model instance is a leaf
-  node (it has no children), ``False`` otherwise.
+``get_root()``
+--------------
 
-* ``is_root_node()`` -- returns ``True`` if the model instance is a root
-  node, ``False`` otherwise.
+Returns the root node of the model instance's tree.
+
+``get_siblings(include_self=False)``
+------------------------------------
+
+Creates a ``QuerySet`` containing siblings of the model instance. Root
+nodes are considered to be siblings of other root nodes.
+
+If ``include_self`` is ``True``, the ``QuerySet`` will also include the
+model instance itself.
+
+``insert_at(target, position='first-child', commit=False)``
+-----------------------------------------------------------
+
+Positions the model instance (which must not yet have been inserted into
+the database) in the tree based on ``target`` and ``position`` (when
+appropriate).
+
+If ``commit`` is True, the model instance's ``save()`` method will be
+called before the instance is returned.
+
+``is_child_node()``
+-------------------
+
+Returns ``True`` if the model instance is a child node, ``False``
+otherwise.
+
+``is_leaf_node()``
+------------------
+
+Returns ``True`` if the model instance is a leaf node (it has no
+children), ``False`` otherwise.
+
+``is_root_node()``
+------------------
+
+Returns ``True`` if the model instance is a root node, ``False``
+otherwise.
 
 .. _`move_to documentation`:
 
-* ``move_to(target, position='first-child')`` -- moves the model
-  instance elsewhere in the tree based on ``target`` and ``position``
-  (when appropriate).
+``move_to(target, position='first-child')``
+-------------------------------------------
 
-  .. note::
-     Is is assumed that when you call this method, the tree fields in
-     the instance you've called it on, and in any ``target`` instance passed
-     in, reflect the current state of the database.
+Moves the model instance elsewhere in the tree based on ``target`` and
+``position`` (when appropriate).
 
-     Modifying the tree fields manually before calling this method or
-     using tree fields which are out of sync with the database can
-     result in the tree structure being put into an inaccurate state.
+.. note::
+   It is assumed that when you call this method, the tree fields in the
+   instance you've called it on, and in any ``target`` instance passed
+   in, reflect the current state of the database.
 
-  If ``target`` is another model instance, it will be used to determine
-  the type of movement which needs to take place, and will be used as
-  the basis for positioning the model when it is moved, in combination
-  with the ``position`` argument.
+   Modifying the tree fields manually before calling this method or
+   using tree fields which are out of sync with the database can result
+   in the tree structure being put into an inaccurate state.
 
-  A ``target`` of ``None`` indicates that the model instance should be
-  turned into a root node. The ``position`` argument is disregarded in
-  this case.
+If ``target`` is another model instance, it will be used to determine
+the type of movement which needs to take place, and will be used as the
+basis for positioning the model when it is moved, in combination with
+the ``position`` argument.
 
-  Valid values for the ``position`` argument and their effects on
-  movement are:
+A ``target`` of ``None`` indicates that the model instance should be
+turned into a root node. The ``position`` argument is disregarded in
+this case.
 
-     ``'first-child'``
-        The instance being moved should have ``target`` set as its new
-        parent and be placed as its *first* child in the tree structure.
+Valid values for the ``position`` argument and their effects on movement
+are:
 
-     ``'last-child'``
-        The instance being moved should have ``target`` set as its new
-        parent and be placed as its *last* child in the tree structure.
+   ``'first-child'``
+      The instance being moved should have ``target`` set as its new
+      parent and be placed as its *first* child in the tree structure.
 
-     ``'left'``
-        The instance being moved should have ``target``'s parent set as
-        its new parent and should be placed *directly before* ``target``
-        in the tree structure.
+   ``'last-child'``
+      The instance being moved should have ``target`` set as its new
+      parent and be placed as its *last* child in the tree structure.
 
-     ``'right'``
-        The instance being moved should have ``target``'s parent set as
-        its new parent and should be placed *directly after* ``target``
-        in the tree structure.
+   ``'left'``
+      The instance being moved should have ``target``'s parent set as
+      its new parent and should be placed *directly before* ``target``
+      in the tree structure.
 
-  A ``ValueError`` will be raised if an invalid value is given for the
-  ``position`` argument.
+   ``'right'``
+      The instance being moved should have ``target``'s parent set as
+      its new parent and should be placed *directly after* ``target``
+      in the tree structure.
 
-  Note that some of the moves you could attempt to make with this method
-  are invalid - for example, trying to make an instance be its own its
-  own child or the child of one of its descendants. In these cases, a
-  ``mptt.exceptions.InvalidMove`` exception will be raised.
+A ``ValueError`` will be raised if an invalid value is given for the
+``position`` argument.
 
-  The instance itself will be also modified as a result of this call, to
-  reflect the state of its updated tree fields in the database, so it's
-  safe to go on to save it or use its tree fields after you've called
-  this method.
+Note that some of the moves you could attempt to make with this method
+are invalid - for example, trying to make an instance be its own its own
+child or the child of one of its descendants. In these cases, a
+``mptt.exceptions.InvalidMove`` exception will be raised.
+
+The instance itself will be also modified as a result of this call, to
+reflect the state of its updated tree fields in the database, so it's
+safe to go on to save it or use its tree fields after you've called this
+method.
 
 
 The ``TreeManager`` custom manager
@@ -248,60 +282,73 @@ Any ``QuerySet`` created with this manager will be ordered based on the
 tree structure, with root nodes appearing in tree id order and and their
 descendants being ordered in a depth-first fashion.
 
+Methods
+-------
+
 The following manager methods are available:
 
-* ``add_related_count(queryset, rel_cls, rel_field, count_attr, cumulative=False)``
-  -- adds a related item count to a given ``QuerySet`` using its
-  `extra method`_, for a model which has a relation to this manager's
-  model.
+``add_related_count(queryset, rel_cls, rel_field, count_attr, cumulative=False)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  ``rel_cls``
-     A Django model class which has a relation to this manager's model.
+Adds a related item count to a given ``QuerySet`` using its
+`extra method`_, for a model which has a relation to this manager's
+model.
 
-  ``rel_field``
-     The name of the field in ``rel_cls`` which holds the
-     relation.
+``rel_cls``
+   A Django model class which has a relation to this manager's model.
 
-  ``count_attr``
-     The name of an attribute which should be added to each item in
-     this ``QuerySet``, containing a count of how many instances
-     of ``rel_cls`` are related to it through ``rel_field``.
+``rel_field``
+   The name of the field in ``rel_cls`` which holds the relation.
 
-  ``cumulative``
-     If ``True``, the count will be for each item and all of its
-     descendants, otherwise it will be for each item itself.
+``count_attr``
+   The name of an attribute which should be added to each item in this
+   ``QuerySet``, containing a count of how many instances of ``rel_cls``
+   are related to it through ``rel_field``.
 
-* ``get_root(tree_id)`` -- returns the root node of tree with the given
-  id.
+``cumulative``
+   If ``True``, the count will be for each item and all of its
+   descendants, otherwise it will be for each item itself.
 
-* ``insert_node(node, target, position='last-child', commit=False)`` --
-  sets up the tree state for ``node`` (which has not yet been inserted
-  into in the database) so it will be positioned relative to a given
-  ``target`` node as specified by ``position`` (when appropriate) when
-  it is inserted, with any neccessary space already having been made for
-  it.
+``get_root(tree_id)``
+~~~~~~~~~~~~~~~~~~~~~
 
-  A ``target`` of ``None`` indicates that ``node`` should be the last
-  root node.
+Returns the root node of tree with the given id.
 
-  If ``commit`` is ``True``, ``node``'s ``save()`` method will be
-  called before it is returned.
+``insert_node(node, target, position='last-child', commit=False)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* ``move_node(node, target, position='last-child')`` -- moves ``node``
-  based on ``target``, relative to ``position`` when appropriate.
+Sets up the tree state for ``node`` (which has not yet been inserted
+into in the database) so it will be positioned relative to a given
+``target`` node as specified by ``position`` (when appropriate) when it
+is inserted, with any neccessary space already having been made for it.
 
-  A ``target`` of ``None`` indicates that ``node`` should be removed
-  from its current position and turned into a root node. If ``node`` is
-  a root node in this case, no action will be taken.
+A ``target`` of ``None`` indicates that ``node`` should be the last root
+node.
 
-  The given ``node`` will be modified to reflect its new tree state in
-  the database.
+If ``commit`` is ``True``, ``node``'s ``save()`` method will be called
+before it is returned.
 
-  For more details, see the `move_to documentation`_ above.
+``move_node(node, target, position='last-child')``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* ``root_nodes()`` -- creates a ``QuerySet`` containing root nodes.
+Moves ``node`` based on ``target``, relative to ``position`` when
+appropriate.
 
-.. _`extra method`: http://www.djangoproject.com/documentation/db-api/#extra-select-none-where-none-params-none-tables-none
+A ``target`` of ``None`` indicates that ``node`` should be removed from
+its current position and turned into a root node. If ``node`` is a root
+node in this case, no action will be taken.
+
+The given ``node`` will be modified to reflect its new tree state in the
+database.
+
+For more details, see the `move_to documentation`_ above.
+
+``root_nodes()``
+~~~~~~~~~~~~~~~~
+
+Creates a ``QuerySet`` containing root nodes.
+
+.. _`extra method`: http://docs.djangoproject.com/en/dev/ref/models/querysets/#extra-select-none-where-none-params-none-tables-none-order-by-none-select-params-none
 
 Example usage
 -------------
@@ -325,21 +372,3 @@ them::
    node = Category.objects.get(name='Some Category')
    children = Category.tree.add_related_count(node.get_children(), Question,
                                               'category', 'question_counts')
-
-
-A note about fixtures
-=====================
-
-As detailed in http://code.djangoproject.com/ticket/5422 - the ``raw``
-argument accepted by ``Model.save()`` is not currently passed along when
-the ``pre_save`` signal dispatched, so Django MPTT does not currently
-work with `fixtures`_ out of the box on Django's SVN trunk, as it has no
-way of determining when it *shouldn't* modify the data which is about to
-be saved.
-
-However, Django MPTT's ``pre_save`` signal receiver still checks for the
-presence of a ``raw`` keyword argument, so if you *need* to use
-fixtures, you can apply the small patch in the above ticket to your own
-version of Django for the time being.
-
-.. _`fixtures`: http://www.djangoproject.com/documentation/django-admin/#loaddata-fixture-fixture
