@@ -78,7 +78,7 @@ def register(model, parent_attr='parent', left_attr='lft', right_attr='rght',
 
     # Wrap the model's delete method to manage the tree structure before
     # deletion. This is icky, but the pre_delete signal doesn't currently
-    # provide a way to identify which model delete was called on, but we
+    # provide a way to identify which model delete was called on and we
     # only want to manage the tree based on the topmost node which is
     # being deleted.
     def wrap_delete(delete):
