@@ -4,7 +4,7 @@ from django.test import TestCase
 
 from mptt.exceptions import InvalidMove
 from mptt.tests import doctests
-from mptt.tests.models import Category, Genre, OrderedInsertion
+from mptt.tests.models import Category, Genre
 
 def get_tree_details(nodes):
     """Creates pertinent tree details for the given list of nodes."""
@@ -306,73 +306,4 @@ class InterTreeMovementTestCase(TestCase):
     pass
 
 class PositionedInsertionTestCase(TestCase):
-    pass
-
-class OrderInsertionBySingleCriterionTestCase(TestCase):
-    """
-    Tests that ordering specified with ``order_insertion_by`` for a
-    single column is respected when nodes are being automatically
-    positioned in the tree.
-    """
-    def test_insertion(self):
-        """
-        Tests that ordering is respected when new nodes are being
-        inserted.
-        """
-        root_1 = OrderedInsertion.objects.create(name='games')
-
-        # Root ordering
-        root_2 = OrderedInsertion.objects.create(name='food')
-        self.assertEqual(get_tree_details(OrderedInsertion.tree.all()),
-                         tree_details("""2 - 1 0 1 2
-                                         1 - 2 0 1 2"""))
-
-        # Where a row exists with identical ordering critiera, the new
-        # node should be inserted after.
-        root_3 = OrderedInsertion.objects.create(name='food')
-        self.assertEqual(get_tree_details(OrderedInsertion.tree.all()),
-                         tree_details("""2 - 1 0 1 2
-                                         3 - 2 0 1 2
-                                         1 - 3 0 1 2"""))
-
-        OrderedInsertion.objects.create(
-            name='zoo', parent=OrderedInsertion.objects.get(id=3))
-        self.assertEqual(get_tree_details(OrderedInsertion.tree.all()),
-                         tree_details("""2 - 1 0 1 2
-                                         3 - 2 0 1 4
-                                         4 3 2 1 2 3
-                                         1 - 3 0 1 2"""))
-
-        # Ordering as previous sibling
-        OrderedInsertion.objects.create(
-            name='monkey', parent=OrderedInsertion.objects.get(id=3))
-        self.assertEqual(get_tree_details(OrderedInsertion.tree.all()),
-                         tree_details("""2 - 1 0 1 2
-                                         3 - 2 0 1 6
-                                         5 3 2 1 2 3
-                                         4 3 2 1 4 5
-                                         1 - 3 0 1 2"""))
-
-        OrderedInsertion.objects.create(
-            name='aardvark', parent=OrderedInsertion.objects.get(id=3))
-        self.assertEqual(get_tree_details(OrderedInsertion.tree.all()),
-                         tree_details("""2 - 1 0 1 2
-                                         3 - 2 0 1 8
-                                         6 3 2 1 2 3
-                                         5 3 2 1 4 5
-                                         4 3 2 1 6 7
-                                         1 - 3 0 1 2"""))
-
-    def test_reparenting(self):
-        pass
-        # Root -> Child
-        # Child -> Root
-        # Child -> Child
-
-class OrderInsertionByMultipleCriteriaTestCase(TestCase):
-    """
-    Tests that ordering specified with ``order_insertion_by`` for
-    multiple columns is respected when nodes are being automatically
-    positioned in the tree.
-    """
     pass
