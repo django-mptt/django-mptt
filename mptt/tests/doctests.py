@@ -1,7 +1,7 @@
 r"""
 >>> from datetime import date
 >>> from mptt.exceptions import InvalidMove
->>> from mptt.tests.models import Category, Genre, Insert, MultiOrder, Node, OrderedInsertion, Tree
+>>> from mptt.tests.models import Genre, Insert, MultiOrder, Node, OrderedInsertion, Tree
 
 >>> def print_tree_details(nodes):
 ...     opts = nodes[0]._meta
@@ -189,134 +189,8 @@ True
 >>> platformer_3d.is_leaf_node()
 True
 
-# The move_to method will be used in a few places in other tests to verify that
-# it calls the TreeManager correctly.
-
-# Moving Nodes Manually #######################################################
->>> games = Category.objects.create(name='PC & Video Games')
->>> wii = Category.objects.create(name='Nintendo Wii', parent=games)
->>> wii_games = Category.objects.create(name='Games', parent=wii)
->>> wii = Category.objects.get(pk=wii.pk)
->>> wii_hardware = Category.objects.create(name='Hardware & Accessories', parent=wii)
->>> games = Category.objects.get(pk=games.pk)
->>> xbox360 = Category.objects.create(name='Xbox 360', parent=games)
->>> xbox360_games = Category.objects.create(name='Games', parent=xbox360)
->>> xbox360 = Category.objects.get(pk=xbox360.pk)
->>> xbox360_hardware = Category.objects.create(name='Hardware & Accessories', parent=xbox360)
->>> games = Category.objects.get(pk=games.pk)
->>> ps3 = Category.objects.create(name='PlayStation 3', parent=games)
->>> ps3_games = Category.objects.create(name='Games', parent=ps3)
->>> ps3 = Category.objects.get(pk=ps3.pk)
->>> ps3_hardware = Category.objects.create(name='Hardware & Accessories', parent=ps3)
->>> print_tree_details(Category.tree.all())
-1 - 1 0 1 20
-2 1 1 1 2 7
-3 2 1 2 3 4
-4 2 1 2 5 6
-5 1 1 1 8 13
-6 5 1 2 9 10
-7 5 1 2 11 12
-8 1 1 1 14 19
-9 8 1 2 15 16
-10 8 1 2 17 18
-
->>> wii = Category.objects.get(pk=wii.pk)
->>> wii.move_to(None)
->>> print_tree_details([wii])
-2 - 2 0 1 6
->>> print_tree_details(Category.tree.all())
-1 - 1 0 1 14
-5 1 1 1 2 7
-6 5 1 2 3 4
-7 5 1 2 5 6
-8 1 1 1 8 13
-9 8 1 2 9 10
-10 8 1 2 11 12
-2 - 2 0 1 6
-3 2 2 1 2 3
-4 2 2 1 4 5
-
->>> games = Category.objects.get(pk=games.pk)
->>> Category.tree.move_node(wii, games)
->>> print_tree_details([wii])
-2 1 1 1 14 19
->>> print_tree_details(Category.tree.all())
-1 - 1 0 1 20
-5 1 1 1 2 7
-6 5 1 2 3 4
-7 5 1 2 5 6
-8 1 1 1 8 13
-9 8 1 2 9 10
-10 8 1 2 11 12
-2 1 1 1 14 19
-3 2 1 2 15 16
-4 2 1 2 17 18
-
->>> ps3 = Category.objects.get(pk=ps3.pk)
->>> Category.tree.move_node(wii, ps3)
->>> print_tree_details([wii])
-2 8 1 2 13 18
->>> print_tree_details(Category.tree.all())
-1 - 1 0 1 20
-5 1 1 1 2 7
-6 5 1 2 3 4
-7 5 1 2 5 6
-8 1 1 1 8 19
-9 8 1 2 9 10
-10 8 1 2 11 12
-2 8 1 2 13 18
-3 2 1 3 14 15
-4 2 1 3 16 17
-
->>> ps3 = Category.objects.get(pk=ps3.pk)
->>> Category.tree.move_node(ps3, None)
->>> print_tree_details([ps3])
-8 - 2 0 1 12
->>> print_tree_details(Category.tree.all())
-1 - 1 0 1 8
-5 1 1 1 2 7
-6 5 1 2 3 4
-7 5 1 2 5 6
-8 - 2 0 1 12
-9 8 2 1 2 3
-10 8 2 1 4 5
-2 8 2 1 6 11
-3 2 2 2 7 8
-4 2 2 2 9 10
-
->>> wii = Category.objects.get(pk=wii.pk)
->>> games = Category.objects.get(pk=games.pk)
->>> Category.tree.move_node(wii, games)
->>> print_tree_details([wii])
-2 1 1 1 8 13
->>> print_tree_details(Category.tree.all())
-1 - 1 0 1 14
-5 1 1 1 2 7
-6 5 1 2 3 4
-7 5 1 2 5 6
-2 1 1 1 8 13
-3 2 1 2 9 10
-4 2 1 2 11 12
-8 - 2 0 1 6
-9 8 2 1 2 3
-10 8 2 1 4 5
-
-# Regression test for no level change being required
->>> xbox360_games = Category.objects.get(pk=xbox360_games.pk)
->>> Category.tree.move_node(xbox360_games, wii)
->>> print_tree_details([xbox360_games])
-6 2 1 2 11 12
->>> print_tree_details(Category.tree.all())
-1 - 1 0 1 14
-5 1 1 1 2 5
-7 5 1 2 3 4
-2 1 1 1 6 13
-3 2 1 2 7 8
-4 2 1 2 9 10
-6 2 1 2 11 12
-8 - 2 0 1 6
-9 8 2 1 2 3
-10 8 2 1 4 5
+# The move_to method will be used in other tests to verify that it calls the
+# TreeManager correctly.
 
 #######################
 # Intra-Tree Movement #
