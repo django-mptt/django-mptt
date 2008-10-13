@@ -86,7 +86,10 @@ applications, do the following:
 
    1. Put ``'mptt'`` in your ``INSTALLED_APPS`` setting.
    2. Place appropriate calls to the ``mptt.register`` function in your
-      model modules, for any models you wish to use with MPTT. See the
-      models documentation for more information.
+      model modules, for any models you wish to use with MPTT. This step
+      most be performed *before* you generate tables with ``syncdb``. See
+      the `models documentation`_ for more information.
 
 That's it!
+
+.. _`models documentation`: models.html

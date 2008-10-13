@@ -5,9 +5,8 @@ related logic when model instances are about to be saved or deleted.
 import operator
 
 from django.db.models.query import Q
-from django.utils.translation import ugettext as _
 
-__all__ = ('pre_save', 'pre_delete')
+__all__ = ('pre_save',)
 
 def _insertion_target_filters(node, order_insertion_by):
     """
@@ -126,17 +125,3 @@ def pre_save(instance, **kwargs):
                 # Make sure the instance's new parent is always
                 # restored on the way out in case of errors.
                 setattr(instance, opts.parent_attr, parent)
-
-def pre_delete(instance, **kwargs):
-    """
-    Updates tree node edge indicators which will by affected by the
-    deletion of the given model instance and any descendants it may
-    have, to ensure the integrity of the tree structure is
-    maintained.
-    """
-    opts = instance._meta
-    tree_width = (getattr(instance, opts.right_attr) -
-                  getattr(instance, opts.left_attr) + 1)
-    target_right = getattr(instance, opts.right_attr)
-    tree_id = getattr(instance, opts.tree_id_attr)
-    instance._tree_manager._close_gap(tree_width, target_right, tree_id)
