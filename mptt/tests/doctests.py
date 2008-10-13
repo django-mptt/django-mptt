@@ -975,7 +975,7 @@ ValueError: Cannot insert a node which has already been saved.
 3 - 5 0 1 2
 11 - 6 0 1 2
 
-# order_insertion_by insertion ################################################
+# order_insertion_by with single criterion ####################################
 >>> r1 = OrderedInsertion.objects.create(name='games')
 
 # Root ordering
@@ -1017,7 +1017,7 @@ ValueError: Cannot insert a node which has already been saved.
 4 3 2 1 6 7
 1 - 3 0 1 2
 
-# order_insertion_by reparenting ##############################################
+# order_insertion_by reparenting with single criterion ########################
 
 # Root -> child
 >>> r1 = OrderedInsertion.objects.get(pk=r1.pk)
