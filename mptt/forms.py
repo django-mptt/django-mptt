@@ -17,7 +17,7 @@ class TreeNodeChoiceField(forms.ModelChoiceField):
     """A ModelChoiceField for tree nodes."""
     def __init__(self, level_indicator=u'---', *args, **kwargs):
         self.level_indicator = level_indicator
-        if kwargs.get('required', True):
+        if kwargs.get('required', True) and not 'empty_label' in kwargs:
             kwargs['empty_label'] = None
         super(TreeNodeChoiceField, self).__init__(*args, **kwargs)
 
@@ -127,4 +127,3 @@ class MoveNodeForm(forms.Form):
         except InvalidMove, e:
             self.errors[NON_FIELD_ERRORS] = ErrorList(e)
             raise
-
