@@ -17,7 +17,8 @@ class TreeNodeChoiceField(forms.ModelChoiceField):
     """A ModelChoiceField for tree nodes."""
     def __init__(self, level_indicator=u'---', *args, **kwargs):
         self.level_indicator = level_indicator
-        kwargs['empty_label'] = None
+        if kwargs.get('required', True):
+            kwargs['empty_label'] = None
         super(TreeNodeChoiceField, self).__init__(*args, **kwargs)
 
     def label_from_instance(self, obj):
