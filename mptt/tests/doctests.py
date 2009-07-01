@@ -88,7 +88,7 @@ AlreadyRegistered: The model Genre has already been registered.
 [u'Action', u'Platformer', u'3D Platformer']
 
 # Forms #######################################################################
->>> from mptt.forms import TreeNodeChoiceField
+>>> from mptt.forms import TreeNodeChoiceField, MoveNodeForm
 
 >>> f = TreeNodeChoiceField(queryset=Genre.tree.all())
 >>> print(f.widget.render("test", None))
@@ -120,6 +120,7 @@ AlreadyRegistered: The model Genre has already been registered.
 >>> f = TreeNodeChoiceField(queryset=Genre.tree.all(), empty_label=u'None of the below')
 >>> print(f.widget.render("test", None))
 <select name="test">
+<option value="" selected="selected">None of the below</option>
 <option value="1"> Action</option>
 <option value="2">--- Platformer</option>
 <option value="3">------ 2D Platformer</option>
@@ -143,6 +144,55 @@ AlreadyRegistered: The model Genre has already been registered.
 <option value="7">--- Action RPG</option>
 <option value="8">--- Tactical RPG</option>
 </select>
+
+>>> f = TreeNodeChoiceField(queryset=Genre.tree.all(), level_indicator=u'+--')
+>>> print(f.widget.render("test", None))
+<select name="test">
+<option value="1"> Action</option>
+<option value="2">+-- Platformer</option>
+<option value="3">+--+-- 2D Platformer</option>
+<option value="4">+--+-- 3D Platformer</option>
+<option value="5">+--+-- 4D Platformer</option>
+<option value="6"> Role-playing Game</option>
+<option value="7">+-- Action RPG</option>
+<option value="8">+-- Tactical RPG</option>
+</select>
+
+>>> form = MoveNodeForm(Genre.objects.get(pk=7))
+>>> print(form)
+<tr><th><label for="id_target">Target:</label></th><td><select id="id_target" name="target" size="10">
+<option value="1"> Action</option>
+<option value="2">--- Platformer</option>
+<option value="3">------ 2D Platformer</option>
+<option value="4">------ 3D Platformer</option>
+<option value="5">------ 4D Platformer</option>
+<option value="6"> Role-playing Game</option>
+<option value="8">--- Tactical RPG</option>
+</select></td></tr>
+<tr><th><label for="id_position">Position:</label></th><td><select name="position" id="id_position">
+<option value="first-child">First child</option>
+<option value="last-child">Last child</option>
+<option value="left">Left sibling</option>
+<option value="right">Right sibling</option>
+</select></td></tr>
+
+>>> form = MoveNodeForm(Genre.objects.get(pk=7), level_indicator=u'+--', target_select_size=5)
+>>> print(form)
+<tr><th><label for="id_target">Target:</label></th><td><select id="id_target" name="target" size="5">
+<option value="1"> Action</option>
+<option value="2">+-- Platformer</option>
+<option value="3">+--+-- 2D Platformer</option>
+<option value="4">+--+-- 3D Platformer</option>
+<option value="5">+--+-- 4D Platformer</option>
+<option value="6"> Role-playing Game</option>
+<option value="8">+-- Tactical RPG</option>
+</select></td></tr>
+<tr><th><label for="id_position">Position:</label></th><td><select name="position" id="id_position">
+<option value="first-child">First child</option>
+<option value="last-child">Last child</option>
+<option value="left">Left sibling</option>
+<option value="right">Right sibling</option>
+</select></td></tr>
 
 # TreeManager Methods #########################################################
 
