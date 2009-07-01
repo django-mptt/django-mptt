@@ -87,6 +87,63 @@ AlreadyRegistered: The model Genre has already been registered.
 >>> [item.name for item in drilldown_tree_for_node(platformer_3d)]
 [u'Action', u'Platformer', u'3D Platformer']
 
+# Forms #######################################################################
+>>> from mptt.forms import TreeNodeChoiceField
+
+>>> f = TreeNodeChoiceField(queryset=Genre.tree.all())
+>>> print(f.widget.render("test", None))
+<select name="test">
+<option value="1"> Action</option>
+<option value="2">--- Platformer</option>
+<option value="3">------ 2D Platformer</option>
+<option value="4">------ 3D Platformer</option>
+<option value="5">------ 4D Platformer</option>
+<option value="6"> Role-playing Game</option>
+<option value="7">--- Action RPG</option>
+<option value="8">--- Tactical RPG</option>
+</select>
+
+>>> f = TreeNodeChoiceField(queryset=Genre.tree.all(), required=False)
+>>> print(f.widget.render("test", None))
+<select name="test">
+<option value="" selected="selected">---------</option>
+<option value="1"> Action</option>
+<option value="2">--- Platformer</option>
+<option value="3">------ 2D Platformer</option>
+<option value="4">------ 3D Platformer</option>
+<option value="5">------ 4D Platformer</option>
+<option value="6"> Role-playing Game</option>
+<option value="7">--- Action RPG</option>
+<option value="8">--- Tactical RPG</option>
+</select>
+
+>>> f = TreeNodeChoiceField(queryset=Genre.tree.all(), empty_label=u'None of the below')
+>>> print(f.widget.render("test", None))
+<select name="test">
+<option value="1"> Action</option>
+<option value="2">--- Platformer</option>
+<option value="3">------ 2D Platformer</option>
+<option value="4">------ 3D Platformer</option>
+<option value="5">------ 4D Platformer</option>
+<option value="6"> Role-playing Game</option>
+<option value="7">--- Action RPG</option>
+<option value="8">--- Tactical RPG</option>
+</select>
+
+>>> f = TreeNodeChoiceField(queryset=Genre.tree.all(), required=False, empty_label=u'None of the below')
+>>> print(f.widget.render("test", None))
+<select name="test">
+<option value="" selected="selected">None of the below</option>
+<option value="1"> Action</option>
+<option value="2">--- Platformer</option>
+<option value="3">------ 2D Platformer</option>
+<option value="4">------ 3D Platformer</option>
+<option value="5">------ 4D Platformer</option>
+<option value="6"> Role-playing Game</option>
+<option value="7">--- Action RPG</option>
+<option value="8">--- Tactical RPG</option>
+</select>
+
 # TreeManager Methods #########################################################
 
 >>> Genre.tree.root_node(action.tree_id)
