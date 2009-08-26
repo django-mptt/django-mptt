@@ -61,6 +61,7 @@ def tree_item_iterator(items, ancestors=False):
     """
     structure = {}
     opts = None
+    first_item_level = 0
     for previous, current, next in previous_current_next(items):
         if opts is None:
             opts = current._meta
@@ -86,13 +87,14 @@ def tree_item_iterator(items, ancestors=False):
                 # Set up the ancestors list on the first item
                 structure['ancestors'] = []
 
+            first_item_level = current_level
         if next:
             structure['closed_levels'] = range(current_level,
                                                getattr(next,
                                                        opts.level_attr), -1)
         else:
             # All remaining levels need to be closed
-            structure['closed_levels'] = range(current_level, -1, -1)
+            structure['closed_levels'] = range(current_level, first_item_level-1, -1)
 
         # Return a deep copy of the structure dict so this function can
         # be used in situations where the iterator is consumed
