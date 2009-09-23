@@ -57,6 +57,7 @@ def register(model, parent_attr='parent', left_attr='lft', right_attr='rght',
     setattr(model, 'get_children', models.get_children)
     setattr(model, 'get_descendants', models.get_descendants)
     setattr(model, 'get_descendant_count', models.get_descendant_count)
+    setattr(model, 'get_leafnodes', models.get_leafnodes)
     setattr(model, 'get_next_sibling', models.get_next_sibling)
     setattr(model, 'get_previous_sibling', models.get_previous_sibling)
     setattr(model, 'get_root', models.get_root)

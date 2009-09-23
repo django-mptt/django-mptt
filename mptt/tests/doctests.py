@@ -218,6 +218,8 @@ DoesNotExist: Genre matching query does not exist.
 [u'Platformer']
 >>> [g.name for g in action.get_descendants()]
 [u'Platformer', u'2D Platformer', u'3D Platformer', u'4D Platformer']
+>>> [g.name for g in action.get_leafnodes()]
+[u'2D Platformer', u'3D Platformer', u'4D Platformer']
 >>> [g.name for g in action.get_descendants(include_self=True)]
 [u'Action', u'Platformer', u'2D Platformer', u'3D Platformer', u'4D Platformer']
 >>> action.get_descendant_count()
@@ -295,6 +297,10 @@ False
 True
 >>> platformer_3d.is_leaf_node()
 True
+>>> platformer_3d.get_leafnodes()
+[]
+>>> [g.name for g in platformer_3d.get_leafnodes(True)]
+[u'3D Platformer']
 
 # The move_to method will be used in other tests to verify that it calls the
 # TreeManager correctly.
