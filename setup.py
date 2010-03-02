@@ -62,7 +62,7 @@ setup(
     install_requires=[
         'Django',
     ],
-    test_suite="nose.collector",
+    test_suite="mptt.tests.test_runner.run_tests",
     packages = packages,
     data_files = data_files,
     classifiers = ['Development Status :: 4 - Beta',

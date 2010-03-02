@@ -1,3 +1,4 @@
+
 >>> from datetime import date
 >>> from mptt.exceptions import InvalidMove
 >>> from mptt.tests.models import Category, Genre, Insert, MultiOrder, Node, OrderedInsertion, Tree
