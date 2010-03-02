@@ -7,6 +7,30 @@ Django MPTT CHANGELOG
 Trunk Changes
 =============
 
+Sun 12th Sep, 2008
+------------------
+
+* Extracted new ``TreeNodeChoiceField`` and ``TreeNodePositionField``
+  form fields from ``MoveNodeForm``.
+
+Thu 4th Sep, 2008
+-----------------
+
+* Updated forms for Django 1.0 compatibility, as ``django.newforms`` is
+  no more.
+
+* Fixed tests.
+
+Mon 11th Aug, 2008
+------------------
+
+* (brosner) Updated signal handling to be compatible with Django 1.0.
+
+Mon 12th May, 2008
+------------------
+
+* Added ``position_choices`` argument to ``mptt.forms.MoveNodeForm``.
+
 Fri 25th Jan, 2008
 ------------------
 

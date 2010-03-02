@@ -9,6 +9,9 @@ class Category(models.Model):
     def __unicode__(self):
         return self.name
 
+    def delete(self):
+        super(Category, self).delete()
+
 class Genre(models.Model):
     name = models.CharField(max_length=50, unique=True)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')

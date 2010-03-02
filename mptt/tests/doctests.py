@@ -1,7 +1,7 @@
 
 >>> from datetime import date
 >>> from mptt.exceptions import InvalidMove
->>> from mptt.tests.models import Category, Genre, Insert, MultiOrder, Node, OrderedInsertion, Tree
+>>> from mptt.tests.models import Genre, Insert, MultiOrder, Node, OrderedInsertion, Tree
 
 >>> def print_tree_details(nodes):
 ...     opts = nodes[0]._meta
@@ -21,10 +21,13 @@ AlreadyRegistered: The model Genre has already been registered.
 >>> action = Genre.objects.create(name='Action')
 >>> platformer = Genre.objects.create(name='Platformer', parent=action)
 >>> platformer_2d = Genre.objects.create(name='2D Platformer', parent=platformer)
+>>> platformer = Genre.objects.get(pk=platformer.pk)
 >>> platformer_3d = Genre.objects.create(name='3D Platformer', parent=platformer)
+>>> platformer = Genre.objects.get(pk=platformer.pk)
 >>> platformer_4d = Genre.objects.create(name='4D Platformer', parent=platformer)
 >>> rpg = Genre.objects.create(name='Role-playing Game')
 >>> arpg = Genre.objects.create(name='Action RPG', parent=rpg)
+>>> rpg = Genre.objects.get(pk=rpg.pk)
 >>> trpg = Genre.objects.create(name='Tactical RPG', parent=rpg)
 >>> print_tree_details(Genre.tree.all())
 1 - 1 0 1 10
@@ -83,6 +86,113 @@ AlreadyRegistered: The model Genre has already been registered.
 >>> platformer_3d = Genre.objects.get(pk=platformer_3d.pk)
 >>> [item.name for item in drilldown_tree_for_node(platformer_3d)]
 [u'Action', u'Platformer', u'3D Platformer']
+
+# Forms #######################################################################
+>>> from mptt.forms import TreeNodeChoiceField, MoveNodeForm
+
+>>> f = TreeNodeChoiceField(queryset=Genre.tree.all())
+>>> print(f.widget.render("test", None))
+<select name="test">
+<option value="1"> Action</option>
+<option value="2">--- Platformer</option>
+<option value="3">------ 2D Platformer</option>
+<option value="4">------ 3D Platformer</option>
+<option value="5">------ 4D Platformer</option>
+<option value="6"> Role-playing Game</option>
+<option value="7">--- Action RPG</option>
+<option value="8">--- Tactical RPG</option>
+</select>
+
+>>> f = TreeNodeChoiceField(queryset=Genre.tree.all(), required=False)
+>>> print(f.widget.render("test", None))
+<select name="test">
+<option value="" selected="selected">---------</option>
+<option value="1"> Action</option>
+<option value="2">--- Platformer</option>
+<option value="3">------ 2D Platformer</option>
+<option value="4">------ 3D Platformer</option>
+<option value="5">------ 4D Platformer</option>
+<option value="6"> Role-playing Game</option>
+<option value="7">--- Action RPG</option>
+<option value="8">--- Tactical RPG</option>
+</select>
+
+>>> f = TreeNodeChoiceField(queryset=Genre.tree.all(), empty_label=u'None of the below')
+>>> print(f.widget.render("test", None))
+<select name="test">
+<option value="" selected="selected">None of the below</option>
+<option value="1"> Action</option>
+<option value="2">--- Platformer</option>
+<option value="3">------ 2D Platformer</option>
+<option value="4">------ 3D Platformer</option>
+<option value="5">------ 4D Platformer</option>
+<option value="6"> Role-playing Game</option>
+<option value="7">--- Action RPG</option>
+<option value="8">--- Tactical RPG</option>
+</select>
+
+>>> f = TreeNodeChoiceField(queryset=Genre.tree.all(), required=False, empty_label=u'None of the below')
+>>> print(f.widget.render("test", None))
+<select name="test">
+<option value="" selected="selected">None of the below</option>
+<option value="1"> Action</option>
+<option value="2">--- Platformer</option>
+<option value="3">------ 2D Platformer</option>
+<option value="4">------ 3D Platformer</option>
+<option value="5">------ 4D Platformer</option>
+<option value="6"> Role-playing Game</option>
+<option value="7">--- Action RPG</option>
+<option value="8">--- Tactical RPG</option>
+</select>
+
+>>> f = TreeNodeChoiceField(queryset=Genre.tree.all(), level_indicator=u'+--')
+>>> print(f.widget.render("test", None))
+<select name="test">
+<option value="1"> Action</option>
+<option value="2">+-- Platformer</option>
+<option value="3">+--+-- 2D Platformer</option>
+<option value="4">+--+-- 3D Platformer</option>
+<option value="5">+--+-- 4D Platformer</option>
+<option value="6"> Role-playing Game</option>
+<option value="7">+-- Action RPG</option>
+<option value="8">+-- Tactical RPG</option>
+</select>
+
+>>> form = MoveNodeForm(Genre.objects.get(pk=7))
+>>> print(form)
+<tr><th><label for="id_target">Target:</label></th><td><select id="id_target" name="target" size="10">
+<option value="1"> Action</option>
+<option value="2">--- Platformer</option>
+<option value="3">------ 2D Platformer</option>
+<option value="4">------ 3D Platformer</option>
+<option value="5">------ 4D Platformer</option>
+<option value="6"> Role-playing Game</option>
+<option value="8">--- Tactical RPG</option>
+</select></td></tr>
+<tr><th><label for="id_position">Position:</label></th><td><select name="position" id="id_position">
+<option value="first-child">First child</option>
+<option value="last-child">Last child</option>
+<option value="left">Left sibling</option>
+<option value="right">Right sibling</option>
+</select></td></tr>
+
+>>> form = MoveNodeForm(Genre.objects.get(pk=7), level_indicator=u'+--', target_select_size=5)
+>>> print(form)
+<tr><th><label for="id_target">Target:</label></th><td><select id="id_target" name="target" size="5">
+<option value="1"> Action</option>
+<option value="2">+-- Platformer</option>
+<option value="3">+--+-- 2D Platformer</option>
+<option value="4">+--+-- 3D Platformer</option>
+<option value="5">+--+-- 4D Platformer</option>
+<option value="6"> Role-playing Game</option>
+<option value="8">+-- Tactical RPG</option>
+</select></td></tr>
+<tr><th><label for="id_position">Position:</label></th><td><select name="position" id="id_position">
+<option value="first-child">First child</option>
+<option value="last-child">Last child</option>
+<option value="left">Left sibling</option>
+<option value="right">Right sibling</option>
+</select></td></tr>
 
 # TreeManager Methods #########################################################
 
@@ -186,356 +296,8 @@ True
 >>> platformer_3d.is_leaf_node()
 True
 
-# The move_to method will be used in a few places in the tests which
-# follow to verify that it calls the TreeManager correctly.
-
-# Automatic Reparenting #######################################################
-
-Test that trees are in the appropriate state and that reparented items have the
-correct tree attributes defined, should they be required for use after a save.
-
-# Extract new root node from a subtree
->>> platformer = Genre.objects.get(pk=platformer.pk)
->>> platformer.parent = None
->>> platformer.save()
->>> print_tree_details([platformer])
-2 - 3 0 1 8
->>> print_tree_details(Genre.tree.all())
-1 - 1 0 1 2
-6 - 2 0 1 6
-7 6 2 1 2 3
-8 6 2 1 4 5
-2 - 3 0 1 8
-3 2 3 1 2 3
-4 2 3 1 4 5
-5 2 3 1 6 7
-
-# Extract new root node from a leaf node which has siblings
->>> platformer_3d = Genre.objects.get(pk=platformer_3d.pk)
->>> platformer_3d.parent = None
->>> platformer_3d.save()
->>> print_tree_details([platformer_3d])
-4 - 4 0 1 2
->>> print_tree_details(Genre.tree.all())
-1 - 1 0 1 2
-6 - 2 0 1 6
-7 6 2 1 2 3
-8 6 2 1 4 5
-2 - 3 0 1 6
-3 2 3 1 2 3
-5 2 3 1 4 5
-4 - 4 0 1 2
-
-# Check that exceptions are raised appropriately when giving
-# a root node a parent.
->>> rpg = Genre.objects.get(pk=rpg.pk)
->>> rpg.parent = rpg
->>> rpg.save()
-Traceback (most recent call last):
-    ...
-InvalidMove: A node may not be made a child of itself.
->>> arpg = Genre.objects.get(pk=arpg.pk)
->>> rpg.parent = arpg
->>> rpg.save()
-Traceback (most recent call last):
-    ...
-InvalidMove: A node may not be made a child of any of its descendants.
-
-# Make a tree a subtree of another tree
->>> rpg = Genre.objects.get(pk=rpg.pk)
->>> platformer = Genre.objects.get(pk=platformer.pk)
->>> rpg.parent = platformer
->>> rpg.save()
->>> print_tree_details([rpg])
-6 2 3 1 6 11
->>> print_tree_details(Genre.tree.all())
-1 - 1 0 1 2
-2 - 3 0 1 12
-3 2 3 1 2 3
-5 2 3 1 4 5
-6 2 3 1 6 11
-7 6 3 2 7 8
-8 6 3 2 9 10
-4 - 4 0 1 2
-
-# Move a leaf node to another tree
->>> arpg = Genre.objects.get(pk=arpg.pk)
->>> platformer_3d = Genre.objects.get(pk=platformer_3d.pk)
->>> arpg.parent = platformer_3d
->>> arpg.save()
->>> print_tree_details([arpg])
-7 4 4 1 2 3
->>> print_tree_details(Genre.tree.all())
-1 - 1 0 1 2
-2 - 3 0 1 10
-3 2 3 1 2 3
-5 2 3 1 4 5
-6 2 3 1 6 9
-8 6 3 2 7 8
-4 - 4 0 1 4
-7 4 4 1 2 3
-
-# Move a subtree to another tree
->>> rpg = Genre.objects.get(pk=rpg.pk)
->>> platformer_3d = Genre.objects.get(pk=platformer_3d.pk)
->>> rpg.parent = platformer_3d
->>> rpg.save()
->>> print_tree_details([rpg])
-6 4 4 1 4 7
->>> print_tree_details(Genre.tree.all())
-1 - 1 0 1 2
-2 - 3 0 1 6
-3 2 3 1 2 3
-5 2 3 1 4 5
-4 - 4 0 1 8
-7 4 4 1 2 3
-6 4 4 1 4 7
-8 6 4 2 5 6
-
-# Check that exceptions are raised appropriately when moving
-# a subtree within its tree.
->>> rpg = Genre.objects.get(pk=rpg.pk)
->>> rpg.parent = rpg
->>> rpg.save()
-Traceback (most recent call last):
-    ...
-InvalidMove: A node may not be made a child of itself.
->>> trpg = Genre.objects.get(pk=trpg.pk)
->>> rpg.parent = trpg
->>> rpg.save()
-Traceback (most recent call last):
-    ...
-InvalidMove: A node may not be made a child of any of its descendants.
-
-# Move a subtree up a level (position stays the same)
->>> trpg = Genre.objects.get(pk=trpg.pk)
->>> platformer_3d = Genre.objects.get(pk=platformer_3d.pk)
->>> trpg.parent = platformer_3d
->>> trpg.save()
->>> print_tree_details([trpg])
-8 4 4 1 6 7
->>> print_tree_details(Genre.tree.all())
-1 - 1 0 1 2
-2 - 3 0 1 6
-3 2 3 1 2 3
-5 2 3 1 4 5
-4 - 4 0 1 8
-7 4 4 1 2 3
-6 4 4 1 4 5
-8 4 4 1 6 7
-
-# Move a subtree down a level
->>> arpg = Genre.objects.get(pk=arpg.pk)
->>> rpg = Genre.objects.get(pk=rpg.pk)
->>> arpg.parent = rpg
->>> arpg.save()
->>> print_tree_details([arpg])
-7 6 4 2 3 4
->>> print_tree_details(Genre.tree.all())
-1 - 1 0 1 2
-2 - 3 0 1 6
-3 2 3 1 2 3
-5 2 3 1 4 5
-4 - 4 0 1 8
-6 4 4 1 2 5
-7 6 4 2 3 4
-8 4 4 1 6 7
-
-# Move a subtree with descendants down a level
->>> rpg = Genre.objects.get(pk=rpg.pk)
->>> trpg = Genre.objects.get(pk=trpg.pk)
->>> rpg.parent = trpg
->>> rpg.save()
->>> print_tree_details([rpg])
-6 8 4 2 3 6
->>> print_tree_details(Genre.tree.all())
-1 - 1 0 1 2
-2 - 3 0 1 6
-3 2 3 1 2 3
-5 2 3 1 4 5
-4 - 4 0 1 8
-8 4 4 1 2 7
-6 8 4 2 3 6
-7 6 4 3 4 5
-
-# Move a subtree with descendants up a level
->>> rpg = Genre.objects.get(pk=rpg.pk)
->>> platformer_3d = Genre.objects.get(pk=platformer_3d.pk)
->>> rpg.parent = platformer_3d
->>> rpg.save()
->>> print_tree_details([rpg])
-6 4 4 1 4 7
->>> print_tree_details(Genre.tree.all())
-1 - 1 0 1 2
-2 - 3 0 1 6
-3 2 3 1 2 3
-5 2 3 1 4 5
-4 - 4 0 1 8
-8 4 4 1 2 3
-6 4 4 1 4 7
-7 6 4 2 5 6
-
-# New parent is still set when an error occurs
->>> arpg = Genre.objects.get(pk=arpg.pk)
->>> rpg.parent = arpg
->>> try:
-...     rpg.save()
-... except InvalidMove:
-...     print rpg.parent == arpg
-True
-
-# Deletion ####################################################################
-
-# Delete a node which has siblings
->>> platformer_2d = Genre.objects.get(pk=platformer_2d.pk)
->>> platformer_2d.delete()
->>> print_tree_details(Genre.tree.all())
-1 - 1 0 1 2
-2 - 3 0 1 4
-5 2 3 1 2 3
-4 - 4 0 1 8
-8 4 4 1 2 3
-6 4 4 1 4 7
-7 6 4 2 5 6
-
-# Delete a node which has descendants
->>> rpg = Genre.objects.get(pk=rpg.pk)
->>> rpg.delete()
->>> print_tree_details(Genre.tree.all())
-1 - 1 0 1 2
-2 - 3 0 1 4
-5 2 3 1 2 3
-4 - 4 0 1 4
-8 4 4 1 2 3
-
-# Delete a root node
->>> platformer = Genre.objects.get(pk=platformer.pk)
->>> platformer.delete()
->>> print_tree_details(Genre.tree.all())
-1 - 1 0 1 2
-4 - 4 0 1 4
-8 4 4 1 2 3
-
-# Moving Nodes Manually #######################################################
->>> games = Category.objects.create(name='PC & Video Games')
->>> wii = Category.objects.create(name='Nintendo Wii', parent=games)
->>> wii_games = Category.objects.create(name='Games', parent=wii)
->>> wii_hardware = Category.objects.create(name='Hardware & Accessories', parent=wii)
->>> xbox360 = Category.objects.create(name='Xbox 360', parent=games)
->>> xbox360_games = Category.objects.create(name='Games', parent=xbox360)
->>> xbox360_hardware = Category.objects.create(name='Hardware & Accessories', parent=xbox360)
->>> ps3 = Category.objects.create(name='PlayStation 3', parent=games)
->>> ps3_games = Category.objects.create(name='Games', parent=ps3)
->>> ps3_hardware = Category.objects.create(name='Hardware & Accessories', parent=ps3)
->>> print_tree_details(Category.tree.all())
-1 - 1 0 1 20
-2 1 1 1 2 7
-3 2 1 2 3 4
-4 2 1 2 5 6
-5 1 1 1 8 13
-6 5 1 2 9 10
-7 5 1 2 11 12
-8 1 1 1 14 19
-9 8 1 2 15 16
-10 8 1 2 17 18
-
->>> wii = Category.objects.get(pk=wii.pk)
->>> wii.move_to(None)
->>> print_tree_details([wii])
-2 - 2 0 1 6
->>> print_tree_details(Category.tree.all())
-1 - 1 0 1 14
-5 1 1 1 2 7
-6 5 1 2 3 4
-7 5 1 2 5 6
-8 1 1 1 8 13
-9 8 1 2 9 10
-10 8 1 2 11 12
-2 - 2 0 1 6
-3 2 2 1 2 3
-4 2 2 1 4 5
-
->>> games = Category.objects.get(pk=games.pk)
->>> Category.tree.move_node(wii, games)
->>> print_tree_details([wii])
-2 1 1 1 14 19
->>> print_tree_details(Category.tree.all())
-1 - 1 0 1 20
-5 1 1 1 2 7
-6 5 1 2 3 4
-7 5 1 2 5 6
-8 1 1 1 8 13
-9 8 1 2 9 10
-10 8 1 2 11 12
-2 1 1 1 14 19
-3 2 1 2 15 16
-4 2 1 2 17 18
-
->>> ps3 = Category.objects.get(pk=ps3.pk)
->>> Category.tree.move_node(wii, ps3)
->>> print_tree_details([wii])
-2 8 1 2 13 18
->>> print_tree_details(Category.tree.all())
-1 - 1 0 1 20
-5 1 1 1 2 7
-6 5 1 2 3 4
-7 5 1 2 5 6
-8 1 1 1 8 19
-9 8 1 2 9 10
-10 8 1 2 11 12
-2 8 1 2 13 18
-3 2 1 3 14 15
-4 2 1 3 16 17
-
->>> ps3 = Category.objects.get(pk=ps3.pk)
->>> Category.tree.move_node(ps3, None)
->>> print_tree_details([ps3])
-8 - 2 0 1 12
->>> print_tree_details(Category.tree.all())
-1 - 1 0 1 8
-5 1 1 1 2 7
-6 5 1 2 3 4
-7 5 1 2 5 6
-8 - 2 0 1 12
-9 8 2 1 2 3
-10 8 2 1 4 5
-2 8 2 1 6 11
-3 2 2 2 7 8
-4 2 2 2 9 10
-
->>> wii = Category.objects.get(pk=wii.pk)
->>> games = Category.objects.get(pk=games.pk)
->>> Category.tree.move_node(wii, games)
->>> print_tree_details([wii])
-2 1 1 1 8 13
->>> print_tree_details(Category.tree.all())
-1 - 1 0 1 14
-5 1 1 1 2 7
-6 5 1 2 3 4
-7 5 1 2 5 6
-2 1 1 1 8 13
-3 2 1 2 9 10
-4 2 1 2 11 12
-8 - 2 0 1 6
-9 8 2 1 2 3
-10 8 2 1 4 5
-
-# Regression test for no level change being required
->>> xbox360_games = Category.objects.get(pk=xbox360_games.pk)
->>> Category.tree.move_node(xbox360_games, wii)
->>> print_tree_details([xbox360_games])
-6 2 1 2 11 12
->>> print_tree_details(Category.tree.all())
-1 - 1 0 1 14
-5 1 1 1 2 5
-7 5 1 2 3 4
-2 1 1 1 6 13
-3 2 1 2 7 8
-4 2 1 2 9 10
-6 2 1 2 11 12
-8 - 2 0 1 6
-9 8 2 1 2 3
-10 8 2 1 4 5
+# The move_to method will be used in other tests to verify that it calls the
+# TreeManager correctly.
 
 #######################
 # Intra-Tree Movement #
@@ -544,9 +306,12 @@ True
 >>> root = Node.objects.create()
 >>> c_1 = Node.objects.create(parent=root)
 >>> c_1_1 = Node.objects.create(parent=c_1)
+>>> c_1 = Node.objects.get(pk=c_1.pk)
 >>> c_1_2 = Node.objects.create(parent=c_1)
+>>> root = Node.objects.get(pk=root.pk)
 >>> c_2 = Node.objects.create(parent=root)
 >>> c_2_1 = Node.objects.create(parent=c_2)
+>>> c_2 = Node.objects.get(pk=c_2.pk)
 >>> c_2_2 = Node.objects.create(parent=c_2)
 >>> print_tree_details(Node.tree.all())
 1 - 1 0 1 14
@@ -1317,7 +1082,7 @@ ValueError: Cannot insert a node which has already been saved.
 3 - 5 0 1 2
 11 - 6 0 1 2
 
-# order_insertion_by insertion ################################################
+# order_insertion_by with single criterion ####################################
 >>> r1 = OrderedInsertion.objects.create(name='games')
 
 # Root ordering
@@ -1359,7 +1124,7 @@ ValueError: Cannot insert a node which has already been saved.
 4 3 2 1 6 7
 1 - 3 0 1 2
 
-# order_insertion_by reparenting ##############################################
+# order_insertion_by reparenting with single criterion ########################
 
 # Root -> child
 >>> r1 = OrderedInsertion.objects.get(pk=r1.pk)
@@ -1478,14 +1243,3 @@ ValueError: Cannot insert a node which has already been saved.
 9 1 5 1 4 5
 10 1 5 1 6 7
 8 1 5 1 8 9
-
-# TODO Fixtures won't work with Django MPTT unless the pre_save signal
-#      is given the ``save()`` method's ``raw`` argument, so we know not
-#      to attempt any tree processing.
-#
-#      http://code.djangoproject.com/ticket/5422 has a patch for this.
-#
-#      Once this change is available, we can think about using the more
-#      appropriate ``django.tests.TestCase`` with fixtures for testing
-#      specific features without having a knock-on effect on other
-#      tests.

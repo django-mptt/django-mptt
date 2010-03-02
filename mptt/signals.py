@@ -5,9 +5,8 @@ related logic when model instances are about to be saved or deleted.
 import operator
 
 from django.db.models.query import Q
-from django.utils.translation import ugettext as _
 
-__all__ = ('pre_save', 'pre_delete')
+__all__ = ('pre_save',)
 
 def _insertion_target_filters(node, order_insertion_by):
     """
@@ -84,15 +83,6 @@ def pre_save(instance, **kwargs):
     In either case, if the node's class has its ``order_insertion_by``
     tree option set, the node will be inserted or moved to the
     appropriate position to maintain ordering by the specified field.
-
-    .. note::
-       The ``raw`` argument accepted by ``Model.save()`` is not
-       currently passed along when the ``pre_save`` signal is
-       dispatched, but we check for it anyway for the benefit of people
-       who need to use fixtures and are willing to apply the patch in
-       ticket http://code.djangoproject.com/ticket/5422 to their own
-       version of Django.
-
     """
     if kwargs.get('raw'):
         return
@@ -135,17 +125,3 @@ def pre_save(instance, **kwargs):
                 # Make sure the instance's new parent is always
                 # restored on the way out in case of errors.
                 setattr(instance, opts.parent_attr, parent)
-
-def pre_delete(instance):
-    """
-    Updates tree node edge indicators which will by affected by the
-    deletion of the given model instance and any descendants it may
-    have, to ensure the integrity of the tree structure is
-    maintained.
-    """
-    opts = instance._meta
-    tree_width = (getattr(instance, opts.right_attr) -
-                  getattr(instance, opts.left_attr) + 1)
-    target_right = getattr(instance, opts.right_attr)
-    tree_id = getattr(instance, opts.tree_id_attr)
-    instance._tree_manager._close_gap(tree_width, target_right, tree_id)

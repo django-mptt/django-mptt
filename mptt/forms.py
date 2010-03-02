@@ -1,14 +1,55 @@
 """
 Form components for working with trees.
 """
-from django import newforms as forms
-from django.newforms.forms import NON_FIELD_ERRORS
-from django.newforms.util import ErrorList
+from django import forms
+from django.forms.forms import NON_FIELD_ERRORS
+from django.forms.util import ErrorList
+from django.utils.encoding import smart_unicode
 from django.utils.translation import ugettext_lazy as _
 
 from mptt.exceptions import InvalidMove
 
-__all__ = ('MoveNodeForm',)
+__all__ = ('TreeNodeChoiceField', 'TreeNodePositionField', 'MoveNodeForm')
+
+# Fields ######################################################################
+
+class TreeNodeChoiceField(forms.ModelChoiceField):
+    """A ModelChoiceField for tree nodes."""
+    def __init__(self, level_indicator=u'---', *args, **kwargs):
+        self.level_indicator = level_indicator
+        if kwargs.get('required', True) and not 'empty_label' in kwargs:
+            kwargs['empty_label'] = None
+        super(TreeNodeChoiceField, self).__init__(*args, **kwargs)
+
+    def label_from_instance(self, obj):
+        """
+        Creates labels which represent the tree level of each node when
+        generating option labels.
+        """
+        return u'%s %s' % (self.level_indicator * getattr(obj,
+                                                  obj._meta.level_attr),
+                           smart_unicode(obj))
+
+class TreeNodePositionField(forms.ChoiceField):
+    """A ChoiceField for specifying position relative to another node."""
+    FIRST_CHILD = 'first-child'
+    LAST_CHILD = 'last-child'
+    LEFT = 'left'
+    RIGHT = 'right'
+
+    DEFAULT_CHOICES = (
+        (FIRST_CHILD, _('First child')),
+        (LAST_CHILD, _('Last child')),
+        (LEFT, _('Left sibling')),
+        (RIGHT, _('Right sibling')),
+    )
+
+    def __init__(self, *args, **kwargs):
+        if 'choices' not in kwargs:
+            kwargs['choices'] = self.DEFAULT_CHOICES
+        super(TreeNodePositionField, self).__init__(*args, **kwargs)
+
+# Forms #######################################################################
 
 class MoveNodeForm(forms.Form):
     """
@@ -16,21 +57,8 @@ class MoveNodeForm(forms.Form):
     in its tree to another, with optional restriction of the nodes which
     are valid target nodes for the move.
     """
-    POSITION_FIRST_CHILD = 'first-child'
-    POSITION_LAST_CHILD = 'last-child'
-    POSITION_LEFT = 'left'
-    POSITION_RIGHT = 'right'
-
-    POSITION_CHOICES = (
-        (POSITION_FIRST_CHILD, _('First child')),
-        (POSITION_LAST_CHILD, _('Last child')),
-        (POSITION_LEFT, _('Left sibling')),
-        (POSITION_RIGHT, _('Right sibling')),
-    )
-
-    target   = forms.ModelChoiceField(queryset=None)
-    position = forms.ChoiceField(choices=POSITION_CHOICES,
-                                 initial=POSITION_FIRST_CHILD)
+    target   = TreeNodeChoiceField(queryset=None)
+    position = TreeNodePositionField()
 
     def __init__(self, node, *args, **kwargs):
         """
@@ -53,11 +81,21 @@ class MoveNodeForm(forms.Form):
         ``target_select_size``
            The size of the select element used for the target node.
            Defaults to ``10``.
+
+        ``position_choices``
+           A tuple of allowed position choices and their descriptions.
+           Defaults to ``TreeNodePositionField.DEFAULT_CHOICES``.
+
+        ``level_indicator``
+           A string which will be used to represent a single tree level
+           in the target options.
         """
+        self.node = node
         valid_targets = kwargs.pop('valid_targets', None)
         target_select_size = kwargs.pop('target_select_size', 10)
+        position_choices = kwargs.pop('position_choices', None)
+        level_indicator = kwargs.pop('level_indicator', None)
         super(MoveNodeForm, self).__init__(*args, **kwargs)
-        self.node = node
         opts = node._meta
         if valid_targets is None:
             valid_targets = node._tree_manager.exclude(**{
@@ -66,11 +104,11 @@ class MoveNodeForm(forms.Form):
                 '%s__lte' % opts.right_attr: getattr(node, opts.right_attr),
             })
         self.fields['target'].queryset = valid_targets
-        self.fields['target'].choices = \
-            [(target.pk, '%s %s' % ('---' * getattr(target, opts.level_attr),
-                                    unicode(target)))
-             for target in valid_targets]
         self.fields['target'].widget.attrs['size'] = target_select_size
+        if level_indicator:
+            self.fields['target'].level_indicator = level_indicator
+        if position_choices:
+            self.fields['position_choices'].choices = position_choices
 
     def save(self):
         """
