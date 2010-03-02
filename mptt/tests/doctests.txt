@@ -1,4 +1,3 @@
-
 >>> from datetime import date
 >>> from mptt.exceptions import InvalidMove
 >>> from mptt.tests.models import Genre, Insert, MultiOrder, Node, OrderedInsertion, Tree
@@ -1243,3 +1242,4 @@ ValueError: Cannot insert a node which has already been saved.
 9 1 5 1 4 5
 10 1 5 1 6 7
 8 1 5 1 8 9
+

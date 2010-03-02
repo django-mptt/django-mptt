@@ -1,9 +1,11 @@
 import re
 
+# hack to make test run
+import os
+os.environ['DJANGO_SETTINGS_MODULE'] = 'mptt.tests.settings'
 from django.test import TestCase
 
 from mptt.exceptions import InvalidMove
-from mptt.tests import doctests
 from mptt.tests.models import Category, Genre
 
 def get_tree_details(nodes):
@@ -39,6 +41,12 @@ def tree_details(text):
 # 9 - 2 0 1 6    rpg
 # 10 9 2 1 2 3   |-- arpg
 # 11 9 2 1 4 5   +-- trpg
+
+class DocTestTestCase(TestCase):
+
+    def test_run_doctest(self):
+        import doctest
+        doctest.testfile('doctests.txt')
 
 class ReparentingTestCase(TestCase):
     """
