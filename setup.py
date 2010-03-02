@@ -3,7 +3,7 @@ Based entirely on Django's own ``setup.py``.
 """
 import os
 from distutils.command.install import INSTALL_SCHEMES
-from distutils.core import setup
+from setuptools import setup
 
 def fullsplit(path, result=None):
     """
@@ -59,6 +59,10 @@ setup(
     author = 'Jonathan Buchanan',
     author_email = 'jonathan.buchanan@gmail.com',
     url = 'http://code.google.com/p/django-mptt/',
+    install_requires=[
+        'Django',
+    ],
+    test_suite="nose.collector",
     packages = packages,
     data_files = data_files,
     classifiers = ['Development Status :: 4 - Beta',
