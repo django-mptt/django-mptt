@@ -10,5 +10,5 @@ class MpttTestCase(unittest.TestCase):
         self.assertTrue(1==1)
 
     def test_run_doctest(self):
-        doctest.testfile('doctests.txt')
+        doctest.testfile('doctests.py')
 

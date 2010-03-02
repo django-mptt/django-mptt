@@ -16,17 +16,22 @@ def register(model, parent_attr='parent', left_attr='lft', right_attr='rght',
     """
     Sets the given model class up for Modified Preorder Tree Traversal.
     """
+    try:
+        from functools import wraps
+    except ImportError:
+        from django.utils.functional import wraps # Python 2.3, 2.4 fallback
+
     from django.db.models import signals as model_signals
     from django.db.models import FieldDoesNotExist, PositiveIntegerField
-    from django.dispatch import dispatcher
     from django.utils.translation import ugettext as _
 
     from mptt import models
-    from mptt.signals import pre_delete, pre_save
+    from mptt.signals import pre_save
     from mptt.managers import TreeManager
 
     if model in registry:
-        raise AlreadyRegistered(_('The model %s has already been registered.') % model.__name__)
+        raise AlreadyRegistered(
+            _('The model %s has already been registered.') % model.__name__)
     registry.append(model)
 
     # Add tree options to the model's Options
@@ -67,8 +72,23 @@ def register(model, parent_attr='parent', left_attr='lft', right_attr='rght',
                 level_attr).contribute_to_class(model, tree_manager_attr)
     setattr(model, '_tree_manager', getattr(model, tree_manager_attr))
 
-    # Set up signal receivers to manage the tree when instances of the
-    # model are about to be created, have their parent changed or be
-    # deleted.
-    dispatcher.connect(pre_save, signal=model_signals.pre_save, sender=model)
-    dispatcher.connect(pre_delete, signal=model_signals.pre_delete, sender=model)
+    # Set up signal receiver to manage the tree when instances of the
+    # model are about to be saved.
+    model_signals.pre_save.connect(pre_save, sender=model)
+
+    # Wrap the model's delete method to manage the tree structure before
+    # deletion. This is icky, but the pre_delete signal doesn't currently
+    # provide a way to identify which model delete was called on and we
+    # only want to manage the tree based on the topmost node which is
+    # being deleted.
+    def wrap_delete(delete):
+        def _wrapped_delete(self):
+            opts = self._meta
+            tree_width = (getattr(self, opts.right_attr) -
+                          getattr(self, opts.left_attr) + 1)
+            target_right = getattr(self, opts.right_attr)
+            tree_id = getattr(self, opts.tree_id_attr)
+            self._tree_manager._close_gap(tree_width, target_right, tree_id)
+            delete(self)
+        return wraps(delete)(_wrapped_delete)
+    model.delete = wrap_delete(model.delete)
