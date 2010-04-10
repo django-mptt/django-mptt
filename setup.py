@@ -2,7 +2,6 @@
 Django mptt setup file
 """
 import os
-# distribue?
 from setuptools import setup, find_packages
 
 # Dynamically calculate the version based on mptt.VERSION
@@ -10,13 +9,13 @@ version_tuple = __import__('mptt').VERSION
 version = "%d.%d.%d" % version_tuple
 
 setup(
-    name = 'django-mptt',
+    name = 'django-mptt-2',
     description = '''Utilities for implementing Modified Preorder Tree
     Traversal with your Django Models and working with trees of Model instances''',
     version = version,
     author = 'Jonathan Buchanan',
-    author_email = 'jonathan.buchanan@gmail.com',
-    url = 'http://code.google.com/p/django-mptt/',
+    author_email = 'batiste.bieler@gmail.com',
+    url = 'http://github.com/batiste/django-mptt',
     install_requires=[
         'Django',
     ],
