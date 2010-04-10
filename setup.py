@@ -11,7 +11,8 @@ version = "%d.%d.%d" % version_tuple
 setup(
     name = 'django-mptt-2',
     description = '''Utilities for implementing Modified Preorder Tree
-    Traversal with your Django Models and working with trees of Model instances''',
+    Traversal with your Django Models and working with trees of Model instances.
+    This package is maintained for Django 1.1.1 and the incoming 1.2''',
     version = version,
     author = 'Jonathan Buchanan',
     author_email = 'batiste.bieler@gmail.com',
