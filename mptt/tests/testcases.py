@@ -28,6 +28,22 @@ def tree_details(text):
     """
     return leading_whitespace_re.sub('', text)
 
+class DocTestTestCase(TestCase):
+
+    def test_run_doctest(self):
+        class DummyStream:
+            content = ""
+            def write(self, text):
+                self.content += text
+        dummy_stream = DummyStream()
+        import sys
+        before = sys.stdout
+        sys.stdout = dummy_stream
+        import doctest
+        doctest.testfile('doctests.txt')
+        sys.stdout = before
+        self.assertEqual(dummy_stream.content, "")
+
 # genres.json defines the following tree structure
 #
 # 1 - 1 0 1 16   action
@@ -41,12 +57,6 @@ def tree_details(text):
 # 9 - 2 0 1 6    rpg
 # 10 9 2 1 2 3   |-- arpg
 # 11 9 2 1 4 5   +-- trpg
-
-class DocTestTestCase(TestCase):
-
-    def test_run_doctest(self):
-        import doctest
-        doctest.testfile('doctests.txt')
 
 class ReparentingTestCase(TestCase):
     """
