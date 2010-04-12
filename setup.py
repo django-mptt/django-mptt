@@ -1,66 +1,27 @@
 """
-Based entirely on Django's own ``setup.py``.
+Django mptt setup file
 """
 import os
-from distutils.command.install import INSTALL_SCHEMES
-from distutils.core import setup
-
-def fullsplit(path, result=None):
-    """
-    Split a pathname into components (the opposite of os.path.join) in a
-    platform-neutral way.
-    """
-    if result is None:
-        result = []
-    head, tail = os.path.split(path)
-    if head == '':
-        return [tail] + result
-    if head == path:
-        return result
-    return fullsplit(head, [tail] + result)
-
-# Tell distutils to put the data_files in platform-specific installation
-# locations. See here for an explanation:
-# http://groups.google.com/group/comp.lang.python/browse_thread/thread/35ec7b2fed36eaec/2105ee4d9e8042cb
-for scheme in INSTALL_SCHEMES.values():
-    scheme['data'] = scheme['purelib']
-
-# Compile the list of packages available, because distutils doesn't have
-# an easy way to do this.
-packages, data_files = [], []
-root_dir = os.path.dirname(__file__)
-mptt_dir = os.path.join(root_dir, 'mptt')
-pieces = fullsplit(root_dir)
-if pieces[-1] == '':
-    len_root_dir = len(pieces) - 1
-else:
-    len_root_dir = len(pieces)
-
-for dirpath, dirnames, filenames in os.walk(mptt_dir):
-    # Ignore dirnames that start with '.'
-    for i, dirname in enumerate(dirnames):
-        if dirname.startswith('.'): del dirnames[i]
-    if '__init__.py' in filenames:
-        packages.append('.'.join(fullsplit(dirpath)[len_root_dir:]))
-    elif filenames:
-        data_files.append([dirpath, [os.path.join(dirpath, f) for f in filenames]])
+from setuptools import setup, find_packages
 
 # Dynamically calculate the version based on mptt.VERSION
 version_tuple = __import__('mptt').VERSION
-if version_tuple[2] is not None:
-    version = "%d.%d_%s" % version_tuple
-else:
-    version = "%d.%d" % version_tuple[:2]
+version = "%d.%d.%d" % version_tuple
 
 setup(
-    name = 'django-mptt',
-    description = 'Utilities for implementing Modified Preorder Tree Traversal with your Django Models and working with trees of Model instances',
+    name = 'django-mptt-2',
+    description = '''Utilities for implementing Modified Preorder Tree
+    Traversal with your Django Models and working with trees of Model instances.
+    This package is maintained for Django 1.1.1 and the incoming 1.2''',
     version = version,
     author = 'Jonathan Buchanan',
-    author_email = 'jonathan.buchanan@gmail.com',
-    url = 'http://code.google.com/p/django-mptt/',
-    packages = packages,
-    data_files = data_files,
+    author_email = 'batiste.bieler@gmail.com',
+    url = 'http://github.com/batiste/django-mptt',
+    install_requires=[
+        'Django',
+    ],
+    test_suite="mptt.tests.test_runner.run_tests",
+    packages=find_packages(),
     classifiers = ['Development Status :: 4 - Beta',
                    'Environment :: Web Environment',
                    'Framework :: Django',

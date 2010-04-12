@@ -1,9 +1,11 @@
 import re
 
+# hack to make test run
+import os
+os.environ['DJANGO_SETTINGS_MODULE'] = 'mptt.tests.settings'
 from django.test import TestCase
 
 from mptt.exceptions import InvalidMove
-from mptt.tests import doctests
 from mptt.tests.models import Category, Genre
 
 def get_tree_details(nodes):
@@ -25,6 +27,22 @@ def tree_details(text):
     the ``get_tree_details`` function.
     """
     return leading_whitespace_re.sub('', text)
+
+class DocTestTestCase(TestCase):
+
+    def test_run_doctest(self):
+        class DummyStream:
+            content = ""
+            def write(self, text):
+                self.content += text
+        dummy_stream = DummyStream()
+        import sys
+        before = sys.stdout
+        sys.stdout = dummy_stream
+        import doctest
+        doctest.testfile('doctests.txt')
+        sys.stdout = before
+        self.assertEqual(dummy_stream.content, "")
 
 # genres.json defines the following tree structure
 #

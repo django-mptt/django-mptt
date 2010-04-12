@@ -4,3 +4,5 @@ include LICENSE
 include MANIFEST.in
 include README
 recursive-include docs *.txt
+recursive-include mptt *.json
+recursive-include mptt/tests *.txt
