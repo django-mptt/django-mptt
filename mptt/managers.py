@@ -214,24 +214,14 @@ class TreeManager(models.Manager):
         """
         opts = self.model._meta
         
-        cursor = connection.cursor()
-        cursor.execute('UPDATE %(table)s SET %(left)s = 0, %(right)s = 0, %(level)s = 0, %(tree_id)s = 0' % {
-            'table': qn(opts.db_table),
-            'left': qn(opts.get_field(self.left_attr).column),
-            'right': qn(opts.get_field(self.right_attr).column),
-            'level': qn(opts.get_field(self.level_attr).column),
-            'tree_id': qn(opts.get_field(self.tree_id_attr).column)
-        })
-        
-        cursor.execute('SELECT %(id_col)s FROM %(table)s WHERE %(parent_col)s is NULL %(orderby)s' % {
-            'id_col': qn(opts.pk.column),
-            'table': qn(opts.db_table),
-            'parent_col': qn(opts.get_field(self.parent_attr).column),
-            'orderby': 'ORDER BY ' + ', '.join([qn(field) for field in opts.order_insertion_by]) if opts.order_insertion_by else ''
-        })
+        filters = {'%s__isnull' % opts.get_field(self.parent_attr).name : True}
+        qs = self.model._default_manager.filter(**filters)
+        if opts.order_insertion_by:
+            qs = qs.order_by(*opts.order_insertion_by)
+        pks = qs.values_list('pk', flat=True)
 
         idx = 0
-        for (pk, ) in cursor.fetchall():
+        for pk in pks:
             idx += 1
             self._rebuild_helper(pk, 1, idx)
         transaction.commit_unless_managed()
@@ -239,40 +229,20 @@ class TreeManager(models.Manager):
     def _rebuild_helper(self, pk, left, tree_id, level=0):
         opts = self.model._meta
         right = left + 1
-
-        cursor = connection.cursor()
-        cursor.execute('SELECT %(id_col)s FROM %(table)s WHERE %(parent_col)s = %(parent)d %(orderby)s' % {
-            'id_col': qn(opts.pk.column),
-            'table': qn(opts.db_table),
-            'parent_col': qn(opts.get_field(self.parent_attr).column),
-            'parent': pk,
-            'orderby': 'ORDER BY ' + ', '.join([qn(field) for field in opts.order_insertion_by]) if opts.order_insertion_by else ''
-        })
         
-        for (child_id, ) in cursor.fetchall():
+        qs = self.model._default_manager.filter(**{'%s__pk' % opts.get_field(self.parent_attr).name : pk})
+        if opts.order_insertion_by:
+            qs = qs.order_by(*opts.order_insertion_by)
+        child_ids = qs.values_list('pk', flat=True)
+        
+        for child_id in child_ids:
             right = self._rebuild_helper(child_id, right, tree_id, level+1)
         
-        cursor.execute("""
-            UPDATE %(table)s
-            SET
-                %(left_col)s = %(left)d,
-                %(right_col)s = %(right)d,
-                %(level_col)s = %(level)d,
-                %(tree_id_col)s = %(tree_id)d
-            WHERE
-                %(pk_col)s = %(pk)s
-        """ % {
-            'table': qn(opts.db_table),
-            'pk_col': qn(opts.pk.column),
-            'left_col': qn(opts.get_field(self.left_attr).column),
-            'right_col': qn(opts.get_field(self.right_attr).column),
-            'level_col': qn(opts.get_field(self.level_attr).column),
-            'tree_id_col': qn(opts.get_field(self.tree_id_attr).column),
-            'pk': pk,
-            'left': left,
-            'right': right,
-            'level': level,
-            'tree_id': tree_id
+        self.model._default_manager.filter(pk=pk).update(**{
+            self.left_attr : left,
+            self.right_attr : right,
+            self.level_attr : level,
+            self.tree_id_attr : tree_id
         })
         
         return right + 1
