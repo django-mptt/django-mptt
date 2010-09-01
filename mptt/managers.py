@@ -2,7 +2,7 @@
 A custom manager for working with trees of objects.
 """
 from django.db import connection, models, transaction
-from django.db.models import F
+from django.db.models import F, Max
 from django.utils.translation import ugettext as _
 
 from mptt.exceptions import InvalidMove
@@ -306,13 +306,11 @@ class TreeManager(models.Manager):
         Determines the next largest unused tree id for the tree managed
         by this manager.
         """
-        opts = self.model._meta
-        cursor = connection.cursor()
-        cursor.execute('SELECT MAX(%s) FROM %s' % (
-            qn(opts.get_field(self.tree_id_attr).column),
-            qn(opts.db_table)))
-        row = cursor.fetchone()
-        return row[0] and (row[0] + 1) or 1
+        qs = self.get_query_set()
+        max_tree_id = qs.aggregate(Max(self.tree_id_attr)).values()[0]
+        
+        max_tree_id = max_tree_id or 0
+        return max_tree_id + 1
 
     def _inter_tree_move_and_close_gap(self, node, level_change,
             left_right_change, new_tree_id, parent_pk=None):
