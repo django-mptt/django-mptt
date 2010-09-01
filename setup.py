@@ -18,7 +18,7 @@ setup(
     author_email = 'craig.ds@gmail.com',
     url = 'http://github.com/django-mptt/django-mptt',
     install_requires=[
-        'Django',
+        'Django >= 1.1',
     ],
     test_suite="mptt.tests.test_runner.run_tests",
     packages=find_packages(exclude=['mptt.tests']),
