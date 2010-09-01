@@ -403,7 +403,6 @@ class TreeManager(models.Manager):
         left = getattr(node, self.left_attr)
         right = getattr(node, self.right_attr)
         level = getattr(node, self.level_attr)
-        tree_id = getattr(node, self.tree_id_attr)
         if not new_tree_id:
             new_tree_id = self._get_next_tree_id()
         left_right_change = left - 1
@@ -537,8 +536,7 @@ class TreeManager(models.Manager):
         tree_id = getattr(node, self.tree_id_attr)
         target_tree_id = getattr(target, self.tree_id_attr)
 
-        if (getattr(node, self.tree_id_attr) ==
-            getattr(target, self.tree_id_attr)):
+        if tree_id == target_tree_id:
             self._move_child_within_tree(node, target, position)
         else:
             self._move_child_to_new_tree(node, target, position)
@@ -555,10 +553,6 @@ class TreeManager(models.Manager):
         left = getattr(node, self.left_attr)
         right = getattr(node, self.right_attr)
         level = getattr(node, self.level_attr)
-        target_left = getattr(target, self.left_attr)
-        target_right = getattr(target, self.right_attr)
-        target_level = getattr(target, self.level_attr)
-        tree_id = getattr(node, self.tree_id_attr)
         new_tree_id = getattr(target, self.tree_id_attr)
 
         space_target, level_change, left_right_change, parent = \

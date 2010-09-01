@@ -1,7 +1,6 @@
 """
 Django mptt setup file
 """
-import os
 from setuptools import setup, find_packages
 
 # Dynamically calculate the version based on mptt.VERSION
