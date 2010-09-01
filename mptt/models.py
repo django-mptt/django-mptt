@@ -42,9 +42,7 @@ def get_children(self):
     if self.is_leaf_node():
         return self._tree_manager.none()
 
-    return self._tree_manager.filter(**{
-        self._meta.parent_attr: self,
-    })
+    return self._tree_manager._mptt_filter(parent=self)
 
 def get_descendants(self, include_self=False):
     """
