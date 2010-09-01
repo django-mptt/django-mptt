@@ -2,6 +2,7 @@
 A custom manager for working with trees of objects.
 """
 from django.db import connection, models, transaction
+from django.db.models import F
 from django.utils.translation import ugettext as _
 
 from mptt.exceptions import InvalidMove
@@ -297,15 +298,8 @@ class TreeManager(models.Manager):
         Creates space for a new tree by incrementing all tree ids
         greater than ``target_tree_id``.
         """
-        opts = self.model._meta
-        cursor = connection.cursor()
-        cursor.execute("""
-        UPDATE %(table)s
-        SET %(tree_id)s = %(tree_id)s + 1
-        WHERE %(tree_id)s > %%s""" % {
-            'table': qn(opts.db_table),
-            'tree_id': qn(opts.get_field(self.tree_id_attr).column),
-        }, [target_tree_id])
+        qs = self.filter(**{'%s__gt' % self.tree_id_attr : target_tree_id})
+        qs.update(**{self.tree_id_attr: F(self.tree_id_attr) + 1})
 
     def _get_next_tree_id(self):
         """
