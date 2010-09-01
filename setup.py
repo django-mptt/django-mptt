@@ -21,7 +21,7 @@ setup(
         'Django',
     ],
     test_suite="mptt.tests.test_runner.run_tests",
-    packages=find_packages(),
+    packages=find_packages(exclude=['mptt.tests']),
     classifiers = ['Development Status :: 4 - Beta',
                    'Environment :: Web Environment',
                    'Framework :: Django',
