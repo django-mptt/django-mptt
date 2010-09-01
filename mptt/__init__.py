@@ -33,6 +33,13 @@ def register(model, parent_attr='parent', left_attr='lft', right_attr='rght',
         raise AlreadyRegistered(
             _('The model %s has already been registered.') % model.__name__)
     registry.append(model)
+    
+    # Allow order_insertion_by to be either a string, a list/tuple or None
+    if order_insertion_by is not None:
+        if isinstance(order_insertion_by, basestring):
+            order_insertion_by = [order_insertion_by]
+        else:
+            order_insertion_by = list(order_insertion_by)
 
     # Add tree options to the model's Options
     opts = model._meta
