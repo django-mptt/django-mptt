@@ -56,15 +56,18 @@ def get_descendants(self, include_self=False):
         return self._tree_manager.none()
 
     opts = self._meta
-    filters = {opts.tree_id_attr: getattr(self, opts.tree_id_attr)}
-    if include_self:
-        filters['%s__range' % opts.left_attr] = (getattr(self, opts.left_attr),
-                                                 getattr(self, opts.right_attr))
-    else:
-        filters['%s__gt' % opts.left_attr] = getattr(self, opts.left_attr)
-        filters['%s__lt' % opts.left_attr] = getattr(self, opts.right_attr)
+    left = getattr(self, opts.left_attr)
+    right = getattr(self, opts.right_attr)
     
-    return self._tree_manager.filter(**filters)
+    if not include_self:
+        left += 1
+        right -= 1
+    
+    return self._tree_manager._mptt_filter(
+        tree_id=getattr(self, opts.tree_id_attr),
+        left__gte=left,
+        left__lte=right
+    )
 
 def get_descendant_count(self):
     """
