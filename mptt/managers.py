@@ -34,8 +34,7 @@ class TreeManager(models.Manager):
     """
     A manager for working with trees of objects.
     """
-    def __init__(self, parent_attr, left_attr, right_attr, tree_id_attr,
-                 level_attr):
+    def __init__(self, parent_attr, left_attr, right_attr, tree_id_attr, level_attr):
         """
         Tree attributes for the model being managed are held as
         attributes of this manager for later use, since it will be using
@@ -47,6 +46,34 @@ class TreeManager(models.Manager):
         self.right_attr = right_attr
         self.tree_id_attr = tree_id_attr
         self.level_attr = level_attr
+    
+    def _translate_lookups(self, **lookups):
+        opts = self.model._meta
+        new_lookups = {}
+        for k, v in lookups.items():
+            parts = k.split('__')
+            new_parts = []
+            for part in parts:
+                new_parts.append(opts.mptt_field_lookup_map.get(part, part))
+            new_lookups['__'.join(new_parts)] = v
+        return new_lookups
+    
+    def _mptt_filter(self, qs=None, **filters):
+        """
+        Like self.filter(), but translates name-agnostic filters for MPTT fields.
+        """
+        if qs is None:
+            qs = self.get_query_set()
+        return qs.filter(**self._translate_lookups(**filters))
+    
+    def _mptt_update(self, qs=None, **items):
+        """
+        Like self.update(), but translates name-agnostic MPTT fields.
+        """
+        if qs is None:
+            qs = self.get_query_set()
+        return qs.update(**self._translate_lookups(**items))
+    
 
     def add_related_count(self, queryset, rel_model, rel_field, count_attr,
                           cumulative=False):
@@ -198,16 +225,13 @@ class TreeManager(models.Manager):
         """
         Returns the root node of the tree with the given id.
         """
-        return self.get(**{
-            self.tree_id_attr: tree_id,
-            '%s__isnull' % self.parent_attr: True,
-        })
+        return self._mptt_filter(tree_id=tree_id, parent__isnull=True).get()
 
     def root_nodes(self):
         """
         Creates a ``QuerySet`` containing root nodes.
         """
-        return self.filter(**{'%s__isnull' % self.parent_attr: True})
+        return self._mptt_filter(parent__isnull=True)
 
     def rebuild(self):
         """
@@ -215,8 +239,7 @@ class TreeManager(models.Manager):
         """
         opts = self.model._meta
         
-        filters = {'%s__isnull' % opts.get_field(self.parent_attr).name : True}
-        qs = self.model._default_manager.filter(**filters)
+        qs = self._mptt_filter(parent__isnull=True)
         if opts.order_insertion_by:
             qs = qs.order_by(*opts.order_insertion_by)
         pks = qs.values_list('pk', flat=True)
@@ -231,7 +254,7 @@ class TreeManager(models.Manager):
         opts = self.model._meta
         right = left + 1
         
-        qs = self.model._default_manager.filter(**{'%s__pk' % opts.get_field(self.parent_attr).name : pk})
+        qs = self._mptt_filter(parent__pk=pk)
         if opts.order_insertion_by:
             qs = qs.order_by(*opts.order_insertion_by)
         child_ids = qs.values_list('pk', flat=True)
@@ -239,12 +262,13 @@ class TreeManager(models.Manager):
         for child_id in child_ids:
             right = self._rebuild_helper(child_id, right, tree_id, level+1)
         
-        self.model._default_manager.filter(pk=pk).update(**{
-            self.left_attr : left,
-            self.right_attr : right,
-            self.level_attr : level,
-            self.tree_id_attr : tree_id
-        })
+        qs = self.model._default_manager.filter(pk=pk)
+        self._mptt_update(qs,
+            left=left,
+            right=right,
+            level=level,
+            tree_id=tree_id
+        )
         
         return right + 1
             
@@ -298,8 +322,8 @@ class TreeManager(models.Manager):
         Creates space for a new tree by incrementing all tree ids
         greater than ``target_tree_id``.
         """
-        qs = self.filter(**{'%s__gt' % self.tree_id_attr : target_tree_id})
-        qs.update(**{self.tree_id_attr: F(self.tree_id_attr) + 1})
+        qs = self._mptt_filter(tree_id__gt=target_tree_id)
+        self._mptt_update(qs, tree_id=F(self.tree_id_attr) + 1)
 
     def _get_next_tree_id(self):
         """

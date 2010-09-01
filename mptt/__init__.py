@@ -50,7 +50,14 @@ def register(model, parent_attr='parent', left_attr='lft', right_attr='rght',
     opts.level_attr = level_attr
     opts.tree_manager_attr = tree_manager_attr
     opts.order_insertion_by = order_insertion_by
-
+    opts.mptt_field_lookup_map = {
+        'parent': parent_attr,
+        'left': left_attr,
+        'right': right_attr,
+        'tree_id': tree_id_attr,
+        'level': level_attr,
+    }
+    
     # Add tree fields if they do not exist
     for attr in [left_attr, right_attr, tree_id_attr, level_attr]:
         try:
