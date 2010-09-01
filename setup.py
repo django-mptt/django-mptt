@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 
 # Dynamically calculate the version based on mptt.VERSION
 version_tuple = __import__('mptt').VERSION
-version = "%d.%d.%d" % version_tuple
+version = ".".join([str(v) for v in version_tuple])
 
 setup(
     name = 'django-mptt-2',
