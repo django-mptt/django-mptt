@@ -1,4 +1,4 @@
-VERSION = (0, 3, 0)
+VERSION = (0, 4, 'pre')
 
 __all__ = ('register',)
 
