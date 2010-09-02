@@ -260,7 +260,7 @@ A ``ValueError`` will be raised if an invalid value is given for the
 ``position`` argument.
 
 Note that some of the moves you could attempt to make with this method
-are invalid - for example, trying to make an instance be its own its own
+are invalid - for example, trying to make an instance be its own
 child or the child of one of its descendants. In these cases, a
 ``mptt.exceptions.InvalidMove`` exception will be raised.
 
