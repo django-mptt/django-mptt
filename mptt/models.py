@@ -157,12 +157,10 @@ def get_siblings(self, include_self=False):
     If ``include_self`` is ``True``, the ``QuerySet`` will also
     include this model instance.
     """
-    opts = self._meta
     if self.is_root_node():
-        filters = {'%s__isnull' % opts.parent_attr: True}
+        queryset = self._tree_manager._mptt_filter(parent__isnull=True)
     else:
-        filters = {opts.parent_attr: getattr(self, '%s_id' % opts.parent_attr)}
-    queryset = self._tree_manager.filter(**filters)
+        queryset = self._tree_manager._mptt_filter(parent__id=getattr(self, '%s_id' % self._meta.parent_attr))
     if not include_self:
         queryset = queryset.exclude(pk=self.pk)
     return queryset
