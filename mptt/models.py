@@ -165,6 +165,12 @@ def get_siblings(self, include_self=False):
         queryset = queryset.exclude(pk=self.pk)
     return queryset
 
+def get_level(self):
+    """
+    Returns the level of this node (distance from root)
+    """
+    return getattr(self, self._meta.level_attr)
+
 def insert_at(self, target, position='first-child', commit=False):
     """
     Convenience method for calling ``TreeManager.insert_node`` with this

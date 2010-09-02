@@ -76,6 +76,7 @@ def register(model, parent_attr='parent', left_attr='lft', right_attr='rght',
     setattr(model, 'get_previous_sibling', models.get_previous_sibling)
     setattr(model, 'get_root', models.get_root)
     setattr(model, 'get_siblings', models.get_siblings)
+    setattr(model, 'get_level', models.get_level)
     setattr(model, 'insert_at', models.insert_at)
     setattr(model, 'is_child_node', models.is_child_node)
     setattr(model, 'is_leaf_node', models.is_leaf_node)
