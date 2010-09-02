@@ -3,6 +3,8 @@ New instance methods for Django models which are set up for Modified
 Preorder Tree Traversal.
 """
 
+from django.db.models import F
+
 def get_ancestors(self, ascending=False):
     """
     Creates a ``QuerySet`` containing the ancestors of this model
@@ -82,27 +84,13 @@ def get_leafnodes(self, include_self=False):
     instance, in tree order.
 
     If ``include_self`` is ``True``, the ``QuerySet`` will also
-    include this model instance.
+    include this model instance (if it is a leaf node)
     """
-    if not include_self and self.is_leaf_node():
-        return self._tree_manager.none()
-
-    if include_self and self.is_leaf_node():
-        # Isn't there a better way?
-        return self._tree_manager.filter(id=self.id)
-
-    opts = self._meta
-    filters = {opts.tree_id_attr: getattr(self, opts.tree_id_attr)}
-    if include_self:
-        filters['%s__range' % opts.left_attr] = (getattr(self, opts.left_attr),
-                                                 getattr(self, opts.right_attr))
-    else:
-        filters['%s__gt' % opts.left_attr] = getattr(self, opts.left_attr)
-        filters['%s__lt' % opts.left_attr] = getattr(self, opts.right_attr)
-
-    return self._tree_manager.filter(**filters).extra(
-        where=['%s-%s=1' % (self._meta.right_attr,
-                            self._meta.left_attr)])
+    descendants = get_descendants(self, include_self=include_self)
+    
+    return self._tree_manager._mptt_filter(descendants,
+        left=F(self._meta.right_attr)-1
+    )
 
 def get_next_sibling(self, **filters):
     """
