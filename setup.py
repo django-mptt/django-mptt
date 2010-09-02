@@ -8,10 +8,9 @@ version_tuple = __import__('mptt').VERSION
 version = ".".join([str(v) for v in version_tuple])
 
 setup(
-    name = 'django-mptt-2',
-    description = '''Utilities for implementing Modified Preorder Tree
-    Traversal with your Django Models and working with trees of Model instances.
-    Requires Django 1.1+''',
+    name = 'django-mptt',
+    description = '''Utilities for implementing Modified Preorder Tree Traversal
+        with your Django Models and working with trees of Model instances.''',
     version = version,
     author = 'Jonathan Buchanan',
     author_email = 'craig.ds@gmail.com',
