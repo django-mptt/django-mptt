@@ -142,12 +142,11 @@ def get_root(self):
     """
     if self.is_root_node():
         return self
-
-    opts = self._meta
-    return self._default_manager.get(**{
-        opts.tree_id_attr: getattr(self, opts.tree_id_attr),
-        '%s__isnull' % opts.parent_attr: True,
-    })
+    
+    return self._tree_manager._mptt_filter(
+        tree_id=getattr(self, self._meta.tree_id_attr),
+        parent__isnull=True
+    ).get()
 
 def get_siblings(self, include_self=False):
     """
