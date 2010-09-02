@@ -98,23 +98,20 @@ def get_next_sibling(self, **filters):
     ``None`` if it doesn't have a next sibling.
     """
     opts = self._meta
+    qs = self._tree_manager.filter(**filters)
     if self.is_root_node():
-        filters.update({
-            '%s__isnull' % opts.parent_attr: True,
-            '%s__gt' % opts.tree_id_attr: getattr(self, opts.tree_id_attr),
-        })
+        qs = self._tree_manager._mptt_filter(qs,
+            parent__isnull=True,
+            tree_id__gt=getattr(self, opts.tree_id_attr),
+        )
     else:
-        filters.update({
-             opts.parent_attr: getattr(self, '%s_id' % opts.parent_attr),
-            '%s__gt' % opts.left_attr: getattr(self, opts.right_attr),
-        })
-
-    sibling = None
-    try:
-        sibling = self._tree_manager.filter(**filters)[0]
-    except IndexError:
-        pass
-    return sibling
+        qs = self._tree_manager._mptt_filter(qs,
+            parent__id=getattr(self, '%s_id' % opts.parent_attr),
+            left__gt=getattr(self, opts.right_attr),
+        )
+    
+    siblings = qs[:1]
+    return siblings[0] if siblings else None
 
 def get_previous_sibling(self, **filters):
     """
@@ -122,25 +119,22 @@ def get_previous_sibling(self, **filters):
     ``None`` if it doesn't have a previous sibling.
     """
     opts = self._meta
+    qs = self._tree_manager.filter(**filters)
     if self.is_root_node():
-        filters.update({
-            '%s__isnull' % opts.parent_attr: True,
-            '%s__lt' % opts.tree_id_attr: getattr(self, opts.tree_id_attr),
-        })
-        order_by = '-%s' % opts.tree_id_attr
+        qs = self._tree_manager._mptt_filter(qs,
+            parent__isnull=True,
+            tree_id__lt=getattr(self, opts.tree_id_attr),
+        )
+        qs = qs.order_by('-%s' % opts.tree_id_attr)
     else:
-        filters.update({
-             opts.parent_attr: getattr(self, '%s_id' % opts.parent_attr),
-            '%s__lt' % opts.right_attr: getattr(self, opts.left_attr),
-        })
-        order_by = '-%s' % opts.right_attr
+        qs = self._tree_manager._mptt_filter(qs,
+            parent__id=getattr(self, '%s_id' % opts.parent_attr),
+            right__lt=getattr(self, opts.left_attr),
+        )
+        qs = qs.order_by('-%s' % opts.right_attr)
 
-    sibling = None
-    try:
-        sibling = self._tree_manager.filter(**filters).order_by(order_by)[0]
-    except IndexError:
-        pass
-    return sibling
+    siblings = qs[:1]
+    return siblings[0] if siblings else None
 
 def get_root(self):
     """
