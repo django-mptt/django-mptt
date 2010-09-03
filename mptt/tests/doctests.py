@@ -218,10 +218,14 @@ DoesNotExist: Genre matching query does not exist.
 [u'Platformer']
 >>> [g.name for g in action.get_descendants()]
 [u'Platformer', u'2D Platformer', u'3D Platformer', u'4D Platformer']
->>> [g.name for g in action.get_leafnodes()]
-[u'2D Platformer', u'3D Platformer', u'4D Platformer']
 >>> [g.name for g in action.get_descendants(include_self=True)]
 [u'Action', u'Platformer', u'2D Platformer', u'3D Platformer', u'4D Platformer']
+>>> [g.name for g in action.get_leafnodes()]
+[u'2D Platformer', u'3D Platformer', u'4D Platformer']
+>>> [g.name for g in action.get_leafnodes(include_self=False)]
+[u'2D Platformer', u'3D Platformer', u'4D Platformer']
+>>> [g.name for g in action.get_leafnodes(include_self=True)]
+[u'2D Platformer', u'3D Platformer', u'4D Platformer']
 >>> action.get_descendant_count()
 4
 >>> action.get_previous_sibling()
@@ -251,6 +255,10 @@ False
 [u'2D Platformer', u'3D Platformer', u'4D Platformer']
 >>> [g.name for g in platformer.get_descendants(include_self=True)]
 [u'Platformer', u'2D Platformer', u'3D Platformer', u'4D Platformer']
+>>> [g.name for g in platformer.get_leafnodes()]
+[u'2D Platformer', u'3D Platformer', u'4D Platformer']
+>>> [g.name for g in platformer.get_leafnodes(include_self=True)]
+[u'2D Platformer', u'3D Platformer', u'4D Platformer']
 >>> platformer.get_descendant_count()
 3
 >>> platformer.get_previous_sibling()
@@ -279,6 +287,10 @@ False
 []
 >>> [g.name for g in platformer_3d.get_descendants(include_self=True)]
 [u'3D Platformer']
+>>> [g.name for g in platformer_3d.get_leafnodes()]
+[]
+>>> [g.name for g in platformer_3d.get_leafnodes(include_self=True)]
+[u'3D Platformer']
 >>> platformer_3d.get_descendant_count()
 0
 >>> platformer_3d.get_previous_sibling()
@@ -297,10 +309,6 @@ False
 True
 >>> platformer_3d.is_leaf_node()
 True
->>> platformer_3d.get_leafnodes()
-[]
->>> [g.name for g in platformer_3d.get_leafnodes(True)]
-[u'3D Platformer']
 
 # The move_to method will be used in other tests to verify that it calls the
 # TreeManager correctly.
