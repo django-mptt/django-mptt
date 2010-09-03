@@ -131,7 +131,7 @@ class TreeManager(models.Manager):
             self.tree_id_attr, self.left_attr)
 
     def insert_node(self, node, target, position='last-child',
-                    commit=False):
+                    save=False):
         """
         Sets up the tree state for ``node`` (which has not yet been
         inserted into in the database) so it will be positioned relative
@@ -142,7 +142,7 @@ class TreeManager(models.Manager):
         A ``target`` of ``None`` indicates that ``node`` should be
         the last root node.
 
-        If ``commit`` is ``True``, ``node``'s ``save()`` method will be
+        If ``save`` is ``True``, ``node``'s ``save()`` method will be
         called before it is returned.
         """
         if node.pk:
@@ -186,7 +186,7 @@ class TreeManager(models.Manager):
             setattr(node, self.tree_id_attr, tree_id)
             setattr(node, self.parent_attr, parent)
 
-        if commit:
+        if save:
             node.save()
         return node
 

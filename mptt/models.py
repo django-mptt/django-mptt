@@ -171,12 +171,12 @@ def get_level(self):
     """
     return getattr(self, self._meta.level_attr)
 
-def insert_at(self, target, position='first-child', commit=False):
+def insert_at(self, target, position='first-child', save=False):
     """
     Convenience method for calling ``TreeManager.insert_node`` with this
     model instance.
     """
-    self._tree_manager.insert_node(self, target, position, commit)
+    self._tree_manager.insert_node(self, target, position, save)
 
 def is_child_node(self):
     """

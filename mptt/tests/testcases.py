@@ -240,9 +240,9 @@ class DeletionTestCase(TestCase):
     def test_delete_root_node(self):
         # Add a few other roots to verify that they aren't affected
         Category(name='Preceding root').insert_at(Category.objects.get(id=1),
-                                                  'left', commit=True)
+                                                  'left', save=True)
         Category(name='Following root').insert_at(Category.objects.get(id=1),
-                                                  'right', commit=True)
+                                                  'right', save=True)
         self.assertEqual(get_tree_details(Category.tree.all()),
                          tree_details("""11 - 1 0 1 2
                                          1 - 2 0 1 20

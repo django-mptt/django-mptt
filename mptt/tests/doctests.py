@@ -964,7 +964,7 @@ InvalidMove: A node may not be made a sibling of itself.
 
 >>> r2 = Insert.objects.get(pk=r2.pk)
 >>> c1 = Insert()
->>> c1 = Insert.tree.insert_node(c1, r2, commit=True)
+>>> c1 = Insert.tree.insert_node(c1, r2, save=True)
 >>> print_tree_details([c1])
 4 2 2 1 2 3
 >>> print_tree_details(Insert.tree.all())
@@ -981,7 +981,7 @@ ValueError: Cannot insert a node which has already been saved.
 # First child
 >>> r2 = Insert.objects.get(pk=r2.pk)
 >>> c2 = Insert()
->>> c2 = Insert.tree.insert_node(c2, r2, position='first-child', commit=True)
+>>> c2 = Insert.tree.insert_node(c2, r2, position='first-child', save=True)
 >>> print_tree_details([c2])
 5 2 2 1 2 3
 >>> print_tree_details(Insert.tree.all())
@@ -994,7 +994,7 @@ ValueError: Cannot insert a node which has already been saved.
 # Left
 >>> c1 = Insert.objects.get(pk=c1.pk)
 >>> c3 = Insert()
->>> c3 = Insert.tree.insert_node(c3, c1, position='left', commit=True)
+>>> c3 = Insert.tree.insert_node(c3, c1, position='left', save=True)
 >>> print_tree_details([c3])
 6 2 2 1 4 5
 >>> print_tree_details(Insert.tree.all())
@@ -1007,7 +1007,7 @@ ValueError: Cannot insert a node which has already been saved.
 
 # Right
 >>> c4 = Insert()
->>> c4 = Insert.tree.insert_node(c4, c3, position='right', commit=True)
+>>> c4 = Insert.tree.insert_node(c4, c3, position='right', save=True)
 >>> print_tree_details([c4])
 7 2 2 1 6 7
 >>> print_tree_details(Insert.tree.all())
@@ -1022,7 +1022,7 @@ ValueError: Cannot insert a node which has already been saved.
 # Last child
 >>> r2 = Insert.objects.get(pk=r2.pk)
 >>> c5 = Insert()
->>> c5 = Insert.tree.insert_node(c5, r2, position='last-child', commit=True)
+>>> c5 = Insert.tree.insert_node(c5, r2, position='last-child', save=True)
 >>> print_tree_details([c5])
 8 2 2 1 10 11
 >>> print_tree_details(Insert.tree.all())
@@ -1038,7 +1038,7 @@ ValueError: Cannot insert a node which has already been saved.
 # Left sibling of root
 >>> r2 = Insert.objects.get(pk=r2.pk)
 >>> r4 = Insert()
->>> r4 = Insert.tree.insert_node(r4, r2, position='left', commit=True)
+>>> r4 = Insert.tree.insert_node(r4, r2, position='left', save=True)
 >>> print_tree_details([r4])
 9 - 2 0 1 2
 >>> print_tree_details(Insert.tree.all())
@@ -1055,7 +1055,7 @@ ValueError: Cannot insert a node which has already been saved.
 # Right sibling of root
 >>> r2 = Insert.objects.get(pk=r2.pk)
 >>> r5 = Insert()
->>> r5 = Insert.tree.insert_node(r5, r2, position='right', commit=True)
+>>> r5 = Insert.tree.insert_node(r5, r2, position='right', save=True)
 >>> print_tree_details([r5])
 10 - 4 0 1 2
 >>> print_tree_details(Insert.tree.all())
@@ -1072,7 +1072,7 @@ ValueError: Cannot insert a node which has already been saved.
 
 # Last root
 >>> r6 = Insert()
->>> r6 = Insert.tree.insert_node(r6, None, commit=True)
+>>> r6 = Insert.tree.insert_node(r6, None, save=True)
 >>> print_tree_details([r6])
 11 - 6 0 1 2
 >>> print_tree_details(Insert.tree.all())
