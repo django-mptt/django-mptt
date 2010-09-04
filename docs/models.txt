@@ -181,15 +181,15 @@ nodes are considered to be siblings of other root nodes.
 If ``include_self`` is ``True``, the ``QuerySet`` will also include the
 model instance itself.
 
-``insert_at(target, position='first-child', commit=False)``
+``insert_at(target, position='first-child', save=False)``
 -----------------------------------------------------------
 
 Positions the model instance (which must not yet have been inserted into
 the database) in the tree based on ``target`` and ``position`` (when
 appropriate).
 
-If ``commit`` is True, the model instance's ``save()`` method will be
-called before the instance is returned.
+If ``save`` is True, the model instance's ``save()`` method will also be
+called.
 
 ``is_child_node()``
 -------------------
@@ -314,7 +314,7 @@ model.
 
 Returns the root node of tree with the given id.
 
-``insert_node(node, target, position='last-child', commit=False)``
+``insert_node(node, target, position='last-child', save=False)``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Sets up the tree state for ``node`` (which has not yet been inserted
@@ -325,7 +325,7 @@ is inserted, with any neccessary space already having been made for it.
 A ``target`` of ``None`` indicates that ``node`` should be the last root
 node.
 
-If ``commit`` is ``True``, ``node``'s ``save()`` method will be called
+If ``save`` is ``True``, ``node``'s ``save()`` method will be called
 before it is returned.
 
 ``move_node(node, target, position='last-child')``
