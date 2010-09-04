@@ -9,14 +9,13 @@ version_tuple = __import__('mptt').VERSION
 version = "%d.%d.%d" % version_tuple
 
 setup(
-    name = 'django-mptt-2',
-    description = '''Utilities for implementing Modified Preorder Tree
-    Traversal with your Django Models and working with trees of Model instances.
-    This package is maintained for Django 1.1.1 and the incoming 1.2''',
+    name = 'django-mptt',
+    description = '''Utilities for implementing Modified Preorder Tree Traversal
+        with your Django Models and working with trees of Model instances.''',
     version = version,
     author = 'Jonathan Buchanan',
-    author_email = 'batiste.bieler@gmail.com',
-    url = 'http://github.com/batiste/django-mptt',
+    author_email = 'craig.ds@gmail.com',
+    url = 'http://github.com/django-mptt/django-mptt',
     install_requires=[
         'Django',
     ],
