@@ -1,6 +1,6 @@
 Metadata-Version: 1.0
 Name: django-mptt
-Version: 0.3.0
+Version: 0.3.1
 Summary: Utilities for implementing Modified Preorder Tree Traversal with your Django Models and working with trees of Model instances.
 Home-page: http://code.google.com/p/django-mptt/
 Author: Jonathan Buchanan
