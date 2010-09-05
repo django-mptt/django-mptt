@@ -51,7 +51,8 @@ class DrilldownTreeForNodeNode(template.Node):
         context[self.context_var] = drilldown_tree_for_node(*args)
         return ''
 
-def do_full_tree_for_model(parser, token):
+@register.tag
+def full_tree_for_model(parser, token):
     """
     Populates a template variable with a ``QuerySet`` containing the
     full tree for a given model.
@@ -74,6 +75,7 @@ def do_full_tree_for_model(parser, token):
         raise template.TemplateSyntaxError(_("second argument to %s tag must be 'as'") % bits[0])
     return FullTreeForModelNode(bits[1], bits[3])
 
+@register.tag('drilldown_tree_for_node')
 def do_drilldown_tree_for_node(parser, token):
     """
     Populates a template variable with the drilldown tree for a given
@@ -140,6 +142,7 @@ def do_drilldown_tree_for_node(parser, token):
     else:
         return DrilldownTreeForNodeNode(bits[1], bits[3])
 
+@register.filter
 def tree_info(items, features=None):
     """
     Given a list of tree items, produces doubles of a tree item and a
@@ -175,6 +178,7 @@ def tree_info(items, features=None):
             kwargs['ancestors'] = True
     return tree_item_iterator(items, **kwargs)
 
+@register.filter
 def tree_path(items, separator=' :: '):
     """
     Creates a tree path represented by a list of ``items`` by joining
@@ -191,7 +195,3 @@ def tree_path(items, separator=' :: '):
     """
     return separator.join([force_unicode(i) for i in items])
 
-register.tag('full_tree_for_model', do_full_tree_for_model)
-register.tag('drilldown_tree_for_node', do_drilldown_tree_for_node)
-register.filter('tree_info', tree_info)
-register.filter('tree_path', tree_path)
