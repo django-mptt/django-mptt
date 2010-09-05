@@ -4,7 +4,7 @@ __all__ = ('register',)
 
 class AlreadyRegistered(Exception):
     """
-    An attempt was made to register a model for MPTT more than once.
+    (Deprecated)
     """
     pass
 
@@ -30,8 +30,8 @@ def register(model, parent_attr='parent', left_attr='lft', right_attr='rght',
     from mptt.managers import TreeManager
 
     if model in registry:
-        raise AlreadyRegistered(
-            _('The model %s has already been registered.') % model.__name__)
+        return
+    
     registry.append(model)
     
     # Allow order_insertion_by to be either a string, a list/tuple or None
