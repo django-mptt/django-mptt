@@ -1,6 +1,4 @@
-"""
-Django mptt setup file
-"""
+#!/usr/bin/env python
 from setuptools import setup, find_packages
 
 # Dynamically calculate the version based on mptt.VERSION
