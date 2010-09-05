@@ -7,6 +7,7 @@ from django.db.models import get_model
 from django.db.models.fields import FieldDoesNotExist
 from django.template import loader
 from django.utils.encoding import force_unicode
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 
 from mptt.libs.djblets_utils import basictag
@@ -249,3 +250,60 @@ def render_include(context, template_name):
     """
     t = loader.get_template(template_name)
     return t.render(context)
+
+
+class RecurseTreeNode(template.Node):
+    def __init__(self, template_nodes, queryset_var):
+        self.template_nodes = template_nodes
+        self.queryset_var = queryset_var
+        
+    def _render_node(self, context, node):
+        bits = []
+        context.push()
+        for child in node.get_children():
+            context['node'] = child
+            bits.append(self._render_node(context, child))
+        context['node'] = node
+        context['children'] = mark_safe(u''.join(bits))
+        rendered = self.template_nodes.render(context)
+        context.pop()
+        return rendered
+    
+    def render(self, context):
+        queryset = self.queryset_var.resolve(context)
+        roots = cache_tree_children(queryset)
+        bits = [self._render_node(context, node) for node in roots]
+        return ''.join(bits)
+
+
+@register.tag
+def recursetree(parser, token):
+    """
+    Iterates over the nodes in the tree, and renders the contained block for each node.
+    This tag will recursively render children into the template variable {{ children }}.
+    Only one database query is required (children are cached for the whole tree)
+    
+    Usage:
+            <ul>
+                {% iteratetree nodes %}
+                    <li>
+                        {{ node.name }}
+                        {% if not node.is_leaf_node %}
+                            <ul>
+                                {{ children }}
+                            </ul>
+                        {% endif %}
+                    </li>
+                {% enditeratetree %}
+            </ul>
+    """
+    bits = token.contents.split()
+    if len(bits) != 2:
+        raise template.TemplateSyntaxError(_('%s tag requires a queryset') % bits[0])
+    
+    queryset_var = template.Variable(bits[1])
+    
+    template_nodes = parser.parse(('endrecursetree',))
+    parser.delete_first_token()
+    
+    return RecurseTreeNode(template_nodes, queryset_var)
