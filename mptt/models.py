@@ -33,18 +33,25 @@ def get_ancestors(self, ascending=False):
 
 def get_children(self):
     """
-    Creates a ``QuerySet`` containing the immediate children of this
+    Returns a ``QuerySet`` containing the immediate children of this
     model instance, in tree order.
 
     The benefit of using this method over the reverse relation
     provided by the ORM to the instance's children is that a
     database query can be avoided in the case where the instance is
     a leaf node (it has no children).
+    
+    If called from a template where the tree has been walked by the
+    ``cache_tree_children`` filter, no database query is required.
     """
-    if self.is_leaf_node():
-        return self._tree_manager.none()
+    
+    if hasattr(self, '_cached_children'):
+        return self._cached_children
+    else:
+        if self.is_leaf_node():
+            return self._tree_manager.none()
 
-    return self._tree_manager._mptt_filter(parent=self)
+        return self._tree_manager._mptt_filter(parent=self)
 
 def get_descendants(self, include_self=False):
     """

@@ -5,8 +5,11 @@ trees.
 from django import template
 from django.db.models import get_model
 from django.db.models.fields import FieldDoesNotExist
+from django.template import loader
 from django.utils.encoding import force_unicode
 from django.utils.translation import ugettext as _
+
+from mptt.libs.djblets_utils import basictag
 
 from mptt.utils import tree_item_iterator, drilldown_tree_for_node
 
@@ -195,3 +198,54 @@ def tree_path(items, separator=' :: '):
     """
     return separator.join([force_unicode(i) for i in items])
 
+@register.filter
+def cache_tree_children(queryset):
+    """
+    Takes a list/queryset of model objects in MPTT left (depth-first) order,
+    and caches the children on each node so that no further queries are needed.
+    This makes it possible to have a recursively included template without worrying
+    about database queries.
+
+    Returns a list of top-level nodes.
+    """
+    
+    current_path = []
+    top_nodes = []
+    if queryset:
+        root_level = queryset[0].get_level()
+        for obj in queryset:
+            node_level = obj.get_level()
+            if node_level < root_level:
+                raise ValueError, "cache_tree_children was passed nodes in the wrong order!"
+            
+            obj._cached_children = []
+
+            while len(current_path) > node_level - root_level:
+                current_path.pop(-1)
+            
+            if node_level == root_level:
+                top_nodes.append(obj)
+            else:
+                current_path[-1]._cached_children.append(obj)
+            current_path.append(obj)
+    return top_nodes
+
+@register.tag
+@basictag(takes_context=True)
+def render_include(context, template_name):
+    """
+    Like {% include %} but the include occurs at template render time.
+    
+    Usage: {% render_include "template.html" %}
+    
+    This is neccessary if you're recursively including templates,
+    since compile-time includes are parsed before {% if %} logic, which leads
+    to infinite recursion.
+    
+    If you're not doing that, you should use the standard {% include %} tag instead.
+    
+    Also, using the cached template loader in Django 1.2 will make this tag much
+    faster for medium/large trees.
+    """
+    t = loader.get_template(template_name)
+    return t.render(context)
