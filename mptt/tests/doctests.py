@@ -11,11 +11,6 @@ r"""
 ...                       getattr(n, opts.left_attr), getattr(n, opts.right_attr)) \
 ...                      for n in nodes])
 
->>> import mptt
->>> mptt.register(Genre)
-Traceback (most recent call last):
-    ...
-AlreadyRegistered: The model Genre has already been registered.
 
 # Creation ####################################################################
 >>> action = Genre.objects.create(name='Action')
