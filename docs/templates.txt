@@ -14,7 +14,7 @@ Working with trees in templates
 Getting started
 =========================
 
-Before you can use the templatetags in this document, you must:
+Before you can use these tags/filters, you must:
 
  * add "mptt" to your ``INSTALLED_APPS`` in ``settings.py``
  * add ``{% load mptt_tags %}`` in your template.
@@ -71,6 +71,12 @@ These are magically inserted into your context while you're inside the
             {% endrecursetree %}
         {% endwith %}
 
+
+Iterative tags
+==============
+
+Why? These tags are better suited to unusually deep trees. If you expect to
+have trees with depth > 20, you should use these instead of the above.
 
 ``full_tree_for_model``
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -133,10 +139,11 @@ Examples::
 See `template tag examples`_ for an example of how to render a drilldown
 tree as a nested list.
 
-Filter reference
-----------------
 
-``tree_info``
+Filters
+=======
+
+``tree_info`` filter
 ~~~~~~~~~~~~~
 
 Given a list of tree items, iterates over the list, generating
@@ -197,12 +204,11 @@ Example::
     {{ some_list|tree_path }}
     {{ some_node.get_ancestors|tree_path:" > " }}
 
-Template tag examples
----------------------
+Examples
+=====================
 
-An example of the ``drilldown_tree_for_node`` tag and the ``tree_info``
-filter being used together to render a drilldown menu for a node, with
-cumulative counts of related items being displayed for the node's
+Using ``drilldown_tree_for_node`` and ``tree_info`` together to render a 
+drilldown menu for a node, with cumulative counts of related items for the node's
 children::
 
     {% drilldown_tree_for_node genre as drilldown cumulative count tests.Game.genre in game_count %}
@@ -217,10 +223,13 @@ children::
         {% for level in structure.closed_levels %}</li></ul>{% endfor %}
     {% endfor %}
 
-An example of the``tree_info`` (with its optional argument) and
-``tree_path`` filters being used together to create a multiple select
-which doesn't contain root nodes and displays the full path to each
-option's node::
+Using ``tree_info`` (with its optional argument) and ``tree_path`` together 
+to create a multiple-select, which:
+
+* doesn't contain root nodes
+* displays the full path to each node
+
+::
 
     <select name="classifiers" multiple="multiple" size="10">
         {% for node,structure in classifiers|tree_info:"ancestors" %}
