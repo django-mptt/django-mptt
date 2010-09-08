@@ -238,37 +238,6 @@ def cache_tree_children(queryset):
     return top_nodes
 
 
-
-class RenderIncludeNode(template.Node):
-    def __init__(self, template_name):
-        self.template_name = template_name
-
-    def render(self, context):
-        t = loader.get_template(Variable(self.template_name).resolve(context))
-        return t.render(context)
-
-@register.tag
-def render_include(parser, token):
-    """
-    Like {% include %} but the include occurs at template render time.
-    
-    Usage: {% render_include "template.html" %}
-    
-    This is necessary if you're recursively including templates,
-    since compile-time includes are parsed before {% if %} logic, which leads
-    to infinite recursion.
-    
-    If you're not doing that, you should use the standard {% include %} tag instead.
-    
-    Also, using the cached template loader in Django 1.2 will make this tag much
-    faster for medium/large trees.
-    """
-    bits = token.contents.split()
-    if len(bits) != 2:
-        raise template.TemplateSyntaxError(_('%s tag requires one argument') % bits[0])
-    return RenderIncludeNode(bits[1])
-
-
 class RecurseTreeNode(template.Node):
     def __init__(self, template_nodes, queryset_var):
         self.template_nodes = template_nodes
