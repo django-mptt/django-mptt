@@ -5,16 +5,18 @@ trees.
 from django import template
 from django.db.models import get_model
 from django.db.models.fields import FieldDoesNotExist
-from django.template import loader
+from django.template import loader, Variable
 from django.utils.encoding import force_unicode
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 
-from mptt.libs.djblets_utils import basictag
-
 from mptt.utils import tree_item_iterator, drilldown_tree_for_node
 
 register = template.Library()
+
+
+
+### ITERATIVE TAGS
 
 class FullTreeForModelNode(template.Node):
     def __init__(self, model, context_var):
@@ -199,6 +201,10 @@ def tree_path(items, separator=' :: '):
     """
     return separator.join([force_unicode(i) for i in items])
 
+
+
+### RECURSIVE TAGS
+
 @register.filter
 def cache_tree_children(queryset):
     """
@@ -231,15 +237,24 @@ def cache_tree_children(queryset):
             current_path.append(obj)
     return top_nodes
 
+
+
+class RenderIncludeNode(template.Node):
+    def __init__(self, template_name):
+        self.template_name = template_name
+
+    def render(self, context):
+        t = loader.get_template(Variable(self.template_name).resolve(context))
+        return t.render(context)
+
 @register.tag
-@basictag(takes_context=True)
-def render_include(context, template_name):
+def render_include(parser, token):
     """
     Like {% include %} but the include occurs at template render time.
     
     Usage: {% render_include "template.html" %}
     
-    This is neccessary if you're recursively including templates,
+    This is necessary if you're recursively including templates,
     since compile-time includes are parsed before {% if %} logic, which leads
     to infinite recursion.
     
@@ -248,8 +263,10 @@ def render_include(context, template_name):
     Also, using the cached template loader in Django 1.2 will make this tag much
     faster for medium/large trees.
     """
-    t = loader.get_template(template_name)
-    return t.render(context)
+    bits = token.contents.split()
+    if len(bits) != 2:
+        raise template.TemplateSyntaxError(_('%s tag requires one argument') % bits[0])
+    return RenderIncludeNode(bits[1])
 
 
 class RecurseTreeNode(template.Node):
