@@ -39,6 +39,12 @@ clean:
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
+	@echo "renaming sphinx dirs so they're okay for gh-pages"
+	sed -i -s -e 's/"_static\//"static\//g' $(BUILDDIR)/html/*.html
+	mv $(BUILDDIR)/html/_static/ $(BUILDDIR)/html/static
+	sed -i -s -e 's/"_sources\//"sources\//g' $(BUILDDIR)/html/*.html
+	mv $(BUILDDIR)/html/_sources/ $(BUILDDIR)/html/sources
+	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
 dirhtml:
