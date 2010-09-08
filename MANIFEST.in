@@ -1,4 +1,3 @@
-include CHANGELOG
 include INSTALL
 include LICENSE
 include MANIFEST.in
