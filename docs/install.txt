@@ -26,26 +26,13 @@ named ``setup.py``. Enter this command::
 
 ...and the package will install automatically.
 
-Windows installer
------------------
-
-A Windows installer is also made available - download the .exe
-distribution file and launch it to install the application.
-
-An uninstaller will also be created, accessible through Add/Remove
-Programs in your Control Panel.
-
 
 Installing the development version
 ==================================
 
-Alternatively, if you'd like to update Django MPTT occasionally to pick
-up the latest bug fixes and enhancements before they make it into an
-offical release, perform a `Subversion`_ checkout instead. The following
-command will check the application's development branch out to an
-``mptt-trunk`` directory::
+Alternatively, you can get the latest source from our `git`_ repository::
 
-   svn checkout http://django-mptt.googlecode.com/svn/trunk/ mptt-trunk
+   git clone git://github.com/django-mptt/django-mptt.git django-mptt
 
 Add the resulting folder to your `PYTHONPATH`_ or symlink (`junction`_,
 if you're on Windows) the ``mptt`` directory inside it into a directory
@@ -57,24 +44,24 @@ opening a Python interpreter and entering the following commands::
 
    >>> import mptt
    >>> mptt.VERSION
-   (0, 3, 'pre')
+   (0, 4, 'pre')
 
-When you want to update your copy of the Django MPTT source code, run the
-command ``svn update`` from within the ``mptt-trunk`` directory.
+When you want to update your copy of the source code, run ``git pull``
+from within the ``django-mptt`` directory.
 
 .. caution::
 
    The development version may contain bugs which are not present in the
    release version and introduce backwards-incompatible changes.
 
-   If you're tracking trunk, keep an eye on the `CHANGELOG`_ and the
+   If you're tracking master, keep an eye on the recent `Commit History`_ and the
    `backwards-incompatible changes wiki page`_ before you update your
    copy of the source code.
 
-.. _`Subversion`: http://subversion.tigris.org
+.. _`git`: http://git-scm.com/
 .. _`PYTHONPATH`: http://docs.python.org/tut/node8.html#SECTION008110000000000000000
 .. _`junction`: http://www.microsoft.com/technet/sysinternals/FileAndDisk/Junction.mspx
-.. _`CHANGELOG`: http://django-mptt.googlecode.com/svn/trunk/CHANGELOG
+.. _`Commit History`: http://github.com/django-mptt/django-mptt/commits/master
 .. _`backwards-incompatible changes wiki page`: http://code.google.com/p/django-mptt/wiki/BackwardsIncompatibleChanges
 
 
