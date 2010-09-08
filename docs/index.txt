@@ -12,3 +12,4 @@ Contents:
    forms
    templates
    utilities
+   technical_details

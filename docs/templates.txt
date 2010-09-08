@@ -136,7 +136,7 @@ Examples::
    {% drilldown_tree_for_node genre as drilldown count tests.Game.genre in game_count %}
    {% drilldown_tree_for_node genre as drilldown cumulative count tests.Game.genre in game_count %}
 
-See `template tag examples`_ for an example of how to render a drilldown
+See `Examples`_ for an example of how to render a drilldown
 tree as a nested list.
 
 
@@ -144,7 +144,7 @@ Filters
 =======
 
 ``tree_info`` filter
-~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 
 Given a list of tree items, iterates over the list, generating
 two-tuples of the current tree item and a ``dict`` containing
@@ -205,7 +205,7 @@ Example::
     {{ some_node.get_ancestors|tree_path:" > " }}
 
 Examples
-=====================
+========
 
 Using ``drilldown_tree_for_node`` and ``tree_info`` together to render a 
 drilldown menu for a node, with cumulative counts of related items for the node's

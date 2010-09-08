@@ -114,10 +114,6 @@ Running the test suite
 
 The ``mptt.tests`` package is set up as a project which holds a test
 settings module and defines models for use in testing MPTT. You can run
-the tests from the command-line using the ``django-admin.py`` script,
-specifying that the test settings module should be used::
+the tests from the command-line using the ``manage.py`` script::
 
-   django-admin.py test --settings=mptt.tests.settings
-
-Django MPTT has been tested with SQLite, MySQL 4.1 and PostgreSQL 8.1 on
-Windows.
+   python manage.py test
