@@ -1,6 +1,7 @@
 ===============================
 Working with trees in templates
 ===============================
+.. highlightlang:: html+django
 
 .. admonition:: About this document
 
@@ -10,18 +11,66 @@ Working with trees in templates
 .. contents::
    :depth: 3
 
-Template tags and filters
+Getting started
 =========================
 
-The ``mptt.templatetags.mptt_tags`` module defines template tags and
-filters for working with trees of model instances.
+Before you can use the templatetags in this document, you must:
 
-To use these, you must add ``mptt`` to your project's ``INSTALLED_APPS``
-setting, then you can load the tag module in your templates using
-``{% load mptt_tags %}``
+ * add "mptt" to your ``INSTALLED_APPS`` in ``settings.py``
+ * add ``{% load mptt_tags %}`` in your template.
 
-Tag reference
--------------
+Recursive tags
+==============
+
+.. versionadded:: 0.4
+
+For most setups, recursive tags are the easiest and most efficient way to render
+trees.
+
+``recursetree``
+~~~~~~~~~~~~~~~
+
+.. versionadded:: 0.4
+
+This tag renders a section of your template recursively for each node in your
+tree.
+
+For example::
+
+    <ul class="root">
+        {% recursetree nodes %}
+            <li>
+                {{ node.name }}
+                {% if not node.is_leaf_node %}
+                    <ul class="children">
+                        {{ children }}
+                    </ul>
+                {% endif %}
+            </li>
+        {% endrecursetree %}
+    </ul>
+
+Note the special variables ``node`` and ``children``.
+These are magically inserted into your context while you're inside the
+``recursetree`` tag.
+
+  ``node`` is an instance of your MPTT model.
+
+  ``children`` : This variable holds the rendered HTML for the children of 
+  ``node``.
+
+.. note::
+    If you already have variables called ``node`` or ``children`` in your 
+    template, and you need to access them inside the ``recursetree`` block,
+    you'll need to alias them to some other name first::
+
+        {% with node as friendly_node %}
+            {% recursetree nodes %}
+                {{ node.name }} is friends with {{ friendly_node.name }}
+                {{ children }}
+            {% endrecursetree %}
+        {% endwith %}
+
 
 ``full_tree_for_model``
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -127,11 +176,11 @@ representation of the tree.
 
 Example::
 
-   {% for genre,structure in genres|tree_info %}
-   {% if structure.new_level %}<ul><li>{% else %}</li><li>{% endif %}
-   {{ genre.name }}
-   {% for level in structure.closed_levels %}</li></ul>{% endfor %}
-   {% endfor %}
+    {% for genre,structure in genres|tree_info %}
+        {% if structure.new_level %}<ul><li>{% else %}</li><li>{% endif %}
+            {{ genre.name }}
+        {% for level in structure.closed_levels %}</li></ul>{% endfor %}
+    {% endfor %}
 
 ``tree_path``
 ~~~~~~~~~~~~~
@@ -156,29 +205,29 @@ filter being used together to render a drilldown menu for a node, with
 cumulative counts of related items being displayed for the node's
 children::
 
-   {% drilldown_tree_for_node genre as drilldown cumulative count tests.Game.genre in game_count %}
-   {% for node,structure in drilldown|tree_info %}
-      {% if structure.new_level %}<ul><li>{% else %}</li><li>{% endif %}
-      {% ifequal node genre %}
-      <strong>{{ node.name }}</strong>
-      {% else %}
-      <a href="{{ node.get_absolute_url }}">{{ node.name }}</a>
-      {% ifequal node.parent_id genre.pk %}({{ node.game_count }}){% endifequal %}
-      {% endifequal %}
-      {% for level in structure.closed_levels %}</li></ul>{% endfor %}
-   {% endfor %}
+    {% drilldown_tree_for_node genre as drilldown cumulative count tests.Game.genre in game_count %}
+    {% for node,structure in drilldown|tree_info %}
+        {% if structure.new_level %}<ul><li>{% else %}</li><li>{% endif %}
+        {% ifequal node genre %}
+            <strong>{{ node.name }}</strong>
+        {% else %}
+            <a href="{{ node.get_absolute_url }}">{{ node.name }}</a>
+            {% ifequal node.parent_id genre.pk %}({{ node.game_count }}){% endifequal %}
+        {% endifequal %}
+        {% for level in structure.closed_levels %}</li></ul>{% endfor %}
+    {% endfor %}
 
 An example of the``tree_info`` (with its optional argument) and
 ``tree_path`` filters being used together to create a multiple select
 which doesn't contain root nodes and displays the full path to each
 option's node::
 
-   <select name="classifiers" multiple="multiple" size="10">
-   {% for node,structure in classifiers|tree_info:"ancestors" %}
-   {% if node.is_child_node %}
-   <option value="{{ node.pk }}">
-   {{ structure.ancestors|tree_path }} :: {{ node }}
-   </option>
-   {% endif %}
-   {% endfor %}
-   </select>
+    <select name="classifiers" multiple="multiple" size="10">
+        {% for node,structure in classifiers|tree_info:"ancestors" %}
+            {% if node.is_child_node %}
+                <option value="{{ node.pk }}">
+                    {{ structure.ancestors|tree_path }} :: {{ node }}
+                </option>
+            {% endif %}
+        {% endfor %}
+    </select>
