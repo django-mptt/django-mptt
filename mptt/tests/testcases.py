@@ -9,7 +9,12 @@ from mptt.exceptions import InvalidMove
 from mptt.tests.models import Category, Genre
 
 def get_tree_details(nodes):
-    """Creates pertinent tree details for the given list of nodes."""
+    """
+    Creates pertinent tree details for the given list of nodes.
+    The fields are:
+        id  parent_id  tree_id  level  left  right
+    """
+    
     opts = nodes[0]._meta
     return '\n'.join(['%s %s %s %s %s %s' %
                       (n.pk, getattr(n, '%s_id' % opts.parent_attr) or '-',
@@ -42,7 +47,10 @@ class DocTestTestCase(TestCase):
         import doctest
         doctest.testfile('doctests.txt')
         sys.stdout = before
-        self.assertEqual(dummy_stream.content, "")
+        content = dummy_stream.content
+        if content:
+            print >>sys.stderr, content
+            self.fail()
 
 # genres.json defines the following tree structure
 #
@@ -233,7 +241,7 @@ class ReparentingTestCase(TestCase):
 class DeletionTestCase(TestCase):
     """
     Tests that the tree structure is maintained appropriately in various
-    deletion scenrios.
+    deletion scenarios.
     """
     fixtures = ['categories.json']
 
