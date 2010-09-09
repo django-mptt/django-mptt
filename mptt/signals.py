@@ -6,7 +6,28 @@ import operator
 
 from django.db.models.query import Q
 
-__all__ = ('pre_save',)
+__all__ = ('post_init', 'pre_save')
+
+def _update_mptt_cached_fields(instance):
+    opts = instance._meta
+    instance._mptt_cached_fields = {}
+    keys = [opts.parent_attr]
+    if opts.order_insertion_by:
+        keys += opts.order_insertion_by
+    for key in keys:
+        instance._mptt_cached_fields[key] = getattr(instance, key)
+
+def post_init(instance, **kwargs):
+    """
+    Caches (in an instance._mptt_cached_fields dict) the original values of:
+     - parent pk
+     - fields specified in order_insertion_by
+    
+    These are used in pre_save to determine if the relevant fields have changed,
+    so that the MPTT fields need to be updated.
+    """
+    _update_mptt_cached_fields(instance)
+
 
 def _insertion_target_filters(node, order_insertion_by):
     """
@@ -86,6 +107,9 @@ def pre_save(instance, **kwargs):
     """
     if kwargs.get('raw'):
         return
+    
+    # TODO collapse parent queries here to use equivalent of parent_id where
+    # possible (reduce queries, probably heaps faster!)
 
     opts = instance._meta
     parent = getattr(instance, opts.parent_attr)
@@ -104,12 +128,15 @@ def pre_save(instance, **kwargs):
         # Default insertion
         instance.insert_at(parent, position='last-child')
     else:
-        # TODO Is it possible to track the original parent so we
-        #      don't have to look it up again on each save after the
-        #      first?
-        old_parent = getattr(instance._default_manager.get(pk=instance.pk),
-                             opts.parent_attr)
-        if parent != old_parent:
+        old_parent = instance._mptt_cached_fields[opts.parent_attr]
+        same_order = old_parent == parent
+        if same_order and len(instance._mptt_cached_fields) > 1:
+            for field_name, old_value in instance._mptt_cached_fields.items():
+                if old_value != getattr(instance, field_name):
+                    same_order = False
+                    break
+        
+        if not same_order:
             setattr(instance, opts.parent_attr, old_parent)
             try:
                 if opts.order_insertion_by:
@@ -120,7 +147,12 @@ def pre_save(instance, **kwargs):
                         return
 
                 # Default movement
-                instance.move_to(parent, position='last-child')
+                if parent is None:
+                    root_nodes = instance._tree_manager.root_nodes()
+                    rightmost_sibling = root_nodes.order_by('-%s' % opts.tree_id_attr)[0]
+                    instance.move_to(rightmost_sibling, position='right')
+                else:
+                    instance.move_to(parent, position='last-child')
             finally:
                 # Make sure the instance's new parent is always
                 # restored on the way out in case of errors.

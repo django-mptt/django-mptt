@@ -26,7 +26,7 @@ def register(model, parent_attr='parent', left_attr='lft', right_attr='rght',
     from django.utils.translation import ugettext as _
 
     from mptt import models
-    from mptt.signals import pre_save
+    from mptt.signals import post_init, pre_save
     from mptt.managers import TreeManager
 
     if model in registry:
@@ -87,9 +87,9 @@ def register(model, parent_attr='parent', left_attr='lft', right_attr='rght',
     TreeManager(parent_attr, left_attr, right_attr, tree_id_attr,
                 level_attr).contribute_to_class(model, tree_manager_attr)
     setattr(model, '_tree_manager', getattr(model, tree_manager_attr))
-
-    # Set up signal receiver to manage the tree when instances of the
-    # model are about to be saved.
+    
+    # Set up our signal receivers
+    model_signals.post_init.connect(post_init, sender=model)
     model_signals.pre_save.connect(pre_save, sender=model)
 
     # Wrap the model's delete method to manage the tree structure before
