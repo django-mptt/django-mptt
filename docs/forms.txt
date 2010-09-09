@@ -71,6 +71,11 @@ options::
 
 .. _`ModelChoiceField`: http://docs.djangoproject.com/en/dev/ref/forms/fields/#django.forms.ModelChoiceField
 
+``TreeNodeMultipleChoiceField``
+-------------------------------
+
+Just like ``TreeNodeChoiceField``, but accepts more than one value.
+
 ``TreeNodePositionField``
 -------------------------
 

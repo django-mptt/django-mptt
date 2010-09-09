@@ -9,14 +9,14 @@ from django.utils.translation import ugettext_lazy as _
 
 from mptt.exceptions import InvalidMove
 
-__all__ = ('TreeNodeChoiceField', 'TreeNodePositionField', 'MoveNodeForm')
+__all__ = ('TreeNodeChoiceField', 'TreeNodeMultipleChoiceField', 'TreeNodePositionField', 'MoveNodeForm')
 
 # Fields ######################################################################
 
 class TreeNodeChoiceField(forms.ModelChoiceField):
     """A ModelChoiceField for tree nodes."""
-    def __init__(self, level_indicator=u'---', *args, **kwargs):
-        self.level_indicator = level_indicator
+    def __init__(self, *args, **kwargs):
+        self.level_indicator = kwargs.pop('level_indicator', u'---')
         if kwargs.get('required', True) and not 'empty_label' in kwargs:
             kwargs['empty_label'] = None
         super(TreeNodeChoiceField, self).__init__(*args, **kwargs)
@@ -29,6 +29,20 @@ class TreeNodeChoiceField(forms.ModelChoiceField):
         return u'%s %s' % (self.level_indicator * getattr(obj,
                                                   obj._meta.level_attr),
                            smart_unicode(obj))
+
+class TreeNodeMultipleChoiceField(TreeNodeChoiceField, forms.ModelMultipleChoiceField):
+    """A ModelMultipleChoiceField for tree nodes."""
+    
+    def __init__(self, *args, **kwargs):
+        self.level_indicator = kwargs.pop('level_indicator', u'---')
+        if kwargs.get('required', True) and not 'empty_label' in kwargs:
+            kwargs['empty_label'] = None
+        
+        # For some reason ModelMultipleChoiceField constructor passes kwargs
+        # as args to its super(), which causes 'multiple values for keyword arg'
+        # error sometimes. So we skip it (that constructor does nothing anyway!)
+        forms.ModelChoiceField.__init__(self, *args, **kwargs)
+
 
 class TreeNodePositionField(forms.ChoiceField):
     """A ChoiceField for specifying position relative to another node."""
