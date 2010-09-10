@@ -57,6 +57,8 @@ def register(model, parent_attr='parent', left_attr='lft', right_attr='rght',
         'tree_id': tree_id_attr,
         'level': level_attr,
     }
+    opts.get_raw_field_value = models.get_raw_field_value
+    opts.set_raw_field_value = models.set_raw_field_value
     
     # Add tree fields if they do not exist
     for attr in [left_attr, right_attr, tree_id_attr, level_attr]:

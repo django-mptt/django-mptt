@@ -11,11 +11,11 @@ __all__ = ('post_init', 'pre_save')
 def _update_mptt_cached_fields(instance):
     opts = instance._meta
     instance._mptt_cached_fields = {}
-    keys = [opts.parent_attr]
+    field_names = [opts.parent_attr]
     if opts.order_insertion_by:
-        keys += opts.order_insertion_by
-    for key in keys:
-        instance._mptt_cached_fields[key] = getattr(instance, key)
+        field_names += opts.order_insertion_by
+    for field_name in field_names:
+        instance._mptt_cached_fields[field_name] = opts.get_raw_field_value(instance, field_name)
 
 def post_init(instance, **kwargs):
     """
@@ -108,16 +108,15 @@ def pre_save(instance, **kwargs):
     if kwargs.get('raw'):
         return
     
-    # TODO collapse parent queries here to use equivalent of parent_id where
-    # possible (reduce queries, probably heaps faster!)
-
     opts = instance._meta
-    parent = getattr(instance, opts.parent_attr)
+    parent_id = opts.get_raw_field_value(instance, opts.parent_attr)
     if not instance.pk:
         if (getattr(instance, opts.left_attr) and
             getattr(instance, opts.right_attr)):
             # This node has already been set up for insertion.
             return
+        
+        parent = getattr(instance, opts.parent_attr)
 
         if opts.order_insertion_by:
             right_sibling = _get_ordered_insertion_target(instance, parent)
@@ -128,32 +127,33 @@ def pre_save(instance, **kwargs):
         # Default insertion
         instance.insert_at(parent, position='last-child')
     else:
-        old_parent = instance._mptt_cached_fields[opts.parent_attr]
-        same_order = old_parent == parent
+        old_parent_id = instance._mptt_cached_fields[opts.parent_attr]
+        same_order = old_parent_id == parent_id
         if same_order and len(instance._mptt_cached_fields) > 1:
             for field_name, old_value in instance._mptt_cached_fields.items():
-                if old_value != getattr(instance, field_name):
+                if old_value != opts.get_raw_field_value(instance, field_name):
                     same_order = False
                     break
         
         if not same_order:
-            setattr(instance, opts.parent_attr, old_parent)
+            opts.set_raw_field_value(instance, opts.parent_attr, old_parent_id)
             try:
                 if opts.order_insertion_by:
                     right_sibling = _get_ordered_insertion_target(instance,
-                                                                  parent)
+                                    getattr(instance, opts.parent_attr))
                     if right_sibling:
                         instance.move_to(right_sibling, 'left')
                         return
 
                 # Default movement
-                if parent is None:
+                if parent_id is None:
                     root_nodes = instance._tree_manager.root_nodes()
                     rightmost_sibling = root_nodes.order_by('-%s' % opts.tree_id_attr)[0]
                     instance.move_to(rightmost_sibling, position='right')
                 else:
+                    parent = getattr(instance, opts.parent_attr)
                     instance.move_to(parent, position='last-child')
             finally:
                 # Make sure the instance's new parent is always
                 # restored on the way out in case of errors.
-                setattr(instance, opts.parent_attr, parent)
+                opts.set_raw_field_value(instance, opts.parent_attr, parent_id)
