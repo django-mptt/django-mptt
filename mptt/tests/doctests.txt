@@ -1182,6 +1182,103 @@ ValueError: Cannot insert a node which has already been saved.
 3 - 3 0 1 4
 1 3 3 1 2 3
 
+# reordering after save, original insertion in order ##########################
+# sibling root nodes, inserted B,C, moved C-->A
+>>> OrderedInsertion.objects.all().delete()
+>>> b = OrderedInsertion.objects.create(name='b')
+>>> c = OrderedInsertion.objects.create(name='c')
+>>> c.name = 'a'
+>>> c.save()
+>>> print_tree_details(OrderedInsertion.tree.all())
+2 - 1 0 1 2
+1 - 2 0 1 2
+
+# sibling non-root nodes, inserted B,C, moved C-->A
+>>> OrderedInsertion.objects.all().delete()
+>>> root = OrderedInsertion.objects.create(name='root')
+>>> b = OrderedInsertion.objects.create(name='b', parent=root)
+>>> c = OrderedInsertion.objects.create(name='c', parent=root)
+>>> c.name = 'a'
+>>> c.save()
+>>> print_tree_details(OrderedInsertion.tree.all())
+1 - 1 0 1 6
+3 1 1 1 2 3
+2 1 1 1 4 5
+
+# sibling root nodes, inserted A,B, moved A-->C
+>>> OrderedInsertion.objects.all().delete()
+>>> a = OrderedInsertion.objects.create(name='a')
+>>> b = OrderedInsertion.objects.create(name='b')
+>>> a = OrderedInsertion.objects.get(name='a')
+>>> a.name = 'c'
+>>> a.save()
+>>> print_tree_details(OrderedInsertion.tree.all())
+2 - 1 0 1 2
+1 - 2 0 1 2
+
+# sibling non-root nodes, inserted A,B, moved A-->C
+>>> OrderedInsertion.objects.all().delete()
+>>> root = OrderedInsertion.objects.create(name='root')
+>>> a = OrderedInsertion.objects.create(name='a', parent=root)
+>>> b = OrderedInsertion.objects.create(name='b', parent=root)
+>>> a = OrderedInsertion.objects.get(name='a')
+>>> a.name = 'c'
+>>> a.save()
+>>> print_tree_details(OrderedInsertion.tree.all())
+1 - 1 0 1 6
+3 1 1 1 2 3
+2 1 1 1 4 5
+
+
+# reordering after save, original insertion in reverse ########################
+# sibling root nodes, inserted C,B, moved C-->A
+>>> OrderedInsertion.objects.all().delete()
+>>> c = OrderedInsertion.objects.create(name='c')
+>>> b = OrderedInsertion.objects.create(name='b')
+>>> c = OrderedInsertion.objects.get(name='c')
+>>> c.name = 'a'
+>>> c.save()
+>>> print_tree_details(OrderedInsertion.tree.all())
+1 - 1 0 1 2
+2 - 2 0 1 2
+
+# sibling non-root nodes, inserted C,B, moved C-->A
+>>> OrderedInsertion.objects.all().delete()
+>>> root = OrderedInsertion.objects.create(name='root')
+>>> c = OrderedInsertion.objects.create(name='c', parent=root)
+>>> b = OrderedInsertion.objects.create(name='b', parent=root)
+>>> c = OrderedInsertion.objects.get(name='c')
+>>> c.name = 'a'
+>>> c.save()
+>>> print_tree_details(OrderedInsertion.tree.all())
+1 - 1 0 1 6
+2 1 1 1 2 3
+3 1 1 1 4 5
+
+# sibling root nodes, inserted B,A, moved A-->C
+>>> OrderedInsertion.objects.all().delete()
+>>> b = OrderedInsertion.objects.create(name='b')
+>>> a = OrderedInsertion.objects.create(name='a')
+>>> a.name = 'c'
+>>> a.save()
+>>> print_tree_details(OrderedInsertion.tree.all())
+1 - 1 0 1 2
+2 - 2 0 1 2
+
+# sibling non-root nodes, inserted B,A, moved A-->C
+>>> OrderedInsertion.objects.all().delete()
+>>> root = OrderedInsertion.objects.create(name='root')
+>>> b = OrderedInsertion.objects.create(name='b', parent=root)
+>>> a = OrderedInsertion.objects.create(name='a', parent=root)
+>>> a.name = 'c'
+>>> a.save()
+>>> print_tree_details(OrderedInsertion.tree.all())
+1 - 1 0 1 6
+3 1 1 1 2 3
+2 1 1 1 4 5
+
+
+
 # Insertion of positioned nodes, multiple ordering criteria ###################
 >>> r1 = MultiOrder.objects.create(name='fff', size=20, date=date(2008, 1, 1))
 

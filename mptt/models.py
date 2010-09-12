@@ -212,3 +212,25 @@ def move_to(self, target, position='first-child'):
     model instance.
     """
     self._tree_manager.move_node(self, target, position)
+
+
+### These methods are set on the model's _meta, not on the model itself
+
+def get_raw_field_value(instance, field_name):
+    """
+    Gets the value of the given fieldname for the instance.
+    This is not the same as getattr().
+    This function will return IDs for foreignkeys etc, rather than doing
+    a database query.
+    """
+    field = instance._meta.get_field(field_name)
+    return field.value_from_object(instance)
+
+def set_raw_field_value(instance, field_name, value):
+    """
+    Sets the value of the given fieldname for the instance.
+    This is not the same as setattr().
+    This function requires an ID for a foreignkey (etc) rather than an instance.
+    """
+    field = instance._meta.get_field(field_name)
+    setattr(instance, field.attname, value)
