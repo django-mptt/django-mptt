@@ -34,27 +34,26 @@ class TreeManager(models.Manager):
     """
     A manager for working with trees of objects.
     """
-    def __init__(self, parent_attr, left_attr, right_attr, tree_id_attr, level_attr):
+    def __init__(self, mptt_opts):
         """
         Tree attributes for the model being managed are held as
         attributes of this manager for later use, since it will be using
         them a **lot**.
         """
         super(TreeManager, self).__init__()
-        self.parent_attr = parent_attr
-        self.left_attr = left_attr
-        self.right_attr = right_attr
-        self.tree_id_attr = tree_id_attr
-        self.level_attr = level_attr
+        self.parent_attr = mptt_opts.parent_attr
+        self.left_attr = mptt_opts.left_attr
+        self.right_attr = mptt_opts.right_attr
+        self.tree_id_attr = mptt_opts.tree_id_attr
+        self.level_attr = mptt_opts.level_attr
     
     def _translate_lookups(self, **lookups):
-        opts = self.model._meta
         new_lookups = {}
         for k, v in lookups.items():
             parts = k.split('__')
             new_parts = []
             for part in parts:
-                new_parts.append(opts.mptt_field_lookup_map.get(part, part))
+                new_parts.append(getattr(self, '%s_attr' % part, part))
             new_lookups['__'.join(new_parts)] = v
         return new_lookups
     
@@ -101,23 +100,23 @@ class TreeManager(models.Manager):
            If ``True``, the count will be for each item and all of its
            descendants, otherwise it will be for each item itself.
         """
-        opts = self.model._meta
+        meta = self.model._meta
         if cumulative:
             subquery = CUMULATIVE_COUNT_SUBQUERY % {
                 'rel_table': qn(rel_model._meta.db_table),
                 'mptt_fk': qn(rel_model._meta.get_field(rel_field).column),
-                'mptt_table': qn(opts.db_table),
-                'mptt_pk': qn(opts.pk.column),
-                'tree_id': qn(opts.get_field(self.tree_id_attr).column),
-                'left': qn(opts.get_field(self.left_attr).column),
-                'right': qn(opts.get_field(self.right_attr).column),
+                'mptt_table': qn(meta.db_table),
+                'mptt_pk': qn(meta.pk.column),
+                'tree_id': qn(meta.get_field(self.tree_id_attr).column),
+                'left': qn(meta.get_field(self.left_attr).column),
+                'right': qn(meta.get_field(self.right_attr).column),
             }
         else:
             subquery = COUNT_SUBQUERY % {
                 'rel_table': qn(rel_model._meta.db_table),
                 'mptt_fk': qn(rel_model._meta.get_field(rel_field).column),
-                'mptt_table': qn(opts.db_table),
-                'mptt_pk': qn(opts.pk.column),
+                'mptt_table': qn(meta.db_table),
+                'mptt_pk': qn(meta.pk.column),
             }
         return queryset.extra(select={count_attr: subquery})
 
@@ -237,7 +236,7 @@ class TreeManager(models.Manager):
         """
         Rebuilds whole tree in database using `parent` link.
         """
-        opts = self.model._meta
+        opts = self.model._mptt_meta
         
         qs = self._mptt_filter(parent__isnull=True)
         if opts.order_insertion_by:
@@ -251,7 +250,7 @@ class TreeManager(models.Manager):
         transaction.commit_unless_managed()
 
     def _rebuild_helper(self, pk, left, tree_id, level=0):
-        opts = self.model._meta
+        opts = self.model._mptt_meta
         right = left + 1
         
         qs = self._mptt_filter(parent__pk=pk)

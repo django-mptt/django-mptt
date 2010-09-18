@@ -15,7 +15,7 @@ def get_tree_details(nodes):
         id  parent_id  tree_id  level  left  right
     """
     
-    opts = nodes[0]._meta
+    opts = nodes[0]._mptt_meta
     return '\n'.join(['%s %s %s %s %s %s' %
                       (n.pk, getattr(n, '%s_id' % opts.parent_attr) or '-',
                        getattr(n, opts.tree_id_attr), getattr(n, opts.level_attr),

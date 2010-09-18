@@ -16,7 +16,7 @@ class MPTTOptions(object):
         ...     
     """
     
-    insertion_order_by = []
+    order_insertion_by = []
     tree_manager_attr = 'tree'
     left_attr = 'lft'
     right_attr = 'rght'
@@ -25,9 +25,37 @@ class MPTTOptions(object):
     parent_attr = 'parent'
     
     def __init__(self, opts):
+        # Override defaults with options provided
         if opts:
             for key, value in opts.__dict__.iteritems():
                 setattr(self, key, value)
+        
+        # Normalize order_insertion_by to a list
+        if isinstance(self.order_insertion_by, basestring):
+            self.order_insertion_by = [self.order_insertion_by]
+        elif self.order_insertion_by is None:
+            self.order_insertion_by = []
+    
+    # Helper methods for accessing tree attributes on models.
+    def get_raw_field_value(self, instance, field_name):
+        """
+        Gets the value of the given fieldname for the instance.
+        This is not the same as getattr().
+        This function will return IDs for foreignkeys etc, rather than doing
+        a database query.
+        """
+        field = instance._meta.get_field(field_name)
+        return field.value_from_object(instance)
+    
+    def set_raw_field_value(self, instance, field_name, value):
+        """
+        Sets the value of the given fieldname for the instance.
+        This is not the same as setattr().
+        This function requires an ID for a foreignkey (etc) rather than an instance.
+        """
+        field = instance._meta.get_field(field_name)
+        setattr(instance, field.attname, value)
+
 
 class MPTTModelBase(ModelBase):
     """
@@ -40,7 +68,7 @@ class MPTTModelBase(ModelBase):
          - adds the MPTT fields to the class
          - adds a TreeManager to the model
         """
-        cls = models.ModelBase.__new__(meta, class_name, bases, class_dict)
+        cls = ModelBase.__new__(meta, class_name, bases, class_dict)
         
         try:
             MPTTModel
@@ -62,15 +90,22 @@ class MPTTModelBase(ModelBase):
                     field.contribute_to_class(cls, field_name)
             
             # Add a custom tree manager
-            TreeManager().contribute_to_class(cls, cls._mptt_meta.tree_manager_attr)
+            manager = TreeManager(cls._mptt_meta)
+            manager.contribute_to_class(cls, cls._mptt_meta.tree_manager_attr)
             setattr(cls, '_tree_manager', getattr(cls, cls._mptt_meta.tree_manager_attr))
-        
+            
+            # Set up signal receivers
+            model_signals.post_init.connect(signals.post_init, sender=cls)
+            model_signals.pre_save.connect(signals.pre_save, sender=cls)
+
         return cls
 
 class MPTTModel(models.Model):
     """
     Base class for tree models.
     """
+    
+    __metaclass__ = MPTTModelBase
     
     class Meta:
         abstract = True
@@ -294,8 +329,4 @@ class MPTTModel(models.Model):
         tree_id = self._mpttfield('tree_id')
         self._tree_manager._close_gap(tree_width, target_right, tree_id)
         super(MPTTModel, self).delete(*args, **kwargs)
-
-
-# Set up signal receivers
-model_signals.post_init.connect(signals.post_init, sender=MPTTModel)
-model_signals.pre_save.connect(signals.pre_save, sender=MPTTModel)
+    
