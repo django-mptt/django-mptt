@@ -12,34 +12,42 @@ Models and Managers
    :depth: 3
 
 
-``mptt.register`` - setting up a Django model for MPTT
-======================================================
+Setting up a Django model for MPTT
+==================================
 
-The ``mptt`` module contains a ``register`` function, which users can
-call to set a Django model up for MPTT. This function takes as its
-arguments the model class itself and additional options related to
-working with the model as a tree.
+Start with a basic subclass of MPTTModel, something like this::
+   
+    from django.db import models
+    from mptt.models import MPTTModel
+    
+    class Genre(MPTTModel):
+        name = models.CharField(max_length=50, unique=True)
+        parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
 
-.. admonition:: ``mptt.register`` and ``syncdb``
+You must define a parent field which is a ``ForeignKey`` to ``'self'``. (You can
+call it something different if you want - see `Model Options`_ below.)
 
-   As discussed further below, the ``mptt.register`` function will
-   dynamically add new fields to your models if certain required tree
-   fields are not present.
+Because you're inheriting from MPTTModel, your model will also have a number of
+other fields: ``level``, ``lft``, ``rght``, and ``tree_id``. Most of the time
+you won't need to use these fields directly, but it's helpful to know they're there.
 
-   As such, unless you are manually setting up all required tree fields
-   in your models, you must have the call to ``mptt.register`` in place
-   **before** you use Django's ``syncdb`` management command to create
-   tables. Otherwise, you will have to recreate tables so the
-   appropriate tree columns are in place in the database.
+Model Options
+=============
 
-The following argument is required:
+Sometimes you might want to change the names of the above fields, for instance if
+you've already got a field named ``level`` and you want to avoid conflicts.
 
-``model``
-   The model class which is to be set up for MPTT.
+To change the names, create an ``MPTTMeta`` class inside your class::
 
-All remaining arguments are optional, but you should take care to
-specify appropriate fields names where the default field names do not
-fit with your model class' definition:
+    class Genre(MPTTModel):
+        name = models.CharField(max_length=50, unique=True)
+        parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+        
+        class MPTTMeta:
+            level_attr = 'mptt_level'
+            order_insertion_by=['name']
+
+The available options for the MPTTMeta class are:
 
 ``parent_attr``
    The name of a field which relates the model back to itself such that
@@ -96,28 +104,11 @@ exist, they will be added to the model dynamically:
    option is handy if you're maintaining mostly static structures, such
    as trees of categories, which should always be in alphabetical order.
 
-.. _`minimal example usage`:
 
-A mimimal example usage of ``mptt.register`` is given below, where the
-model being set up for MPTT is suitable for use with the default
-arguments which specify fields and the tree manager attribute::
+MPTTModel instance methods
+==========================
 
-   from django.db import models
-
-   import mptt
-
-   class Genre(models.Model):
-       name = models.CharField(max_length=50, unique=True)
-       parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
-
-   mptt.register(Genre, order_insertion_by=['name'])
-
-
-Model instance methods added by Django MPTT
-===========================================
-
-The following instance methods will be added to your Django models when
-you set them up for MPTT:
+Subclasses of MPTTModel have the following instance methods:
 
 ``get_ancestors(ascending=False)``
 ----------------------------------
@@ -273,10 +264,9 @@ method.
 The ``TreeManager`` custom manager
 ==================================
 
-A custom manager, ``TreeManager`` is also added to your Django models
-when you set them up for MPTT - the attribute this manager can be
-accessed through is specified by the ``tree_manager_attr`` argument to
-``mptt.register``.
+A custom manager, ``TreeManager`` is also added to your MPTTModel subclasses.
+The attribute this manager can be accessed through is specified by the 
+``tree_manager_attr`` option (default ``'tree'``)
 
 Any ``QuerySet`` created with this manager will be ordered based on the
 tree structure, with root nodes appearing in tree id order and and their
