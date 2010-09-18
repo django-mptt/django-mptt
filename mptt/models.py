@@ -1,16 +1,38 @@
 from django.db import models
+from django.db.models import signals as model_signals
+from django.db.models.base import ModelBase
 
-class MPTTModelBase(models.ModelBase):
+from mptt import signals
+from mptt.managers import TreeManager
+
+class MPTTOptions(object):
+    """
+    Options class for MPTT models. Use this as an inner class called MPTTMeta:
+    
+    class MyModel(MPTTModel):
+        class MPTTMeta:
+            order_insertion_by = ['name']
+            parent_attr = 'myparent'
+        ...     
+    """
+    
+    insertion_order_by = []
+    tree_manager_attr = 'tree'
+    left_attr = 'lft'
+    right_attr = 'rght'
+    tree_id_attr = 'tree_id'
+    level_attr = 'level'
+    parent_attr = 'parent'
+    
+    def __init__(self, opts):
+        if opts:
+            for key, value in opts.__dict__.iteritems():
+                setattr(self, key, value)
+
+class MPTTModelBase(ModelBase):
     """
     Metaclass for MPTT models
     """
-    class DefaultOpts:
-        tree_manager_attr = 'tree'
-        
-        left_attr = 'lft'
-        right_attr = 'rght'
-        tree_id_attr = 'tree_id'
-        level_attr = 'level'
     
     def __new__(meta, class_name, bases, class_dict):
         """
@@ -29,18 +51,19 @@ class MPTTModelBase(models.ModelBase):
             # copies)
             pass
         else:
+            mptt_opts = class_dict.pop('MPTTMeta', None)
+            setattr(cls, '_mptt_meta', MPTTOptions(mptt_opts))
             for key in ('left_attr', 'right_attr', 'tree_id_attr', 'level_attr'):
-                field_name = getattr(cls._meta, key, getattr(meta.DefaultOpts, key))
-                setattr(cls._meta, key, field_name)
+                field_name = getattr(cls._mptt_meta, key)
                 try:
                     cls._meta.get_field(field_name)
-                except FieldDoesNotExist:
+                except models.FieldDoesNotExist:
                     field = models.PositiveIntegerField(db_index=True, editable=False)
                     field.contribute_to_class(cls, field_name)
             
             # Add a custom tree manager
-            TreeManager().contribute_to_class(model, cls._meta.tree_manager_attr)
-            setattr(model, '_tree_manager', getattr(model, cls._meta.tree_manager_attr))
+            TreeManager().contribute_to_class(cls, cls._mptt_meta.tree_manager_attr)
+            setattr(cls, '_tree_manager', getattr(cls, cls._mptt_meta.tree_manager_attr))
         
         return cls
 
@@ -53,7 +76,7 @@ class MPTTModel(models.Model):
         abstract = True
     
     def _mpttfield(self, fieldname):
-        translated_fieldname = getattr(self._meta, '%s_attr' % fieldname)
+        translated_fieldname = getattr(self._mptt_meta, '%s_attr' % fieldname)
         return getattr(self, translated_fieldname)
     
     def get_ancestors(self, ascending=False):
@@ -69,7 +92,7 @@ class MPTTModel(models.Model):
         if self.is_root_node():
             return self._tree_manager.none()
 
-        opts = self._meta
+        opts = self._mptt_meta
         
         order_by = opts.left_attr
         if ascending:
@@ -115,7 +138,7 @@ class MPTTModel(models.Model):
         if not include_self and self.is_leaf_node():
             return self._tree_manager.none()
 
-        opts = self._meta
+        opts = self._mptt_meta
         left = getattr(self, opts.left_attr)
         right = getattr(self, opts.right_attr)
         
@@ -144,10 +167,10 @@ class MPTTModel(models.Model):
         If ``include_self`` is ``True``, the ``QuerySet`` will also
         include this model instance (if it is a leaf node)
         """
-        descendants = get_descendants(self, include_self=include_self)
+        descendants = self.get_descendants(include_self=include_self)
         
         return self._tree_manager._mptt_filter(descendants,
-            left=F(self._meta.right_attr)-1
+            left=models.F(self._mptt_meta.right_attr)-1
         )
 
     def get_next_sibling(self, **filters):
@@ -155,7 +178,6 @@ class MPTTModel(models.Model):
         Returns this model instance's next sibling in the tree, or
         ``None`` if it doesn't have a next sibling.
         """
-        opts = self._meta
         qs = self._tree_manager.filter(**filters)
         if self.is_root_node():
             qs = self._tree_manager._mptt_filter(qs,
@@ -164,7 +186,7 @@ class MPTTModel(models.Model):
             )
         else:
             qs = self._tree_manager._mptt_filter(qs,
-                parent__id=getattr(self, '%s_id' % opts.parent_attr),
+                parent__id=getattr(self, '%s_id' % self._mptt_meta.parent_attr),
                 left__gt=self._mpttfield('right'),
             )
         
@@ -176,7 +198,7 @@ class MPTTModel(models.Model):
         Returns this model instance's previous sibling in the tree, or
         ``None`` if it doesn't have a previous sibling.
         """
-        opts = self._meta
+        opts = self._mptt_meta
         qs = self._tree_manager.filter(**filters)
         if self.is_root_node():
             qs = self._tree_manager._mptt_filter(qs,
@@ -218,7 +240,8 @@ class MPTTModel(models.Model):
         if self.is_root_node():
             queryset = self._tree_manager._mptt_filter(parent__isnull=True)
         else:
-            queryset = self._tree_manager._mptt_filter(parent__id=getattr(self, '%s_id' % self._meta.parent_attr))
+            parent_id = getattr(self, '%s_id' % self._mptt_meta.parent_attr)
+            queryset = self._tree_manager._mptt_filter(parent__id=parent_id)
         if not include_self:
             queryset = queryset.exclude(pk=self.pk)
         return queryset
@@ -227,7 +250,7 @@ class MPTTModel(models.Model):
         """
         Returns the level of this node (distance from root)
         """
-        return getattr(self, self._meta.level_attr)
+        return getattr(self, self._mptt_meta.level_attr)
 
     def insert_at(self, target, position='first-child', save=False):
         """
@@ -255,7 +278,7 @@ class MPTTModel(models.Model):
         Returns ``True`` if this model instance is a root node,
         ``False`` otherwise.
         """
-        return getattr(self, '%s_id' % self._meta.parent_attr) is None
+        return getattr(self, '%s_id' % self._mptt_meta.parent_attr) is None
 
     def move_to(self, target, position='first-child'):
         """
@@ -264,18 +287,15 @@ class MPTTModel(models.Model):
         """
         self._tree_manager.move_node(self, target, position)
 
-
-    # Wrap the model's delete method to manage the tree structure before
-    # deletion. This is icky, but the pre_delete signal doesn't currently
-    # provide a way to identify which model delete was called on and we
-    # only want to manage the tree based on the topmost node which is
-    # being deleted.
     def delete(self, *args, **kwargs):
-        opts = self._meta
         tree_width = (self._mpttfield('right') -
                       self._mpttfield('left') + 1)
         target_right = self._mpttfield('right')
         tree_id = self._mpttfield('tree_id')
         self._tree_manager._close_gap(tree_width, target_right, tree_id)
         super(MPTTModel, self).delete(*args, **kwargs)
-    
+
+
+# Set up signal receivers
+model_signals.post_init.connect(signals.post_init, sender=MPTTModel)
+model_signals.pre_save.connect(signals.pre_save, sender=MPTTModel)
