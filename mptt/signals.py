@@ -9,7 +9,7 @@ from django.db.models.query import Q
 __all__ = ('post_init', 'pre_save')
 
 def _update_mptt_cached_fields(instance):
-    opts = instance._meta
+    opts = instance._mptt_meta
     instance._mptt_cached_fields = {}
     field_names = [opts.parent_attr]
     if opts.order_insertion_by:
@@ -66,7 +66,7 @@ def _get_ordered_insertion_target(node, parent):
     # Optimisation - if the parent doesn't have descendants,
     # the node will always be its last child.
     if parent is None or parent.get_descendant_count() > 0:
-        opts = node._meta
+        opts = node._mptt_meta
         order_by = opts.order_insertion_by[:]
         filters = _insertion_target_filters(node, order_by)
         if parent:
@@ -108,7 +108,7 @@ def pre_save(instance, **kwargs):
     if kwargs.get('raw'):
         return
     
-    opts = instance._meta
+    opts = instance._mptt_meta
     parent_id = opts.get_raw_field_value(instance, opts.parent_attr)
     if not instance.pk:
         if (getattr(instance, opts.left_attr) and

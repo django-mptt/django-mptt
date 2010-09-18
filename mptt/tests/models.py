@@ -1,8 +1,9 @@
 from django.db import models
 
 import mptt
+from mptt.models import MPTTModel
 
-class Category(models.Model):
+class Category(MPTTModel):
     name = models.CharField(max_length=50)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
 
@@ -12,43 +13,46 @@ class Category(models.Model):
     def delete(self):
         super(Category, self).delete()
 
-class Genre(models.Model):
+class Genre(MPTTModel):
     name = models.CharField(max_length=50, unique=True)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
 
     def __unicode__(self):
         return self.name
 
-class Insert(models.Model):
+class Insert(MPTTModel):
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
 
-class MultiOrder(models.Model):
+class MultiOrder(MPTTModel):
     name = models.CharField(max_length=50)
     size = models.PositiveIntegerField()
     date = models.DateField()
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+    
+    class MPTTMeta:
+        order_insertion_by = ['name', 'size', 'date']
 
     def __unicode__(self):
         return self.name
 
-class Node(models.Model):
+class Node(MPTTModel):
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+    
+    class MPTTMeta:
+        left_attr = 'does'
+        right_attr = 'zis'
+        level_attr = 'madness'
+        tree_id_attr = 'work'
 
-class OrderedInsertion(models.Model):
+class OrderedInsertion(MPTTModel):
     name = models.CharField(max_length=50)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+    
+    class MPTTMeta:
+        order_insertion_by = ['name']
 
     def __unicode__(self):
         return self.name
 
-class Tree(models.Model):
+class Tree(MPTTModel):
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
-
-mptt.register(Category)
-mptt.register(Genre)
-mptt.register(Insert)
-mptt.register(MultiOrder, order_insertion_by=['name', 'size', 'date'])
-mptt.register(Node, left_attr='does', right_attr='zis', level_attr='madness',
-              tree_id_attr='work')
-mptt.register(OrderedInsertion, order_insertion_by=['name'])
-mptt.register(Tree)

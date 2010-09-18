@@ -27,7 +27,7 @@ class TreeNodeChoiceField(forms.ModelChoiceField):
         generating option labels.
         """
         return u'%s %s' % (self.level_indicator * getattr(obj,
-                                                  obj._meta.level_attr),
+                                                  obj._mptt_meta.level_attr),
                            smart_unicode(obj))
 
 class TreeNodeMultipleChoiceField(TreeNodeChoiceField, forms.ModelMultipleChoiceField):
@@ -110,7 +110,7 @@ class MoveNodeForm(forms.Form):
         position_choices = kwargs.pop('position_choices', None)
         level_indicator = kwargs.pop('level_indicator', None)
         super(MoveNodeForm, self).__init__(*args, **kwargs)
-        opts = node._meta
+        opts = node._mptt_meta
         if valid_targets is None:
             valid_targets = node._tree_manager.exclude(**{
                 opts.tree_id_attr: getattr(node, opts.tree_id_attr),

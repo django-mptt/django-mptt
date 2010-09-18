@@ -64,7 +64,7 @@ def tree_item_iterator(items, ancestors=False):
     first_item_level = 0
     for previous, current, next in previous_current_next(items):
         if opts is None:
-            opts = current._meta
+            opts = current._mptt_meta
 
         current_level = getattr(current, opts.level_attr)
         if previous:
