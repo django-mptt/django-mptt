@@ -92,21 +92,12 @@ Dynamic field creation vs. explicitly defining MPTT fields
 ==========================================================
 
 Model classes which do not have field names which clash with the default
-arguments to the ``mptt.register`` function need not contain any details
-about MPTT fields at all in their class definition.
+MPTTMeta options need not contain any details about MPTT fields at all 
+in their class definition.
 
 One of the goals of this application is that authors should not have to
 worry about setting up or using MPTT fields directly in order to reap
 the benefits of the functionality their existence enables.
-
-While dynamically added MPTT fields can be used in inner ``Meta``
-classes and ``ModelAdmin`` classes, it is recommended that models which
-will use these fields elsewhere in the class definition should implement
-the fields themselves for clarity - it's already bad enough that we're
-dynamically adding fields without your model definitions using fields
-which don't appear to exist.
-
-Salt to taste, your mileage may vary, etc. etc.
 
 
 Running the test suite
