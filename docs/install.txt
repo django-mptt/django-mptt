@@ -72,11 +72,17 @@ Once you've installed Django MPTT and want to use it in your Django
 applications, do the following:
 
    1. Put ``'mptt'`` in your ``INSTALLED_APPS`` setting.
-   2. Place appropriate calls to the ``mptt.register`` function in your
-      model modules, for any models you wish to use with MPTT. This step
-      most be performed *before* you generate tables with ``syncdb``. See
-      the `models documentation`_ for more information.
+   2. Subclass MPTTModel, like this::
+   
+       from django.db import models
+       from mptt.models import MPTTModel
+       
+       class MyTreeNode(MPTTModel):
+           name = models.CharField(max_length=30)
+           parent = models.ForeignKey('self', related_name='children')
 
 That's it!
+
+To customize your model further, have a look at the `models documentation`.
 
 .. _`models documentation`: models.html
