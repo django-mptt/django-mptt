@@ -68,6 +68,8 @@ class MPTTModelBase(ModelBase):
          - adds the MPTT fields to the class
          - adds a TreeManager to the model
         """
+        mptt_opts = class_dict.pop('MPTTMeta', None)
+        class_dict['_mptt_meta'] = MPTTOptions(mptt_opts)
         cls = ModelBase.__new__(meta, class_name, bases, class_dict)
         
         try:
@@ -79,8 +81,6 @@ class MPTTModelBase(ModelBase):
             # copies)
             pass
         else:
-            mptt_opts = class_dict.pop('MPTTMeta', None)
-            setattr(cls, '_mptt_meta', MPTTOptions(mptt_opts))
             for key in ('left_attr', 'right_attr', 'tree_id_attr', 'level_attr'):
                 field_name = getattr(cls._mptt_meta, key)
                 try:
