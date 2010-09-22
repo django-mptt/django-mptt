@@ -1,9 +1,10 @@
 """
 A custom manager for working with trees of objects.
 """
-from django.db import connection, models, transaction
+from django.db import connection, connections, router, models, transaction
 from django.db.models import F, Max
 from django.utils.translation import ugettext as _
+from django.conf import settings
 
 from mptt.exceptions import InvalidMove
 
@@ -29,6 +30,8 @@ CUMULATIVE_COUNT_SUBQUERY = """(
                               AND %(mptt_table)s.%(right)s
     )
 )"""
+
+
 
 class TreeManager(models.Manager):
     """
@@ -401,7 +404,9 @@ class TreeManager(models.Manager):
         ]
         if parent_pk is not None:
             params.insert(-1, parent_pk)
-        cursor = connection.cursor()
+
+        cursor = connections[router.db_for_write(node)].cursor()
+
         cursor.execute(inter_tree_move_query, params)
 
     def _make_child_root_node(self, node, new_tree_id=None):
@@ -509,7 +514,8 @@ class TreeManager(models.Manager):
                 'table': qn(opts.db_table),
                 'tree_id': qn(opts.get_field(self.tree_id_attr).column),
             }
-            cursor = connection.cursor()
+
+            cursor = connections[router.db_for_write(node)].cursor()
             cursor.execute(root_sibling_query, [tree_id, new_tree_id, shift,
                                                 lower_bound, upper_bound])
             setattr(node, self.tree_id_attr, new_tree_id)
@@ -538,7 +544,7 @@ class TreeManager(models.Manager):
             'right': qn(opts.get_field(self.right_attr).column),
             'tree_id': qn(opts.get_field(self.tree_id_attr).column),
         }
-        cursor = connection.cursor()
+        cursor = connections[router.db_for_write(self.model)].cursor()
         cursor.execute(space_query, [target, size, target, size, tree_id,
                                      target, target])
 
@@ -695,7 +701,7 @@ class TreeManager(models.Manager):
             'tree_id': qn(opts.get_field(self.tree_id_attr).column),
         }
 
-        cursor = connection.cursor()
+        cursor = connections[router.db_for_write(node)].cursor()
         cursor.execute(move_subtree_query, [
             left, right, level_change,
             left, right, left_right_change,
@@ -761,7 +767,8 @@ class TreeManager(models.Manager):
             'parent': qn(opts.get_field(self.parent_attr).column),
             'pk': qn(opts.pk.column),
         }
-        cursor = connection.cursor()
+
+        cursor = connections[router.db_for_write(node)].cursor()
         cursor.execute(move_tree_query, [level_change, left_right_change,
             left_right_change, new_tree_id, node.pk, parent.pk, left, right,
             tree_id])
