@@ -101,7 +101,8 @@ def mptt_items_for_result(cl, result, form):
             result_repr = mark_safe('&nbsp;')
         
         if first:
-            padding_attr = ' style="padding-left:%spx"' % (5 + MPTT_ADMIN_LEVEL_INDENT*result.level)
+            level = getattr(result, result._mptt_meta.level_attr)
+            padding_attr = ' style="padding-left:%spx"' % (5 + MPTT_ADMIN_LEVEL_INDENT * level)
         else:
             padding_attr = ''
         
