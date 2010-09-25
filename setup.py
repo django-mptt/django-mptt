@@ -15,6 +15,7 @@ setup(
     url = 'http://github.com/django-mptt/django-mptt',
     test_suite="mptt.tests.test_runner.run_tests",
     packages=find_packages(exclude=['mptt.tests']),
+    package_data={'mptt': ['templates/admin/*']},
     classifiers = ['Development Status :: 4 - Beta',
                    'Environment :: Web Environment',
                    'Framework :: Django',
