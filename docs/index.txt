@@ -12,4 +12,5 @@ Contents:
    forms
    templates
    utilities
+   upgrade
    technical_details

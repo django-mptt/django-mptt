@@ -1,0 +1,75 @@
+==========================
+Upgrade Notes - 0.3 to 0.4
+==========================
+
+In ``django-mptt`` 0.4, mptt.register() has been removed in favour of model inheritance.
+
+Suppose you start with this, which works with ``django-mptt`` 0.3::
+
+    class Node(models.Model):
+        ...
+    
+    mptt.register(Node, order_insertion_by=['name'], parent_attr='padre')
+
+
+First, Make your model a subclass of ``MPTTModel``, instead of ``models.Model``::
+
+    from mptt.models import MPTTModel
+    
+    class Node(MPTTModel):
+        ...
+
+Then remove your call to ``mptt.register()``. If you were passing it keyword arguments, you should add them to an ``MPTTMeta`` inner class on the model::
+
+    class Node(MPTTModel):
+        ...
+        class MPTTMeta:
+            order_insertion_by = ['name']
+            parent_attr = 'padre'
+
+Done! You're all upgraded :) A couple more notes for more complex scenarios:
+
+
+What if I'm already inheriting from something?
+==============================================
+
+If your model is already a subclass of an abstract model, it *should* be safe to use multiple inheritance::
+
+    class Node(ParentModel, MPTTModel):
+        ...
+
+Isn't multiple inheritance evil? Well, maybe. However, the 
+`Django model docs`_ don't forbid this, and as long as your other model doesn't have conflicting methods, it should be fine.
+
+.. _`Django model docs`: http://docs.djangoproject.com/en/dev/topics/db/models/#multiple-inheritance
+
+
+Compatibility with 0.3 as well
+==============================
+
+If you're writing a library or reusable app that needs to work with older versions of django-mptt,
+you'll need to update your code to handle both versions::
+
+    from django.db import models
+    try:
+        from mptt.models import MPTTModel
+    except ImportError:
+        # django-mptt < 0.4
+        MPTTModel = models.Model
+
+    
+    class Node(MPTTModel):
+        ...
+    
+    mptt.register(Node)
+
+If you had keyword arguments to ``mptt.register()``, they now belong in an ``MPTTMeta`` inner class on the model.
+But to keep it compatible with 0.3, you can pass them to ``register()`` as well::
+
+    class Node(MPTTModel):
+        ...
+        class MPTTMeta:
+            order_insertion_by = ['name']
+            parent_attr = 'padre'
+    
+    mptt.register(Node, **dict(Node.MPTTMeta))
