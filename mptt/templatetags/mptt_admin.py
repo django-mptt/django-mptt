@@ -26,6 +26,7 @@ def mptt_items_for_result(cl, result, form):
     pk = cl.lookup_opts.pk.attname
     for field_name in cl.list_display:
         row_class = ''
+        f = None
         try:
             f = cl.lookup_opts.get_field(field_name)
         except models.FieldDoesNotExist:
@@ -100,7 +101,7 @@ def mptt_items_for_result(cl, result, form):
         if force_unicode(result_repr) == '':
             result_repr = mark_safe('&nbsp;')
         
-        if first:
+        if first and f:
             level = getattr(result, result._mptt_meta.level_attr)
             padding_attr = ' style="padding-left:%spx"' % (5 + MPTT_ADMIN_LEVEL_INDENT * level)
         else:
@@ -151,4 +152,6 @@ def mptt_result_list(cl):
     return {'cl': cl,
             'result_headers': list(result_headers(cl)),
             'results': list(mptt_results(cl))}
-mptt_result_list = register.inclusion_tag("admin/change_list_results.html")(mptt_result_list)
+            
+# custom template is merely so we can strip out sortable-ness from the column headers
+mptt_result_list = register.inclusion_tag("admin/mptt_change_list_results.html")(mptt_result_list)
