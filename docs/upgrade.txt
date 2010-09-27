@@ -72,4 +72,4 @@ But to keep it compatible with 0.3, you can pass them to ``register()`` as well:
             order_insertion_by = ['name']
             parent_attr = 'padre'
     
-    mptt.register(Node, **dict(Node.MPTTMeta))
+    mptt.register(Node, **dict(Node._mptt_meta))
