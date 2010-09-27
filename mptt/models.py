@@ -36,6 +36,9 @@ class MPTTOptions(object):
         elif self.order_insertion_by is None:
             self.order_insertion_by = []
     
+    def __iter__(self):
+        return iter([(k, v) for (k, v) in self.__dict__.items() if not k.startswith('_')])
+    
     # Helper methods for accessing tree attributes on models.
     def get_raw_field_value(self, instance, field_name):
         """
