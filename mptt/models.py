@@ -33,6 +33,8 @@ class MPTTOptions(object):
         # Normalize order_insertion_by to a list
         if isinstance(self.order_insertion_by, basestring):
             self.order_insertion_by = [self.order_insertion_by]
+        elif isinstance(self.order_insertion_by, tuple):
+            self.order_insertion_by = list(self.order_insertion_by)
         elif self.order_insertion_by is None:
             self.order_insertion_by = []
     
