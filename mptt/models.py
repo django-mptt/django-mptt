@@ -268,7 +268,7 @@ class MPTTModel(models.Model):
         """
         Returns the root node of this model instance's tree.
         """
-        if self.is_root_node():
+        if self.is_root_node() and type(self) == self._tree_manager.tree_model:
             return self
         
         return self._tree_manager._mptt_filter(
