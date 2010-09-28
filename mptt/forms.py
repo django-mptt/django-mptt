@@ -141,3 +141,21 @@ class MoveNodeForm(forms.Form):
         except InvalidMove, e:
             self.errors[NON_FIELD_ERRORS] = ErrorList(e)
             raise
+
+
+class SafeMPTTAdminForm(forms.ModelForm):
+    """
+    A form which validates that the chosen parent for a node isn't one of
+    it's descendants.
+    """
+    def clean(self):
+        cleaned_data = super(SafeMPTTAdminForm, self).clean()
+        opts = self._meta.model._mptt_meta
+        parent = cleaned_data.get(opts.parent_attr)
+        if self.instance and parent:
+            if parent.is_descendant_of(self.instance, include_self=True):
+                if opts.parent_attr not in self._errors:
+                    self._errors[opts.parent_attr] = forms.util.ErrorList()
+                self._errors[opts.parent_attr].append('Invalid parent')
+                return
+        return cleaned_data

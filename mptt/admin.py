@@ -1,5 +1,6 @@
 
 import django
+from django.conf import settings
 from django.contrib.admin.views.main import ChangeList
 from django.contrib.admin.options import ModelAdmin, IncorrectLookupParameters
 from django import template
@@ -11,6 +12,10 @@ from django.utils.translation import ugettext as _
 from django.utils.translation import ungettext
 from django.utils.encoding import force_unicode
 
+from mptt.forms import SafeMPTTAdminForm
+
+__all__ = ('MPTTChangeList', 'MPTTModelAdmin', 'SafeMPTTAdminForm')
+
 class MPTTChangeList(ChangeList):
     def get_query_set(self):
         qs = super(MPTTChangeList, self).get_query_set()
@@ -21,7 +26,14 @@ class MPTTChangeList(ChangeList):
         return qs.order_by(tree_id, left)
 
 class MPTTModelAdmin(ModelAdmin):
+    """
+    A basic admin class that displays tree items according to their position in the tree.
+    No extra editing functionality beyond what Django admin normally offers.
+    """
+    
     change_list_template = 'admin/mptt_change_list.html'
+    
+    form = SafeMPTTAdminForm
     
     def get_changelist(self, request, **kwargs):
         """
@@ -145,3 +157,4 @@ class MPTTModelAdmin(ModelAdmin):
                 'admin/%s/change_list.html' % app_label,
                 'admin/change_list.html'
             ], context, context_instance=context_instance)
+
