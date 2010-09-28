@@ -143,13 +143,13 @@ class MoveNodeForm(forms.Form):
             raise
 
 
-class SafeMPTTAdminForm(forms.ModelForm):
+class MPTTAdminForm(forms.ModelForm):
     """
     A form which validates that the chosen parent for a node isn't one of
     it's descendants.
     """
     def clean(self):
-        cleaned_data = super(SafeMPTTAdminForm, self).clean()
+        cleaned_data = super(MPTTAdminForm, self).clean()
         opts = self._meta.model._mptt_meta
         parent = cleaned_data.get(opts.parent_attr)
         if self.instance and parent:

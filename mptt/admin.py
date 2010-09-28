@@ -12,9 +12,9 @@ from django.utils.translation import ugettext as _
 from django.utils.translation import ungettext
 from django.utils.encoding import force_unicode
 
-from mptt.forms import SafeMPTTAdminForm
+from mptt.forms import MPTTAdminForm
 
-__all__ = ('MPTTChangeList', 'MPTTModelAdmin', 'SafeMPTTAdminForm')
+__all__ = ('MPTTChangeList', 'MPTTModelAdmin', 'MPTTAdminForm')
 
 class MPTTChangeList(ChangeList):
     def get_query_set(self):
@@ -33,7 +33,7 @@ class MPTTModelAdmin(ModelAdmin):
     
     change_list_template = 'admin/mptt_change_list.html'
     
-    form = SafeMPTTAdminForm
+    form = MPTTAdminForm
     
     def get_changelist(self, request, **kwargs):
         """
@@ -173,7 +173,7 @@ if getattr(settings, 'MPTT_USE_FEINCMS', True):
             Requires FeinCMS to be installed.
             """
             
-            form = SafeMPTTAdminForm
+            form = MPTTAdminForm
         
             def _actions_column(self, obj):
                 actions = super(FeinCMSModelAdmin, self)._actions_column(obj)
