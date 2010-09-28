@@ -239,7 +239,7 @@ class MPTTModel(models.Model):
             )
         
         siblings = qs[:1]
-        return siblings[0] if siblings else None
+        return siblings and siblings[0] or None
 
     def get_previous_sibling(self, **filters):
         """
@@ -262,7 +262,7 @@ class MPTTModel(models.Model):
             qs = qs.order_by('-%s' % opts.right_attr)
 
         siblings = qs[:1]
-        return siblings[0] if siblings else None
+        return siblings and siblings[0] or None
 
     def get_root(self):
         """
