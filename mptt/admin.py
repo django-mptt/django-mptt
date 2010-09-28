@@ -158,3 +158,54 @@ class MPTTModelAdmin(ModelAdmin):
                 'admin/change_list.html'
             ], context, context_instance=context_instance)
 
+
+if getattr(settings, 'MPTT_USE_FEINCMS', True):
+    try:
+        from feincms.admin import editor
+    except ImportError:
+        pass
+    else:
+        __all__ = tuple(list(__all__) + ['FeinCMSModelAdmin'])
+        
+        class FeinCMSModelAdmin(editor.TreeEditor):
+            """
+            A ModelAdmin to add changelist tree view and editing capabilities.
+            Requires FeinCMS to be installed.
+            """
+            
+            form = SafeMPTTAdminForm
+        
+            def _actions_column(self, obj):
+                actions = super(FeinCMSModelAdmin, self)._actions_column(obj)
+                actions.insert(0,
+                    u'<a href="add/?%s=%s" title="%s"><img src="%simg/admin/icon_addlink.gif" alt="%s" /></a>' % (
+                        self.model._mptt_meta.parent_attr,
+                        obj.pk,
+                        _('Add child'),
+                        settings.ADMIN_MEDIA_PREFIX,
+                        _('Add child')))
+                
+                if hasattr(obj, 'get_absolute_url'):
+                    actions.insert(0,
+                        u'<a href="%s" title="%s" target="_blank"><img src="%simg/admin/selector-search.gif" alt="%s" /></a>' % (
+                            obj.get_absolute_url(),
+                            _('View on site'),
+                            settings.ADMIN_MEDIA_PREFIX,
+                            _('View on site')))
+                return actions
+            
+            def delete_selected_tree(self, modeladmin, request, queryset):
+                """
+                Deletes multiple instances and makes sure the MPTT fields get recalculated properly.
+                (Because merely doing a bulk delete doesn't trigger the post_delete hooks.)
+                """
+                n = 0
+                for obj in queryset:
+                    obj.delete()
+                    n += 1
+                self.message_user(request, _("Successfully deleted %s items." % n))
+
+            def get_actions(self, request):
+                actions = super(FeinCMSModelAdmin, self).get_actions(request)
+                actions['delete_selected'] = (self.delete_selected_tree, 'delete_selected', _("Delete selected %(verbose_name_plural)s"))
+                return actions
