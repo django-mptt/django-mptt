@@ -1373,14 +1373,10 @@ ValueError: Cannot insert a node which has already been saved.
 7 6 2 3 6 7
 
 >>> print_tree_details(Student.tree.all())
-1 - 1 0 1 6
-3 1 1 1 2 3
 2 1 1 1 4 5
 4 - 2 0 1 10
 8 4 2 1 2 3
-5 4 2 1 4 9
 6 5 2 2 5 8
-7 6 2 3 6 7
 
 >>> jack = Person.objects.get(pk=1)
 >>> jack.get_descendants()
