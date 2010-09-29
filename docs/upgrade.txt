@@ -81,28 +81,27 @@ Writing reusable apps - Compatibility with 0.3 as well
 ------------------------------------------------------
 
 If you're writing a library or reusable app that needs to work with older versions of django-mptt,
-you'll need to update your code to handle both versions::
+you'll need to update your code to handle both versions.
+
+Here's a sample models file which works with 0.3 and 0.4::
 
     from django.db import models
+
+    import mptt
     try:
         from mptt.models import MPTTModel
     except ImportError:
         # django-mptt < 0.4
         MPTTModel = models.Model
 
-    
     class Node(MPTTModel):
-        ...
-    
-    mptt.register(Node)
-
-If you had keyword arguments to ``mptt.register()``, they now belong in an ``MPTTMeta`` inner class on the model.
-But to keep it compatible with 0.3, you can pass them to ``register()`` as well::
-
-    class Node(MPTTModel):
-        ...
+        name   = models.CharField(max_length=20, blank=True)
+        parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+        
         class MPTTMeta:
-            order_insertion_by = ['name']
-            parent_attr = 'padre'
-    
-    mptt.register(Node, **dict(Node._mptt_meta))
+            order_insertion_by = 'name'
+
+    if hasattr(mptt, 'register'):
+        # django-mptt < 0.4
+        # This line looks frightening, suggestions for alternatives welcome :)
+        mptt.register(Node, **dict([(attr, getattr(Node.MPTTMeta, attr)) for attr in dir(Node.MPTTMeta) if attr[:1] != '_']))
