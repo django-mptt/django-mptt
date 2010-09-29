@@ -3,6 +3,7 @@ A custom manager for working with trees of objects.
 """
 from django.db import connection, models, transaction
 from django.db.models import F, Max
+from django.db.models.query import QuerySet
 from django.utils.translation import ugettext as _
 
 try:
@@ -55,6 +56,16 @@ class TreeManager(models.Manager):
         self.tree_id_attr = mptt_opts.tree_id_attr
         self.level_attr = mptt_opts.level_attr
     
+    def contribute_to_class(self, model, name):
+        super(TreeManager, self).contribute_to_class(model, name)
+        tree_field = model._meta.get_field_by_name(self.tree_id_attr)
+        if tree_field[1]:
+            self.tree_model = tree_field[1]
+            self._base_manager = self.tree_model._tree_manager
+        else:
+            self.tree_model = model
+            self._base_manager = None
+    
     def _translate_lookups(self, **lookups):
         new_lookups = {}
         for k, v in lookups.items():
@@ -69,6 +80,9 @@ class TreeManager(models.Manager):
         """
         Like self.filter(), but translates name-agnostic filters for MPTT fields.
         """
+        if self._base_manager:
+            return self._base_manager._mptt_filter(qs=qs, **filters)
+        
         if qs is None:
             qs = self.get_query_set()
         return qs.filter(**self._translate_lookups(**filters))
@@ -77,6 +91,9 @@ class TreeManager(models.Manager):
         """
         Like self.update(), but translates name-agnostic MPTT fields.
         """
+        if self._base_manager:
+            return self._base_manager._mptt_update(qs=qs, **filters)
+        
         if qs is None:
             qs = self.get_query_set()
         return qs.update(**self._translate_lookups(**items))
@@ -118,7 +135,7 @@ class TreeManager(models.Manager):
             subquery = CUMULATIVE_COUNT_SUBQUERY % {
                 'rel_table': qn(rel_model._meta.db_table),
                 'mptt_fk': qn(rel_model._meta.get_field(rel_field).column),
-                'mptt_table': qn(meta.db_table),
+                'mptt_table': qn(self.tree_model._meta.db_table),
                 'mptt_pk': qn(meta.pk.column),
                 'tree_id': qn(meta.get_field(self.tree_id_attr).column),
                 'left': qn(meta.get_field(self.left_attr).column),
@@ -128,7 +145,7 @@ class TreeManager(models.Manager):
             subquery = COUNT_SUBQUERY % {
                 'rel_table': qn(rel_model._meta.db_table),
                 'mptt_fk': qn(rel_model._meta.get_field(rel_field).column),
-                'mptt_table': qn(meta.db_table),
+                'mptt_table': qn(self.tree_model._meta.db_table),
                 'mptt_pk': qn(meta.pk.column),
             }
         return queryset.extra(select={count_attr: subquery})
@@ -142,8 +159,7 @@ class TreeManager(models.Manager):
         return super(TreeManager, self).get_query_set().order_by(
             self.tree_id_attr, self.left_attr)
 
-    def insert_node(self, node, target, position='last-child',
-                    save=False):
+    def insert_node(self, node, target, position='last-child', save=False):
         """
         Sets up the tree state for ``node`` (which has not yet been
         inserted into in the database) so it will be positioned relative
@@ -157,6 +173,10 @@ class TreeManager(models.Manager):
         If ``save`` is ``True``, ``node``'s ``save()`` method will be
         called before it is returned.
         """
+        
+        if self._base_manager:
+            return self._base_manager.insert_node(node, target, position=position, save=save)
+        
         if node.pk:
             raise ValueError(_('Cannot insert a node which has already been saved.'))
 
@@ -221,6 +241,10 @@ class TreeManager(models.Manager):
         of a root node, as this is a special case due to our use of tree
         ids to order root nodes.
         """
+        
+        if self._base_manager:
+            return self._base_manager.move_node(node, target, position=position)
+        
         if target is None:
             if node.is_child_node():
                 self._make_child_root_node(node)
@@ -237,18 +261,28 @@ class TreeManager(models.Manager):
         """
         Returns the root node of the tree with the given id.
         """
+        if self._base_manager:
+            return self._base_manager.root_node(tree_id)
+        
         return self._mptt_filter(tree_id=tree_id, parent__isnull=True).get()
 
     def root_nodes(self):
         """
         Creates a ``QuerySet`` containing root nodes.
         """
+        if self._base_manager:
+            return self._base_manager.root_nodes()
+        
         return self._mptt_filter(parent__isnull=True)
 
     def rebuild(self):
         """
         Rebuilds whole tree in database using `parent` link.
         """
+        
+        if self._base_manager:
+            return self._base_manager.rebuild()
+        
         opts = self.model._mptt_meta
         
         qs = self._mptt_filter(parent__isnull=True)
@@ -388,7 +422,7 @@ class TreeManager(models.Manager):
                     THEN %(new_parent)s
                 ELSE %(parent)s END
         WHERE %(tree_id)s = %%s""" % {
-            'table': qn(opts.db_table),
+            'table': qn(self.tree_model._meta.db_table),
             'level': qn(opts.get_field(self.level_attr).column),
             'left': qn(opts.get_field(self.left_attr).column),
             'tree_id': qn(opts.get_field(self.tree_id_attr).column),
@@ -521,7 +555,7 @@ class TreeManager(models.Manager):
                     THEN %%s
                 ELSE %(tree_id)s + %%s END
             WHERE %(tree_id)s >= %%s AND %(tree_id)s <= %%s""" % {
-                'table': qn(opts.db_table),
+                'table': qn(self.tree_model._meta.db_table),
                 'tree_id': qn(opts.get_field(self.tree_id_attr).column),
             }
 
@@ -549,7 +583,7 @@ class TreeManager(models.Manager):
                 ELSE %(right)s END
         WHERE %(tree_id)s = %%s
           AND (%(left)s > %%s OR %(right)s > %%s)""" % {
-            'table': qn(opts.db_table),
+            'table': qn(self.tree_model._meta.db_table),
             'left': qn(opts.get_field(self.left_attr).column),
             'right': qn(opts.get_field(self.right_attr).column),
             'tree_id': qn(opts.get_field(self.tree_id_attr).column),
@@ -702,7 +736,7 @@ class TreeManager(models.Manager):
                   THEN %%s
                 ELSE %(parent)s END
         WHERE %(tree_id)s = %%s""" % {
-            'table': qn(opts.db_table),
+            'table': qn(self.tree_model._meta.db_table),
             'level': qn(opts.get_field(self.level_attr).column),
             'left': qn(opts.get_field(self.left_attr).column),
             'right': qn(opts.get_field(self.right_attr).column),
@@ -769,7 +803,7 @@ class TreeManager(models.Manager):
                 ELSE %(parent)s END
         WHERE %(left)s >= %%s AND %(left)s <= %%s
           AND %(tree_id)s = %%s""" % {
-            'table': qn(opts.db_table),
+            'table': qn(self.tree_model._meta.db_table),
             'level': qn(opts.get_field(self.level_attr).column),
             'left': qn(opts.get_field(self.left_attr).column),
             'right': qn(opts.get_field(self.right_attr).column),
