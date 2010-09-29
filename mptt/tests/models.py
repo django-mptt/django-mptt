@@ -56,3 +56,13 @@ class OrderedInsertion(MPTTModel):
 
 class Tree(MPTTModel):
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+
+class Person(MPTTModel):
+    name = models.CharField(max_length=50)
+    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+    
+    def __unicode__(self):
+        return self.name
+
+class Student(Person):
+    type = models.CharField(max_length=50)

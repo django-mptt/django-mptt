@@ -1,6 +1,6 @@
 >>> from datetime import date
 >>> from mptt.exceptions import InvalidMove
->>> from mptt.tests.models import Genre, Insert, MultiOrder, Node, OrderedInsertion, Tree
+>>> from mptt.tests.models import Genre, Insert, MultiOrder, Node, OrderedInsertion, Tree, Person, Student
 
 >>> def print_tree_details(nodes):
 ...     opts = nodes[0]._mptt_meta
@@ -1348,4 +1348,61 @@ ValueError: Cannot insert a node which has already been saved.
 9 1 5 1 4 5
 10 1 5 1 6 7
 8 1 5 1 8 9
+
+# Multi-table Inheritance #####################################################
+
+(pk, parent_id or '-', tree_id, level, left, right_attr)
+
+# Create test model instances
+>>> jack = Person.objects.create(name='Jack')
+>>> jill = Student.objects.create(name='Jill', parent=jack)
+>>> jim = Person.objects.create(name='Jim', parent=jack)
+>>> jess = Student.objects.create(name='Jess')
+>>> jeff = Person.objects.create(name='Jeff', parent=jess)
+>>> jane = Student.objects.create(name='Jane', parent=jeff)
+>>> joe = Person.objects.create(name='Joe', parent=jane)
+>>> julie = Student.objects.create(name='Julie', parent=jess)
+>>> print_tree_details(Person.tree.all())
+1 - 1 0 1 6
+3 1 1 1 2 3
+2 1 1 1 4 5
+4 - 2 0 1 10
+8 4 2 1 2 3
+5 4 2 1 4 9
+6 5 2 2 5 8
+7 6 2 3 6 7
+
+>>> print_tree_details(Student.tree.all())
+1 - 1 0 1 6
+3 1 1 1 2 3
+2 1 1 1 4 5
+4 - 2 0 1 10
+8 4 2 1 2 3
+5 4 2 1 4 9
+6 5 2 2 5 8
+7 6 2 3 6 7
+
+>>> jack = Person.objects.get(pk=1)
+>>> jack.get_descendants()
+[<Person: Jim>, <Person: Jill>]
+>>> jack.get_root()
+<Person: Jack>
+>>> jill = Person.objects.get(pk=3)
+>>> jill.get_root()
+<Person: Jack>
+>>> jess = Student.objects.get(pk=4)
+>>> jess.get_descendants()
+[<Person: Julie>, <Person: Jeff>, <Person: Jane>, <Person: Joe>]
+>>> jess.get_root()
+<Person: Jess>
+>>> jeff = Person.objects.get(pk=5)
+>>> jeff.get_descendants()
+[<Person: Jane>, <Person: Joe>]
+>>> jeff.get_root()
+<Person: Jess>
+>>> jane = Student.objects.get(pk=6)
+>>> jane.get_root()
+<Person: Jess>
+>>> jane.get_ancestors()
+[<Person: Jess>, <Person: Jeff>]
 
