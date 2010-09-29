@@ -237,6 +237,14 @@ True
 False
 >>> action.is_leaf_node()
 False
+>>> action.is_descendant_of(action)
+False
+>>> action.is_descendant_of(action, include_self=True)
+True
+>>> action.is_ancestor_of(action)
+False
+>>> action.is_ancestor_of(action, include_self=True)
+True
 
 >>> platformer = Genre.objects.get(pk=platformer.pk)
 >>> [g.name for g in platformer.get_ancestors()]
@@ -269,6 +277,14 @@ False
 True
 >>> platformer.is_leaf_node()
 False
+>>> action.is_descendant_of(platformer)
+False
+>>> action.is_descendant_of(platformer, include_self=True)
+False
+>>> action.is_ancestor_of(platformer)
+True
+>>> action.is_ancestor_of(platformer, include_self=True)
+True
 
 >>> platformer_3d = Genre.objects.get(pk=platformer_3d.pk)
 >>> [g.name for g in platformer_3d.get_ancestors()]
@@ -302,6 +318,22 @@ False
 >>> platformer_3d.is_child_node()
 True
 >>> platformer_3d.is_leaf_node()
+True
+>>> action.is_descendant_of(platformer_3d)
+False
+>>> action.is_descendant_of(platformer_3d, include_self=True)
+False
+>>> action.is_ancestor_of(platformer_3d)
+True
+>>> action.is_ancestor_of(platformer_3d, include_self=True)
+True
+>>> platformer_3d.is_descendant_of(platformer_3d)
+False
+>>> platformer_3d.is_descendant_of(platformer_3d, include_self=True)
+True
+>>> platformer_3d.is_ancestor_of(platformer_3d)
+False
+>>> platformer_3d.is_ancestor_of(platformer_3d, include_self=True)
 True
 
 # The move_to method will be used in other tests to verify that it calls the

@@ -338,25 +338,26 @@ class MPTTModel(models.Model):
         """
         opts = self._mptt_meta
         
+        if include_self and other.pk == self.pk:
+            return True
+        
         if getattr(self, opts.tree_id_attr) != getattr(other, opts.tree_id_attr):
             return False
         else:
             left = getattr(self, opts.left_attr)
             right = getattr(self, opts.right_attr)
             
-            if include_self:
-                left += 1
-                right -= 1
-            
             return left > getattr(other, opts.left_attr) and right < getattr(other, opts.right_attr)
     
-    def is_ancestor_of(self, other, include_self=True):
+    def is_ancestor_of(self, other, include_self=False):
         """
         Returns ``True`` if this model is an ancestor of the given node,
         ``False`` otherwise.
         If include_self is True, also returns True if the two nodes are the same node.
         """
-        return not other.is_descendant_of(self, include_self=include_self)
+        if include_self and other.pk == self.pk:
+            return True
+        return other.is_descendant_of(self)
 
     def move_to(self, target, position='first-child'):
         """
