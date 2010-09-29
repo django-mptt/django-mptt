@@ -2,6 +2,13 @@
 Upgrade Notes - 0.3 to 0.4
 ==========================
 
+
+Model changes in 0.4
+====================
+
+``mptt.register`` replaced by ``MPTTModel``
+-------------------------------------------
+
 In ``django-mptt`` 0.4, mptt.register() has been removed in favour of model inheritance.
 
 Suppose you start with this, which works with ``django-mptt`` 0.3::
@@ -27,13 +34,32 @@ Then remove your call to ``mptt.register()``. If you were passing it keyword arg
             order_insertion_by = ['name']
             parent_attr = 'padre'
 
-Done! You're all upgraded :) A couple more notes for more complex scenarios:
+MPTT attributes on ``MyModel._meta`` deprecated, moved to ``MyModel._mptt_meta``
+----------------------------------------------------------------------------------
 
+Most people won't need to worry about this, but if you're using any of the following, note that these are deprecated and will be removed in 0.5::
+
+    MyModel._meta.left_attr
+    MyModel._meta.right_attr
+    MyModel._meta.tree_id_attr
+    MyModel._meta.level_attr
+    MyModel._meta.tree_manager_attr
+    MyModel._meta.parent_attr
+    MyModel._meta.order_insertion_by
+
+They'll continue to work as previously for now, but you should upgrade your code if you can. Simply replace ``_meta`` with ``_mptt_meta``.
+
+
+You're probably all upgraded at this point :) A couple more notes for more complex scenarios:
+
+
+More complicated scenarios
+==========================
 
 What if I'm already inheriting from something?
-==============================================
+----------------------------------------------
 
-If your model is already a subclass of an abstract model, it *should* be safe to use multiple inheritance::
+If your model is already a subclass of an abstract model, you should use multiple inheritance::
 
     class Node(ParentModel, MPTTModel):
         ...
@@ -41,11 +67,18 @@ If your model is already a subclass of an abstract model, it *should* be safe to
 Isn't multiple inheritance evil? Well, maybe. However, the 
 `Django model docs`_ don't forbid this, and as long as your other model doesn't have conflicting methods, it should be fine.
 
+.. note::
+   As always when dealing with multiple inheritance, approach with a bit of caution.
+   
+   Our brief testing says it works, but if you find that the Django internals are somehow
+   breaking this approach for you, please `create an issue`_ with specifics.
+
+.. _`create an issue`: http://github.com/django-mptt/django-mptt/issues
 .. _`Django model docs`: http://docs.djangoproject.com/en/dev/topics/db/models/#multiple-inheritance
 
 
-Compatibility with 0.3 as well
-==============================
+Writing reusable apps - Compatibility with 0.3 as well
+------------------------------------------------------
 
 If you're writing a library or reusable app that needs to work with older versions of django-mptt,
 you'll need to update your code to handle both versions::
