@@ -373,7 +373,7 @@ class RebuildTreeTestCase(TestCase):
         opts = MultiOrder._meta
         manager = TreeManager(opts.parent_attr, opts.left_attr, opts.right_attr, opts.tree_id_attr,
                      opts.level_attr)
-        sql = manager._rebuild_select_sql_string_withou_parent(opts)
+        sql = manager._rebuild_select_sql_string_without_parent(opts)
         expected_sql = 'SELECT "id" FROM "tests_multiorder" WHERE "parent_id" is NULL ORDER BY "name", "size", "date"'
         self.assertEqual(sql, expected_sql)        
         
@@ -385,7 +385,7 @@ class RebuildTreeTestCase(TestCase):
         opts = MultiOrderCustom._meta
         manager = TreeManager(opts.parent_attr, opts.left_attr, opts.right_attr, opts.tree_id_attr,
                      opts.level_attr)
-        sql = manager._rebuild_select_sql_string_withou_parent(opts)
+        sql = manager._rebuild_select_sql_string_without_parent(opts)
         expected_sql = 'SELECT "id" FROM "tests_multiordercustom" WHERE "parent_id" is NULL ORDER BY "name_txt"'
         self.assertEqual(sql, expected_sql)         
         
@@ -397,7 +397,7 @@ class RebuildTreeTestCase(TestCase):
         opts = MultiOrderMixed._meta
         manager = TreeManager(opts.parent_attr, opts.left_attr, opts.right_attr, opts.tree_id_attr,
                      opts.level_attr)
-        sql = manager._rebuild_select_sql_string_withou_parent(opts)
+        sql = manager._rebuild_select_sql_string_without_parent(opts)
         expected_sql = 'SELECT "id" FROM "tests_multiordermixed" WHERE "parent_id" is NULL ORDER BY "name_txt", "size", "date"'
         self.assertEqual(sql, expected_sql)
 

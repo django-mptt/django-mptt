@@ -223,7 +223,7 @@ class TreeManager(models.Manager):
             'tree_id': qn(opts.get_field(self.tree_id_attr).column)
         })
         
-        cursor.execute(self._rebuild__select_sql_string(opts))
+        cursor.execute(self._rebuild_select_sql_string_without_parent(opts))
 
         idx = 0
         for (pk, ) in cursor.fetchall():
@@ -231,7 +231,7 @@ class TreeManager(models.Manager):
             self._rebuild_helper(pk, 1, idx)
         transaction.commit_unless_managed()
     
-    def _rebuild_select_sql_string_withou_parent(self, opts):
+    def _rebuild_select_sql_string_without_parent(self, opts):
         return 'SELECT %(id_col)s FROM %(table)s WHERE %(parent_col)s is NULL %(orderby)s' % {
             'id_col': qn(opts.pk.column),
             'table': qn(opts.db_table),
