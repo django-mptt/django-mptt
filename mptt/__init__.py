@@ -36,6 +36,7 @@ def register(model, parent_attr='parent', left_attr='lft', right_attr='rght',
     
     # Allow order_insertion_by to be either a string, a list/tuple or None
     if order_insertion_by is not None:
+        order_insertion_by = [model._meta.get_field(f).db_column or f for f in order_insertion_by]
         if isinstance(order_insertion_by, basestring):
             order_insertion_by = [order_insertion_by]
         else:

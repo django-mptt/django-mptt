@@ -6,7 +6,10 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'mptt.tests.settings'
 from django.test import TestCase
 
 from mptt.exceptions import InvalidMove
-from mptt.tests.models import Category, Genre
+from mptt.tests.models import Category, Genre, MultiOrderCustom, \
+                                MultiOrderMixed, MultiOrder
+
+
 
 def get_tree_details(nodes):
     """Creates pertinent tree details for the given list of nodes."""
@@ -325,3 +328,30 @@ class InterTreeMovementTestCase(TestCase):
 
 class PositionedInsertionTestCase(TestCase):
     pass
+
+class OrderFieldTestCase(TestCase):
+    """
+    Tests to garantee that order_insertion_by will always match a db column
+    """
+    def test_order_insertion_by_uses_db_column_when_informed(self):
+        """
+        Tests to garantee that order_insertion_by can handle custom db column name.
+        """
+        opts = MultiOrderCustom._meta
+        self.assertEqual(opts.order_insertion_by, ["name_txt"])
+
+    def test_order_insertion_by_when_column_name_and_field_name_are_equals(self):
+        """
+        Tests to garantee that order_insertion_by still works when column
+        name and field name are equals.
+        """
+        opts = MultiOrder._meta
+        self.assertEqual(opts.order_insertion_by, ["name", "size", "date"])
+
+    def test_order_insertion_by_when_model_has_both_custom_named_columns_and_defult_named_columns(self):
+        """
+        Tests to garantee that order_insertion_by still works when model has both column 
+        named and fields and default named fields.
+        """
+        opts = MultiOrderMixed._meta
+        self.assertEqual(opts.order_insertion_by, ["name_txt", "size", "date"])

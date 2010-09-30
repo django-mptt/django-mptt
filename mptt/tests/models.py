@@ -44,10 +44,28 @@ class OrderedInsertion(models.Model):
 class Tree(models.Model):
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
 
+class MultiOrderCustom(models.Model):
+    name = models.CharField(max_length=50, db_column="name_txt")
+    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+
+    def __unicode__(self):
+        return self.name
+
+class MultiOrderMixed(models.Model):
+    name = models.CharField(max_length=50, db_column="name_txt")
+    size = models.PositiveIntegerField()
+    date = models.DateField()
+    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+
+    def __unicode__(self):
+        return self.name
+
 mptt.register(Category)
 mptt.register(Genre)
 mptt.register(Insert)
 mptt.register(MultiOrder, order_insertion_by=['name', 'size', 'date'])
+mptt.register(MultiOrderMixed, order_insertion_by=('name', 'size', 'date'))
+mptt.register(MultiOrderCustom, order_insertion_by=['name'])
 mptt.register(Node, left_attr='does', right_attr='zis', level_attr='madness',
               tree_id_attr='work')
 mptt.register(OrderedInsertion, order_insertion_by=['name'])
