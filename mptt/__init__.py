@@ -35,12 +35,14 @@ def register(model, parent_attr='parent', left_attr='lft', right_attr='rght',
     registry.append(model)
     
     # Allow order_insertion_by to be either a string, a list/tuple or None
+    column_to_order_insertion_by = order_insertion_by
     if order_insertion_by is not None:
-        order_insertion_by = [model._meta.get_field(f).db_column or f for f in order_insertion_by]
         if isinstance(order_insertion_by, basestring):
             order_insertion_by = [order_insertion_by]
         else:
             order_insertion_by = list(order_insertion_by)
+        #creates another property to store column names in case of customized model.    
+        column_to_order_insertion_by = [model._meta.get_field(f).db_column or f for f in order_insertion_by]
 
     # Add tree options to the model's Options
     opts = model._meta
@@ -51,6 +53,7 @@ def register(model, parent_attr='parent', left_attr='lft', right_attr='rght',
     opts.level_attr = level_attr
     opts.tree_manager_attr = tree_manager_attr
     opts.order_insertion_by = order_insertion_by
+    opts.column_to_order_insertion_by = column_to_order_insertion_by
 
     # Add tree fields if they do not exist
     for attr in [left_attr, right_attr, tree_id_attr, level_attr]:

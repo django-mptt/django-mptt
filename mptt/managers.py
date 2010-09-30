@@ -223,31 +223,37 @@ class TreeManager(models.Manager):
             'tree_id': qn(opts.get_field(self.tree_id_attr).column)
         })
         
-        cursor.execute('SELECT %(id_col)s FROM %(table)s WHERE %(parent_col)s is NULL %(orderby)s' % {
-            'id_col': qn(opts.pk.column),
-            'table': qn(opts.db_table),
-            'parent_col': qn(opts.get_field(self.parent_attr).column),
-            'orderby': 'ORDER BY ' + ', '.join([qn(field) for field in opts.order_insertion_by]) if opts.order_insertion_by else ''
-        })
+        cursor.execute(self._rebuild__select_sql_string(opts))
 
         idx = 0
         for (pk, ) in cursor.fetchall():
             idx += 1
             self._rebuild_helper(pk, 1, idx)
         transaction.commit_unless_managed()
-
+    
+    def _rebuild_select_sql_string_withou_parent(self, opts):
+        return 'SELECT %(id_col)s FROM %(table)s WHERE %(parent_col)s is NULL %(orderby)s' % {
+            'id_col': qn(opts.pk.column),
+            'table': qn(opts.db_table),
+            'parent_col': qn(opts.get_field(self.parent_attr).column),
+            'orderby': 'ORDER BY ' + ', '.join([qn(field) for field in opts.column_to_order_insertion_by]) if opts.column_to_order_insertion_by else ''
+        }
+    
+    def _rebuild_select_sql_string_using_parent(self, pk, opts):
+        return 'SELECT %(id_col)s FROM %(table)s WHERE %(parent_col)s = %(parent)d %(orderby)s' % {
+            'id_col': qn(opts.pk.column),
+            'table': qn(opts.db_table),
+            'parent_col': qn(opts.get_field(self.parent_attr).column),
+            'parent': pk,
+            'orderby': 'ORDER BY ' + ', '.join([qn(field) for field in opts.column_to_order_insertion_by]) if opts.column_to_order_insertion_by else ''
+        }
+            
     def _rebuild_helper(self, pk, left, tree_id, level=0):
         opts = self.model._meta
         right = left + 1
 
         cursor = connection.cursor()
-        cursor.execute('SELECT %(id_col)s FROM %(table)s WHERE %(parent_col)s = %(parent)d %(orderby)s' % {
-            'id_col': qn(opts.pk.column),
-            'table': qn(opts.db_table),
-            'parent_col': qn(opts.get_field(self.parent_attr).column),
-            'parent': pk,
-            'orderby': 'ORDER BY ' + ', '.join([qn(field) for field in opts.order_insertion_by]) if opts.order_insertion_by else ''
-        })
+        cursor.execute(self._rebuild_select_sql_string_using_parent(pk, opts))
         
         for (child_id, ) in cursor.fetchall():
             right = self._rebuild_helper(child_id, right, tree_id, level+1)
@@ -276,7 +282,7 @@ class TreeManager(models.Manager):
         })
         
         return right + 1
-            
+    
     def _calculate_inter_tree_move_values(self, node, target, position):
         """
         Calculates values required when moving ``node`` relative to

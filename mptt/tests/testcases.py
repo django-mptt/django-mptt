@@ -6,6 +6,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'mptt.tests.settings'
 from django.test import TestCase
 
 from mptt.exceptions import InvalidMove
+from mptt.managers import TreeManager
 from mptt.tests.models import Category, Genre, MultiOrderCustom, \
                                 MultiOrderMixed, MultiOrder
 
@@ -335,23 +336,108 @@ class OrderFieldTestCase(TestCase):
     """
     def test_order_insertion_by_uses_db_column_when_informed(self):
         """
-        Tests to garantee that order_insertion_by can handle custom db column name.
+        Tests to garantee that meta has both order_insertion_by and column_to_order_insertion_by
         """
         opts = MultiOrderCustom._meta
-        self.assertEqual(opts.order_insertion_by, ["name_txt"])
-
+        self.assertEqual(opts.order_insertion_by, ["name"])
+        self.assertEqual(opts.column_to_order_insertion_by, ["name_txt"])
+    
     def test_order_insertion_by_when_column_name_and_field_name_are_equals(self):
         """
-        Tests to garantee that order_insertion_by still works when column
+        Tests to garantee that column_to_order_insertion_by still works when column
         name and field name are equals.
         """
         opts = MultiOrder._meta
         self.assertEqual(opts.order_insertion_by, ["name", "size", "date"])
-
+        self.assertEqual(opts.column_to_order_insertion_by, ["name", "size", "date"])
+    
     def test_order_insertion_by_when_model_has_both_custom_named_columns_and_defult_named_columns(self):
         """
-        Tests to garantee that order_insertion_by still works when model has both column 
+        Tests to garantee that column_to_order_insertion_by still works when model has both column 
         named and fields and default named fields.
         """
         opts = MultiOrderMixed._meta
-        self.assertEqual(opts.order_insertion_by, ["name_txt", "size", "date"])
+        self.assertEqual(opts.order_insertion_by, ["name", "size", "date"])
+        self.assertEqual(opts.column_to_order_insertion_by, ["name_txt", "size", "date"])
+
+
+class RebuildTreeTestCase(TestCase):
+    """
+    Test that checks if rebuild's SQL string is correct
+    """
+    def test_rebuild_select_sql_string_for_model_with_default_field_column_works(self):
+        """
+        Garentees that rebuild's select SQL strings is build correctly when no specified
+        model fields have customized columns.
+        """
+        opts = MultiOrder._meta
+        manager = TreeManager(opts.parent_attr, opts.left_attr, opts.right_attr, opts.tree_id_attr,
+                     opts.level_attr)
+        sql = manager._rebuild_select_sql_string_withou_parent(opts)
+        expected_sql = 'SELECT "id" FROM "tests_multiorder" WHERE "parent_id" is NULL ORDER BY "name", "size", "date"'
+        self.assertEqual(sql, expected_sql)        
+        
+    def test_rebuild_select_sql_string_for_model_with_custom_column_field_works(self):
+        """
+        Garentees that rebuild's select SQL strings is build correctly when all specified
+        model fields have customized columns.
+        """
+        opts = MultiOrderCustom._meta
+        manager = TreeManager(opts.parent_attr, opts.left_attr, opts.right_attr, opts.tree_id_attr,
+                     opts.level_attr)
+        sql = manager._rebuild_select_sql_string_withou_parent(opts)
+        expected_sql = 'SELECT "id" FROM "tests_multiordercustom" WHERE "parent_id" is NULL ORDER BY "name_txt"'
+        self.assertEqual(sql, expected_sql)         
+        
+    def test_rebuild_select_sql_string_for_model_with_default_field_column_mixed_with_custom_column_filds_works(self):
+        """
+        Garentees that rebuild's select SQL strings is build correctly when specified
+        model fields have customized columns and default columns.
+        """
+        opts = MultiOrderMixed._meta
+        manager = TreeManager(opts.parent_attr, opts.left_attr, opts.right_attr, opts.tree_id_attr,
+                     opts.level_attr)
+        sql = manager._rebuild_select_sql_string_withou_parent(opts)
+        expected_sql = 'SELECT "id" FROM "tests_multiordermixed" WHERE "parent_id" is NULL ORDER BY "name_txt", "size", "date"'
+        self.assertEqual(sql, expected_sql)
+
+    def test_rebuild_select_sql_string_using_parent_for_model_with_default_field_column_works(self):
+        """
+        Garentees that rebuild's select SQL strings is build correctly when no specified
+        model fields have customized columns.
+        """
+        opts = MultiOrder._meta
+        pk = 1
+        manager = TreeManager(opts.parent_attr, opts.left_attr, opts.right_attr, opts.tree_id_attr,
+                     opts.level_attr)
+        sql = manager._rebuild_select_sql_string_using_parent(pk, opts)
+        expected_sql = 'SELECT "id" FROM "tests_multiorder" WHERE "parent_id" = 1 ORDER BY "name", "size", "date"'
+        self.assertEqual(sql, expected_sql)        
+        
+    
+    def test_rebuild_select_sql_string_using_parent_for_model_with_custom_column_field_works(self):
+        """
+        Garentees that rebuild's select SQL strings is build correctly when all specified
+        model fields have customized columns.
+        """
+        opts = MultiOrderCustom._meta
+        pk = 1
+        manager = TreeManager(opts.parent_attr, opts.left_attr, opts.right_attr, opts.tree_id_attr,
+                     opts.level_attr)
+        sql = manager._rebuild_select_sql_string_using_parent(pk, opts)
+        expected_sql = 'SELECT "id" FROM "tests_multiordercustom" WHERE "parent_id" = 1 ORDER BY "name_txt"'
+        self.assertEqual(sql, expected_sql)         
+        
+    
+    def test_rebuild_select_sql_string_using_parent_for_model_with_default_field_column_mixed_with_custom_column_filds_works(self):
+        """
+        Garentees that rebuild's select SQL strings is build correctly when specified
+        model fields have customized columns and default columns.
+        """
+        opts = MultiOrderMixed._meta
+        pk = 1
+        manager = TreeManager(opts.parent_attr, opts.left_attr, opts.right_attr, opts.tree_id_attr,
+                     opts.level_attr)
+        sql = manager._rebuild_select_sql_string_using_parent(pk, opts)
+        expected_sql = 'SELECT "id" FROM "tests_multiordermixed" WHERE "parent_id" = 1 ORDER BY "name_txt", "size", "date"'
+        self.assertEqual(sql, expected_sql)
