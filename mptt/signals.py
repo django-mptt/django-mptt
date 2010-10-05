@@ -79,9 +79,11 @@ def _get_ordered_insertion_target(node, parent):
             # Fall back on tree id ordering if multiple root nodes have
             # the same values.
             order_by.append(opts.tree_id_attr)
+        queryset = node._default_manager.filter(filters).order_by(*order_by)
+        if node.pk:
+            queryset = queryset.exclude(pk=node.pk)
         try:
-            right_sibling = \
-                node._default_manager.filter(filters).order_by(*order_by)[0]
+            right_sibling = queryset[0]
         except IndexError:
             # No suitable right sibling could be found
             pass
@@ -148,8 +150,11 @@ def pre_save(instance, **kwargs):
                 # Default movement
                 if parent_id is None:
                     root_nodes = instance._tree_manager.root_nodes()
-                    rightmost_sibling = root_nodes.exclude(pk=instance.pk).order_by('-%s' % opts.tree_id_attr)[0]
-                    instance.move_to(rightmost_sibling, position='right')
+                    try:
+                        rightmost_sibling = root_nodes.exclude(pk=instance.pk).order_by('-%s' % opts.tree_id_attr)[0]
+                        instance.move_to(rightmost_sibling, position='right')
+                    except IndexError:
+                        pass
                 else:
                     parent = getattr(instance, opts.parent_attr)
                     instance.move_to(parent, position='last-child')
