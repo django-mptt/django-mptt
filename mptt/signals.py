@@ -148,7 +148,7 @@ def pre_save(instance, **kwargs):
                 # Default movement
                 if parent_id is None:
                     root_nodes = instance._tree_manager.root_nodes()
-                    rightmost_sibling = root_nodes.order_by('-%s' % opts.tree_id_attr)[0]
+                    rightmost_sibling = root_nodes.exclude(pk=instance.pk).order_by('-%s' % opts.tree_id_attr)[0]
                     instance.move_to(rightmost_sibling, position='right')
                 else:
                     parent = getattr(instance, opts.parent_attr)
