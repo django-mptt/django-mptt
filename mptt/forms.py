@@ -157,5 +157,5 @@ class MPTTAdminForm(forms.ModelForm):
                 if opts.parent_attr not in self._errors:
                     self._errors[opts.parent_attr] = forms.util.ErrorList()
                 self._errors[opts.parent_attr].append('Invalid parent')
-                return
+                del self.cleaned_data[opts.parent_attr]
         return cleaned_data
