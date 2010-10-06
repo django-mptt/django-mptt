@@ -162,3 +162,6 @@ def pre_save(instance, **kwargs):
                 # Make sure the instance's new parent is always
                 # restored on the way out in case of errors.
                 opts.set_raw_field_value(instance, opts.parent_attr, parent_id)
+
+def post_save(instance, **kwargs):
+    _update_mptt_cached_fields(instance)

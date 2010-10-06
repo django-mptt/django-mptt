@@ -112,6 +112,7 @@ class MPTTModelBase(ModelBase):
             # Set up signal receivers
             model_signals.post_init.connect(signals.post_init, sender=cls)
             model_signals.pre_save.connect(signals.pre_save, sender=cls)
+            model_signals.post_save.connect(signals.post_save, sender=cls)
 
         return cls
 
