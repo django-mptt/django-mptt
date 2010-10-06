@@ -83,7 +83,7 @@ def _get_ordered_insertion_target(node, parent):
         if node.pk:
             queryset = queryset.exclude(pk=node.pk)
         try:
-            right_sibling = queryset[0]
+            right_sibling = queryset[:1][0]
         except IndexError:
             # No suitable right sibling could be found
             pass
