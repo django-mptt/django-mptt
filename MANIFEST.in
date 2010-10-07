@@ -5,3 +5,5 @@ include README
 recursive-include docs *.txt
 recursive-include mptt *.json
 recursive-include mptt/tests *.txt
+recursive-include mptt/templates *
+recursive-include mptt/locale *
