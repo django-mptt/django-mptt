@@ -75,7 +75,7 @@ class MPTTModelBase(ModelBase):
         """
         mptt_opts = class_dict.pop('MPTTMeta', None)
         class_dict['_mptt_meta'] = MPTTOptions(mptt_opts)
-        cls = ModelBase.__new__(meta, class_name, bases, class_dict)
+        cls = super(MPTTModelBase, meta).__new__(meta, class_name, bases, class_dict)
         
         
         # For backwards compatibility with existing libraries, we copy the 
