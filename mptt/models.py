@@ -76,7 +76,7 @@ class MPTTModelBase(ModelBase):
         mptt_opts = class_dict.pop('MPTTMeta', None)
         class_dict['_mptt_meta'] = MPTTOptions(mptt_opts)
         cls = super(MPTTModelBase, meta).__new__(meta, class_name, bases, class_dict)
-        
+        abstract = getattr(cls._meta, 'abstract', False)
         
         # For backwards compatibility with existing libraries, we copy the 
         # _mptt_meta options into _meta.
@@ -105,9 +105,10 @@ class MPTTModelBase(ModelBase):
                     field.contribute_to_class(cls, field_name)
             
             # Add a custom tree manager
-            manager = TreeManager(cls._mptt_meta)
-            manager.contribute_to_class(cls, cls._mptt_meta.tree_manager_attr)
-            setattr(cls, '_tree_manager', getattr(cls, cls._mptt_meta.tree_manager_attr))
+            if not abstract:
+                manager = TreeManager(cls._mptt_meta)
+                manager.contribute_to_class(cls, cls._mptt_meta.tree_manager_attr)
+                setattr(cls, '_tree_manager', getattr(cls, cls._mptt_meta.tree_manager_attr))
             
             # Set up signal receivers
             model_signals.post_init.connect(signals.post_init, sender=cls)
