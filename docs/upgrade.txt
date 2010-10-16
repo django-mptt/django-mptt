@@ -61,8 +61,12 @@ What if I'm already inheriting from something?
 
 If your model is already a subclass of an abstract model, you should use multiple inheritance::
 
-    class Node(ParentModel, MPTTModel):
+    class Node(MPTTModel, ParentModel):
         ...
+
+You should always put MPTTModel as the first model base. This is because there's some
+complicated metaclass stuff going on behind the scenes, and if Django's model metaclass
+gets called before the MPTT one, strange things can happen.
 
 Isn't multiple inheritance evil? Well, maybe. However, the 
 `Django model docs`_ don't forbid this, and as long as your other model doesn't have conflicting methods, it should be fine.
