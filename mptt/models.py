@@ -24,11 +24,16 @@ class MPTTOptions(object):
     level_attr = 'level'
     parent_attr = 'parent'
     
-    def __init__(self, opts):
+    def __init__(self, opts=None, **kwargs):
         # Override defaults with options provided
         if opts:
-            for key, value in opts.__dict__.iteritems():
-                setattr(self, key, value)
+            opts = opts.__dict__.items()
+        else:
+            opts = []
+        opts.extend(kwargs.items())
+        
+        for key, value in opts:
+            setattr(self, key, value)
         
         # Normalize order_insertion_by to a list
         if isinstance(self.order_insertion_by, basestring):
@@ -73,9 +78,21 @@ class MPTTModelBase(ModelBase):
          - adds the MPTT fields to the class
          - adds a TreeManager to the model
         """
-        mptt_opts = class_dict.pop('MPTTMeta', None)
-        class_dict['_mptt_meta'] = MPTTOptions(mptt_opts)
+        class_dict['_mptt_meta'] = MPTTOptions(class_dict.pop('MPTTMeta', None))
         cls = super(MPTTModelBase, meta).__new__(meta, class_name, bases, class_dict)
+        
+        return meta.register(cls)
+    
+    @classmethod
+    def register(meta, cls, **kwargs):
+        """
+        For the weird cases when you need to add tree-ness to an *existing*
+        class. For other cases you should subclass MPTTModel instead of calling this.
+        """
+        
+        if not hasattr(cls, '_mptt_meta'):
+            cls._mptt_meta = MPTTOptions(**kwargs)
+        
         abstract = getattr(cls._meta, 'abstract', False)
         
         # For backwards compatibility with existing libraries, we copy the 
@@ -86,7 +103,6 @@ class MPTTModelBase(ModelBase):
                     'tree_manager_attr', 'order_insertion_by'):
             setattr(cls._meta, attr, getattr(cls._mptt_meta, attr))
         
-        
         try:
             MPTTModel
         except NameError:
@@ -96,6 +112,9 @@ class MPTTModelBase(ModelBase):
             # copies)
             pass
         else:
+            if not issubclass(cls, MPTTModel):
+                cls._bases.insert(0, MPTTModel)
+            
             for key in ('left_attr', 'right_attr', 'tree_id_attr', 'level_attr'):
                 field_name = getattr(cls._mptt_meta, key)
                 try:
