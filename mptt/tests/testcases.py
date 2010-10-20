@@ -204,6 +204,13 @@ class ReparentingTestCase(TestCase):
                                          9 - 2 0 1 6
                                          10 9 2 1 2 3
                                          11 9 2 1 4 5"""))
+        
+    def test_move_to(self):
+        rpg = Genre.objects.get(pk=9)
+        action = Genre.objects.get(pk=1)
+        rpg.move_to(action)
+        rpg.save()
+        self.assertEqual(rpg.parent, action)
 
     def test_invalid_moves(self):
         # A node may not be made a child of itself
