@@ -484,6 +484,7 @@ class TreeManager(models.Manager):
         setattr(node, self.level_attr, 0)
         setattr(node, self.tree_id_attr, new_tree_id)
         setattr(node, self.parent_attr, None)
+        node._mptt_cached_fields[self.parent_attr] = None
 
     def _make_sibling_of_root_node(self, node, target, position):
         """
@@ -641,6 +642,7 @@ class TreeManager(models.Manager):
         setattr(node, self.level_attr, level - level_change)
         setattr(node, self.tree_id_attr, new_tree_id)
         setattr(node, self.parent_attr, parent)
+        node._mptt_cached_fields[self.parent_attr] = parent.pk
 
     def _move_child_within_tree(self, node, target, position):
         """
@@ -764,6 +766,7 @@ class TreeManager(models.Manager):
         setattr(node, self.right_attr, new_right)
         setattr(node, self.level_attr, level - level_change)
         setattr(node, self.parent_attr, parent)
+        node._mptt_cached_fields[self.parent_attr] = parent.pk
 
     def _move_root_node(self, node, target, position):
         """
@@ -827,3 +830,4 @@ class TreeManager(models.Manager):
         setattr(node, self.level_attr, level - level_change)
         setattr(node, self.tree_id_attr, new_tree_id)
         setattr(node, self.parent_attr, parent)
+        node._mptt_cached_fields[self.parent_attr] = parent.pk
