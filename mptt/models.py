@@ -113,7 +113,7 @@ class MPTTModelBase(ModelBase):
             pass
         else:
             if not issubclass(cls, MPTTModel):
-                cls._bases.insert(0, MPTTModel)
+                cls.__bases__.insert(0, MPTTModel)
             
             for key in ('left_attr', 'right_attr', 'tree_id_attr', 'level_attr'):
                 field_name = getattr(cls._mptt_meta, key)
