@@ -90,6 +90,9 @@ class MPTTModelBase(ModelBase):
         class. For other cases you should subclass MPTTModel instead of calling this.
         """
         
+        if not issubclass(cls, models.Model):
+            raise ValueError, "register() expects a Django model class argument"
+        
         if not hasattr(cls, '_mptt_meta'):
             cls._mptt_meta = MPTTOptions(**kwargs)
         
