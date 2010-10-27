@@ -113,7 +113,17 @@ class MPTTModelBase(ModelBase):
             pass
         else:
             if not issubclass(cls, MPTTModel):
-                cls.__bases__.insert(0, MPTTModel)
+                bases = list(cls.__bases__)
+                
+                # strip out bases that are strict superclasses of MPTTModel.
+                # (i.e. Model, object)
+                # this helps linearize the type hierarchy if possible
+                for i in range(len(bases)-1, -1, -1):
+                    if issubclass(MPTTModel, bases[i]):
+                        del bases[i]
+                
+                bases.insert(0, MPTTModel)
+                cls.__bases__ = tuple(bases)
             
             for key in ('left_attr', 'right_attr', 'tree_id_attr', 'level_attr'):
                 field_name = getattr(cls._mptt_meta, key)
