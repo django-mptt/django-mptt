@@ -3,7 +3,6 @@ A custom manager for working with trees of objects.
 """
 from django.db import connection, models, transaction
 from django.db.models import F, Max
-from django.db.models.query import QuerySet
 from django.utils.translation import ugettext as _
 
 try:
@@ -95,7 +94,7 @@ class TreeManager(models.Manager):
         Like self.update(), but translates name-agnostic MPTT fields.
         """
         if self._base_manager:
-            return self._base_manager._mptt_update(qs=qs, **filters)
+            return self._base_manager._mptt_update(qs=qs, **items)
         
         if qs is None:
             qs = self.get_query_set()
