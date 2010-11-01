@@ -6,12 +6,28 @@ Upgrade Notes - 0.3 to 0.4
 Model changes in 0.4
 ====================
 
-``mptt.register`` replaced by ``MPTTModel``
--------------------------------------------
+MPTT attributes on ``MyModel._meta`` deprecated, moved to ``MyModel._mptt_meta``
+----------------------------------------------------------------------------------
 
-In ``django-mptt`` 0.4, mptt.register() has been removed in favour of model inheritance.
+Most people won't need to worry about this, but if you're using any of the following, note that these are deprecated and will be removed in 0.5::
 
-Suppose you start with this, which works with ``django-mptt`` 0.3::
+    MyModel._meta.left_attr
+    MyModel._meta.right_attr
+    MyModel._meta.tree_id_attr
+    MyModel._meta.level_attr
+    MyModel._meta.tree_manager_attr
+    MyModel._meta.parent_attr
+    MyModel._meta.order_insertion_by
+
+They'll continue to work as previously for now, but you should upgrade your code if you can. Simply replace ``_meta`` with ``_mptt_meta``.
+
+
+Use model inheritance where possible
+------------------------------------
+
+The preferred way to do model registration in ``django-mptt`` 0.4 is via model inheritance.
+
+Suppose you start with this::
 
     class Node(models.Model):
         ...
@@ -34,21 +50,10 @@ Then remove your call to ``mptt.register()``. If you were passing it keyword arg
             order_insertion_by = ['name']
             parent_attr = 'padre'
 
-MPTT attributes on ``MyModel._meta`` deprecated, moved to ``MyModel._mptt_meta``
-----------------------------------------------------------------------------------
+If necessary you can still use ``mptt.register``. It was removed in 0.4.0 but restored in 0.4.2, since people reported use cases that didn't work without it.)
 
-Most people won't need to worry about this, but if you're using any of the following, note that these are deprecated and will be removed in 0.5::
-
-    MyModel._meta.left_attr
-    MyModel._meta.right_attr
-    MyModel._meta.tree_id_attr
-    MyModel._meta.level_attr
-    MyModel._meta.tree_manager_attr
-    MyModel._meta.parent_attr
-    MyModel._meta.order_insertion_by
-
-They'll continue to work as previously for now, but you should upgrade your code if you can. Simply replace ``_meta`` with ``_mptt_meta``.
-
+For instance, if you need to register models where the code isn't under your control, you'll need to use ``mptt.register``.
+It may also come in handy for keeping libraries compatible with ``django-mptt`` 0.3.
 
 You're probably all upgraded at this point :) A couple more notes for more complex scenarios:
 
