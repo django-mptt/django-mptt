@@ -105,6 +105,23 @@ exist, they will be added to the model dynamically:
    as trees of categories, which should always be in alphabetical order.
 
 
+Registration of existing models
+===============================
+
+The preferred way to do model registration in ``django-mptt`` 0.4 is by subclassing ``MPTTModel``.
+
+However, sometimes that doesn't quite work. For instance, suppose you want to modify Django's Group model to be hierarchical.
+
+You can't subclass MPTTModel without modifying the Group source. Instead, you can do::
+
+    import mptt
+    from django.contrib.auth.models import Group
+    
+    mptt.register(Group, order_insertion_by=['name'])
+
+``mptt.register()`` was removed in 0.4.0 but restored in 0.4.2, when this use case was reported.
+
+
 MPTTModel instance methods
 ==========================
 
