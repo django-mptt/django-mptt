@@ -1,5 +1,5 @@
 
-VERSION = (0, 4, 2, 'pre')
+VERSION = (0, 4, 2)
 
 def register(*args, **kwargs):
     """
