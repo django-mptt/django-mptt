@@ -52,8 +52,11 @@ Then remove your call to ``mptt.register()``. If you were passing it keyword arg
 
 If necessary you can still use ``mptt.register``. It was removed in 0.4.0 but restored in 0.4.2, since people reported use cases that didn't work without it.)
 
-For instance, if you need to register models where the code isn't under your control, you'll need to use ``mptt.register``.
-It may also come in handy for keeping libraries compatible with ``django-mptt`` 0.3.
+For instance, if you need to register models where the code isn't under your control, you'll need to use ``mptt.register()``.
+
+Behind the scenes, ``mptt.register()`` in 0.4 will actually add MPTTModel to ``Node.__bases__``,
+thus achieving the same result as subclassing ``MPTTModel``.
+If you're already inheriting from something other than ``Model``, that means multiple inheritance.
 
 You're probably all upgraded at this point :) A couple more notes for more complex scenarios:
 
@@ -86,31 +89,8 @@ Isn't multiple inheritance evil? Well, maybe. However, the
 .. _`Django model docs`: http://docs.djangoproject.com/en/dev/topics/db/models/#multiple-inheritance
 
 
-Writing reusable apps - Compatibility with 0.3 as well
-------------------------------------------------------
+Compatibility with 0.3
+----------------------
 
-If you're writing a library or reusable app that needs to work with older versions of django-mptt,
-you'll need to update your code to handle both versions.
-
-Here's a sample models file which works with 0.3 and 0.4::
-
-    from django.db import models
-
-    import mptt
-    try:
-        from mptt.models import MPTTModel
-    except ImportError:
-        # django-mptt < 0.4
-        MPTTModel = models.Model
-
-    class Node(MPTTModel):
-        name   = models.CharField(max_length=20, blank=True)
-        parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
-        
-        class MPTTMeta:
-            order_insertion_by = 'name'
-
-    if hasattr(mptt, 'register'):
-        # django-mptt < 0.4
-        # This line looks frightening, suggestions for alternatives welcome :)
-        mptt.register(Node, **dict([(attr, getattr(Node.MPTTMeta, attr)) for attr in dir(Node.MPTTMeta) if attr[:1] != '_']))
+``MPTTModel`` was added in 0.4. If you're writing a library or reusable app that needs to work with 0.3,
+you should use the ``mptt.register()`` function instead, as above.
