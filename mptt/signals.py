@@ -128,8 +128,8 @@ def pre_save(instance, **kwargs):
                 if parent:
                     # since we didn't insert into parent, we have to update parent.rght
                     # here instead of in TreeManager.insert_node()
-                    parent_right = getattr(parent, opts.right_attr)
-                    setattr(parent, opts.right_attr, parent_right + 2 * (instance.get_descendant_count() + 1))
+                    right_shift = 2 * (instance.get_descendant_count() + 1)
+                    instance._tree_manager._post_insert_update_cached_parent_right(parent, right_shift)
                 
                 return
 
