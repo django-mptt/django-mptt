@@ -12,7 +12,8 @@
 
 
 # Creation ####################################################################
->>> action = Genre.objects.create(name='Action')
+# creation with a given ID
+>>> action = Genre.objects.create(pk=1, name='Action')
 >>> platformer = Genre.objects.create(name='Platformer', parent=action)
 >>> platformer_2d = Genre.objects.create(name='2D Platformer', parent=platformer)
 >>> platformer = Genre.objects.get(pk=platformer.pk)
