@@ -124,6 +124,13 @@ def pre_save(instance, **kwargs):
             right_sibling = _get_ordered_insertion_target(instance, parent)
             if right_sibling:
                 instance.insert_at(right_sibling, 'left')
+                
+                if parent:
+                    # since we didn't insert into parent, we have to update parent.rght
+                    # here instead of in TreeManager.insert_node()
+                    parent_right = getattr(parent, opts.right_attr)
+                    setattr(parent, opts.right_attr, parent_right + 2 * (instance.get_descendant_count() + 1))
+                
                 return
 
         # Default insertion

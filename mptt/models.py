@@ -240,8 +240,11 @@ class MPTTModel(models.Model):
         """
         Returns the number of descendants this model instance has.
         """
-        return (self._mpttfield('right') -
-                self._mpttfield('left') - 1) / 2
+        if self._mpttfield('right') is None:
+            # node not saved yet
+            return 0
+        else:
+            return (self._mpttfield('right') - self._mpttfield('left') - 1) / 2
 
     def get_leafnodes(self, include_self=False):
         """
