@@ -10,7 +10,7 @@ setup(
     description = '''Utilities for implementing Modified Preorder Tree Traversal
         with your Django Models and working with trees of Model instances.''',
     version = version,
-    author = 'Jonathan Buchanan',
+    author = 'Craig de Stigter',
     author_email = 'craig.ds@gmail.com',
     url = 'http://github.com/django-mptt/django-mptt',
     test_suite="mptt.tests.test_runner.run_tests",
