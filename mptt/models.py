@@ -1,11 +1,9 @@
 import operator
 
 from django.db import models
-from django.db.models import signals as model_signals
 from django.db.models.base import ModelBase
 from django.db.models.query import Q
 
-from mptt import signals
 from mptt.managers import TreeManager
 
 class MPTTOptions(object):
