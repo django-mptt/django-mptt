@@ -412,12 +412,12 @@ class MPTTModel(models.Model):
         """
         return getattr(self, self._mptt_meta.level_attr)
 
-    def insert_at(self, target, position='first-child', save=False):
+    def insert_at(self, target, position='first-child', save=False, allow_existing_pk=False):
         """
         Convenience method for calling ``TreeManager.insert_node`` with this
         model instance.
         """
-        self._tree_manager.insert_node(self, target, position, save)
+        self._tree_manager.insert_node(self, target, position, save, allow_existing_pk=allow_existing_pk)
 
     def is_child_node(self):
         """
@@ -496,23 +496,19 @@ class MPTTModel(models.Model):
         """
         opts = self._mptt_meta
         parent_id = opts.get_raw_field_value(self, opts.parent_attr)
-        if not self.pk:
-            if (getattr(self, opts.left_attr) and getattr(self, opts.right_attr)):
-                # This node has already been set up for insertion.
-                pass
-            else:
-                parent = getattr(self, opts.parent_attr)
-                
-                right_sibling = None
-                if opts.order_insertion_by:
-                    right_sibling = opts.get_ordered_insertion_target(self, parent)
         
-                if right_sibling:
-                    self.insert_at(right_sibling, 'left')
-                else:
-                    # Default insertion
-                    self.insert_at(parent, position='last-child')
-        else:
+        # determine whether this instance is already in the db
+        force_update = kwargs.get('force_update', False)
+        force_insert = kwargs.get('force_insert', False)
+        using = kwargs.get('using', None)
+        manager = self.__class__._base_manager
+        if hasattr(manager, 'using'):
+            # multi db support was added in django 1.2
+            manager = manager.using(using)
+        
+        if self.pk and (force_update or getattr(self, '_mptt_saved', False) or \
+                    (not force_insert and manager.filter(pk=self.pk).exists())):
+            # it already exists, so do a move
             old_parent_id = self._mptt_cached_fields[opts.parent_attr]
             same_order = old_parent_id == parent_id
             if same_order and len(self._mptt_cached_fields) > 1:
@@ -546,7 +542,25 @@ class MPTTModel(models.Model):
                     # Make sure the new parent is always
                     # restored on the way out in case of errors.
                     opts.set_raw_field_value(self, opts.parent_attr, parent_id)
+        else:
+            # new node, do an insert
+            if (getattr(self, opts.left_attr) and getattr(self, opts.right_attr)):
+                # This node has already been set up for insertion.
+                pass
+            else:
+                parent = getattr(self, opts.parent_attr)
+                
+                right_sibling = None
+                if opts.order_insertion_by:
+                    right_sibling = opts.get_ordered_insertion_target(self, parent)
+        
+                if right_sibling:
+                    self.insert_at(right_sibling, 'left', allow_existing_pk=True)
+                else:
+                    # Default insertion
+                    self.insert_at(parent, position='last-child', allow_existing_pk=True)
         super(MPTTModel, self).save(*args, **kwargs)
+        self._mptt_saved = True
         opts.update_mptt_cached_fields(self)
 
     def delete(self, *args, **kwargs):

@@ -161,7 +161,7 @@ class TreeManager(models.Manager):
         return super(TreeManager, self).get_query_set().order_by(
             self.tree_id_attr, self.left_attr)
 
-    def insert_node(self, node, target, position='last-child', save=False):
+    def insert_node(self, node, target, position='last-child', save=False, allow_existing_pk=False):
         """
         Sets up the tree state for ``node`` (which has not yet been
         inserted into in the database) so it will be positioned relative
@@ -179,7 +179,7 @@ class TreeManager(models.Manager):
         if self._base_manager:
             return self._base_manager.insert_node(node, target, position=position, save=save)
         
-        if node.pk:
+        if node.pk and not allow_existing_pk and self.filter(pk=node.pk).exists():
             raise ValueError(_('Cannot insert a node which has already been saved.'))
 
         if target is None:
