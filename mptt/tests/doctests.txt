@@ -1306,8 +1306,8 @@ ValueError: Cannot insert a node which has already been saved.
 >>> a.save()
 >>> print_tree_details(OrderedInsertion.tree.all())
 1 - 1 0 1 6
-3 1 1 1 2 3
-2 1 1 1 4 5
+2 1 1 1 2 3
+3 1 1 1 4 5
 
 
 # reordering after save, when only a single instance at level exists ##########
@@ -1485,23 +1485,23 @@ ValueError: Cannot insert a node which has already been saved.
 >>> julie = Student.objects.create(name='Julie', parent=jess)
 >>> print_tree_details(Person.tree.all())
 1 - 1 0 1 6
-3 1 1 1 2 3
-2 1 1 1 4 5
+2 1 1 1 2 3
+3 1 1 1 4 5
 4 - 2 0 1 10
-8 4 2 1 2 3
-5 4 2 1 4 9
-6 5 2 2 5 8
-7 6 2 3 6 7
+5 4 2 1 2 7
+6 5 2 2 3 6
+7 6 2 3 4 5
+8 4 2 1 8 9
 
 >>> print_tree_details(Student.tree.all())
-2 1 1 1 4 5
+2 1 1 1 2 3
 4 - 2 0 1 10
-8 4 2 1 2 3
-6 5 2 2 5 8
+6 5 2 2 3 6
+8 4 2 1 8 9
 
 >>> jack = Person.objects.get(pk=1)
 >>> jack.get_descendants()
-[<Person: Jim>, <Person: Jill>]
+[<Person: Jill>, <Person: Jim>]
 >>> jack.get_root()
 <Person: Jack>
 >>> jill = Person.objects.get(pk=3)
@@ -1509,7 +1509,7 @@ ValueError: Cannot insert a node which has already been saved.
 <Person: Jack>
 >>> jess = Student.objects.get(pk=4)
 >>> jess.get_descendants()
-[<Person: Julie>, <Person: Jeff>, <Person: Jane>, <Person: Joe>]
+[<Person: Jeff>, <Person: Jane>, <Person: Joe>, <Person: Julie>]
 >>> jess.get_root()
 <Person: Jess>
 >>> jeff = Person.objects.get(pk=5)
