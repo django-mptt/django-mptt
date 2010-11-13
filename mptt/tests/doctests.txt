@@ -1399,6 +1399,14 @@ ValueError: Cannot insert a node which has already been saved.
 2 1 1 1 2 5
 3 2 1 2 3 4
 
+>>> OrderedInsertion.objects.all().delete()
+>>> root = OrderedInsertion.objects.create(name='root')
+>>> r1 = OrderedInsertion.objects.create(name='r1', parent=root)
+>>> r2 = OrderedInsertion.objects.create(name='r2', parent=root)
+>>> print_tree_details(OrderedInsertion.tree.all())
+1 - 1 0 1 6
+2 1 1 1 2 3
+3 1 1 1 4 5
 
 # Insertion of positioned nodes, multiple ordering criteria ###################
 >>> r1 = MultiOrder.objects.create(name='fff', size=20, date=date(2008, 1, 1))
