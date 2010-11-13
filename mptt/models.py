@@ -497,58 +497,57 @@ class MPTTModel(models.Model):
         appropriate position to maintain ordering by the specified field.
         """
         opts = self._mptt_meta
-        if not kwargs.get('raw', False):
-            parent_id = opts.get_raw_field_value(self, opts.parent_attr)
-            if not self.pk:
-                if (getattr(self, opts.left_attr) and getattr(self, opts.right_attr)):
-                    # This node has already been set up for insertion.
-                    pass
+        parent_id = opts.get_raw_field_value(self, opts.parent_attr)
+        if not self.pk:
+            if (getattr(self, opts.left_attr) and getattr(self, opts.right_attr)):
+                # This node has already been set up for insertion.
+                pass
+            else:
+                parent = getattr(self, opts.parent_attr)
+                
+                right_sibling = None
+                if opts.order_insertion_by:
+                    right_sibling = opts.get_ordered_insertion_target(self, parent)
+        
+                if right_sibling:
+                    self.insert_at(right_sibling, 'left')
                 else:
-                    parent = getattr(self, opts.parent_attr)
-                    
+                    # Default insertion
+                    self.insert_at(parent, position='last-child')
+        else:
+            old_parent_id = self._mptt_cached_fields[opts.parent_attr]
+            same_order = old_parent_id == parent_id
+            if same_order and len(self._mptt_cached_fields) > 1:
+                for field_name, old_value in self._mptt_cached_fields.items():
+                    if old_value != opts.get_raw_field_value(self, field_name):
+                        same_order = False
+                        break
+            
+            if not same_order:
+                opts.set_raw_field_value(self, opts.parent_attr, old_parent_id)
+                try:
                     right_sibling = None
                     if opts.order_insertion_by:
-                        right_sibling = opts.get_ordered_insertion_target(self, parent)
-            
+                        right_sibling = opts.get_ordered_insertion_target(self, getattr(self, opts.parent_attr))
+                    
                     if right_sibling:
-                        self.insert_at(right_sibling, 'left')
+                        self.move_to(right_sibling, 'left')
                     else:
-                        # Default insertion
-                        self.insert_at(parent, position='last-child')
-            else:
-                old_parent_id = self._mptt_cached_fields[opts.parent_attr]
-                same_order = old_parent_id == parent_id
-                if same_order and len(self._mptt_cached_fields) > 1:
-                    for field_name, old_value in self._mptt_cached_fields.items():
-                        if old_value != opts.get_raw_field_value(self, field_name):
-                            same_order = False
-                            break
-                
-                if not same_order:
-                    opts.set_raw_field_value(self, opts.parent_attr, old_parent_id)
-                    try:
-                        right_sibling = None
-                        if opts.order_insertion_by:
-                            right_sibling = opts.get_ordered_insertion_target(self, getattr(self, opts.parent_attr))
-                        
-                        if right_sibling:
-                            self.move_to(right_sibling, 'left')
+                        # Default movement
+                        if parent_id is None:
+                            root_nodes = self._tree_manager.root_nodes()
+                            try:
+                                rightmost_sibling = root_nodes.exclude(pk=self.pk).order_by('-%s' % opts.tree_id_attr)[0]
+                                self.move_to(rightmost_sibling, position='right')
+                            except IndexError:
+                                pass
                         else:
-                            # Default movement
-                            if parent_id is None:
-                                root_nodes = self._tree_manager.root_nodes()
-                                try:
-                                    rightmost_sibling = root_nodes.exclude(pk=self.pk).order_by('-%s' % opts.tree_id_attr)[0]
-                                    self.move_to(rightmost_sibling, position='right')
-                                except IndexError:
-                                    pass
-                            else:
-                                parent = getattr(self, opts.parent_attr)
-                                self.move_to(parent, position='last-child')
-                    finally:
-                        # Make sure the new parent is always
-                        # restored on the way out in case of errors.
-                        opts.set_raw_field_value(self, opts.parent_attr, parent_id)
+                            parent = getattr(self, opts.parent_attr)
+                            self.move_to(parent, position='last-child')
+                finally:
+                    # Make sure the new parent is always
+                    # restored on the way out in case of errors.
+                    opts.set_raw_field_value(self, opts.parent_attr, parent_id)
         super(MPTTModel, self).save(*args, **kwargs)
         opts.update_mptt_cached_fields(self)
 
