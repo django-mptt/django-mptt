@@ -6,7 +6,7 @@ import operator
 
 from django.db.models.query import Q
 
-__all__ = ('post_init', 'pre_save')
+__all__ = ('post_init', 'pre_save', 'post_save')
 
 def _update_mptt_cached_fields(instance):
     opts = instance._mptt_meta
