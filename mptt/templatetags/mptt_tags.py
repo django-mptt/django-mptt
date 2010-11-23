@@ -5,7 +5,6 @@ trees.
 from django import template
 from django.db.models import get_model
 from django.db.models.fields import FieldDoesNotExist
-from django.template import loader, Variable
 from django.utils.encoding import force_unicode
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
@@ -271,7 +270,7 @@ def recursetree(parser, token):
     
     Usage:
             <ul>
-                {% iteratetree nodes %}
+                {% recursetree nodes %}
                     <li>
                         {{ node.name }}
                         {% if not node.is_leaf_node %}
@@ -280,7 +279,7 @@ def recursetree(parser, token):
                             </ul>
                         {% endif %}
                     </li>
-                {% enditeratetree %}
+                {% endrecursetree %}
             </ul>
     """
     bits = token.contents.split()
