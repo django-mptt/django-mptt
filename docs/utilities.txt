@@ -2,12 +2,6 @@
 Utilities for working with trees
 ================================
 
-.. admonition:: About this document
-
-   This document contains details about utilities which are used to
-   implement certain features in Django MPTT, but which are suitable for
-   re-use in your own applications, should the need arise.
-
 .. contents::
    :depth: 3
 

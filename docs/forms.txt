@@ -1,14 +1,6 @@
-======================================
-Working with trees in ``django.forms``
-======================================
-
-.. admonition:: About this document
-
-   This document contains details about the components Django MPTT
-   provides for working with trees using Django's excellent `forms`_
-   library.
-
-.. _`newforms`: http://docs.djangoproject.com/en/dev/topics/forms/
+==================================
+Working with trees in Django forms
+==================================
 
 .. contents::
    :depth: 3

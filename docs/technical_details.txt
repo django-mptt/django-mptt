@@ -2,12 +2,6 @@
 Technical details
 =================
 
-.. admonition:: About this document
-
-   This document provides technical details related to some aspects of
-   Django MPTT's inner workings and its implementation of Modified
-   Preorder Tree Traversal.
-
 .. contents::
    :depth: 3
 
@@ -86,18 +80,6 @@ of nodes which are retrieved for the whole tree or any subtree::
 
    # Retrieve descendants of a node up to two levels below it
    node.get_descendants().filter(level__lte=node.level + 2)
-
-
-Dynamic field creation vs. explicitly defining MPTT fields
-==========================================================
-
-Model classes which do not have field names which clash with the default
-MPTTMeta options need not contain any details about MPTT fields at all 
-in their class definition.
-
-One of the goals of this application is that authors should not have to
-worry about setting up or using MPTT fields directly in order to reap
-the benefits of the functionality their existence enables.
 
 
 Running the test suite

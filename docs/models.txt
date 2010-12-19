@@ -2,12 +2,6 @@
 Models and Managers
 ===================
 
-.. admonition:: About this document
-
-   This document describes the changes Django MPTT makes to your Django
-   model classes and the custom tree manager it provides, so you can
-   easily work with model instances as trees.
-
 .. contents::
    :depth: 3
 

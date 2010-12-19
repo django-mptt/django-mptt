@@ -3,11 +3,6 @@ Working with trees in templates
 ===============================
 .. highlightlang:: html+django
 
-.. admonition:: About this document
-
-   This document contains details about the template tags and filters
-   Django MPTT provides for working with trees of model instances.
-
 .. contents::
    :depth: 3
 
