@@ -3,11 +3,20 @@ Django MPTT documentation
 
 Contents:
 
+If you're new to django-mptt, you may want to start with these documents to get
+you up and running:
+
 .. toctree::
    :maxdepth: 2
    
    overview
    install
+
+Topic docs:
+
+.. toctree::
+   :maxdepth: 1
+
    models
    admin
    forms
