@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from setuptools import setup, find_packages
+from distutils.core import setup
 
 # Dynamically calculate the version based on mptt.VERSION
 version_tuple = __import__('mptt').VERSION
@@ -13,8 +13,7 @@ setup(
     author = 'Craig de Stigter',
     author_email = 'craig.ds@gmail.com',
     url = 'http://github.com/django-mptt/django-mptt',
-    test_suite="mptt.tests.test_runner.run_tests",
-    packages=find_packages(exclude=['mptt.tests']),
+    packages=['mptt', 'mptt.templatetags'],
     package_data={'mptt': ['templates/admin/*']},
     classifiers = ['Development Status :: 4 - Beta',
                    'Environment :: Web Environment',
