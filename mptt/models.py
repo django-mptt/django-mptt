@@ -239,7 +239,7 @@ class MPTTModel(models.Model):
         translated_fieldname = getattr(self._mptt_meta, '%s_attr' % fieldname)
         return getattr(self, translated_fieldname)
     
-    def get_ancestors(self, ascending=False):
+    def get_ancestors(self, ascending=False, include_self=False):
         """
         Creates a ``QuerySet`` containing the ancestors of this model
         instance.
@@ -249,7 +249,7 @@ class MPTTModel(models.Model):
         argument will reverse the ordering (immediate parent first, root
         ancestor last).
         """
-        if self.is_root_node():
+        if self.is_root_node() and not include_self:
             return self._tree_manager.none()
 
         opts = self._mptt_meta
@@ -258,11 +258,27 @@ class MPTTModel(models.Model):
         if ascending:
             order_by = '-%s' % order_by
         
+        left = getattr(self, opts.left_attr)
+        right = getattr(self, opts.right_attr)
+        
+        if not include_self:
+            left -= 1
+            right += 1
+        
         qs = self._tree_manager._mptt_filter(
-            left__lt=self._mpttfield('left'),
-            right__gt=self._mpttfield('right'),
+            left__lte=left,
+            right__gte=right,
             tree_id=self._mpttfield('tree_id'),
         )
+        
+        if self.is_root_node() and include_self:
+            # We know what the result will be, so prepopulate the result
+            # cache to avoid unnecessary db hits. Return immediately
+            # since ordering is unnecessary and would invalidate the
+            # cache.
+            qs._result_cache = [self]
+            return qs
+        
         return qs.order_by(order_by)
 
     def get_children(self):
