@@ -310,8 +310,11 @@ class MPTTModel(models.Model):
         If ``include_self`` is ``True``, the ``QuerySet`` will also
         include this model instance.
         """
-        if not include_self and self.is_leaf_node():
-            return self._tree_manager.none()
+        if self.is_leaf_node():
+            if not include_self:
+                return self._tree_manager.none()
+            else:
+                return self._tree_manager.filter(pk=self.pk)
 
         opts = self._mptt_meta
         left = getattr(self, opts.left_attr)
