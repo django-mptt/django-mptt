@@ -248,9 +248,16 @@ class MPTTModel(models.Model):
         immediate parent last); passing ``True`` for the ``ascending``
         argument will reverse the ordering (immediate parent first, root
         ancestor last).
+
+        If ``include_self`` is ``True``, the ``QuerySet`` will also
+        include this model instance.
         """
-        if self.is_root_node() and not include_self:
-            return self._tree_manager.none()
+        if self.is_root_node():
+            if not include_self:
+                return self._tree_manager.none()
+            else:
+                # Filter on pk for efficiency.
+                return self._tree_manager.filter(pk=self.pk)
 
         opts = self._mptt_meta
         
@@ -270,14 +277,6 @@ class MPTTModel(models.Model):
             right__gte=right,
             tree_id=self._mpttfield('tree_id'),
         )
-        
-        if self.is_root_node() and include_self:
-            # We know what the result will be, so prepopulate the result
-            # cache to avoid unnecessary db hits. Return immediately
-            # since ordering is unnecessary and would invalidate the
-            # cache.
-            qs._result_cache = [self]
-            return qs
         
         return qs.order_by(order_by)
 
