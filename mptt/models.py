@@ -214,8 +214,16 @@ class MPTTModelBase(ModelBase):
             
             # Add a custom tree manager
             if not abstract:
-                manager = TreeManager(cls._mptt_meta)
-                manager.contribute_to_class(cls, cls._mptt_meta.tree_manager_attr)
+                # NOTE: to override the tree manager, you'll need to pass it the mptt meta options:
+                #     class MyModel(MPTTModel):
+                #         class MPTTMeta:
+                #             #...
+                #         #...
+                #         tree = MyTreeManager(MPTTOptions(MPTTMeta))
+                #
+                if not hasattr(cls, cls._mptt_meta.tree_manager_attr):
+                    manager = TreeManager(cls._mptt_meta)
+                    manager.contribute_to_class(cls, cls._mptt_meta.tree_manager_attr)
                 setattr(cls, '_tree_manager', getattr(cls, cls._mptt_meta.tree_manager_attr))
 
         return cls
