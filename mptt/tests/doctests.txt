@@ -1484,7 +1484,7 @@ ValueError: Cannot insert a node which has already been saved.
 >>> jane = Student.objects.create(name='Jane', parent=jeff)
 >>> joe = Person.objects.create(name='Joe', parent=jane)
 >>> julie = Student.objects.create(name='Julie', parent=jess)
->>> print_tree_details(Person.tree.all())
+>>> print_tree_details(Person.my_tree_manager.all())
 1 - 1 0 1 6
 3 1 1 1 2 3
 2 1 1 1 4 5
