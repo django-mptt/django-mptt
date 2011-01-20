@@ -247,7 +247,7 @@ class MPTTModel(models.Model):
         translated_fieldname = getattr(self._mptt_meta, '%s_attr' % fieldname)
         return getattr(self, translated_fieldname)
     
-    def get_ancestors(self, ascending=False):
+    def get_ancestors(self, ascending=False, include_self=False):
         """
         Creates a ``QuerySet`` containing the ancestors of this model
         instance.
@@ -256,9 +256,16 @@ class MPTTModel(models.Model):
         immediate parent last); passing ``True`` for the ``ascending``
         argument will reverse the ordering (immediate parent first, root
         ancestor last).
+
+        If ``include_self`` is ``True``, the ``QuerySet`` will also
+        include this model instance.
         """
         if self.is_root_node():
-            return self._tree_manager.none()
+            if not include_self:
+                return self._tree_manager.none()
+            else:
+                # Filter on pk for efficiency.
+                return self._tree_manager.filter(pk=self.pk)
 
         opts = self._mptt_meta
         
@@ -266,11 +273,19 @@ class MPTTModel(models.Model):
         if ascending:
             order_by = '-%s' % order_by
         
+        left = getattr(self, opts.left_attr)
+        right = getattr(self, opts.right_attr)
+        
+        if not include_self:
+            left -= 1
+            right += 1
+        
         qs = self._tree_manager._mptt_filter(
-            left__lt=self._mpttfield('left'),
-            right__gt=self._mpttfield('right'),
+            left__lte=left,
+            right__gte=right,
             tree_id=self._mpttfield('tree_id'),
         )
+        
         return qs.order_by(order_by)
 
     def get_children(self):
@@ -303,8 +318,11 @@ class MPTTModel(models.Model):
         If ``include_self`` is ``True``, the ``QuerySet`` will also
         include this model instance.
         """
-        if not include_self and self.is_leaf_node():
-            return self._tree_manager.none()
+        if self.is_leaf_node():
+            if not include_self:
+                return self._tree_manager.none()
+            else:
+                return self._tree_manager.filter(pk=self.pk)
 
         opts = self._mptt_meta
         left = getattr(self, opts.left_attr)
