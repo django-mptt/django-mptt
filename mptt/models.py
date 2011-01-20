@@ -212,19 +212,20 @@ class MPTTModelBase(ModelBase):
                     field = models.PositiveIntegerField(db_index=True, editable=False)
                     field.contribute_to_class(cls, field_name)
             
-            # Add a custom tree manager
+            # Add a tree manager, if there isn't one already
             if not abstract:
-                # NOTE: to override the tree manager, you'll need to pass it the mptt meta options:
-                #     class MyModel(MPTTModel):
-                #         class MPTTMeta:
-                #             #...
-                #         #...
-                #         tree = MyTreeManager(MPTTOptions(MPTTMeta))
-                #
-                if not hasattr(cls, cls._mptt_meta.tree_manager_attr):
-                    manager = TreeManager(cls._mptt_meta)
-                    manager.contribute_to_class(cls, cls._mptt_meta.tree_manager_attr)
-                setattr(cls, '_tree_manager', getattr(cls, cls._mptt_meta.tree_manager_attr))
+                tree_manager_attr = cls._mptt_meta.tree_manager_attr
+                manager = getattr(cls, tree_manager_attr, None)
+                if (not manager) or manager.model != cls:
+                    if not manager:
+                        manager = TreeManager()
+                    else:
+                        # manager.model might already be set if this is a proxy model
+                        # (in that case, we need to create a new manager, or _base_manager will be wrong)
+                        manager = manager.__class__()
+                    manager.contribute_to_class(cls, tree_manager_attr)
+                manager.init_from_model(cls)
+                setattr(cls, '_tree_manager', manager)
 
         return cls
 

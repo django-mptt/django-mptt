@@ -2,6 +2,10 @@ from django.db import models
 
 import mptt
 from mptt.models import MPTTModel
+from mptt.managers import TreeManager
+
+class CustomTreeManager(TreeManager):
+    pass
 
 class Category(MPTTModel):
     name = models.CharField(max_length=50)
@@ -60,6 +64,13 @@ class Tree(MPTTModel):
 class Person(MPTTModel):
     name = models.CharField(max_length=50)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+    
+    # just testing it's actually possible to override the tree manager
+    objects = models.Manager()
+    my_tree_manager = CustomTreeManager()
+    
+    class MPTTMeta:
+        tree_manager_attr = 'my_tree_manager'
     
     def __unicode__(self):
         return self.name

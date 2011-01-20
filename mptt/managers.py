@@ -42,21 +42,37 @@ class TreeManager(models.Manager):
     """
     A manager for working with trees of objects.
     """
-    def __init__(self, mptt_opts):
+    def __init__(self, mptt_opts=None):
         """
         Tree attributes for the model being managed are held as
         attributes of this manager for later use, since it will be using
         them a **lot**.
         """
         super(TreeManager, self).__init__()
-        self.parent_attr = mptt_opts.parent_attr
-        self.left_attr = mptt_opts.left_attr
-        self.right_attr = mptt_opts.right_attr
-        self.tree_id_attr = mptt_opts.tree_id_attr
-        self.level_attr = mptt_opts.level_attr
+        self._mptt_opts = mptt_opts
+        
+        # these get populated during init_from_model
+        self.parent_attr = None
+        self.left_attr = None
+        self.right_attr = None
+        self.tree_id_attr = None
+        self.level_attr = None
     
-    def contribute_to_class(self, model, name):
-        super(TreeManager, self).contribute_to_class(model, name)
+    def init_from_model(self, model):
+        """
+        Sets things up. This would normally be done in contribute_to_class(),
+        but Django calls that before we've created our extra tree fields on the
+        model (which we need). So it's done here instead, after field setup.
+        """
+        if self._mptt_opts is None:
+            self._mptt_opts = model._mptt_meta
+        
+        self.parent_attr = self._mptt_opts.parent_attr
+        self.left_attr = self._mptt_opts.left_attr
+        self.right_attr = self._mptt_opts.right_attr
+        self.tree_id_attr = self._mptt_opts.tree_id_attr
+        self.level_attr = self._mptt_opts.level_attr
+        
         # Avoid calling "get_field_by_name()", which populates the related
         # models cache and can cause circular imports in complex projects.
         # Instead, find the tree_id field using "get_fields_with_model()".
