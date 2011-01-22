@@ -5,6 +5,7 @@ from django import forms
 from django.forms.forms import NON_FIELD_ERRORS
 from django.forms.util import ErrorList
 from django.utils.encoding import smart_unicode
+from django.utils.html import conditional_escape, mark_safe
 from django.utils.translation import ugettext_lazy as _
 
 from mptt.exceptions import InvalidMove
@@ -26,9 +27,9 @@ class TreeNodeChoiceField(forms.ModelChoiceField):
         Creates labels which represent the tree level of each node when
         generating option labels.
         """
-        return u'%s %s' % (self.level_indicator * getattr(obj,
-                                                  obj._mptt_meta.level_attr),
-                           smart_unicode(obj))
+        level = getattr(obj, obj._mptt_meta.level_attr)
+        level_indicator = mark_safe(conditional_escape(self.level_indicator) * level)
+        return mark_safe(u'%s %s' % (level_indicator, conditional_escape(smart_unicode(obj))))
 
 class TreeNodeMultipleChoiceField(TreeNodeChoiceField, forms.ModelMultipleChoiceField):
     """A ModelMultipleChoiceField for tree nodes."""
