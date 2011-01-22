@@ -343,8 +343,11 @@ class MPTTModel(models.Model):
         """
         Returns the number of descendants this model instance has.
         """
-        return (self._mpttfield('right') -
-                self._mpttfield('left') - 1) / 2
+        if self._mpttfield('right') is None:
+            # node not saved yet
+            return 0
+        else:
+            return (self._mpttfield('right') - self._mpttfield('left') - 1) / 2
 
     def get_leafnodes(self, include_self=False):
         """
@@ -583,6 +586,12 @@ class MPTTModel(models.Model):
         
                 if right_sibling:
                     self.insert_at(right_sibling, 'left', allow_existing_pk=True)
+                    
+                    if parent:
+                        # since we didn't insert into parent, we have to update parent.rght
+                        # here instead of in TreeManager.insert_node()
+                        right_shift = 2 * (self.get_descendant_count() + 1)
+                        self._tree_manager._post_insert_update_cached_parent_right(parent, right_shift)
                 else:
                     # Default insertion
                     self.insert_at(parent, position='last-child', allow_existing_pk=True)

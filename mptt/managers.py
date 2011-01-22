@@ -224,7 +224,7 @@ class TreeManager(models.Manager):
             setattr(node, self.left_attr, 0)
             setattr(node, self.level_attr, 0)
 
-            space_target, level, left, parent = \
+            space_target, level, left, parent, right_shift = \
                 self._calculate_inter_tree_move_values(node, target, position)
             tree_id = getattr(parent, self.tree_id_attr)
 
@@ -235,6 +235,9 @@ class TreeManager(models.Manager):
             setattr(node, self.level_attr, -level)
             setattr(node, self.tree_id_attr, tree_id)
             setattr(node, self.parent_attr, parent)
+    
+            if parent:
+                self._post_insert_update_cached_parent_right(parent, right_shift)
 
         if save:
             node.save()
@@ -313,6 +316,14 @@ class TreeManager(models.Manager):
             idx += 1
             self._rebuild_helper(pk, 1, idx)
         transaction.commit_unless_managed()
+        
+    def _post_insert_update_cached_parent_right(self, instance, right_shift):
+        setattr(instance, self.right_attr, getattr(instance, self.right_attr) + right_shift)
+        attr = '_%s_cache' % self.parent_attr
+        if hasattr(instance, attr):
+            parent = getattr(instance, attr)
+            if parent:
+                self._post_insert_update_cached_parent_right(parent, right_shift)
 
     def _rebuild_helper(self, pk, left, tree_id, level=0):
         opts = self.model._mptt_meta
@@ -365,7 +376,12 @@ class TreeManager(models.Manager):
             raise ValueError(_('An invalid position was given: %s.') % position)
 
         left_right_change = left - space_target - 1
-        return space_target, level_change, left_right_change, parent
+        
+        right_shift = 0
+        if parent:
+            right_shift = 2 * (node.get_descendant_count() + 1)
+        
+        return space_target, level_change, left_right_change, parent, right_shift
 
     def _close_gap(self, size, target, tree_id):
         """
@@ -639,7 +655,7 @@ class TreeManager(models.Manager):
         level = getattr(node, self.level_attr)
         new_tree_id = getattr(target, self.tree_id_attr)
 
-        space_target, level_change, left_right_change, parent = \
+        space_target, level_change, left_right_change, parent, new_parent_right = \
             self._calculate_inter_tree_move_values(node, target, position)
 
         tree_width = right - left + 1
@@ -657,6 +673,7 @@ class TreeManager(models.Manager):
         setattr(node, self.level_attr, level - level_change)
         setattr(node, self.tree_id_attr, new_tree_id)
         setattr(node, self.parent_attr, parent)
+        
         node._mptt_cached_fields[self.parent_attr] = parent.pk
 
     def _move_child_within_tree(self, node, target, position):
@@ -804,7 +821,7 @@ class TreeManager(models.Manager):
         elif tree_id == new_tree_id:
             raise InvalidMove(_('A node may not be made a child of any of its descendants.'))
 
-        space_target, level_change, left_right_change, parent = \
+        space_target, level_change, left_right_change, parent, right_shift = \
             self._calculate_inter_tree_move_values(node, target, position)
 
         # Create space for the tree which will be inserted
