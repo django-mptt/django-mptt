@@ -207,5 +207,6 @@ if getattr(settings, 'MPTT_USE_FEINCMS', True):
 
             def get_actions(self, request):
                 actions = super(FeinCMSModelAdmin, self).get_actions(request)
-                actions['delete_selected'] = (self.delete_selected_tree, 'delete_selected', _("Delete selected %(verbose_name_plural)s"))
+                if 'delete_selected' in actions:
+                    actions['delete_selected'] = (self.delete_selected_tree, 'delete_selected', _("Delete selected %(verbose_name_plural)s"))
                 return actions
