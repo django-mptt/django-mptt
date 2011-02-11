@@ -10,7 +10,8 @@ classes in ``django-mptt.admin``:
 MPTTModelAdmin
 --------------
 
-This is a bare-bones tree admin. All it does is enforce ordering, and indent the nodes in the tree to make a pretty tree list view.
+This is a bare-bones tree admin. All it does is enforce ordering, and indent the nodes 
+in the tree to make a pretty tree list view.
 
 Usage::
 
@@ -25,7 +26,8 @@ You can change the indent pixels per level by putting this in your settings.py::
     # default is 10 pixels
     MPTT_ADMIN_LEVEL_INDENT = 20
 
-If you'd like to specify which field should be indented, add an `mptt_indent_field` to your MPTTModelAdmin: 
+If you'd like to specify which field should be indented, add an `mptt_indent_field` 
+to your MPTTModelAdmin: 
 
     from django.contrib import admin
     from mptt.admin import MPTTModelAdmin
