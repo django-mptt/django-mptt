@@ -8,13 +8,12 @@ from mptt.managers import TreeManager
 
 class MPTTOptions(object):
     """
-    Options class for MPTT models. Use this as an inner class called MPTTMeta:
+    Options class for MPTT models. Use this as an inner class called ``MPTTMeta``::
     
-    class MyModel(MPTTModel):
-        class MPTTMeta:
-            order_insertion_by = ['name']
-            parent_attr = 'myparent'
-        ...     
+        class MyModel(MPTTModel):
+            class MPTTMeta:
+                order_insertion_by = ['name']
+                parent_attr = 'myparent'
     """
     
     order_insertion_by = []

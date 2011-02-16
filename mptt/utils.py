@@ -33,7 +33,7 @@ def tree_item_iterator(items, ancestors=False):
     information about the tree structure around the item, with the
     following keys:
 
-       ``'new_level'`
+       ``'new_level'``
           ``True`` if the current item is the start of a new level in
           the tree, ``False`` otherwise.
 
