@@ -12,7 +12,7 @@ from django.utils.translation import ugettext as _
 from django.utils.translation import ungettext
 from django.utils.encoding import force_unicode
 
-from mptt.forms import MPTTAdminForm
+from mptt.forms import MPTTAdminForm, TreeNodeChoiceField
 
 __all__ = ('MPTTChangeList', 'MPTTModelAdmin', 'MPTTAdminForm')
 
@@ -34,6 +34,12 @@ class MPTTModelAdmin(ModelAdmin):
     change_list_template = 'admin/mptt_change_list.html'
     
     form = MPTTAdminForm
+    
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        from mptt.models import MPTTModel
+        if issubclass(db_field.rel.to, MPTTModel):
+            return TreeNodeChoiceField(queryset=db_field.rel.to.objects.all())
+        return super(MyModelAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
     
     def get_changelist(self, request, **kwargs):
         """
