@@ -1,12 +1,9 @@
 import re
 
-# hack to make test run
-import os
-os.environ['DJANGO_SETTINGS_MODULE'] = 'mptt.tests.settings'
 from django.test import TestCase
 
 from mptt.exceptions import InvalidMove
-from mptt.tests.models import Category, Genre
+from myapp.models import Category, Genre
 
 def get_tree_details(nodes):
     """

@@ -5,7 +5,6 @@ DIRNAME = os.path.dirname(__file__)
 DEBUG = True
 
 DATABASE_ENGINE = 'sqlite3'
-DATABASE_NAME = os.path.join(DIRNAME, 'mptt.db')
 
 #DATABASE_ENGINE = 'mysql'
 #DATABASE_NAME = 'mptt_test'
@@ -23,5 +22,5 @@ DATABASE_NAME = os.path.join(DIRNAME, 'mptt.db')
 
 INSTALLED_APPS = (
     'mptt',
-    'mptt.tests',
+    'myapp',
 )

@@ -1,7 +1,7 @@
 [
   {
     "pk": 1, 
-    "model": "tests.genre", 
+    "model": "myapp.genre", 
     "fields": {
       "rght": 16, 
       "name": "Action", 
@@ -13,7 +13,7 @@
   }, 
   {
     "pk": 2, 
-    "model": "tests.genre", 
+    "model": "myapp.genre", 
     "fields": {
       "rght": 9, 
       "name": "Platformer", 
@@ -25,7 +25,7 @@
   }, 
   {
     "pk": 3, 
-    "model": "tests.genre", 
+    "model": "myapp.genre", 
     "fields": {
       "rght": 4, 
       "name": "2D Platformer", 
@@ -37,7 +37,7 @@
   }, 
   {
     "pk": 4, 
-    "model": "tests.genre", 
+    "model": "myapp.genre", 
     "fields": {
       "rght": 6, 
       "name": "3D Platformer", 
@@ -49,7 +49,7 @@
   }, 
   {
     "pk": 5, 
-    "model": "tests.genre", 
+    "model": "myapp.genre", 
     "fields": {
       "rght": 8, 
       "name": "4D Platformer", 
@@ -61,7 +61,7 @@
   }, 
   {
     "pk": 6, 
-    "model": "tests.genre", 
+    "model": "myapp.genre", 
     "fields": {
       "rght": 15, 
       "name": "Shootemup", 
@@ -73,7 +73,7 @@
   }, 
   {
     "pk": 7, 
-    "model": "tests.genre", 
+    "model": "myapp.genre", 
     "fields": {
       "rght": 12, 
       "name": "Vertical Scrolling Shootemup", 
@@ -85,7 +85,7 @@
   }, 
   {
     "pk": 8, 
-    "model": "tests.genre", 
+    "model": "myapp.genre", 
     "fields": {
       "rght": 14, 
       "name": "Horizontal Scrolling Shootemup", 
@@ -97,7 +97,7 @@
   }, 
   {
     "pk": 9, 
-    "model": "tests.genre", 
+    "model": "myapp.genre", 
     "fields": {
       "rght": 6, 
       "name": "Role-playing Game", 
@@ -109,7 +109,7 @@
   }, 
   {
     "pk": 10, 
-    "model": "tests.genre", 
+    "model": "myapp.genre", 
     "fields": {
       "rght": 3, 
       "name": "Action RPG", 
@@ -121,7 +121,7 @@
   }, 
   {
     "pk": 11, 
-    "model": "tests.genre", 
+    "model": "myapp.genre", 
     "fields": {
       "rght": 5, 
       "name": "Tactical RPG", 

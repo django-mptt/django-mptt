@@ -1,6 +1,6 @@
 >>> from datetime import date
 >>> from mptt.exceptions import InvalidMove
->>> from mptt.tests.models import Genre, Insert, MultiOrder, Node, OrderedInsertion, Tree, Person, Student
+>>> from myapp.models import Genre, Insert, MultiOrder, Node, OrderedInsertion, Tree, Person, Student
 
 >>> def print_tree_details(nodes):
 ...     opts = nodes[0]._mptt_meta
