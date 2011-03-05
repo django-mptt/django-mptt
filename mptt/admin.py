@@ -38,8 +38,11 @@ class MPTTModelAdmin(ModelAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         from mptt.models import MPTTModel
         if issubclass(db_field.rel.to, MPTTModel):
-            return TreeNodeChoiceField(queryset=db_field.rel.to.objects.all())
-        return super(MyModelAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
+            return TreeNodeChoiceField(queryset=db_field.rel.to.objects.all(),
+                                       required=False)
+        return super(MPTTModelAdmin, self).formfield_for_foreignkey(db_field,
+                                                                    request,
+                                                                    **kwargs)
     
     def get_changelist(self, request, **kwargs):
         """
