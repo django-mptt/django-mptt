@@ -1,10 +1,35 @@
-==========================
-Upgrade Notes - 0.3 to 0.4
-==========================
+=============
+Upgrade notes
+=============
+
+Development version - since 0.4.2
+=================================
+
+``save(raw=True)`` keyword argument removed
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In earlier versions, MPTTModel.save() had a ``raw`` keyword argument.
+If True, the MPTT fields would not be updated during the save.
+This (undocumented) argument has now been removed.
 
 
-Model changes in 0.4
-====================
+Running the tests
+~~~~~~~~~~~~~~~~~
+
+Tests are now run with::
+
+    cd tests/
+    ./runtests.sh
+
+The previous method (``python setup.py test``) no longer works since we switched to plain distutils.
+
+
+0.3 to 0.4.2
+============
+
+
+Model changes
+~~~~~~~~~~~~~
 
 MPTT attributes on ``MyModel._meta`` deprecated, moved to ``MyModel._mptt_meta``
 ----------------------------------------------------------------------------------
@@ -62,7 +87,7 @@ You're probably all upgraded at this point :) A couple more notes for more compl
 
 
 More complicated scenarios
-==========================
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 What if I'm already inheriting from something?
 ----------------------------------------------
