@@ -21,3 +21,10 @@ class TreeForeignKey(models.ForeignKey):
         defaults = {'form_class': TreeNodeChoiceField}
         defaults.update(kwargs)
         return super(TreeForeignKey, self).formfield(**defaults)
+
+# South integration for the TreeForeignKey
+try:
+    from south.modelsinspector import add_introspection_rules
+    add_introspection_rules([], ["^mptt\.fields\.TreeForeignKey"])
+except ImportError:
+    pass
