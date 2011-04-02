@@ -7,6 +7,7 @@
     
     mptt.admin
     mptt.exceptions
+    mptt.fields
     mptt.forms
     mptt.managers
     mptt.models

@@ -275,6 +275,8 @@ method.
 ``TreeForeignKey``
 ==================
 
+.. versionadded:: 0.5
+
 It's recommended you use ``mptt.fields.TreeForeignKey`` wherever you have a
 foreign key to an MPTT model. This includes the ``parent`` link you've just
 created on your model.
