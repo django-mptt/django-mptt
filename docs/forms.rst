@@ -15,6 +15,8 @@ package.
 ``TreeNodeChoiceField``
 -----------------------
 
+This is the default formfield used by ``TreeForeignKey``
+
 A subclass of `ModelChoiceField`_ which represents the tree level of
 each node when generating option labels.
 

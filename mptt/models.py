@@ -4,6 +4,7 @@ from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.query import Q
 
+from mptt.fields import TreeForeignKey
 from mptt.managers import TreeManager
 
 class MPTTOptions(object):

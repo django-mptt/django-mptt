@@ -12,14 +12,14 @@ Setting up a Django model for MPTT
 Start with a basic subclass of MPTTModel, something like this::
    
     from django.db import models
-    from mptt.models import MPTTModel
+    from mptt.models import MPTTModel, TreeForeignKey
     
     class Genre(MPTTModel):
         name = models.CharField(max_length=50, unique=True)
-        parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+        parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
 
-You must define a parent field which is a ``ForeignKey`` to ``'self'``. (You can
-call it something different if you want - see `Model Options`_ below.)
+You must define a parent field which is a ``ForeignKey`` to ``'self'``. Recommended: use `TreeForeignKey`_. You can
+call it something different if you want - see `Model Options`_ below.
 
 Because you're inheriting from MPTTModel, your model will also have a number of
 other fields: ``level``, ``lft``, ``rght``, and ``tree_id``. Most of the time
@@ -35,7 +35,7 @@ To change the names, create an ``MPTTMeta`` class inside your class::
 
     class Genre(MPTTModel):
         name = models.CharField(max_length=50, unique=True)
-        parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+        parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
         
         class MPTTMeta:
             level_attr = 'mptt_level'
@@ -51,7 +51,7 @@ The available options for the MPTTMeta class are:
    Users are responsible for setting this field up on the model class,
    which can be done like so::
 
-      parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+      parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
 
 For the following four arguments, if fields with the given names do not
 exist, they will be added to the model dynamically:
@@ -272,6 +272,17 @@ safe to go on to save it or use its tree fields after you've called this
 method.
 
 
+``TreeForeignKey``
+==================
+
+It's recommended you use ``mptt.fields.TreeForeignKey`` wherever you have a
+foreign key to an MPTT model. This includes the ``parent`` link you've just
+created on your model.
+
+``TreeForeignKey`` is just like a regular ``ForeignKey`` but it makes the default
+form field display choices in tree form.
+
+
 The ``TreeManager`` custom manager
 ==================================
 
@@ -355,7 +366,7 @@ Example usage
 -------------
 
 In the following examples, we have ``Category`` and ``Question`` models.
-``Question`` has a ``category`` field which is a ``ForeignKey`` to
+``Question`` has a ``category`` field which is a ``TreeForeignKey`` to
 ``Category``.
 
 Retrieving a list of root Categories which have a ``question_count``
