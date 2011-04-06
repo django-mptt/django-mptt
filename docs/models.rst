@@ -109,7 +109,11 @@ However, sometimes that doesn't quite work. For instance, suppose you want to mo
 You can't subclass MPTTModel without modifying the Group source. Instead, you can do::
 
     import mptt
+    from mptt.fields import TreeForeignKey
     from django.contrib.auth.models import Group
+    
+    # add a parent foreign key
+    TreeForeignKey(Group, blank=True, null=True).contribute_to_class(Group, 'parent')
     
     mptt.register(Group, order_insertion_by=['name'])
 
