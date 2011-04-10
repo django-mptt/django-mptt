@@ -146,4 +146,5 @@ def _exists(qs):
     if hasattr(qs, 'exists'):
         return qs.exists()
     else:
-        return bool(qs.count())
+        qs = qs.extra(select={'_exists_check': '1'}).values_list('_exists_check', flat=True)[:1]
+        return bool(len(qs))
