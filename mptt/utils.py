@@ -8,6 +8,7 @@ import itertools
 __all__ = ('previous_current_next', 'tree_item_iterator',
            'drilldown_tree_for_node')
 
+
 def previous_current_next(items):
     """
     From http://www.wordaligned.org/articles/zippy-triples-served-with-python
@@ -134,3 +135,15 @@ def drilldown_tree_for_node(node, rel_cls=None, rel_field=None, count_attr=None,
     else:
         children = node.get_children()
     return itertools.chain(node.get_ancestors(), [node], children)
+
+
+def _exists(qs):
+    """
+    For Django 1.1 compatibility. (QuerySet.exists() was added in 1.2)
+    
+    This is not part of the supported mptt API, it may be removed without warning.
+    """
+    if hasattr(qs, 'exists'):
+        return qs.exists()
+    else:
+        return bool(qs.count())
