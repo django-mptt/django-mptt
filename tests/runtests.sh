@@ -1,5 +1,5 @@
 #!/bin/sh
 
-export PYTHONPATH="../:."
+export PYTHONPATH=".:"
 
-django-admin test --settings=settings
+django-admin test --settings=settings --pythonpath="../"

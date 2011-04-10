@@ -195,7 +195,7 @@ class TreeManager(models.Manager):
         if self._base_manager:
             return self._base_manager.insert_node(node, target, position=position, save=save)
         
-        if node.pk and not allow_existing_pk and self.filter(pk=node.pk).exists():
+        if node.pk and not allow_existing_pk and bool(self.filter(pk=node.pk)):
             raise ValueError(_('Cannot insert a node which has already been saved.'))
 
         if target is None:

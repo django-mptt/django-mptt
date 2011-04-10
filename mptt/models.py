@@ -537,7 +537,7 @@ class MPTTModel(models.Model):
             manager = manager.using(using)
         
         if self.pk and (force_update or getattr(self, '_mptt_saved', False) or \
-                    (not force_insert and manager.filter(pk=self.pk).exists())):
+                    (not force_insert and bool(manager.filter(pk=self.pk)))):
             # it already exists, so do a move
             old_parent_id = self._mptt_cached_fields[opts.parent_attr]
             same_order = old_parent_id == parent_id
