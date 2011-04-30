@@ -316,7 +316,6 @@ class TreeManager(models.Manager):
         for pk in pks:
             idx += 1
             self._rebuild_helper(pk, 1, idx)
-        transaction.commit_unless_managed()
         
     def _post_insert_update_cached_parent_right(self, instance, right_shift):
         setattr(instance, self.right_attr, getattr(instance, self.right_attr) + right_shift)
