@@ -18,7 +18,10 @@ __all__ = ('MPTTChangeList', 'MPTTModelAdmin', 'MPTTAdminForm')
 
 class MPTTChangeList(ChangeList):
     def get_query_set(self, request):
-        qs = super(MPTTChangeList, self).get_query_set(request)
+        if django.VERSION < (1, 3):
+            qs = super(MPTTChangeList, self).get_query_set()
+        else:
+            qs = super(MPTTChangeList, self).get_query_set(request)
         
         # always order by (tree_id, left)
         tree_id = qs.model._mptt_meta.tree_id_attr
