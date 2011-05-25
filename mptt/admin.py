@@ -17,8 +17,8 @@ from mptt.forms import MPTTAdminForm, TreeNodeChoiceField
 __all__ = ('MPTTChangeList', 'MPTTModelAdmin', 'MPTTAdminForm')
 
 class MPTTChangeList(ChangeList):
-    def get_query_set(self, request):
-        if django.VERSION < (1, 3):
+    def get_query_set(self, request=None):
+        if request is None:
             qs = super(MPTTChangeList, self).get_query_set()
         else:
             qs = super(MPTTChangeList, self).get_query_set(request)
