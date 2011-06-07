@@ -38,7 +38,13 @@ class MPTTModelAdmin(ModelAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         from mptt.models import MPTTModel
         if issubclass(db_field.rel.to, MPTTModel):
-            return TreeNodeChoiceField(queryset=db_field.rel.to.objects.all(),
+            #This fixes issue 127. Wrong ordering of the Tree Nodes in admin. Just adding order_by to the query set.
+            qs = db_field.rel.to.objects.all()
+            tree_id = qs.model._mptt_meta.tree_id_attr
+            left = qs.model._mptt_meta.left_attr
+            qs = qs.order_by(tree_id, left)
+            #mchavezg
+            return TreeNodeChoiceField(queryset=qs,
                                        required=False)
         return super(MPTTModelAdmin, self).formfield_for_foreignkey(db_field,
                                                                     request,
