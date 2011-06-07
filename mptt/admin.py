@@ -17,8 +17,8 @@ from mptt.forms import MPTTAdminForm, TreeNodeChoiceField
 __all__ = ('MPTTChangeList', 'MPTTModelAdmin', 'MPTTAdminForm')
 
 class MPTTChangeList(ChangeList):
-    def get_query_set(self):
-        qs = super(MPTTChangeList, self).get_query_set()
+    def get_query_set(self, request):
+        qs = super(MPTTChangeList, self).get_query_set(request)
         
         # always order by (tree_id, left)
         tree_id = qs.model._mptt_meta.tree_id_attr
@@ -91,7 +91,7 @@ class MPTTModelAdmin(ModelAdmin):
             # Try to look up an action or confirmation first, but if this isn't an
             # action the POST will fall through to the bulk edit check, below.
             if actions and request.method == 'POST' and (helpers.ACTION_CHECKBOX_NAME in request.POST or 'index' in request.POST):
-                response = self.response_action(request, queryset=cl.get_query_set())
+                response = self.response_action(request, queryset=cl.get_query_set(request))
                 if response:
                     return response
 
