@@ -16,11 +16,17 @@ __all__ = ('TreeNodeChoiceField', 'TreeNodeMultipleChoiceField', 'TreeNodePositi
 
 class TreeNodeChoiceField(forms.ModelChoiceField):
     """A ModelChoiceField for tree nodes."""
-    def __init__(self, *args, **kwargs):
+    def __init__(self, queryset, *args, **kwargs):
         self.level_indicator = kwargs.pop('level_indicator', u'---')
         if kwargs.get('required', True) and not 'empty_label' in kwargs:
             kwargs['empty_label'] = None
-        super(TreeNodeChoiceField, self).__init__(*args, **kwargs)
+
+        # if a queryset is supplied, enforce ordering
+        if hasattr(queryset, 'model'):
+            mptt_opts = queryset.model._mptt_meta
+            queryset = queryset.order_by(mptt_opts.tree_id_attr, mptt_opts.left_attr)
+
+        super(TreeNodeChoiceField, self).__init__(queryset, *args, **kwargs)
 
     def label_from_instance(self, obj):
         """
