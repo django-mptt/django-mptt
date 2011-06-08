@@ -176,14 +176,6 @@ class MPTTModelBase(ModelBase):
         
         abstract = getattr(cls._meta, 'abstract', False)
         
-        # For backwards compatibility with existing libraries, we copy the 
-        # _mptt_meta options into _meta.
-        # This will be removed in 0.5.
-        # All new code should use _mptt_meta rather than _meta for tree attributes.
-        for attr in ('left_attr', 'right_attr', 'tree_id_attr', 'level_attr', 'parent_attr',
-                    'tree_manager_attr', 'order_insertion_by'):
-            setattr(cls._meta, attr, getattr(cls._mptt_meta, attr))
-        
         try:
             MPTTModel
         except NameError:

@@ -12,6 +12,20 @@ In earlier versions, MPTTModel.save() had a ``raw`` keyword argument.
 If True, the MPTT fields would not be updated during the save.
 This (undocumented) argument has now been removed.
 
+``_meta`` attributes moved to ``_mptt_meta``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In 0.4, we deprecated all these mptt attributes on model._meta:
+
+    MyModel._meta.left_attr
+    MyModel._meta.right_attr
+    MyModel._meta.tree_id_attr
+    MyModel._meta.level_attr
+    MyModel._meta.tree_manager_attr
+    MyModel._meta.parent_attr
+    MyModel._meta.order_insertion_by
+
+If you're still using any of these, you'll need to update by simply renaming ``_meta`` to ``_mptt_meta``.
 
 Running the tests
 ~~~~~~~~~~~~~~~~~
@@ -22,7 +36,6 @@ Tests are now run with::
     ./runtests.sh
 
 The previous method (``python setup.py test``) no longer works since we switched to plain distutils.
-
 
 0.3 to 0.4.2
 ============
