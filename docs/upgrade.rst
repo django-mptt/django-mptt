@@ -15,7 +15,7 @@ This (undocumented) argument has now been removed.
 ``_meta`` attributes moved to ``_mptt_meta``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In 0.4, we deprecated all these mptt attributes on model._meta:
+In 0.4, we deprecated all these attributes on model._meta. These have now been removed:
 
     MyModel._meta.left_attr
     MyModel._meta.right_attr
