@@ -188,6 +188,9 @@ class TreeManager(models.Manager):
 
         If ``save`` is ``True``, ``node``'s ``save()`` method will be
         called before it is returned.
+        
+        NOTE: This is a low-level method; it does NOT respect ``MPTTMeta.order_insertion_by``.
+        In most cases you should just set the node's parent and let mptt call this during save.
         """
         
         if self._base_manager:
@@ -259,6 +262,9 @@ class TreeManager(models.Manager):
         This method explicitly checks for ``node`` being made a sibling
         of a root node, as this is a special case due to our use of tree
         ids to order root nodes.
+        
+        NOTE: This is a low-level method; it does NOT respect ``MPTTMeta.order_insertion_by``.
+        In most cases you should just move the node yourself by setting node.parent.
         """
         
         if self._base_manager:

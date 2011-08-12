@@ -497,6 +497,9 @@ class MPTTModel(models.Model):
         """
         Convenience method for calling ``TreeManager.move_node`` with this
         model instance.
+        
+        NOTE: This is a low-level method; it does NOT respect ``MPTTMeta.order_insertion_by``.
+        In most cases you should just move the node yourself by setting node.parent.
         """
         self._tree_manager.move_node(self, target, position)
         
