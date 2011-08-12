@@ -3,7 +3,9 @@ Utilities for working with lists of model instances which represent
 trees.
 """
 import copy
+import csv
 import itertools
+import sys
 
 __all__ = ('previous_current_next', 'tree_item_iterator',
            'drilldown_tree_for_node')
@@ -135,6 +137,32 @@ def drilldown_tree_for_node(node, rel_cls=None, rel_field=None, count_attr=None,
     else:
         children = node.get_children()
     return itertools.chain(node.get_ancestors(), [node], children)
+
+def print_debug_info(qs):
+    """
+    Given an mptt queryset, prints some debug information to stdout.
+    Use this when things go wrong.
+    Please include the output from this method when filing bug issues.
+    """
+    opts = qs.model._mptt_meta
+    writer = csv.writer(sys.stdout)
+    header = (
+        'pk',
+        opts.level_attr,
+        '%s_id' % opts.parent_attr,
+        opts.tree_id_attr,
+        opts.left_attr,
+        opts.right_attr,
+        'pretty',
+    )
+    writer.writerow(header)
+    for n in qs.order_by('tree_id', 'lft'):
+        level = getattr(n, opts.level_attr)
+        row = []
+        for field in header[:-1]:
+            row.append(getattr(n, field))
+        row.append('%s%s' % ('- '*level, unicode(n).encode('utf-8')))
+        writer.writerow(row)
 
 
 def _exists(qs):
