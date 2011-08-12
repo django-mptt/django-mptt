@@ -27,14 +27,17 @@ class TreeNodeChoiceField(forms.ModelChoiceField):
             queryset = queryset.order_by(mptt_opts.tree_id_attr, mptt_opts.left_attr)
 
         super(TreeNodeChoiceField, self).__init__(queryset, *args, **kwargs)
-
+    
+    def _get_level_indicator(self, obj):
+        level = getattr(obj, obj._mptt_meta.level_attr)
+        return mark_safe(conditional_escape(self.level_indicator) * level)
+        
     def label_from_instance(self, obj):
         """
         Creates labels which represent the tree level of each node when
         generating option labels.
         """
-        level = getattr(obj, obj._mptt_meta.level_attr)
-        level_indicator = mark_safe(conditional_escape(self.level_indicator) * level)
+        level_indicator = self._get_level_indicator(obj)
         return mark_safe(u'%s %s' % (level_indicator, conditional_escape(smart_unicode(obj))))
 
 class TreeNodeMultipleChoiceField(TreeNodeChoiceField, forms.ModelMultipleChoiceField):
