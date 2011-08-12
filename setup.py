@@ -14,7 +14,7 @@ setup(
     author_email = 'craig.ds@gmail.com',
     url = 'http://github.com/django-mptt/django-mptt',
     packages=['mptt', 'mptt.templatetags'],
-    package_data={'mptt': ['templates/admin/*']},
+    package_data={'mptt': ['templates/admin/*', 'locale/*/*/*.*']},
     classifiers = ['Development Status :: 4 - Beta',
                    'Environment :: Web Environment',
                    'Framework :: Django',
