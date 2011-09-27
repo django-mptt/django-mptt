@@ -27,8 +27,8 @@ settings.py::
     # default is 10 pixels
     MPTT_ADMIN_LEVEL_INDENT = 20
 
-If you'd like to specify the pixel amount per Model, define an `mptt_level_indent` 
-attribute in your MPTTModelAdmin: 
+If you'd like to specify the pixel amount per Model, define an ``mptt_level_indent`` 
+attribute in your MPTTModelAdmin:: 
 
     from django.contrib import admin
     from mptt.admin import MPTTModelAdmin
@@ -40,8 +40,8 @@ attribute in your MPTTModelAdmin:
 
     admin.site.register(Node, CustomMPTTModelAdmin)
 
-If you'd like to specify which field should be indented, add an `mptt_indent_field` 
-to your MPTTModelAdmin: 
+If you'd like to specify which field should be indented, add an ``mptt_indent_field`` 
+to your MPTTModelAdmin:: 
 
     # …
     class CustomMPTTModelAdmin(MPTTModelAdmin)
