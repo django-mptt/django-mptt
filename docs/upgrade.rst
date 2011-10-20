@@ -5,6 +5,20 @@ Upgrade notes
 Development version - since 0.4.2
 =================================
 
+``TreeManager`` is now the default manager, ``YourModel.tree`` removed
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In 0.5, ``TreeManager`` now behaves just like a normal django manager. If you don't override anything,
+you'll now get a ``TreeManager`` by default (``.objects``.)
+
+Before 0.5, ``.tree`` was the default name for the ``TreeManager``. That's been removed, so we recommend
+updating your code to use ``.objects``.
+
+If you don't want to update ``.tree`` to ``.objects`` everywhere just yet, you should add explicit ``TreeManager``s
+to your models::
+
+    objects = tree = TreeManager()
+
 ``save(raw=True)`` keyword argument removed
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

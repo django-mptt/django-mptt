@@ -1,5 +1,5 @@
 import operator
-
+import warnings
 
 from django.db import models
 from django.db.models.base import ModelBase
@@ -20,7 +20,7 @@ class MPTTOptions(object):
     """
     
     order_insertion_by = []
-    tree_manager_attr = 'tree'
+    tree_manager_attr = 'objects'
     left_attr = 'lft'
     right_attr = 'rght'
     tree_id_attr = 'tree_id'
@@ -34,6 +34,13 @@ class MPTTOptions(object):
         else:
             opts = []
         opts.extend(kwargs.items())
+
+        if 'tree_manager_attr' in [opt[0] for opt in opts]:
+            warnings.warn(
+                "`tree_manager_attr` is deprecated; just instantiate a TreeManager as a normal manager on your model",
+                DeprecationWarning
+            )
+
         
         for key, value in opts:
             setattr(self, key, value)
@@ -135,7 +142,7 @@ class MPTTOptions(object):
                 # Fall back on tree id ordering if multiple root nodes have
                 # the same values.
                 order_by.append(opts.tree_id_attr)
-            queryset = node._default_manager.filter(filters).order_by(*order_by)
+            queryset = node.__class__._tree_manager.filter(filters).order_by(*order_by)
             if node.pk:
                 queryset = queryset.exclude(pk=node.pk)
             try:
@@ -210,15 +217,15 @@ class MPTTModelBase(ModelBase):
             if not abstract:
                 tree_manager_attr = cls._mptt_meta.tree_manager_attr
                 manager = getattr(cls, tree_manager_attr, None)
-                if (not manager) or manager.model != cls:
-                    if not manager:
-                        manager = TreeManager()
-                    else:
-                        # manager.model might already be set if this is a proxy model
-                        # (in that case, we need to create a new manager, or _base_manager will be wrong)
-                        manager = manager.__class__()
-                    manager.contribute_to_class(cls, tree_manager_attr)
+                if not manager:
+                    manager = cls._default_manager
+                if not isinstance(manager, TreeManager):
+                    manager = TreeManager()
+                elif manager.model != cls:
+                    manager = manager._copy_to_model(cls)
+                manager.contribute_to_class(cls, tree_manager_attr)
                 manager.init_from_model(cls)
+
                 setattr(cls, '_tree_manager', manager)
 
         return cls
@@ -230,6 +237,7 @@ class MPTTModel(models.Model):
     """
     
     __metaclass__ = MPTTModelBase
+    _default_manager = TreeManager()
     
     class Meta:
         abstract = True

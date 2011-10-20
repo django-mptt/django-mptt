@@ -81,10 +81,6 @@ exist, they will be added to the model dynamically:
    For example, root nodes would have a level of ``0`` and their
    immediate children would have have a level of ``1``.
 
-``tree_manager_attr``
-   The name of an attribute which will hold a custom manager which is
-   used to work with trees of model instances. Defaults to ``'tree'``.
-
 ``order_insertion_by``
    A list of field names which should define ordering when new tree
    nodes are being inserted or existing nodes are being reparented, with
@@ -292,9 +288,7 @@ form field display choices in tree form.
 The ``TreeManager`` custom manager
 ==================================
 
-A custom manager, ``TreeManager`` is also added to your MPTTModel subclasses.
-The attribute this manager can be accessed through is specified by the 
-``tree_manager_attr`` option (default ``'tree'``)
+The default manager for an MPTTModel is a ``TreeManager``.
 
 Any ``QuerySet`` created with this manager will be ordered based on the
 tree structure, with root nodes appearing in tree id order and and their
@@ -379,7 +373,7 @@ Retrieving a list of root Categories which have a ``question_count``
 attribute containing the number of Questions associated with each root
 and all of its descendants::
 
-   roots = Category.tree.add_related_count(Category.tree.root_nodes(), Question,
+   roots = Category.objects.add_related_count(Category.tree.root_nodes(), Question,
                                            'category', 'question_counts',
                                            cumulative=True)
 
@@ -388,5 +382,5 @@ attribute containing the number of Questions associated with each of
 them::
 
    node = Category.objects.get(name='Some Category')
-   children = Category.tree.add_related_count(node.get_children(), Question,
+   children = Category.objects.add_related_count(node.get_children(), Question,
                                               'category', 'question_counts')
