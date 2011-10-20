@@ -8,9 +8,8 @@ Or if you'd prefer, you can simply place the included ``mptt`` directory
 somewhere on your PYTHONPATH, or symlink to it from somewhere on your
 PYTHONPATH; this is useful if you're working from a git checkout.
 
-Requirements:
- - Python 2.3 or newer (has been tested on 2.5 but should work fine with 2.3)
- - Django 1.1 or newer
+Requires:
+ - Django 1.2 or newer (*should* work with 1.1+ but no promises)
 
 You can obtain Python from http://www.python.org/ and Django from
 http://www.djangoproject.com/
