@@ -49,6 +49,9 @@ def mptt_items_for_result(cl, result, form):
                 break
     ##### MPTT ADDITION END
     
+    # figure out how much to indent
+    mptt_level_indent = getattr(cl.model_admin, 'mptt_level_indent', MPTT_ADMIN_LEVEL_INDENT)
+    
     for field_name in cl.list_display:
         row_class = ''
         try:
@@ -91,7 +94,7 @@ def mptt_items_for_result(cl, result, form):
         ##### MPTT ADDITION START
         if field_name == mptt_indent_field:
             level = getattr(result, result._mptt_meta.level_attr)
-            padding_attr = ' style="padding-left:%spx"' % (5 + MPTT_ADMIN_LEVEL_INDENT * level)
+            padding_attr = ' style="padding-left:%spx"' % (5 + mptt_level_indent * level)
         else:
             padding_attr = ''
         ##### MPTT ADDITION END
