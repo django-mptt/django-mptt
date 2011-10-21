@@ -10,7 +10,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2011-10-17 16:06+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Last-Translator: BARTOSZ BIAŁY <ethifus@gmain.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: \n"
 "MIME-Version: 1.0\n"
@@ -28,21 +28,22 @@ msgstr "Błąd bazy danych"
 #, python-format
 msgid "%(count)s %(name)s was changed successfully."
 msgid_plural "%(count)s %(name)s were changed successfully."
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "%(count)s %(name)s został zmieniony."
+msgstr[1] "%(count)s %(name)s zostały zmienione."
+msgstr[2] "%(count)s %(name)s zostało zmienionych."
 
 #: admin.py:197 admin.py:199
 msgid "Add child"
-msgstr "Dodaj dziecko"
+msgstr "Dodaj podelement"
 
 #: admin.py:205 admin.py:207
 msgid "View on site"
-msgstr "Podgląd na stronie"
+msgstr "Pokaż na stronie"
 
 #: admin.py:219
 #, python-format
 msgid "Successfully deleted %s items."
-msgstr "Usinięto %s elementów."
+msgstr "Skutecznie usinięto %s elementów."
 
 #: admin.py:224
 #, python-format
@@ -51,19 +52,19 @@ msgstr "Usuń wybrane %(verbose_name_plural)s"
 
 #: forms.py:65
 msgid "First child"
-msgstr "Pierwsze dziecko"
+msgstr "Pierwszy podelement"
 
 #: forms.py:66
 msgid "Last child"
-msgstr "Ostatnie dziecko"
+msgstr "Ostatni podelement"
 
 #: forms.py:67
 msgid "Left sibling"
-msgstr ""
+msgstr "Lewy podelement"
 
 #: forms.py:68
 msgid "Right sibling"
-msgstr ""
+msgstr "Prawy podelement"
 
 #: managers.py:200
 msgid "Cannot insert a node which has already been saved."
@@ -76,19 +77,19 @@ msgstr "Podano niewłaściwą pozycję: %s."
 
 #: managers.py:537 managers.py:722
 msgid "A node may not be made a sibling of itself."
-msgstr ""
+msgstr "Węzeł nie może zostać swoim węzłem równożędnym."
 
 #: managers.py:701 managers.py:823
 msgid "A node may not be made a child of itself."
-msgstr "Węzeł nie może zostać swoim własnym dzieckiem."
+msgstr "Węzeł nie może zostać swoim własnym węzłem potomnym."
 
 #: managers.py:703 managers.py:825
 msgid "A node may not be made a child of any of its descendants."
-msgstr "Węzeł nie może zostać potomkiem swoich potomków."
+msgstr "Węzeł nie może zostać węzłem potomnym żadnego ze swoich węzłów potomnych."
 
 #: managers.py:724
 msgid "A node may not be made a sibling of any of its descendants."
-msgstr ""
+msgstr "Węzeł nie może zostać węzłem równożędnym żadnego ze swoich węzłów potomnych."
 
 #: templatetags/mptt_tags.py:29
 #, python-format
