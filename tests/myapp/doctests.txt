@@ -24,7 +24,7 @@
 >>> arpg = Genre.objects.create(name='Action RPG', parent=rpg)
 >>> rpg = Genre.objects.get(pk=rpg.pk)
 >>> trpg = Genre.objects.create(name='Tactical RPG', parent=rpg)
->>> print_tree_details(Genre.tree.all())
+>>> print_tree_details(Genre.objects.all())
 1 - 1 0 1 10
 2 1 1 1 2 9
 3 2 1 2 3 4
@@ -37,7 +37,7 @@
 # Utilities ###################################################################
 >>> from mptt.utils import previous_current_next, tree_item_iterator, drilldown_tree_for_node
 
->>> for p,c,n in previous_current_next(Genre.tree.all()):
+>>> for p,c,n in previous_current_next(Genre.objects.all()):
 ...     print (p,c,n)
 (None, <Genre: Action>, <Genre: Platformer>)
 (<Genre: Action>, <Genre: Platformer>, <Genre: 2D Platformer>)
@@ -48,7 +48,7 @@
 (<Genre: Role-playing Game>, <Genre: Action RPG>, <Genre: Tactical RPG>)
 (<Genre: Action RPG>, <Genre: Tactical RPG>, None)
 
->>> for i,s in tree_item_iterator(Genre.tree.all()):
+>>> for i,s in tree_item_iterator(Genre.objects.all()):
 ...     print (i, s['new_level'], s['closed_levels'])
 (<Genre: Action>, True, [])
 (<Genre: Platformer>, True, [])
@@ -59,7 +59,7 @@
 (<Genre: Action RPG>, True, [])
 (<Genre: Tactical RPG>, False, [1, 0])
 
->>> for i,s in tree_item_iterator(Genre.tree.all(), ancestors=True):
+>>> for i,s in tree_item_iterator(Genre.objects.all(), ancestors=True):
 ...     print (i, s['new_level'], s['ancestors'], s['closed_levels'])
 (<Genre: Action>, True, [], [])
 (<Genre: Platformer>, True, [u'Action'], [])
@@ -85,7 +85,7 @@
 # Forms #######################################################################
 >>> from mptt.forms import TreeNodeChoiceField, MoveNodeForm
 
->>> f = TreeNodeChoiceField(queryset=Genre.tree.all())
+>>> f = TreeNodeChoiceField(queryset=Genre.objects.all())
 >>> print(f.widget.render("test", None))
 <select name="test">
 <option value="1"> Action</option>
@@ -98,7 +98,7 @@
 <option value="8">--- Tactical RPG</option>
 </select>
 
->>> f = TreeNodeChoiceField(queryset=Genre.tree.all(), required=False)
+>>> f = TreeNodeChoiceField(queryset=Genre.objects.all(), required=False)
 >>> print(f.widget.render("test", None))
 <select name="test">
 <option value="" selected="selected">---------</option>
@@ -112,7 +112,7 @@
 <option value="8">--- Tactical RPG</option>
 </select>
 
->>> f = TreeNodeChoiceField(queryset=Genre.tree.all(), empty_label=u'None of the below')
+>>> f = TreeNodeChoiceField(queryset=Genre.objects.all(), empty_label=u'None of the below')
 >>> print(f.widget.render("test", None))
 <select name="test">
 <option value="" selected="selected">None of the below</option>
@@ -126,7 +126,7 @@
 <option value="8">--- Tactical RPG</option>
 </select>
 
->>> f = TreeNodeChoiceField(queryset=Genre.tree.all(), required=False, empty_label=u'None of the below')
+>>> f = TreeNodeChoiceField(queryset=Genre.objects.all(), required=False, empty_label=u'None of the below')
 >>> print(f.widget.render("test", None))
 <select name="test">
 <option value="" selected="selected">None of the below</option>
@@ -140,7 +140,7 @@
 <option value="8">--- Tactical RPG</option>
 </select>
 
->>> f = TreeNodeChoiceField(queryset=Genre.tree.all(), level_indicator=u'+--')
+>>> f = TreeNodeChoiceField(queryset=Genre.objects.all(), level_indicator=u'+--')
 >>> print(f.widget.render("test", None))
 <select name="test">
 <option value="1"> Action</option>
@@ -191,16 +191,16 @@
 
 # TreeManager Methods #########################################################
 
->>> Genre.tree.root_node(action.tree_id)
+>>> Genre.objects.root_node(action.tree_id)
 <Genre: Action>
->>> Genre.tree.root_node(rpg.tree_id)
+>>> Genre.objects.root_node(rpg.tree_id)
 <Genre: Role-playing Game>
->>> Genre.tree.root_node(3)
+>>> Genre.objects.root_node(3)
 Traceback (most recent call last):
     ...
 DoesNotExist: Genre matching query does not exist.
 
->>> [g.name for g in Genre.tree.root_nodes()]
+>>> [g.name for g in Genre.objects.root_nodes()]
 [u'Action', u'Role-playing Game']
 
 # Model Instance Methods ######################################################
@@ -354,7 +354,7 @@ True
 >>> c_2_1 = Node.objects.create(parent=c_2)
 >>> c_2 = Node.objects.get(pk=c_2.pk)
 >>> c_2_2 = Node.objects.create(parent=c_2)
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 14
 2 1 1 1 2 7
 3 2 1 2 3 4
@@ -365,26 +365,26 @@ True
 
 # Validate exceptions are raised appropriately
 >>> root = Node.objects.get(pk=root.pk)
->>> Node.tree.move_node(root, root, position='first-child')
+>>> Node.objects.move_node(root, root, position='first-child')
 Traceback (most recent call last):
     ...
 InvalidMove: A node may not be made a child of itself.
 >>> c_1 = Node.objects.get(pk=c_1.pk)
 >>> c_1_1 = Node.objects.get(pk=c_1_1.pk)
->>> Node.tree.move_node(c_1, c_1_1, position='last-child')
+>>> Node.objects.move_node(c_1, c_1_1, position='last-child')
 Traceback (most recent call last):
     ...
 InvalidMove: A node may not be made a child of any of its descendants.
->>> Node.tree.move_node(root, root, position='right')
+>>> Node.objects.move_node(root, root, position='right')
 Traceback (most recent call last):
     ...
 InvalidMove: A node may not be made a sibling of itself.
 >>> c_2 = Node.objects.get(pk=c_2.pk)
->>> Node.tree.move_node(c_1, c_1_1, position='left')
+>>> Node.objects.move_node(c_1, c_1_1, position='left')
 Traceback (most recent call last):
     ...
 InvalidMove: A node may not be made a sibling of any of its descendants.
->>> Node.tree.move_node(c_1, c_2, position='cheese')
+>>> Node.objects.move_node(c_1, c_2, position='cheese')
 Traceback (most recent call last):
     ...
 ValueError: An invalid position was given: cheese.
@@ -392,10 +392,10 @@ ValueError: An invalid position was given: cheese.
 # Move up the tree using first-child
 >>> c_2_2 = Node.objects.get(pk=c_2_2.pk)
 >>> c_1 = Node.objects.get(pk=c_1.pk)
->>> Node.tree.move_node(c_2_2, c_1, 'first-child')
+>>> Node.objects.move_node(c_2_2, c_1, 'first-child')
 >>> print_tree_details([c_2_2])
 7 2 1 2 3 4
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 14
 2 1 1 1 2 9
 7 2 1 2 3 4
@@ -409,7 +409,7 @@ ValueError: An invalid position was given: cheese.
 >>> c_2_2.move_to(c_2_1, 'right')
 >>> print_tree_details([c_2_2])
 7 5 1 2 11 12
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 14
 2 1 1 1 2 7
 3 2 1 2 3 4
@@ -421,10 +421,10 @@ ValueError: An invalid position was given: cheese.
 # Move up the tree with descendants using first-child
 >>> c_2 = Node.objects.get(pk=c_2.pk)
 >>> c_1 = Node.objects.get(pk=c_1.pk)
->>> Node.tree.move_node(c_2, c_1, 'first-child')
+>>> Node.objects.move_node(c_2, c_1, 'first-child')
 >>> print_tree_details([c_2])
 5 2 1 2 3 8
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 14
 2 1 1 1 2 13
 5 2 1 2 3 8
@@ -435,10 +435,10 @@ ValueError: An invalid position was given: cheese.
 
 # Undo the move using right
 >>> c_1 = Node.objects.get(pk=c_1.pk)
->>> Node.tree.move_node(c_2, c_1, 'right')
+>>> Node.objects.move_node(c_2, c_1, 'right')
 >>> print_tree_details([c_2])
 5 1 1 1 8 13
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 14
 2 1 1 1 2 7
 3 2 1 2 3 4
@@ -457,10 +457,10 @@ right       |    |    | Y  | Y
 # Move down the tree using first-child
 >>> c_1_2 = Node.objects.get(pk=c_1_2.pk)
 >>> c_2 = Node.objects.get(pk=c_2.pk)
->>> Node.tree.move_node(c_1_2, c_2, 'first-child')
+>>> Node.objects.move_node(c_1_2, c_2, 'first-child')
 >>> print_tree_details([c_1_2])
 4 5 1 2 7 8
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 14
 2 1 1 1 2 5
 3 2 1 2 3 4
@@ -471,10 +471,10 @@ right       |    |    | Y  | Y
 
 # Undo the move using last-child
 >>> c_1 = Node.objects.get(pk=c_1.pk)
->>> Node.tree.move_node(c_1_2, c_1, 'last-child')
+>>> Node.objects.move_node(c_1_2, c_1, 'last-child')
 >>> print_tree_details([c_1_2])
 4 2 1 2 5 6
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 14
 2 1 1 1 2 7
 3 2 1 2 3 4
@@ -486,10 +486,10 @@ right       |    |    | Y  | Y
 # Move down the tree with descendants using first-child
 >>> c_1 = Node.objects.get(pk=c_1.pk)
 >>> c_2 = Node.objects.get(pk=c_2.pk)
->>> Node.tree.move_node(c_1, c_2, 'first-child')
+>>> Node.objects.move_node(c_1, c_2, 'first-child')
 >>> print_tree_details([c_1])
 2 5 1 2 3 8
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 14
 5 1 1 1 2 13
 2 5 1 2 3 8
@@ -500,10 +500,10 @@ right       |    |    | Y  | Y
 
 # Undo the move using left
 >>> c_2 = Node.objects.get(pk=c_2.pk)
->>> Node.tree.move_node(c_1, c_2, 'left')
+>>> Node.objects.move_node(c_1, c_2, 'left')
 >>> print_tree_details([c_1])
 2 1 1 1 2 7
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 14
 2 1 1 1 2 7
 3 2 1 2 3 4
@@ -522,10 +522,10 @@ right       |    |    | Y  | Y
 # Move up the tree using right
 >>> c_2_2 = Node.objects.get(pk=c_2_2.pk)
 >>> c_1_1 = Node.objects.get(pk=c_1_1.pk)
->>> Node.tree.move_node(c_2_2, c_1_1, 'right')
+>>> Node.objects.move_node(c_2_2, c_1_1, 'right')
 >>> print_tree_details([c_2_2])
 7 2 1 2 5 6
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 14
 2 1 1 1 2 9
 3 2 1 2 3 4
@@ -536,10 +536,10 @@ right       |    |    | Y  | Y
 
 # Undo the move using last-child
 >>> c_2 = Node.objects.get(pk=c_2.pk)
->>> Node.tree.move_node(c_2_2, c_2, 'last-child')
+>>> Node.objects.move_node(c_2_2, c_2, 'last-child')
 >>> print_tree_details([c_2_2])
 7 5 1 2 11 12
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 14
 2 1 1 1 2 7
 3 2 1 2 3 4
@@ -551,10 +551,10 @@ right       |    |    | Y  | Y
 # Move up the tree with descendants using right
 >>> c_2 = Node.objects.get(pk=c_2.pk)
 >>> c_1_1 = Node.objects.get(pk=c_1_1.pk)
->>> Node.tree.move_node(c_2, c_1_1, 'right')
+>>> Node.objects.move_node(c_2, c_1_1, 'right')
 >>> print_tree_details([c_2])
 5 2 1 2 5 10
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 14
 2 1 1 1 2 13
 3 2 1 2 3 4
@@ -565,10 +565,10 @@ right       |    |    | Y  | Y
 
 # Undo the move using last-child
 >>> root = Node.objects.get(pk=root.pk)
->>> Node.tree.move_node(c_2, root, 'last-child')
+>>> Node.objects.move_node(c_2, root, 'last-child')
 >>> print_tree_details([c_2])
 5 1 1 1 8 13
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 14
 2 1 1 1 2 7
 3 2 1 2 3 4
@@ -587,10 +587,10 @@ right       | Y  | Y  | Y  | Y
 # Move down the tree with descendants using left
 >>> c_1 = Node.objects.get(pk=c_1.pk)
 >>> c_2_2 = Node.objects.get(pk=c_2_2.pk)
->>> Node.tree.move_node(c_1, c_2_2, 'left')
+>>> Node.objects.move_node(c_1, c_2_2, 'left')
 >>> print_tree_details([c_1])
 2 5 1 2 5 10
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 14
 5 1 1 1 2 13
 6 5 1 2 3 4
@@ -601,10 +601,10 @@ right       | Y  | Y  | Y  | Y
 
 # Undo the move using first-child
 >>> root = Node.objects.get(pk=root.pk)
->>> Node.tree.move_node(c_1, root, 'first-child')
+>>> Node.objects.move_node(c_1, root, 'first-child')
 >>> print_tree_details([c_1])
 2 1 1 1 2 7
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 14
 2 1 1 1 2 7
 3 2 1 2 3 4
@@ -616,10 +616,10 @@ right       | Y  | Y  | Y  | Y
 # Move down the tree using left
 >>> c_1_1 = Node.objects.get(pk=c_1_1.pk)
 >>> c_2_2 = Node.objects.get(pk=c_2_2.pk)
->>> Node.tree.move_node(c_1_1, c_2_2, 'left')
+>>> Node.objects.move_node(c_1_1, c_2_2, 'left')
 >>> print_tree_details([c_1_1])
 3 5 1 2 9 10
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 14
 2 1 1 1 2 5
 4 2 1 2 3 4
@@ -630,10 +630,10 @@ right       | Y  | Y  | Y  | Y
 
 # Undo the move using left
 >>> c_1_2 = Node.objects.get(pk=c_1_2.pk)
->>> Node.tree.move_node(c_1_1,  c_1_2, 'left')
+>>> Node.objects.move_node(c_1_1,  c_1_2, 'left')
 >>> print_tree_details([c_1_1])
 3 2 1 2 3 4
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 14
 2 1 1 1 2 7
 3 2 1 2 3 4
@@ -656,7 +656,7 @@ I guess we're covered :)
 #######################
 
 >>> new_root = Node.objects.create()
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 14
 2 1 1 1 2 7
 3 2 1 2 3 4
@@ -673,7 +673,7 @@ I guess we're covered :)
 >>> c_2.move_to(new_root)
 >>> print_tree_details([c_2])
 5 8 2 1 2 7
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 8
 2 1 1 1 2 7
 3 2 1 2 3 4
@@ -686,10 +686,10 @@ I guess we're covered :)
 # Move using left
 >>> c_1_1 = Node.objects.get(pk=c_1_1.pk)
 >>> c_2 = Node.objects.get(pk=c_2.pk)
->>> Node.tree.move_node(c_1_1, c_2, position='left')
+>>> Node.objects.move_node(c_1_1, c_2, position='left')
 >>> print_tree_details([c_1_1])
 3 8 2 1 2 3
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 6
 2 1 1 1 2 5
 4 2 1 2 3 4
@@ -702,10 +702,10 @@ I guess we're covered :)
 # Move using first-child
 >>> c_1_2 = Node.objects.get(pk=c_1_2.pk)
 >>> c_2 = Node.objects.get(pk=c_2.pk)
->>> Node.tree.move_node(c_1_2, c_2, position='first-child')
+>>> Node.objects.move_node(c_1_2, c_2, position='first-child')
 >>> print_tree_details([c_1_2])
 4 5 2 2 5 6
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 4
 2 1 1 1 2 3
 8 - 2 0 1 12
@@ -718,10 +718,10 @@ I guess we're covered :)
 # Move using right
 >>> c_2 = Node.objects.get(pk=c_2.pk)
 >>> c_1 = Node.objects.get(pk=c_1.pk)
->>> Node.tree.move_node(c_2, c_1, position='right')
+>>> Node.objects.move_node(c_2, c_1, position='right')
 >>> print_tree_details([c_2])
 5 1 1 1 4 11
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 12
 2 1 1 1 2 3
 5 1 1 1 4 11
@@ -733,10 +733,10 @@ I guess we're covered :)
 
 # Move using last-child
 >>> c_1_1 = Node.objects.get(pk=c_1_1.pk)
->>> Node.tree.move_node(c_1_1, c_2, position='last-child')
+>>> Node.objects.move_node(c_1_1, c_2, position='last-child')
 >>> print_tree_details([c_1_1])
 3 5 1 2 11 12
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 14
 2 1 1 1 2 3
 5 1 1 1 4 13
@@ -749,11 +749,11 @@ I guess we're covered :)
 # Moving a root node into another tree as a child node ########################
 
 # Validate exceptions are raised appropriately
->>> Node.tree.move_node(root, c_1, position='first-child')
+>>> Node.objects.move_node(root, c_1, position='first-child')
 Traceback (most recent call last):
     ...
 InvalidMove: A node may not be made a child of any of its descendants.
->>> Node.tree.move_node(new_root, c_1, position='cheese')
+>>> Node.objects.move_node(new_root, c_1, position='cheese')
 Traceback (most recent call last):
     ...
 ValueError: An invalid position was given: cheese.
@@ -763,7 +763,7 @@ ValueError: An invalid position was given: cheese.
 >>> new_root.move_to(c_2, position='first-child')
 >>> print_tree_details([new_root])
 8 5 1 2 5 6
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 16
 2 1 1 1 2 3
 5 1 1 1 4 15
@@ -775,10 +775,10 @@ ValueError: An invalid position was given: cheese.
 
 >>> new_root = Node.objects.create()
 >>> root = Node.objects.get(pk=root.pk)
->>> Node.tree.move_node(new_root, root, position='last-child')
+>>> Node.objects.move_node(new_root, root, position='last-child')
 >>> print_tree_details([new_root])
 9 1 1 1 16 17
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 18
 2 1 1 1 2 3
 5 1 1 1 4 15
@@ -791,10 +791,10 @@ ValueError: An invalid position was given: cheese.
 
 >>> new_root = Node.objects.create()
 >>> c_2_1 = Node.objects.get(pk=c_2_1.pk)
->>> Node.tree.move_node(new_root, c_2_1, position='left')
+>>> Node.objects.move_node(new_root, c_2_1, position='left')
 >>> print_tree_details([new_root])
 10 5 1 2 9 10
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 20
 2 1 1 1 2 3
 5 1 1 1 4 17
@@ -808,10 +808,10 @@ ValueError: An invalid position was given: cheese.
 
 >>> new_root = Node.objects.create()
 >>> c_1 = Node.objects.get(pk=c_1.pk)
->>> Node.tree.move_node(new_root, c_1, position='right')
+>>> Node.objects.move_node(new_root, c_1, position='right')
 >>> print_tree_details([new_root])
 11 1 1 1 4 5
->>> print_tree_details(Node.tree.all())
+>>> print_tree_details(Node.objects.all())
 1 - 1 0 1 22
 2 1 1 1 2 3
 11 1 1 1 4 5
@@ -828,11 +828,11 @@ ValueError: An invalid position was given: cheese.
 
 # Validate exceptions are raised appropriately
 >>> root = Node.objects.get(pk=root.pk)
->>> Node.tree.move_node(root, root, position='left')
+>>> Node.objects.move_node(root, root, position='left')
 Traceback (most recent call last):
     ...
 InvalidMove: A node may not be made a sibling of itself.
->>> Node.tree.move_node(root, root, position='right')
+>>> Node.objects.move_node(root, root, position='right')
 Traceback (most recent call last):
     ...
 InvalidMove: A node may not be made a sibling of itself.
@@ -846,7 +846,7 @@ InvalidMove: A node may not be made a sibling of itself.
 >>> r3 = Tree.objects.create()
 >>> c3_1 = Tree.objects.create(parent=r3)
 >>> c3_1_1 = Tree.objects.create(parent=c3_1)
->>> print_tree_details(Tree.tree.all())
+>>> print_tree_details(Tree.objects.all())
 1 - 1 0 1 6
 2 1 1 1 2 5
 3 2 1 2 3 4
@@ -863,7 +863,7 @@ InvalidMove: A node may not be made a sibling of itself.
 >>> r2.move_to(r1, 'left')
 >>> print_tree_details([r2])
 4 - 1 0 1 6
->>> print_tree_details(Tree.tree.all())
+>>> print_tree_details(Tree.objects.all())
 4 - 1 0 1 6
 5 4 1 1 2 5
 6 5 1 2 3 4
@@ -879,7 +879,7 @@ InvalidMove: A node may not be made a sibling of itself.
 >>> r2.move_to(r3, 'left')
 >>> print_tree_details([r2])
 4 - 2 0 1 6
->>> print_tree_details(Tree.tree.all())
+>>> print_tree_details(Tree.objects.all())
 1 - 1 0 1 6
 2 1 1 1 2 5
 3 2 1 2 3 4
@@ -896,7 +896,7 @@ InvalidMove: A node may not be made a sibling of itself.
 >>> r3.move_to(r1, 'right')
 >>> print_tree_details([r3])
 7 - 2 0 1 6
->>> print_tree_details(Tree.tree.all())
+>>> print_tree_details(Tree.objects.all())
 1 - 1 0 1 6
 2 1 1 1 2 5
 3 2 1 2 3 4
@@ -913,7 +913,7 @@ InvalidMove: A node may not be made a sibling of itself.
 >>> r1.move_to(r2, 'right')
 >>> print_tree_details([r1])
 1 - 3 0 1 6
->>> print_tree_details(Tree.tree.all())
+>>> print_tree_details(Tree.objects.all())
 7 - 1 0 1 6
 8 7 1 1 2 5
 9 8 1 2 3 4
@@ -929,7 +929,7 @@ InvalidMove: A node may not be made a sibling of itself.
 >>> r2.move_to(r1, 'left')
 >>> print_tree_details([r2])
 4 - 2 0 1 6
->>> print_tree_details(Tree.tree.all())
+>>> print_tree_details(Tree.objects.all())
 7 - 1 0 1 6
 8 7 1 1 2 5
 9 8 1 2 3 4
@@ -944,7 +944,7 @@ InvalidMove: A node may not be made a sibling of itself.
 >>> r1.move_to(r2, 'right')
 >>> print_tree_details([r1])
 1 - 3 0 1 6
->>> print_tree_details(Tree.tree.all())
+>>> print_tree_details(Tree.objects.all())
 7 - 1 0 1 6
 8 7 1 1 2 5
 9 8 1 2 3 4
@@ -960,7 +960,7 @@ InvalidMove: A node may not be made a sibling of itself.
 >>> c3_1.move_to(r1, 'left')
 >>> print_tree_details([c3_1])
 8 - 3 0 1 4
->>> print_tree_details(Tree.tree.all())
+>>> print_tree_details(Tree.objects.all())
 7 - 1 0 1 2
 4 - 2 0 1 6
 5 4 2 1 2 5
@@ -977,7 +977,7 @@ InvalidMove: A node may not be made a sibling of itself.
 >>> c1_1.move_to(r3, 'right')
 >>> print_tree_details([c1_1])
 2 - 2 0 1 4
->>> print_tree_details(Tree.tree.all())
+>>> print_tree_details(Tree.objects.all())
 7 - 1 0 1 2
 2 - 2 0 1 4
 3 2 2 1 2 3
@@ -992,17 +992,17 @@ InvalidMove: A node may not be made a sibling of itself.
 >>> r1 = Insert.objects.create()
 >>> r2 = Insert.objects.create()
 >>> r3 = Insert.objects.create()
->>> print_tree_details(Insert.tree.all())
+>>> print_tree_details(Insert.objects.all())
 1 - 1 0 1 2
 2 - 2 0 1 2
 3 - 3 0 1 2
 
 >>> r2 = Insert.objects.get(pk=r2.pk)
 >>> c1 = Insert()
->>> c1 = Insert.tree.insert_node(c1, r2, save=True)
+>>> c1 = Insert.objects.insert_node(c1, r2, save=True)
 >>> print_tree_details([c1])
 4 2 2 1 2 3
->>> print_tree_details(Insert.tree.all())
+>>> print_tree_details(Insert.objects.all())
 1 - 1 0 1 2
 2 - 2 0 1 4
 4 2 2 1 2 3
@@ -1016,10 +1016,10 @@ ValueError: Cannot insert a node which has already been saved.
 # First child
 >>> r2 = Insert.objects.get(pk=r2.pk)
 >>> c2 = Insert()
->>> c2 = Insert.tree.insert_node(c2, r2, position='first-child', save=True)
+>>> c2 = Insert.objects.insert_node(c2, r2, position='first-child', save=True)
 >>> print_tree_details([c2])
 5 2 2 1 2 3
->>> print_tree_details(Insert.tree.all())
+>>> print_tree_details(Insert.objects.all())
 1 - 1 0 1 2
 2 - 2 0 1 6
 5 2 2 1 2 3
@@ -1029,10 +1029,10 @@ ValueError: Cannot insert a node which has already been saved.
 # Left
 >>> c1 = Insert.objects.get(pk=c1.pk)
 >>> c3 = Insert()
->>> c3 = Insert.tree.insert_node(c3, c1, position='left', save=True)
+>>> c3 = Insert.objects.insert_node(c3, c1, position='left', save=True)
 >>> print_tree_details([c3])
 6 2 2 1 4 5
->>> print_tree_details(Insert.tree.all())
+>>> print_tree_details(Insert.objects.all())
 1 - 1 0 1 2
 2 - 2 0 1 8
 5 2 2 1 2 3
@@ -1042,10 +1042,10 @@ ValueError: Cannot insert a node which has already been saved.
 
 # Right
 >>> c4 = Insert()
->>> c4 = Insert.tree.insert_node(c4, c3, position='right', save=True)
+>>> c4 = Insert.objects.insert_node(c4, c3, position='right', save=True)
 >>> print_tree_details([c4])
 7 2 2 1 6 7
->>> print_tree_details(Insert.tree.all())
+>>> print_tree_details(Insert.objects.all())
 1 - 1 0 1 2
 2 - 2 0 1 10
 5 2 2 1 2 3
@@ -1057,10 +1057,10 @@ ValueError: Cannot insert a node which has already been saved.
 # Last child
 >>> r2 = Insert.objects.get(pk=r2.pk)
 >>> c5 = Insert()
->>> c5 = Insert.tree.insert_node(c5, r2, position='last-child', save=True)
+>>> c5 = Insert.objects.insert_node(c5, r2, position='last-child', save=True)
 >>> print_tree_details([c5])
 8 2 2 1 10 11
->>> print_tree_details(Insert.tree.all())
+>>> print_tree_details(Insert.objects.all())
 1 - 1 0 1 2
 2 - 2 0 1 12
 5 2 2 1 2 3
@@ -1073,10 +1073,10 @@ ValueError: Cannot insert a node which has already been saved.
 # Left sibling of root
 >>> r2 = Insert.objects.get(pk=r2.pk)
 >>> r4 = Insert()
->>> r4 = Insert.tree.insert_node(r4, r2, position='left', save=True)
+>>> r4 = Insert.objects.insert_node(r4, r2, position='left', save=True)
 >>> print_tree_details([r4])
 9 - 2 0 1 2
->>> print_tree_details(Insert.tree.all())
+>>> print_tree_details(Insert.objects.all())
 1 - 1 0 1 2
 9 - 2 0 1 2
 2 - 3 0 1 12
@@ -1090,10 +1090,10 @@ ValueError: Cannot insert a node which has already been saved.
 # Right sibling of root
 >>> r2 = Insert.objects.get(pk=r2.pk)
 >>> r5 = Insert()
->>> r5 = Insert.tree.insert_node(r5, r2, position='right', save=True)
+>>> r5 = Insert.objects.insert_node(r5, r2, position='right', save=True)
 >>> print_tree_details([r5])
 10 - 4 0 1 2
->>> print_tree_details(Insert.tree.all())
+>>> print_tree_details(Insert.objects.all())
 1 - 1 0 1 2
 9 - 2 0 1 2
 2 - 3 0 1 12
@@ -1107,10 +1107,10 @@ ValueError: Cannot insert a node which has already been saved.
 
 # Last root
 >>> r6 = Insert()
->>> r6 = Insert.tree.insert_node(r6, None, save=True)
+>>> r6 = Insert.objects.insert_node(r6, None, save=True)
 >>> print_tree_details([r6])
 11 - 6 0 1 2
->>> print_tree_details(Insert.tree.all())
+>>> print_tree_details(Insert.objects.all())
 1 - 1 0 1 2
 9 - 2 0 1 2
 2 - 3 0 1 12
@@ -1128,19 +1128,19 @@ ValueError: Cannot insert a node which has already been saved.
 
 # Root ordering
 >>> r2 = OrderedInsertion.objects.create(name='food')
->>> print_tree_details(OrderedInsertion.tree.all())
+>>> print_tree_details(OrderedInsertion.objects.all())
 2 - 1 0 1 2
 1 - 2 0 1 2
 
 # Same name - insert after
 >>> r3 = OrderedInsertion.objects.create(name='food')
->>> print_tree_details(OrderedInsertion.tree.all())
+>>> print_tree_details(OrderedInsertion.objects.all())
 2 - 1 0 1 2
 3 - 2 0 1 2
 1 - 3 0 1 2
 
 >>> c1 = OrderedInsertion.objects.create(name='zoo', parent=r3)
->>> print_tree_details(OrderedInsertion.tree.all())
+>>> print_tree_details(OrderedInsertion.objects.all())
 2 - 1 0 1 2
 3 - 2 0 1 4
 4 3 2 1 2 3
@@ -1148,7 +1148,7 @@ ValueError: Cannot insert a node which has already been saved.
 
 >>> r3 = OrderedInsertion.objects.get(pk=r3.pk)
 >>> c2 = OrderedInsertion.objects.create(name='monkey', parent=r3)
->>> print_tree_details(OrderedInsertion.tree.all())
+>>> print_tree_details(OrderedInsertion.objects.all())
 2 - 1 0 1 2
 3 - 2 0 1 6
 5 3 2 1 2 3
@@ -1157,7 +1157,7 @@ ValueError: Cannot insert a node which has already been saved.
 
 >>> r3 = OrderedInsertion.objects.get(pk=r3.pk)
 >>> c3 = OrderedInsertion.objects.create(name='animal', parent=r3)
->>> print_tree_details(OrderedInsertion.tree.all())
+>>> print_tree_details(OrderedInsertion.objects.all())
 2 - 1 0 1 2
 3 - 2 0 1 8
 6 3 2 1 2 3
@@ -1172,7 +1172,7 @@ ValueError: Cannot insert a node which has already been saved.
 >>> r3 = OrderedInsertion.objects.get(pk=r3.pk)
 >>> r1.parent = r3
 >>> r1.save()
->>> print_tree_details(OrderedInsertion.tree.all())
+>>> print_tree_details(OrderedInsertion.objects.all())
 2 - 1 0 1 2
 3 - 2 0 1 10
 6 3 2 1 2 3
@@ -1184,7 +1184,7 @@ ValueError: Cannot insert a node which has already been saved.
 >>> c3 = OrderedInsertion.objects.get(pk=c3.pk)
 >>> c3.parent = None
 >>> c3.save()
->>> print_tree_details(OrderedInsertion.tree.all())
+>>> print_tree_details(OrderedInsertion.objects.all())
 6 - 1 0 1 2
 2 - 2 0 1 2
 3 - 3 0 1 8
@@ -1196,7 +1196,7 @@ ValueError: Cannot insert a node which has already been saved.
 >>> c1 = OrderedInsertion.objects.get(pk=c1.pk)
 >>> c1.parent = c3
 >>> c1.save()
->>> print_tree_details(OrderedInsertion.tree.all())
+>>> print_tree_details(OrderedInsertion.objects.all())
 6 - 1 0 1 4
 4 6 1 1 2 3
 2 - 2 0 1 2
@@ -1207,7 +1207,7 @@ ValueError: Cannot insert a node which has already been saved.
 >>> c2 = OrderedInsertion.objects.get(pk=c2.pk)
 >>> c2.parent = c3
 >>> c2.save()
->>> print_tree_details(OrderedInsertion.tree.all())
+>>> print_tree_details(OrderedInsertion.objects.all())
 6 - 1 0 1 6
 5 6 1 1 2 3
 4 6 1 1 4 5
@@ -1222,7 +1222,7 @@ ValueError: Cannot insert a node which has already been saved.
 >>> c = OrderedInsertion.objects.create(name='c')
 >>> c.name = 'a'
 >>> c.save()
->>> print_tree_details(OrderedInsertion.tree.all())
+>>> print_tree_details(OrderedInsertion.objects.all())
 2 - 1 0 1 2
 1 - 2 0 1 2
 
@@ -1233,7 +1233,7 @@ ValueError: Cannot insert a node which has already been saved.
 >>> c = OrderedInsertion.objects.create(name='c', parent=root)
 >>> c.name = 'a'
 >>> c.save()
->>> print_tree_details(OrderedInsertion.tree.all())
+>>> print_tree_details(OrderedInsertion.objects.all())
 1 - 1 0 1 6
 3 1 1 1 2 3
 2 1 1 1 4 5
@@ -1245,7 +1245,7 @@ ValueError: Cannot insert a node which has already been saved.
 >>> a = OrderedInsertion.objects.get(name='a')
 >>> a.name = 'c'
 >>> a.save()
->>> print_tree_details(OrderedInsertion.tree.all())
+>>> print_tree_details(OrderedInsertion.objects.all())
 2 - 1 0 1 2
 1 - 2 0 1 2
 
@@ -1257,7 +1257,7 @@ ValueError: Cannot insert a node which has already been saved.
 >>> a = OrderedInsertion.objects.get(name='a')
 >>> a.name = 'c'
 >>> a.save()
->>> print_tree_details(OrderedInsertion.tree.all())
+>>> print_tree_details(OrderedInsertion.objects.all())
 1 - 1 0 1 6
 3 1 1 1 2 3
 2 1 1 1 4 5
@@ -1271,7 +1271,7 @@ ValueError: Cannot insert a node which has already been saved.
 >>> c = OrderedInsertion.objects.get(name='c')
 >>> c.name = 'a'
 >>> c.save()
->>> print_tree_details(OrderedInsertion.tree.all())
+>>> print_tree_details(OrderedInsertion.objects.all())
 1 - 1 0 1 2
 2 - 2 0 1 2
 
@@ -1283,7 +1283,7 @@ ValueError: Cannot insert a node which has already been saved.
 >>> c = OrderedInsertion.objects.get(name='c')
 >>> c.name = 'a'
 >>> c.save()
->>> print_tree_details(OrderedInsertion.tree.all())
+>>> print_tree_details(OrderedInsertion.objects.all())
 1 - 1 0 1 6
 2 1 1 1 2 3
 3 1 1 1 4 5
@@ -1294,7 +1294,7 @@ ValueError: Cannot insert a node which has already been saved.
 >>> a = OrderedInsertion.objects.create(name='a')
 >>> a.name = 'c'
 >>> a.save()
->>> print_tree_details(OrderedInsertion.tree.all())
+>>> print_tree_details(OrderedInsertion.objects.all())
 1 - 1 0 1 2
 2 - 2 0 1 2
 
@@ -1305,7 +1305,7 @@ ValueError: Cannot insert a node which has already been saved.
 >>> a = OrderedInsertion.objects.create(name='a', parent=root)
 >>> a.name = 'c'
 >>> a.save()
->>> print_tree_details(OrderedInsertion.tree.all())
+>>> print_tree_details(OrderedInsertion.objects.all())
 1 - 1 0 1 6
 2 1 1 1 2 3
 3 1 1 1 4 5
@@ -1318,7 +1318,7 @@ ValueError: Cannot insert a node which has already been saved.
 >>> b = OrderedInsertion.objects.get(name='b')
 >>> b.name = 'a'
 >>> b.save()
->>> print_tree_details(OrderedInsertion.tree.all())
+>>> print_tree_details(OrderedInsertion.objects.all())
 1 - 1 0 1 2
 
 # root node with no siblings with children, inserted B,child, moved B-->A (forward)
@@ -1328,7 +1328,7 @@ ValueError: Cannot insert a node which has already been saved.
 >>> b = OrderedInsertion.objects.get(name='b')
 >>> b.name = 'a'
 >>> b.save()
->>> print_tree_details(OrderedInsertion.tree.all())
+>>> print_tree_details(OrderedInsertion.objects.all())
 1 - 1 0 1 4
 2 1 1 1 2 3
 
@@ -1339,7 +1339,7 @@ ValueError: Cannot insert a node which has already been saved.
 >>> b = OrderedInsertion.objects.get(name='b')
 >>> b.name = 'a'
 >>> b.save()
->>> print_tree_details(OrderedInsertion.tree.all())
+>>> print_tree_details(OrderedInsertion.objects.all())
 1 - 1 0 1 4
 2 1 1 1 2 3
 
@@ -1351,7 +1351,7 @@ ValueError: Cannot insert a node which has already been saved.
 >>> b = OrderedInsertion.objects.get(name='b')
 >>> b.name = 'a'
 >>> b.save()
->>> print_tree_details(OrderedInsertion.tree.all())
+>>> print_tree_details(OrderedInsertion.objects.all())
 1 - 1 0 1 6
 2 1 1 1 2 5
 3 2 1 2 3 4
@@ -1362,7 +1362,7 @@ ValueError: Cannot insert a node which has already been saved.
 >>> b = OrderedInsertion.objects.get(name='b')
 >>> b.name = 'c'
 >>> b.save()
->>> print_tree_details(OrderedInsertion.tree.all())
+>>> print_tree_details(OrderedInsertion.objects.all())
 1 - 1 0 1 2
 
 # root node with no siblings with children, inserted B,child, moved B-->C (backward)
@@ -1372,7 +1372,7 @@ ValueError: Cannot insert a node which has already been saved.
 >>> b = OrderedInsertion.objects.get(name='b')
 >>> b.name = 'c'
 >>> b.save()
->>> print_tree_details(OrderedInsertion.tree.all())
+>>> print_tree_details(OrderedInsertion.objects.all())
 1 - 1 0 1 4
 2 1 1 1 2 3
 
@@ -1383,7 +1383,7 @@ ValueError: Cannot insert a node which has already been saved.
 >>> b = OrderedInsertion.objects.get(name='b')
 >>> b.name = 'c'
 >>> b.save()
->>> print_tree_details(OrderedInsertion.tree.all())
+>>> print_tree_details(OrderedInsertion.objects.all())
 1 - 1 0 1 4
 2 1 1 1 2 3
 
@@ -1395,7 +1395,7 @@ ValueError: Cannot insert a node which has already been saved.
 >>> b = OrderedInsertion.objects.get(name='b')
 >>> b.name = 'c'
 >>> b.save()
->>> print_tree_details(OrderedInsertion.tree.all())
+>>> print_tree_details(OrderedInsertion.objects.all())
 1 - 1 0 1 6
 2 1 1 1 2 5
 3 2 1 2 3 4
@@ -1404,7 +1404,7 @@ ValueError: Cannot insert a node which has already been saved.
 >>> root = OrderedInsertion.objects.create(name='root')
 >>> r1 = OrderedInsertion.objects.create(name='r1', parent=root)
 >>> r2 = OrderedInsertion.objects.create(name='r2', parent=root)
->>> print_tree_details(OrderedInsertion.tree.all())
+>>> print_tree_details(OrderedInsertion.objects.all())
 1 - 1 0 1 6
 2 1 1 1 2 3
 3 1 1 1 4 5
@@ -1414,25 +1414,25 @@ ValueError: Cannot insert a node which has already been saved.
 
 # Root nodes - ordering by subsequent fields
 >>> r2 = MultiOrder.objects.create(name='fff', size=10, date=date(2009, 1, 1))
->>> print_tree_details(MultiOrder.tree.all())
+>>> print_tree_details(MultiOrder.objects.all())
 2 - 1 0 1 2
 1 - 2 0 1 2
 
 >>> r3 = MultiOrder.objects.create(name='fff', size=20, date=date(2007, 1, 1))
->>> print_tree_details(MultiOrder.tree.all())
+>>> print_tree_details(MultiOrder.objects.all())
 2 - 1 0 1 2
 3 - 2 0 1 2
 1 - 3 0 1 2
 
 >>> r4 = MultiOrder.objects.create(name='fff', size=20, date=date(2008, 1, 1))
->>> print_tree_details(MultiOrder.tree.all())
+>>> print_tree_details(MultiOrder.objects.all())
 2 - 1 0 1 2
 3 - 2 0 1 2
 1 - 3 0 1 2
 4 - 4 0 1 2
 
 >>> r5 = MultiOrder.objects.create(name='fff', size=20, date=date(2007, 1, 1))
->>> print_tree_details(MultiOrder.tree.all())
+>>> print_tree_details(MultiOrder.objects.all())
 2 - 1 0 1 2
 3 - 2 0 1 2
 5 - 3 0 1 2
@@ -1440,7 +1440,7 @@ ValueError: Cannot insert a node which has already been saved.
 4 - 5 0 1 2
 
 >>> r6 = MultiOrder.objects.create(name='aaa', size=999, date=date(2010, 1, 1))
->>> print_tree_details(MultiOrder.tree.all())
+>>> print_tree_details(MultiOrder.objects.all())
 6 - 1 0 1 2
 2 - 2 0 1 2
 3 - 3 0 1 2
@@ -1451,20 +1451,20 @@ ValueError: Cannot insert a node which has already been saved.
 # Child nodes
 >>> r1 = MultiOrder.objects.get(pk=r1.pk)
 >>> c1 = MultiOrder.objects.create(parent=r1, name='hhh', size=10, date=date(2009, 1, 1))
->>> print_tree_details(MultiOrder.tree.filter(tree_id=r1.tree_id))
+>>> print_tree_details(MultiOrder.objects.filter(tree_id=r1.tree_id))
 1 - 5 0 1 4
 7 1 5 1 2 3
 
 >>> r1 = MultiOrder.objects.get(pk=r1.pk)
 >>> c2 = MultiOrder.objects.create(parent=r1, name='hhh', size=20, date=date(2008, 1, 1))
->>> print_tree_details(MultiOrder.tree.filter(tree_id=r1.tree_id))
+>>> print_tree_details(MultiOrder.objects.filter(tree_id=r1.tree_id))
 1 - 5 0 1 6
 7 1 5 1 2 3
 8 1 5 1 4 5
 
 >>> r1 = MultiOrder.objects.get(pk=r1.pk)
 >>> c3 = MultiOrder.objects.create(parent=r1, name='hhh', size=15, date=date(2008, 1, 1))
->>> print_tree_details(MultiOrder.tree.filter(tree_id=r1.tree_id))
+>>> print_tree_details(MultiOrder.objects.filter(tree_id=r1.tree_id))
 1 - 5 0 1 8
 7 1 5 1 2 3
 9 1 5 1 4 5
@@ -1472,7 +1472,7 @@ ValueError: Cannot insert a node which has already been saved.
 
 >>> r1 = MultiOrder.objects.get(pk=r1.pk)
 >>> c4 = MultiOrder.objects.create(parent=r1, name='hhh', size=15, date=date(2008, 1, 1))
->>> print_tree_details(MultiOrder.tree.filter(tree_id=r1.tree_id))
+>>> print_tree_details(MultiOrder.objects.filter(tree_id=r1.tree_id))
 1 - 5 0 1 10
 7 1 5 1 2 3
 9 1 5 1 4 5
@@ -1502,7 +1502,7 @@ ValueError: Cannot insert a node which has already been saved.
 7 6 2 3 4 5
 8 4 2 1 8 9
 
->>> print_tree_details(Student.tree.all())
+>>> print_tree_details(Student.objects.all())
 2 1 1 1 2 3
 4 - 2 0 1 10
 6 5 2 2 3 6
