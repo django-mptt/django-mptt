@@ -510,7 +510,22 @@ class MPTTModel(models.Model):
         In most cases you should just move the node yourself by setting node.parent.
         """
         self._tree_manager.move_node(self, target, position)
-        
+    
+    def _is_saved(self, using=None):
+        if not self.pk:
+            return False
+        opts = self._meta
+        if opts.pk.rel is None:
+            return True
+        else:
+            if not hasattr(self, '_mptt_saved'):
+                manager = self.__class__._base_manager
+                if hasattr(manager, 'using'):
+                    # multi db support was added in django 1.2
+                    manager = manager.using(using)
+                self._mptt_saved = _exists(manager.filter(pk=self.pk))
+            return self._mptt_saved
+
     def save(self, *args, **kwargs):
         """
         If this is a new node, sets tree fields up before it is inserted
@@ -535,14 +550,7 @@ class MPTTModel(models.Model):
         # determine whether this instance is already in the db
         force_update = kwargs.get('force_update', False)
         force_insert = kwargs.get('force_insert', False)
-        using = kwargs.get('using', None)
-        manager = self.__class__._base_manager
-        if hasattr(manager, 'using'):
-            # multi db support was added in django 1.2
-            manager = manager.using(using)
-        
-        if self.pk and (force_update or getattr(self, '_mptt_saved', False) or \
-                    (not force_insert and _exists(manager.filter(pk=self.pk)))):
+        if force_update or (not force_insert and self._is_saved(using=kwargs.get('using', None))):
             # it already exists, so do a move
             old_parent_id = self._mptt_cached_fields[opts.parent_attr]
             same_order = old_parent_id == parent_id
