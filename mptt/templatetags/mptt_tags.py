@@ -231,7 +231,7 @@ def cache_tree_children(queryset):
             if root_level is None:
                 root_level = node_level
             if node_level < root_level:
-                raise ValueError, "cache_tree_children was passed nodes in the wrong order!"
+                raise ValueError(_("cache_tree_children was passed nodes in the wrong order!"))
 
             obj._cached_children = []
 

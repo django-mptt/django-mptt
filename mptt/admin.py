@@ -217,7 +217,7 @@ if getattr(settings, 'MPTT_USE_FEINCMS', True):
                 for obj in queryset:
                     obj.delete()
                     n += 1
-                self.message_user(request, _("Successfully deleted %s items." % n))
+                self.message_user(request, _("Successfully deleted %s items.") % n)
 
             def get_actions(self, request):
                 actions = super(FeinCMSModelAdmin, self).get_actions(request)

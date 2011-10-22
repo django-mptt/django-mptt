@@ -166,6 +166,6 @@ class MPTTAdminForm(forms.ModelForm):
             if parent.is_descendant_of(self.instance, include_self=True):
                 if opts.parent_attr not in self._errors:
                     self._errors[opts.parent_attr] = forms.util.ErrorList()
-                self._errors[opts.parent_attr].append('Invalid parent')
+                self._errors[opts.parent_attr].append(_('Invalid parent'))
                 del self.cleaned_data[opts.parent_attr]
         return cleaned_data

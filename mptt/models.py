@@ -4,6 +4,7 @@ import warnings
 from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.query import Q
+from django.utils.translation import ugettext as _
 
 from mptt.fields import TreeForeignKey
 from mptt.managers import TreeManager
@@ -37,7 +38,7 @@ class MPTTOptions(object):
 
         if 'tree_manager_attr' in [opt[0] for opt in opts]:
             warnings.warn(
-                "`tree_manager_attr` is deprecated; just instantiate a TreeManager as a normal manager on your model",
+                _("`tree_manager_attr` is deprecated; just instantiate a TreeManager as a normal manager on your model"),
                 DeprecationWarning
             )
 
@@ -176,7 +177,7 @@ class MPTTModelBase(ModelBase):
         """
         
         if not issubclass(cls, models.Model):
-            raise ValueError, "register() expects a Django model class argument"
+            raise ValueError(_("register() expects a Django model class argument"))
         
         if not hasattr(cls, '_mptt_meta'):
             cls._mptt_meta = MPTTOptions(**kwargs)
