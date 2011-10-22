@@ -16,6 +16,7 @@ from mptt.forms import MPTTAdminForm, TreeNodeChoiceField
 
 __all__ = ('MPTTChangeList', 'MPTTModelAdmin', 'MPTTAdminForm')
 
+
 class MPTTChangeList(ChangeList):
     def get_query_set(self, request=None):
         # request arg was added in django r16144 (after 1.3)
@@ -23,22 +24,23 @@ class MPTTChangeList(ChangeList):
             qs = super(MPTTChangeList, self).get_query_set(request)
         else:
             qs = super(MPTTChangeList, self).get_query_set()
-        
+
         # always order by (tree_id, left)
         tree_id = qs.model._mptt_meta.tree_id_attr
         left = qs.model._mptt_meta.left_attr
         return qs.order_by(tree_id, left)
+
 
 class MPTTModelAdmin(ModelAdmin):
     """
     A basic admin class that displays tree items according to their position in the tree.
     No extra editing functionality beyond what Django admin normally offers.
     """
-    
+
     change_list_template = 'admin/mptt_change_list.html'
-    
+
     form = MPTTAdminForm
-    
+
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         from mptt.models import MPTTModel, TreeForeignKey
         if issubclass(db_field.rel.to, MPTTModel) and not isinstance(db_field, TreeForeignKey):
@@ -48,13 +50,13 @@ class MPTTModelAdmin(ModelAdmin):
         return super(MPTTModelAdmin, self).formfield_for_foreignkey(db_field,
                                                                     request,
                                                                     **kwargs)
-    
+
     def get_changelist(self, request, **kwargs):
         """
         Returns the ChangeList class for use on the changelist page.
         """
         return MPTTChangeList
-    
+
     # In Django 1.1, the changelist class is hard coded in changelist_view, so
     # we've got to override this too, just to get it to use our custom ChangeList
     if django.VERSION < (1, 2):
@@ -76,7 +78,7 @@ class MPTTModelAdmin(ModelAdmin):
                     list_display.remove('action_checkbox')
                 except ValueError:
                     pass
-                
+
             CL = self.get_changelist(request)
 
             try:
@@ -180,15 +182,15 @@ if getattr(settings, 'MPTT_USE_FEINCMS', True):
         pass
     else:
         __all__ = tuple(list(__all__) + ['FeinCMSModelAdmin'])
-        
+
         class FeinCMSModelAdmin(editor.TreeEditor):
             """
             A ModelAdmin to add changelist tree view and editing capabilities.
             Requires FeinCMS to be installed.
             """
-            
+
             form = MPTTAdminForm
-        
+
             def _actions_column(self, obj):
                 actions = super(FeinCMSModelAdmin, self)._actions_column(obj)
                 actions.insert(0,
@@ -198,7 +200,7 @@ if getattr(settings, 'MPTT_USE_FEINCMS', True):
                         _('Add child'),
                         settings.ADMIN_MEDIA_PREFIX,
                         _('Add child')))
-                
+
                 if hasattr(obj, 'get_absolute_url'):
                     actions.insert(0,
                         u'<a href="%s" title="%s" target="_blank"><img src="%simg/admin/selector-search.gif" alt="%s" /></a>' % (
@@ -207,7 +209,7 @@ if getattr(settings, 'MPTT_USE_FEINCMS', True):
                             settings.ADMIN_MEDIA_PREFIX,
                             _('View on site')))
                 return actions
-            
+
             def delete_selected_tree(self, modeladmin, request, queryset):
                 """
                 Deletes multiple instances and makes sure the MPTT fields get recalculated properly.

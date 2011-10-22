@@ -1,14 +1,10 @@
 from django.conf import settings
-from django.contrib.admin.util import lookup_field, display_for_field, label_for_field
-from django.contrib.admin.views.main import (ALL_VAR, EMPTY_CHANGELIST_VALUE,
-    ORDER_VAR, ORDER_TYPE_VAR, PAGE_VAR, SEARCH_VAR)
+from django.contrib.admin.util import lookup_field, display_for_field
+from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
-from django.utils import dateformat
 from django.utils.html import escape, conditional_escape
-from django.utils.text import capfirst
 from django.utils.safestring import mark_safe
-from django.utils.translation import get_date_formats
 from django.utils.encoding import smart_unicode, force_unicode
 from django.template import Library
 
@@ -20,6 +16,7 @@ register = Library()
 
 MPTT_ADMIN_LEVEL_INDENT = getattr(settings, 'MPTT_ADMIN_LEVEL_INDENT', 10)
 
+
 ###
 # Ripped from contrib.admin's (1.3.1) items_for_result tag.
 # The only difference is we're indenting nodes according to their level.
@@ -29,7 +26,7 @@ def mptt_items_for_result(cl, result, form):
     """
     first = True
     pk = cl.lookup_opts.pk.attname
-    
+
     ##### MPTT ADDITION START
     # figure out which field to indent
     mptt_indent_field = getattr(cl.model_admin, 'mptt_indent_field', None)
@@ -48,10 +45,10 @@ def mptt_items_for_result(cl, result, form):
                 mptt_indent_field = field_name
                 break
     ##### MPTT ADDITION END
-    
+
     # figure out how much to indent
     mptt_level_indent = getattr(cl.model_admin, 'mptt_level_indent', MPTT_ADMIN_LEVEL_INDENT)
-    
+
     for field_name in cl.list_display:
         row_class = ''
         try:
@@ -90,7 +87,7 @@ def mptt_items_for_result(cl, result, form):
                     row_class = ' class="nowrap"'
         if force_unicode(result_repr) == '':
             result_repr = mark_safe('&nbsp;')
-        
+
         ##### MPTT ADDITION START
         if field_name == mptt_indent_field:
             level = getattr(result, result._mptt_meta.level_attr)
@@ -98,10 +95,10 @@ def mptt_items_for_result(cl, result, form):
         else:
             padding_attr = ''
         ##### MPTT ADDITION END
-        
+
         # If list_display_links not defined, add the link tag to the first field
         if (first and not cl.list_display_links) or field_name in cl.list_display_links:
-            table_tag = {True:'th', False:'td'}[first]
+            table_tag = {True: 'th', False: 'td'}[first]
             first = False
             url = cl.url_for_result(result)
             # Convert the pk to something that can be used in Javascript.
@@ -150,7 +147,7 @@ def mptt_result_list(cl):
     return {'cl': cl,
             'result_headers': list(result_headers(cl)),
             'results': list(mptt_results(cl))}
-            
+
 # custom template is merely so we can strip out sortable-ness from the column headers
 # Based on admin/change_list_results.html (1.3.1)
 mptt_result_list = register.inclusion_tag("admin/mptt_change_list_results.html")(mptt_result_list)

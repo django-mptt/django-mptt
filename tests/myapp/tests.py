@@ -5,13 +5,14 @@ from django.test import TestCase
 from mptt.exceptions import InvalidMove
 from myapp.models import Category, Genre
 
+
 def get_tree_details(nodes):
     """
     Creates pertinent tree details for the given list of nodes.
     The fields are:
         id  parent_id  tree_id  level  left  right
     """
-    
+
     opts = nodes[0]._mptt_meta
     return '\n'.join(['%s %s %s %s %s %s' %
                       (n.pk, getattr(n, '%s_id' % opts.parent_attr) or '-',
@@ -20,6 +21,7 @@ def get_tree_details(nodes):
                       for n in nodes])
 
 leading_whitespace_re = re.compile(r'^\s+', re.MULTILINE)
+
 
 def tree_details(text):
     """
@@ -30,13 +32,15 @@ def tree_details(text):
     """
     return leading_whitespace_re.sub('', text)
 
-class DocTestTestCase(TestCase):
 
+class DocTestTestCase(TestCase):
     def test_run_doctest(self):
         class DummyStream:
             content = ""
+
             def write(self, text):
                 self.content += text
+
         dummy_stream = DummyStream()
         import sys
         before = sys.stdout
@@ -62,6 +66,7 @@ class DocTestTestCase(TestCase):
 # 9 - 2 0 1 6    rpg
 # 10 9 2 1 2 3   |-- arpg
 # 11 9 2 1 4 5   +-- trpg
+
 
 class ReparentingTestCase(TestCase):
     """
@@ -201,7 +206,7 @@ class ReparentingTestCase(TestCase):
                                          9 - 2 0 1 6
                                          10 9 2 1 2 3
                                          11 9 2 1 4 5"""))
-        
+
     def test_move_to(self):
         rpg = Genre.objects.get(pk=9)
         action = Genre.objects.get(pk=1)
@@ -241,6 +246,7 @@ class ReparentingTestCase(TestCase):
 # 8 1 1 1 14 19   +-- ps3
 # 9 8 1 2 15 16       |-- ps3_games
 # 10 8 1 2 17 18      +-- ps3_hardware
+
 
 class DeletionTestCase(TestCase):
     """
@@ -329,11 +335,14 @@ class DeletionTestCase(TestCase):
                                          9 8 1 2 9 10
                                          10 8 1 2 11 12"""))
 
+
 class IntraTreeMovementTestCase(TestCase):
     pass
 
+
 class InterTreeMovementTestCase(TestCase):
     pass
+
 
 class PositionedInsertionTestCase(TestCase):
     pass

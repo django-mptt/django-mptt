@@ -2,6 +2,7 @@
 MPTT exceptions.
 """
 
+
 class InvalidMove(Exception):
     """
     An invalid node move was attempted.
