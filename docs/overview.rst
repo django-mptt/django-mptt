@@ -16,16 +16,12 @@ The trade-off for this efficiency is that performing inserts and moving
 items around the tree is more involved, as there's some extra work
 required to keep the tree structure in a good state at all times.
 
-Here are a few articles about MPTT to whet your appetite and provide
+Here's a good article about MPTT to whet your appetite and provide
 details about how the technique itself works:
 
-    * `Trees in SQL`_
     * `Storing Hierarchical Data in a Database`_
-    * `Managing Hierarchical Data in MySQL`_
 
-.. _`Trees in SQL`: http://www.intelligententerprise.com/001020/celko.jhtml
 .. _`Storing Hierarchical Data in a Database`: http://www.sitepoint.com/print/hierarchical-data-database
-.. _`Managing Hierarchical Data in MySQL`: http://dev.mysql.com/tech-resources/articles/hierarchical-data.html
 
 
 What is ``django-mptt``?
@@ -69,3 +65,10 @@ Feature overview
 * Utility functions for tree models.
 
 * Template tags and filters for rendering trees.
+
+* Translations for:
+
+  * Danish
+  * French
+  * German
+  * Polish
