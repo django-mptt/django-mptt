@@ -11,6 +11,7 @@ you up and running:
    
    overview
    install
+   tutorial
 
 Topic docs:
 
