@@ -168,6 +168,7 @@ def print_debug_info(qs):
         writer.writerow(row)
 
 
+# NOTE we don't support django 1.1 anymore, so this stuff is likely to get removed soon
 def _exists(qs):
     """
     For Django 1.1 compatibility. (QuerySet.exists() was added in 1.2)

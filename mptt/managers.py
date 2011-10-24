@@ -9,6 +9,7 @@ try:
     from django.db import connections, router
 except ImportError:
     # multi db support was new in django 1.2
+    # NOTE we don't support django 1.1 anymore, so this stuff is likely to get removed soon
     connections = None
     router = None
 

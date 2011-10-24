@@ -522,6 +522,7 @@ class MPTTModel(models.Model):
         else:
             if not hasattr(self, '_mptt_saved'):
                 manager = self.__class__._base_manager
+                # NOTE we don't support django 1.1 anymore, so this is likely to get removed soon
                 if hasattr(manager, 'using'):
                     # multi db support was added in django 1.2
                     manager = manager.using(using)
