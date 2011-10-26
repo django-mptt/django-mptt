@@ -22,12 +22,14 @@ class MPTTOptions(object):
     """
 
     order_insertion_by = []
-    tree_manager_attr = 'objects'
     left_attr = 'lft'
     right_attr = 'rght'
     tree_id_attr = 'tree_id'
     level_attr = 'level'
     parent_attr = 'parent'
+
+    # deprecated, don't use this
+    tree_manager_attr = 'tree'
 
     def __init__(self, opts=None, **kwargs):
         # Override defaults with options provided
@@ -217,18 +219,51 @@ class MPTTModelBase(ModelBase):
 
             # Add a tree manager, if there isn't one already
             if not abstract:
-                tree_manager_attr = cls._mptt_meta.tree_manager_attr
-                manager = getattr(cls, tree_manager_attr, None)
-                if not manager:
-                    manager = cls._default_manager
+                manager = getattr(cls, 'objects', None)
+                if manager is None:
+                    manager = cls._default_manager._copy_to_model(cls)
+                    manager.contribute_to_class(cls, 'objects')
+                if hasattr(manager, 'init_from_model'):
+                    manager.init_from_model(cls)
+
+                # make sure we have a tree manager somewhere
                 if not isinstance(manager, TreeManager):
                     manager = TreeManager()
-                elif manager.model != cls:
-                    manager = manager._copy_to_model(cls)
-                manager.contribute_to_class(cls, tree_manager_attr)
-                manager.init_from_model(cls)
+                    manager.contribute_to_class(cls, '_tree_manager')
+                    manager.init_from_model(cls)
+                else:
+                    setattr(cls, '_tree_manager', manager)
 
-                setattr(cls, '_tree_manager', manager)
+                # for backwards compatibility, add .tree too (or whatever's in tree_manager_attr)
+                tree_manager_attr = cls._mptt_meta.tree_manager_attr
+                if tree_manager_attr != 'objects':
+                    another = getattr(cls, tree_manager_attr, None)
+                    if another is None:
+                        # wrap with a warning on first use
+                        from django.db.models.manager import ManagerDescriptor
+
+                        class _WarningDescriptor(ManagerDescriptor):
+                            def __init__(self, manager):
+                                self.manager = manager
+                                self.used = False
+
+                            def __get__(self, instance, type=None):
+                                if instance != None:
+                                    raise AttributeError("Manager isn't accessible via %s instances" % type.__name__)
+
+                                if not self.used:
+                                    warnings.warn(
+                                        'Implicit manager %s.%s will be removed in django-mptt 0.6. '
+                                        ' Explicitly define a TreeManager() on your model to remove this warning.'
+                                        % (cls.__name__, tree_manager_attr),
+                                        DeprecationWarning
+                                    )
+                                    self.used = True
+                                return self.manager
+
+                        setattr(cls, tree_manager_attr, _WarningDescriptor(manager))
+                    elif hasattr(another, 'init_from_model'):
+                        another.init_from_model(cls)
 
         return cls
 
