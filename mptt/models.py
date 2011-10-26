@@ -231,8 +231,9 @@ class MPTTModelBase(ModelBase):
                     manager = TreeManager()
                     manager.contribute_to_class(cls, '_tree_manager')
                     manager.init_from_model(cls)
-                else:
-                    setattr(cls, '_tree_manager', manager)
+
+                # avoid using ManagerDescriptor, so instances can refer to self._tree_manager
+                setattr(cls, '_tree_manager', manager)
 
                 # for backwards compatibility, add .tree too (or whatever's in tree_manager_attr)
                 tree_manager_attr = cls._mptt_meta.tree_manager_attr
