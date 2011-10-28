@@ -45,15 +45,20 @@ class TreeNodeChoiceField(forms.ModelChoiceField):
 class TreeNodeMultipleChoiceField(TreeNodeChoiceField, forms.ModelMultipleChoiceField):
     """A ModelMultipleChoiceField for tree nodes."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, queryset, *args, **kwargs):
         self.level_indicator = kwargs.pop('level_indicator', u'---')
         if kwargs.get('required', True) and not 'empty_label' in kwargs:
             kwargs['empty_label'] = None
 
+        # if a queryset is supplied, enforce ordering
+        if hasattr(queryset, 'model'):
+            mptt_opts = queryset.model._mptt_meta
+            queryset = queryset.order_by(mptt_opts.tree_id_attr, mptt_opts.left_attr)
+
         # For some reason ModelMultipleChoiceField constructor passes kwargs
         # as args to its super(), which causes 'multiple values for keyword arg'
         # error sometimes. So we skip it (that constructor does nothing anyway!)
-        forms.ModelChoiceField.__init__(self, *args, **kwargs)
+        forms.ModelChoiceField.__init__(self, queryset, *args, **kwargs)
 
 
 class TreeNodePositionField(forms.ChoiceField):

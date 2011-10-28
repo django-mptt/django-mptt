@@ -2,8 +2,10 @@
 Model fields for working with trees.
 """
 
+__all__ = ('TreeForeignKey', 'TreeOneToOneField', 'TreeManyToManyField')
+
 from django.db import models
-from mptt.forms import TreeNodeChoiceField
+from mptt.forms import TreeNodeChoiceField, TreeNodeMultipleChoiceField
 
 
 class TreeForeignKey(models.ForeignKey):
@@ -19,13 +21,26 @@ class TreeForeignKey(models.ForeignKey):
         """
         Use MPTT's ``TreeNodeChoiceField``
         """
-        defaults = {'form_class': TreeNodeChoiceField}
-        defaults.update(kwargs)
-        return super(TreeForeignKey, self).formfield(**defaults)
+        kwargs.setdefault('form_class', TreeNodeChoiceField)
+        return super(TreeForeignKey, self).formfield(**kwargs)
 
-# South integration for the TreeForeignKey
+
+class TreeOneToOneField(models.OneToOneField):
+    def formfield(self, **kwargs):
+        kwargs.setdefault('form_class', TreeNodeChoiceField)
+        return super(TreeOneToOneField, self).formfield(**kwargs)
+
+
+class TreeManyToManyField(models.ManyToManyField):
+    def formfield(self, **kwargs):
+        kwargs.setdefault('form_class', TreeNodeMultipleChoiceField)
+        return super(TreeManyToManyField, self).formfield(**kwargs)
+
+# South integration
 try:
     from south.modelsinspector import add_introspection_rules
     add_introspection_rules([], ["^mptt\.fields\.TreeForeignKey"])
+    add_introspection_rules([], ["^mptt\.fields\.TreeOneToOneField"])
+    add_introspection_rules([], ["^mptt\.fields\.TreeManyToManyField"])
 except ImportError:
     pass
