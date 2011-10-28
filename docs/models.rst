@@ -272,8 +272,8 @@ safe to go on to save it or use its tree fields after you've called this
 method.
 
 
-``TreeForeignKey``
-==================
+``TreeForeignKey``, ``TreeOneToOneField``, ``TreeManyToManyField``
+==================================================================
 
 .. versionadded:: 0.5
 
@@ -283,6 +283,8 @@ created on your model.
 
 ``TreeForeignKey`` is just like a regular ``ForeignKey`` but it makes the default
 form field display choices in tree form.
+
+There are also ``TreeOneToOneField`` and ``TreeManyToManyField`` if you need them.
 
 
 The ``TreeManager`` custom manager
