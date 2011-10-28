@@ -167,7 +167,23 @@ class MPTTModelBase(ModelBase):
          - adds the MPTT fields to the class
          - adds a TreeManager to the model
         """
-        class_dict['_mptt_meta'] = MPTTOptions(class_dict.pop('MPTTMeta', None))
+        MPTTMeta = class_dict.pop('MPTTMeta', None)
+        if not MPTTMeta:
+            class MPTTMeta:
+                pass
+
+        initial_options = set(dir(MPTTMeta))
+
+        # extend MPTTMeta from base classes
+        for base in bases:
+            if hasattr(base, '_mptt_meta'):
+                for (name, value) in base._mptt_meta:
+                    if name == 'tree_manager_attr':
+                        continue
+                    if name not in initial_options:
+                        setattr(MPTTMeta, name, value)
+
+        class_dict['_mptt_meta'] = MPTTOptions(MPTTMeta)
         cls = super(MPTTModelBase, meta).__new__(meta, class_name, bases, class_dict)
 
         return meta.register(cls)
