@@ -8,7 +8,7 @@ from django.utils.safestring import mark_safe
 from django.utils.encoding import smart_unicode, force_unicode
 from django.template import Library
 
-from django.contrib.admin.templatetags.admin_list import _boolean_icon, result_headers
+from django.contrib.admin.templatetags.admin_list import _boolean_icon, result_headers, result_hidden_fields
 
 
 register = Library()
@@ -145,6 +145,7 @@ def mptt_result_list(cl):
     Displays the headers and data list together
     """
     return {'cl': cl,
+            'result_hidden_fields': list(result_hidden_fields(cl)),
             'result_headers': list(result_headers(cl)),
             'results': list(mptt_results(cl))}
 
