@@ -265,17 +265,20 @@ class MPTTModelBase(ModelBase):
                 if manager is None:
                     manager = cls._default_manager._copy_to_model(cls)
                     manager.contribute_to_class(cls, 'objects')
+                elif manager.model != cls:
+                    # manager was inherited
+                    manager = manager._copy_to_model(cls)
+                    manager.contribute_to_class(cls, 'objects')
                 if hasattr(manager, 'init_from_model'):
                     manager.init_from_model(cls)
 
                 # make sure we have a tree manager somewhere
-                if not isinstance(manager, TreeManager):
-                    manager = TreeManager()
-                    manager.contribute_to_class(cls, '_tree_manager')
-                    manager.init_from_model(cls)
+                tree_manager = TreeManager()
+                tree_manager.contribute_to_class(cls, '_tree_manager')
+                tree_manager.init_from_model(cls)
 
                 # avoid using ManagerDescriptor, so instances can refer to self._tree_manager
-                setattr(cls, '_tree_manager', manager)
+                setattr(cls, '_tree_manager', tree_manager)
 
                 # for backwards compatibility, add .tree too (or whatever's in tree_manager_attr)
                 tree_manager_attr = cls._mptt_meta.tree_manager_attr
