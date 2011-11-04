@@ -503,17 +503,21 @@ class MPTTModel(models.Model):
             parent__isnull=True
         ).get()
 
-    def get_siblings(self, include_self=False):
+    def get_siblings(self, include_self=False, root_siblings=True):
         """
         Creates a ``QuerySet`` containing siblings of this model
-        instance. Root nodes are considered to be siblings of other root
-        nodes.
+        instance.
+
+        If ``root_siblings`` is ``True``, root nodes are considered to be
+        siblings of other root nodes.
 
         If ``include_self`` is ``True``, the ``QuerySet`` will also
         include this model instance.
         """
         if self.is_root_node():
             queryset = self._tree_manager._mptt_filter(parent__isnull=True)
+            if not root_siblings:
+                queryset = queryset.filter(tree_id=self.tree_id)
         else:
             parent_id = getattr(self, '%s_id' % self._mptt_meta.parent_attr)
             queryset = self._tree_manager._mptt_filter(parent__id=parent_id)

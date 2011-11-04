@@ -346,3 +346,18 @@ class InterTreeMovementTestCase(TestCase):
 
 class PositionedInsertionTestCase(TestCase):
     pass
+
+
+class QueriesTestCase(TestCase):
+    """ Tests that node queries behave as expected. """
+    fixtures = ['genres.json']
+
+    def test_get_siblings_with_root_siblings(self):
+        action = Genre.objects.get(pk=1)
+        siblings = action.get_siblings()
+        self.assertEqual(siblings.count(), 1)
+
+    def test_get_siblings_without_root_siblings(self):
+        action = Genre.objects.get(pk=1)
+        siblings = action.get_siblings(root_siblings=False)
+        self.assertEqual(siblings.count(), 0)
