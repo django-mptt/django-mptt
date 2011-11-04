@@ -2,8 +2,8 @@
 Upgrade notes
 =============
 
-Development version - since 0.4.2
-=================================
+0.4.2 to 0.5.1
+==============
 
 ``TreeManager`` is now the default manager, ``YourModel.tree`` removed
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
