@@ -374,7 +374,7 @@ class MPTTModel(models.Model):
 
         return qs.order_by(order_by)
 
-    def get_children(self):
+    def get_children(self, from_cache=True):
         """
         Returns a ``QuerySet`` containing the immediate children of this
         model instance, in tree order.
@@ -388,7 +388,7 @@ class MPTTModel(models.Model):
         ``cache_tree_children`` filter, no database query is required.
         """
 
-        if hasattr(self, '_cached_children'):
+        if hasattr(self, '_cached_children') and from_cache:
             return self._cached_children
         else:
             if self.is_leaf_node():
