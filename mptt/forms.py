@@ -47,8 +47,9 @@ class TreeNodeMultipleChoiceField(TreeNodeChoiceField, forms.ModelMultipleChoice
 
     def __init__(self, queryset, *args, **kwargs):
         self.level_indicator = kwargs.pop('level_indicator', u'---')
-        if kwargs.get('required', True) and not 'empty_label' in kwargs:
-            kwargs['empty_label'] = None
+
+        # MultipleChoice fields don't need an empty label
+        kwargs['empty_label'] = None
 
         # if a queryset is supplied, enforce ordering
         if hasattr(queryset, 'model'):
