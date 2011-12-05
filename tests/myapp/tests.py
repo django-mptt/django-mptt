@@ -360,8 +360,8 @@ class CustomPKNameTestCase(TestCase):
         c3 = CustomPKName.objects.create(name="c3")
 
     def test_get_next_sibling(self):
-        root = CustomPKName.objects.get(name="c1")
+        root = CustomPKName.objects.get(name="c12")
         sib = root.get_next_sibling()
-        self.assertEqual(sib.name, "c2")
+        self.assertTrue(sib is None)
 
 
