@@ -85,7 +85,7 @@ descendants into the new format required:
          new_right = current_right - new_root_node.left + 1
 
    3. A new tree id will be generated for the new root node, so update
-      the node and all descendents with this value.
+      the node and all descendants with this value.
 
 This can be expressed as a single SQL query::
 
@@ -148,7 +148,7 @@ required:
          new_left = current_left + new_parent.right - 1
          new_right = current_right + new_parent.right - 1
 
-   3. Update the node and all descendents with the tree id of the tree
+   3. Update the node and all descendants with the tree id of the tree
       they're moving to.
 
 This is a similar query to that used when creating new root nodes from

@@ -43,7 +43,9 @@ class MPTTModelAdmin(ModelAdmin):
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         from mptt.models import MPTTModel, TreeForeignKey
-        if issubclass(db_field.rel.to, MPTTModel) and not isinstance(db_field, TreeForeignKey):
+        if issubclass(db_field.rel.to, MPTTModel) \
+                and not isinstance(db_field, TreeForeignKey) \
+                and not db_field.name in self.raw_id_fields:
             defaults = dict(form_class=TreeNodeChoiceField, queryset=db_field.rel.to.objects.all(), required=False)
             defaults.update(kwargs)
             kwargs = defaults

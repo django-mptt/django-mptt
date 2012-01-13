@@ -387,9 +387,10 @@ class MPTTModel(models.Model):
         If called from a template where the tree has been walked by the
         ``cache_tree_children`` filter, no database query is required.
         """
-
         if hasattr(self, '_cached_children'):
-            return self._cached_children
+            qs = self._tree_manager.filter(pk__in=[n.pk for n in self._cached_children])
+            qs._result_cache = self._cached_children
+            return qs
         else:
             if self.is_leaf_node():
                 return self._tree_manager.none()

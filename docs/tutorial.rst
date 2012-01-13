@@ -31,13 +31,13 @@ Modified Preorder Tree Traversal can be a bit daunting at first, but it's one of
 If you want to go into the details, there's a good explanation here: `Storing Hierarchical Data in a Database`_
 
 tl;dr: MPTT makes most tree operations much cheaper in terms of queries. In fact all these operations take at most one query, and sometimes zero:
- * get descendents of a node
+ * get descendants of a node
  * get ancestors of a node
  * get all nodes at a given level
  * get leaf nodes
 
 And this one takes zero queries:
- * count the descendents of a given node
+ * count the descendants of a given node
 
 .. _`Storing Hierarchical Data in a Database`: http://www.sitepoint.com/hierarchical-data-database/
 
