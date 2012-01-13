@@ -176,14 +176,19 @@ class MPTTModelAdmin(ModelAdmin):
 
 
 if getattr(settings, 'MPTT_USE_FEINCMS', True):
+    _feincms_tree_editor = None
     try:
-        from feincms.admin import editor
+        from feincms.admin.tree_editor import TreeEditor as _feincms_tree_editor
     except ImportError:
-        pass
-    else:
+        try:
+            # old versions of feincms (this causes a deprecation warning since 1.5+)
+            from feincms.admin.editor import TreeEditor as _feincms_tree_editor
+        except ImportError:
+            pass
+    if _feincms_tree_editor is not None:
         __all__ = tuple(list(__all__) + ['FeinCMSModelAdmin'])
 
-        class FeinCMSModelAdmin(editor.TreeEditor):
+        class FeinCMSModelAdmin(_feincms_tree_editor):
             """
             A ModelAdmin to add changelist tree view and editing capabilities.
             Requires FeinCMS to be installed.
