@@ -2,7 +2,7 @@
 Upgrade notes
 =============
 
-0.4.2 to 0.5.1
+0.4.2 to 0.5.2
 ==============
 
 ``TreeManager`` is now the default manager, ``YourModel.tree`` removed
