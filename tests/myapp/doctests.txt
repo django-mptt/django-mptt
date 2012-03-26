@@ -190,6 +190,25 @@
 </select></td></tr>
 
 # TreeManager Methods #########################################################
+# check that tree manager is the explicitly defined tree manager for Person
+>>> Person._tree_manager == Person.my_tree_manager
+True
+
+# managers of non-abstract bases don't get inherited, so:
+>>> Student._tree_manager == Student.my_tree_manager
+False
+
+>>> Student._tree_manager == Person._tree_manager
+False
+
+>>> Student._tree_manager.model
+<class 'myapp.models.Student'>
+>>> Student._tree_manager.tree_model
+<class 'myapp.models.Person'>
+>>> Person._tree_manager.model
+<class 'myapp.models.Person'>
+>>> Person._tree_manager.tree_model
+<class 'myapp.models.Person'>
 
 >>> Genre.objects.root_node(action.tree_id)
 <Genre: Action>

@@ -273,7 +273,18 @@ class MPTTModelBase(ModelBase):
                     manager.init_from_model(cls)
 
                 # make sure we have a tree manager somewhere
-                tree_manager = TreeManager()
+                tree_manager = None
+                for attr in sorted(dir(cls)):
+                    obj = getattr(cls, attr)
+                    if isinstance(obj, TreeManager):
+                        tree_manager = obj
+                        # prefer any locally defined manager (i.e. keep going if not local)
+                        if obj.model is cls:
+                            break
+                if tree_manager and tree_manager.model is not cls:
+                    tree_manager = tree_manager._copy_to_model(cls)
+                elif tree_manager is None:
+                    tree_manager = TreeManager()
                 tree_manager.contribute_to_class(cls, '_tree_manager')
                 tree_manager.init_from_model(cls)
 
