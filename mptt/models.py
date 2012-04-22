@@ -275,7 +275,10 @@ class MPTTModelBase(ModelBase):
                 # make sure we have a tree manager somewhere
                 tree_manager = None
                 for attr in sorted(dir(cls)):
-                    obj = getattr(cls, attr)
+                    try:
+                        obj = getattr(cls, attr)
+                    except AttributeError:
+                        continue
                     if isinstance(obj, TreeManager):
                         tree_manager = obj
                         # prefer any locally defined manager (i.e. keep going if not local)
