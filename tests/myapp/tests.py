@@ -118,6 +118,7 @@ class ReparentingTestCase(TestCase):
         action.parent = rpg
         action.save()
         self.assertEqual(get_tree_details([action]), '1 9 2 1 6 21')
+        self.assertEqual(get_tree_details([rpg]), '9 - 2 0 1 22')
         self.assertEqual(get_tree_details(Genre.objects.all()),
                          tree_details("""9 - 2 0 1 22
                                          10 9 2 1 2 3
@@ -137,6 +138,7 @@ class ReparentingTestCase(TestCase):
         shmup_horizontal.parent = rpg
         shmup_horizontal.save()
         self.assertEqual(get_tree_details([shmup_horizontal]), '8 9 2 1 6 7')
+        self.assertEqual(get_tree_details([rpg]), '9 - 2 0 1 8')
         self.assertEqual(get_tree_details(Genre.objects.all()),
                          tree_details("""1 - 1 0 1 14
                                          2 1 1 1 2 9
@@ -156,6 +158,7 @@ class ReparentingTestCase(TestCase):
         shmup.parent = trpg
         shmup.save()
         self.assertEqual(get_tree_details([shmup]), '6 11 2 2 5 10')
+        self.assertEqual(get_tree_details([trpg]), '11 9 2 1 4 11')
         self.assertEqual(get_tree_details(Genre.objects.all()),
                          tree_details("""1 - 1 0 1 10
                                          2 1 1 1 2 9
@@ -175,6 +178,7 @@ class ReparentingTestCase(TestCase):
         shmup_horizontal.parent = action
         shmup_horizontal.save()
         self.assertEqual(get_tree_details([shmup_horizontal]), '8 1 1 1 14 15')
+        self.assertEqual(get_tree_details([action]), '1 - 1 0 1 16')
         self.assertEqual(get_tree_details(Genre.objects.all()),
                          tree_details("""1 - 1 0 1 16
                                          2 1 1 1 2 9
@@ -194,6 +198,7 @@ class ReparentingTestCase(TestCase):
         shmup.parent = platformer
         shmup.save()
         self.assertEqual(get_tree_details([shmup]), '6 2 1 2 9 14')
+        self.assertEqual(get_tree_details([platformer]), '2 1 1 1 2 15')
         self.assertEqual(get_tree_details(Genre.objects.all()),
                          tree_details("""1 - 1 0 1 16
                                          2 1 1 1 2 15
