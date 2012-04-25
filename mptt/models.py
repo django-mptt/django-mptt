@@ -321,7 +321,7 @@ class MPTTModelBase(ModelBase):
                                     self.used = True
                                 return self.manager
 
-                        setattr(cls, tree_manager_attr, _WarningDescriptor(manager))
+                        setattr(cls, tree_manager_attr, _WarningDescriptor(tree_manager))
                     elif hasattr(another, 'init_from_model'):
                         another.init_from_model(cls)
 
