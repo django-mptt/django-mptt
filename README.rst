@@ -28,9 +28,9 @@ details about how the technique itself works:
     * `Storing Hierarchical Data in a Database`_
     * `Managing Hierarchical Data in MySQL`_
 
-.. _`Trees in SQL`: http://www.intelligententerprise.com/001020/celko.jhtml
+.. _`Trees in SQL`: http://www.ibase.ru/devinfo/DBMSTrees/sqltrees.html
 .. _`Storing Hierarchical Data in a Database`: http://www.sitepoint.com/print/hierarchical-data-database
-.. _`Managing Hierarchical Data in MySQL`: http://dev.mysql.com/tech-resources/articles/hierarchical-data.html
+.. _`Managing Hierarchical Data in MySQL`: http://mirror.neu.edu.cn/mysql/tech-resources/articles/hierarchical-data.html
 
 
 What is ``django-mptt``?
