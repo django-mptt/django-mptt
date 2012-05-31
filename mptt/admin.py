@@ -200,20 +200,25 @@ if getattr(settings, 'MPTT_USE_FEINCMS', True):
 
             def _actions_column(self, obj):
                 actions = super(FeinCMSModelAdmin, self)._actions_column(obj)
+                # compatibility with Django 1.4 admin images
+                if django.VERSION >= (1, 4):
+                    admin_img_prefix = "%simg/" % settings.ADMIN_MEDIA_PREFIX
+                else:
+                    admin_img_prefix = "%simg/admin/" % settings.ADMIN_MEDIA_PREFIX
                 actions.insert(0,
-                    u'<a href="add/?%s=%s" title="%s"><img src="%simg/admin/icon_addlink.gif" alt="%s" /></a>' % (
+                    u'<a href="add/?%s=%s" title="%s"><img src="%sicon_addlink.gif" alt="%s" /></a>' % (
                         self.model._mptt_meta.parent_attr,
                         obj.pk,
                         _('Add child'),
-                        settings.ADMIN_MEDIA_PREFIX,
+                        admin_img_prefix,
                         _('Add child')))
 
                 if hasattr(obj, 'get_absolute_url'):
                     actions.insert(0,
-                        u'<a href="%s" title="%s" target="_blank"><img src="%simg/admin/selector-search.gif" alt="%s" /></a>' % (
+                        u'<a href="%s" title="%s" target="_blank"><img src="%sselector-search.gif" alt="%s" /></a>' % (
                             obj.get_absolute_url(),
                             _('View on site'),
-                            settings.ADMIN_MEDIA_PREFIX,
+                            admin_img_prefix,
                             _('View on site')))
                 return actions
 
