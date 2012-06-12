@@ -182,11 +182,8 @@ if getattr(settings, 'MPTT_USE_FEINCMS', True):
     try:
         from feincms.admin.tree_editor import TreeEditor as _feincms_tree_editor
     except ImportError:
-        try:
-            # old versions of feincms (this causes a deprecation warning since 1.5+)
-            from feincms.admin.editor import TreeEditor as _feincms_tree_editor
-        except ImportError:
-            pass
+        pass
+
     if _feincms_tree_editor is not None:
         __all__ = tuple(list(__all__) + ['FeinCMSModelAdmin'])
 
