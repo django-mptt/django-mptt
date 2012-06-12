@@ -10,7 +10,7 @@ classes in ``django-mptt.admin``:
 MPTTModelAdmin
 --------------
 
-This is a bare-bones tree admin. All it does is enforce ordering, and indent the nodes 
+This is a bare-bones tree admin. All it does is enforce ordering, and indent the nodes
 in the tree to make a pretty tree list view.
 
 Usage::
@@ -21,14 +21,14 @@ Usage::
 
     admin.site.register(Node, MPTTModelAdmin)
 
-You can change the indent pixels per level globally by putting this in your 
+You can change the indent pixels per level globally by putting this in your
 settings.py::
 
     # default is 10 pixels
     MPTT_ADMIN_LEVEL_INDENT = 20
 
-If you'd like to specify the pixel amount per Model, define an ``mptt_level_indent`` 
-attribute in your MPTTModelAdmin:: 
+If you'd like to specify the pixel amount per Model, define an ``mptt_level_indent``
+attribute in your MPTTModelAdmin::
 
     from django.contrib import admin
     from mptt.admin import MPTTModelAdmin
@@ -40,8 +40,8 @@ attribute in your MPTTModelAdmin::
 
     admin.site.register(Node, CustomMPTTModelAdmin)
 
-If you'd like to specify which field should be indented, add an ``mptt_indent_field`` 
-to your MPTTModelAdmin:: 
+If you'd like to specify which field should be indented, add an ``mptt_indent_field``
+to your MPTTModelAdmin::
 
     # …
     class CustomMPTTModelAdmin(MPTTModelAdmin)
@@ -58,4 +58,4 @@ In addition to enforcing ordering and indenting the nodes, it has:
  - Javascript expand/collapse for parent nodes
  - Javascript widgets for moving nodes on the list view page
 
-.. _`FeinCMS`: http://www.feinheit.ch/labs/feincms-django-cms/
+.. _`FeinCMS`: http://www.feincms.org/
