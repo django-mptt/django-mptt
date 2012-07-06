@@ -164,7 +164,7 @@ class MoveNodeForm(forms.Form):
 class MPTTAdminForm(forms.ModelForm):
     """
     A form which validates that the chosen parent for a node isn't one of
-    it's descendants.
+    its descendants.
     """
     def clean(self):
         cleaned_data = super(MPTTAdminForm, self).clean()
