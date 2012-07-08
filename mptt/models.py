@@ -463,12 +463,12 @@ class MPTTModel(models.Model):
             left=(models.F(self._mptt_meta.right_attr) - 1)
         )
 
-    def get_next_sibling(self, **filters):
+    def get_next_sibling(self, *filter_args, **filter_kwargs):
         """
         Returns this model instance's next sibling in the tree, or
         ``None`` if it doesn't have a next sibling.
         """
-        qs = self._tree_manager.filter(**filters)
+        qs = self._tree_manager.filter(*filter_args, **filter_kwargs)
         if self.is_root_node():
             qs = self._tree_manager._mptt_filter(qs,
                 parent__isnull=True,
@@ -483,13 +483,13 @@ class MPTTModel(models.Model):
         siblings = qs[:1]
         return siblings and siblings[0] or None
 
-    def get_previous_sibling(self, **filters):
+    def get_previous_sibling(self, *filter_args, **filter_kwargs):
         """
         Returns this model instance's previous sibling in the tree, or
         ``None`` if it doesn't have a previous sibling.
         """
         opts = self._mptt_meta
-        qs = self._tree_manager.filter(**filters)
+        qs = self._tree_manager.filter(*filter_args, **filter_kwargs)
         if self.is_root_node():
             qs = self._tree_manager._mptt_filter(qs,
                 parent__isnull=True,
