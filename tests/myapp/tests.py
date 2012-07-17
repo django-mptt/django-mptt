@@ -1,5 +1,7 @@
 import re
 
+import django
+from django.contrib import admin
 from django.test import TestCase
 
 from mptt.exceptions import InvalidMove
@@ -346,3 +348,30 @@ class InterTreeMovementTestCase(TestCase):
 
 class PositionedInsertionTestCase(TestCase):
     pass
+
+
+class FeinCMSModelAdminTestCase(TestCase):
+    """
+    Tests for FeinCMSModelAdmin.
+    """
+    fixtures = ['categories.json']
+
+    def setUp(self):
+        from mptt.admin import FeinCMSModelAdmin
+        self.model_admin = FeinCMSModelAdmin(Category, admin.site)
+
+    def test_actions_column(self):
+        """
+        The action column should have an "add" button inserted.
+        """
+        # See implementation notes.
+        if django.VERSION < (1, 4):
+            prefix = '/static/admin/img/admin/'
+        else:
+            prefix = '/static/admin/img/'
+
+        category = Category.objects.get(id=1)
+        self.assertEqual(self.model_admin._actions_column(category), [
+            u'<a href="add/?parent=1" title="Add child">'
+                u'<img src="%sicon_addlink.gif" alt="Add child" /></a>' % prefix,
+            '<div class="drag_handle"></div>'])
