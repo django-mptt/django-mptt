@@ -17,3 +17,6 @@ INSTALLED_APPS = (
     'mptt',
     'myapp',
 )
+
+# Required for Django 1.4+
+STATIC_URL = '/static/'

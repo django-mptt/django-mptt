@@ -200,9 +200,10 @@ if getattr(settings, 'MPTT_USE_FEINCMS', True):
 
             def _actions_column(self, obj):
                 actions = super(FeinCMSModelAdmin, self)._actions_column(obj)
-                # compatibility with Django 1.4 admin images
+                # compatibility with Django 1.4 admin images (issue #191):
+                # https://docs.djangoproject.com/en/1.4/releases/1.4/#django-contrib-admin
                 if django.VERSION >= (1, 4):
-                    admin_img_prefix = "%simg/" % settings.ADMIN_MEDIA_PREFIX
+                    admin_img_prefix = "%sadmin/img/" % settings.STATIC_URL
                 else:
                     admin_img_prefix = "%simg/admin/" % settings.ADMIN_MEDIA_PREFIX
                 actions.insert(0,
