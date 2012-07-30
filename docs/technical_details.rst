@@ -49,7 +49,7 @@ Since root node ordering is defined by tree id, it can also be used to
 implement movement of other nodes as siblings of a target root node.
 
 When you use the node movement API to move a node to be a sibling of a
-root node, tree ids are shuffled around to acheive the new ordering
+root node, tree ids are shuffled around to achieve the new ordering
 required. Given this, you should consider the tree id to be
 **volatile**, so it's recommended that you don't store tree ids in your
 applications to identify particular trees.
