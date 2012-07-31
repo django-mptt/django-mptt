@@ -1,4 +1,5 @@
 import operator
+import threading
 import warnings
 
 from django.db import models
@@ -186,7 +187,20 @@ class MPTTModelBase(ModelBase):
         class_dict['_mptt_meta'] = MPTTOptions(MPTTMeta)
         cls = super(MPTTModelBase, meta).__new__(meta, class_name, bases, class_dict)
 
+        cls._threadlocal = threading.local()
+        cls._mptt_updates_enabled = True
+
         return meta.register(cls)
+
+    def _get_mptt_updates_enabled(cls):
+        for supercls in cls.mro():
+            if isinstance(supercls, MPTTModelBase) and not supercls._threadlocal.mptt_updates_enabled:
+                return False
+        return True
+
+    def _set_mptt_updates_enabled(cls, value):
+        cls._threadlocal.mptt_updates_enabled = value
+    _mptt_updates_enabled = property(_get_mptt_updates_enabled, _set_mptt_updates_enabled)
 
     @classmethod
     def register(meta, cls, **kwargs):

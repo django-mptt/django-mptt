@@ -2,6 +2,7 @@
 Utilities for working with lists of model instances which represent
 trees.
 """
+
 import copy
 import csv
 import itertools

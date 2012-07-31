@@ -10,8 +10,8 @@ try:
 except ImportError:
     feincms = False
 
-from mptt.exceptions import InvalidMove
-from myapp.models import Category, Genre, CustomPKName
+from mptt.exceptions import CantDisableUpdates, InvalidMove
+from myapp.models import Category, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel, ConcreteModel
 
 
 def get_tree_details(nodes):
@@ -405,3 +405,37 @@ class CustomPKNameTestCase(TestCase):
         root = CustomPKName.objects.get(name="c12")
         sib = root.get_next_sibling()
         self.assertTrue(sib is None)
+
+
+class DisabledUpdatesTestCase(TestCase):
+    def test_single_proxy(self):
+        self.assertTrue(ConcreteModel._mptt_updates_enabled)
+        self.assertTrue(SingleProxyModel._mptt_updates_enabled)
+
+        self.assertRaises(CantDisableUpdates, SingleProxyModel.objects.disable_mptt_updates().__enter__)
+
+        self.assertTrue(ConcreteModel._mptt_updates_enabled)
+        self.assertTrue(SingleProxyModel._mptt_updates_enabled)
+
+        with ConcreteModel.objects.disable_mptt_updates():
+            self.assertFalse(ConcreteModel._mptt_updates_enabled)
+            self.assertFalse(SingleProxyModel._mptt_updates_enabled)
+
+        self.assertTrue(ConcreteModel._mptt_updates_enabled)
+        self.assertTrue(SingleProxyModel._mptt_updates_enabled)
+
+    def test_double_proxy(self):
+        self.assertTrue(ConcreteModel._mptt_updates_enabled)
+        self.assertTrue(DoubleProxyModel._mptt_updates_enabled)
+
+        self.assertRaises(CantDisableUpdates, DoubleProxyModel.objects.disable_mptt_updates().__enter__)
+
+        self.assertTrue(ConcreteModel._mptt_updates_enabled)
+        self.assertTrue(DoubleProxyModel._mptt_updates_enabled)
+
+        with ConcreteModel.objects.disable_mptt_updates():
+            self.assertFalse(ConcreteModel._mptt_updates_enabled)
+            self.assertFalse(DoubleProxyModel._mptt_updates_enabled)
+
+        self.assertTrue(ConcreteModel._mptt_updates_enabled)
+        self.assertTrue(DoubleProxyModel._mptt_updates_enabled)

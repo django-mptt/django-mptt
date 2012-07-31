@@ -1,6 +1,8 @@
 """
 A custom manager for working with trees of objects.
 """
+import contextlib
+
 from django.db import connection, models, transaction
 from django.db.models import F, Max
 from django.utils.translation import ugettext as _
@@ -13,7 +15,7 @@ except ImportError:
     connections = None
     router = None
 
-from mptt.exceptions import InvalidMove
+from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.utils import _exists
 
 __all__ = ('TreeManager',)
@@ -67,6 +69,57 @@ class TreeManager(models.Manager):
         if self.tree_model is not model:
             # _base_manager is the treemanager on tree_model
             self._base_manager = self.tree_model._tree_manager
+
+    @contextlib.contextmanager
+    def disable_mptt_updates(self):
+        """
+        Context manager. Disables mptt updates.
+        Use this to speed up bulk updates. Afterwards, you'll need to do a tree rebuild.
+
+        This doesn't enforce any transactional behavior.
+        You should wrap this in a transaction to ensure database consistency.
+
+        If updates are already disabled on the model, this is a noop.
+
+        Usage:
+            with MyNode.disable_mptt_updates():
+                # bulk updates.
+            MyNode.objects.rebuild()
+        """
+        # Error cases:
+        if self.model._meta.abstract:
+            #  * an abstract model. Design decision needed - do we disable updates for
+            #    all concrete models that derive from this model?
+            #    I vote no - that's a bit implicit and it's a weird use-case anyway.
+            #    Open to further discussion :)
+            raise CantDisableUpdates(
+                "You can't disable mptt updates on %s, it's an abstract model" % self.model.__name__
+            )
+        elif self.model._meta.proxy:
+            #  * a proxy model. disabling updates would implicitly affect other models
+            #    using the db table. Caller should call this on the manager for the concrete
+            #    model instead, to make the behavior explicit.
+            raise CantDisableUpdates(
+                "You can't disable mptt updates on %s, it's a proxy model. Call the concrete model instead."
+                % self.model.__name__
+            )
+        elif self.tree_model is not self.model:
+            #  * a multiple-inheritance child of an MPTTModel.
+            #    Disabling updates may affect instances of other models in the tree.
+            raise CantDisableUpdates(
+                "You can't disable mptt updates on %s, it doesn't contain the mptt fields."
+                % self.model.__name__
+            )
+
+        if not self.model._mptt_updates_enabled:
+            # already disabled, noop.
+            yield
+        else:
+            self.model._mptt_updates_enabled = False
+            try:
+                yield
+            finally:
+                self.model._mptt_updates_enabled = True
 
     @property
     def parent_attr(self):
