@@ -88,6 +88,7 @@
 >>> f = TreeNodeChoiceField(queryset=Genre.objects.all())
 >>> print(f.widget.render("test", None))
 <select name="test">
+<option value="" selected="selected">---------</option>
 <option value="1"> Action</option>
 <option value="2">--- Platformer</option>
 <option value="3">------ 2D Platformer</option>
@@ -143,6 +144,7 @@
 >>> f = TreeNodeChoiceField(queryset=Genre.objects.all(), level_indicator=u'+--')
 >>> print(f.widget.render("test", None))
 <select name="test">
+<option value="" selected="selected">---------</option>
 <option value="1"> Action</option>
 <option value="2">+-- Platformer</option>
 <option value="3">+--+-- 2D Platformer</option>
@@ -156,6 +158,7 @@
 >>> form = MoveNodeForm(Genre.objects.get(pk=7))
 >>> print(form)
 <tr><th><label for="id_target">Target:</label></th><td><select id="id_target" name="target" size="10">
+<option value="" selected="selected">---------</option>
 <option value="1"> Action</option>
 <option value="2">--- Platformer</option>
 <option value="3">------ 2D Platformer</option>
@@ -174,6 +177,7 @@
 >>> form = MoveNodeForm(Genre.objects.get(pk=7), level_indicator=u'+--', target_select_size=5)
 >>> print(form)
 <tr><th><label for="id_target">Target:</label></th><td><select id="id_target" name="target" size="5">
+<option value="" selected="selected">---------</option>
 <option value="1"> Action</option>
 <option value="2">+-- Platformer</option>
 <option value="3">+--+-- 2D Platformer</option>
