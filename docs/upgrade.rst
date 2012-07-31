@@ -2,6 +2,18 @@
 Upgrade notes
 =============
 
+Development version (since 0.5.2)
+=================================
+
+No more implicit ``empty_label=True`` on form fields
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Until 0.5.2, ``TreeNodeChoiceField`` and ``TreeNodeMultipleChoiceField`` implicitly set ``empty_label=True``.
+This was around since a long time ago, for unknown reasons. It has been removed in 0.6 as it caused occasional headaches for users.
+
+If you were relying on this behavior, you'll need to explicitly pass ``empty_label=True`` to any of those fields you use,
+otherwise you will start seeing new '--------' choices appearing in them.
+
 0.4.2 to 0.5.2
 ==============
 
