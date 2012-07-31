@@ -7,13 +7,7 @@ from django.db import connection, models, transaction
 from django.db.models import F, Max
 from django.utils.translation import ugettext as _
 
-try:
-    from django.db import connections, router
-except ImportError:
-    # multi db support was new in django 1.2
-    # NOTE we don't support django 1.1 anymore, so this stuff is likely to get removed soon
-    connections = None
-    router = None
+from django.db import connections, router
 
 from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.utils import _exists
@@ -174,10 +168,7 @@ class TreeManager(models.Manager):
         return qs.update(**self._translate_lookups(**items))
 
     def _get_connection(self, node):
-        if connections is None:
-            return connection
-        else:
-            return connections[router.db_for_write(node)]
+        return connections[router.db_for_write(node)]
 
     def add_related_count(self, queryset, rel_model, rel_field, count_attr,
                           cumulative=False):

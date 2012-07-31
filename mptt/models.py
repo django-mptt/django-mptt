@@ -9,7 +9,6 @@ from django.utils.translation import ugettext as _
 
 from mptt.fields import TreeForeignKey, TreeOneToOneField, TreeManyToManyField
 from mptt.managers import TreeManager
-from mptt.utils import _exists
 
 
 class MPTTOptions(object):
@@ -632,11 +631,8 @@ class MPTTModel(models.Model):
         else:
             if not hasattr(self, '_mptt_saved'):
                 manager = self.__class__._base_manager
-                # NOTE we don't support django 1.1 anymore, so this is likely to get removed soon
-                if hasattr(manager, 'using'):
-                    # multi db support was added in django 1.2
-                    manager = manager.using(using)
-                self._mptt_saved = _exists(manager.filter(pk=self.pk))
+                manager = manager.using(using)
+                self._mptt_saved = manager.filter(pk=self.pk).exists()
             return self._mptt_saved
 
     def save(self, *args, **kwargs):
