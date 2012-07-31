@@ -3,3 +3,4 @@
 build
 dist
 .tox
+.DS_Store
