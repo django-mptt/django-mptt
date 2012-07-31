@@ -666,6 +666,17 @@ class MPTTModel(models.Model):
                     if opts.order_insertion_by:
                         right_sibling = opts.get_ordered_insertion_target(self, getattr(self, opts.parent_attr))
 
+                    if parent_id is not None:
+                        parent = getattr(self, opts.parent_attr)
+                        # If we aren't already a descendant of the new parent, we need to update the parent.rght so
+                        # things like get_children and get_descendant_count work correctly.
+                        if (getattr(self, opts.tree_id_attr) != getattr(parent, opts.tree_id_attr) or
+                            getattr(self, opts.left_attr) < getattr(parent, opts.left_attr) or
+                            getattr(self, opts.right_attr) > getattr(parent, opts.right_attr)):
+                            update_cached_parent = True
+                        else:
+                            update_cached_parent = False
+
                     if right_sibling:
                         self.move_to(right_sibling, 'left')
                     else:
@@ -678,8 +689,12 @@ class MPTTModel(models.Model):
                             except IndexError:
                                 pass
                         else:
-                            parent = getattr(self, opts.parent_attr)
                             self.move_to(parent, position='last-child')
+
+                    if parent_id is not None and update_cached_parent:
+                        # Update rght of cached parent
+                        right_shift = 2 * (self.get_descendant_count() + 1)
+                        self._tree_manager._post_insert_update_cached_parent_right(parent, right_shift)
                 finally:
                     # Make sure the new parent is always
                     # restored on the way out in case of errors.
