@@ -11,7 +11,7 @@ except ImportError:
     feincms = False
 
 from mptt.exceptions import InvalidMove
-from myapp.models import Category, Genre
+from myapp.models import Category, Genre, CustomPKName
 
 
 def get_tree_details(nodes):
@@ -386,3 +386,22 @@ class FeinCMSModelAdminTestCase(TestCase):
             u'<a href="add/?parent=1" title="Add child">'
                 u'<img src="%sicon_addlink.gif" alt="Add child" /></a>' % prefix,
             '<div class="drag_handle"></div>'])
+
+
+class CustomPKNameTestCase(TestCase):
+    def setUp(self):
+        manager = CustomPKName.objects
+        c1 = manager.create(name="c1")
+        manager.create(name="c11", parent=c1)
+        manager.create(name="c12", parent=c1)
+
+        c2 = manager.create(name="c2")
+        manager.create(name="c21", parent=c2)
+        manager.create(name="c22", parent=c2)
+
+        manager.create(name="c3")
+
+    def test_get_next_sibling(self):
+        root = CustomPKName.objects.get(name="c12")
+        sib = root.get_next_sibling()
+        self.assertTrue(sib is None)
