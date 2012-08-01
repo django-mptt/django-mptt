@@ -352,38 +352,6 @@ class MPTTModelBase(ModelBase):
 
                 # avoid using ManagerDescriptor, so instances can refer to self._tree_manager
                 setattr(cls, '_tree_manager', tree_manager)
-
-                # for backwards compatibility, add .tree too (or whatever's in tree_manager_attr)
-                tree_manager_attr = cls._mptt_meta.tree_manager_attr
-                if tree_manager_attr != 'objects':
-                    another = getattr(cls, tree_manager_attr, None)
-                    if another is None:
-                        # wrap with a warning on first use
-                        from django.db.models.manager import ManagerDescriptor
-
-                        class _WarningDescriptor(ManagerDescriptor):
-                            def __init__(self, manager):
-                                self.manager = manager
-                                self.used = False
-
-                            def __get__(self, instance, type=None):
-                                if instance != None:
-                                    raise AttributeError("Manager isn't accessible via %s instances" % type.__name__)
-
-                                if not self.used:
-                                    warnings.warn(
-                                        'Implicit manager %s.%s will be removed in django-mptt 0.6. '
-                                        ' Explicitly define a TreeManager() on your model to remove this warning.'
-                                        % (cls.__name__, tree_manager_attr),
-                                        DeprecationWarning
-                                    )
-                                    self.used = True
-                                return self.manager
-
-                        setattr(cls, tree_manager_attr, _WarningDescriptor(tree_manager))
-                    elif hasattr(another, 'init_from_model'):
-                        another.init_from_model(cls)
-
         return cls
 
 
