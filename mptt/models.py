@@ -186,20 +186,66 @@ class MPTTModelBase(ModelBase):
         class_dict['_mptt_meta'] = MPTTOptions(MPTTMeta)
         cls = super(MPTTModelBase, meta).__new__(meta, class_name, bases, class_dict)
 
-        cls._threadlocal = threading.local()
-        cls._mptt_updates_enabled = True
+        cls = meta.register(cls)
 
-        return meta.register(cls)
+        # see error cases in TreeManager.disable_mptt_updates for the reasoning here.
+        cls._mptt_tracking_base = None
+        for base in cls.mro():
+            if not isinstance(base, MPTTModelBase):
+                continue
+            if not (base._meta.abstract or base._meta.proxy) and base._tree_manager.tree_model is base:
+                cls._mptt_tracking_base = base
+                break
+        if cls is cls._mptt_tracking_base:
+            cls._threadlocal = threading.local()
+            cls._threadlocal.mptt_delayed_tree_changes = None
+            cls._mptt_updates_enabled = True
+
+        return cls
 
     def _get_mptt_updates_enabled(cls):
-        for supercls in cls.mro():
-            if isinstance(supercls, MPTTModelBase) and not supercls._threadlocal.mptt_updates_enabled:
-                return False
-        return True
+        if not cls._mptt_tracking_base:
+            return True
+        return cls._mptt_tracking_base._threadlocal.mptt_updates_enabled
 
     def _set_mptt_updates_enabled(cls, value):
+        assert cls is cls._mptt_tracking_base, "Can't enable or disable mptt updates on a non-tracking class."
         cls._threadlocal.mptt_updates_enabled = value
     _mptt_updates_enabled = property(_get_mptt_updates_enabled, _set_mptt_updates_enabled)
+
+    @property
+    def _mptt_is_tracking(cls):
+        if not cls._mptt_tracking_base:
+            return False
+        return cls._threadlocal.mptt_delayed_tree_changes is not None
+
+    def _mptt_start_tracking(cls):
+        assert cls is cls._mptt_tracking_base, "Can't start or stop mptt tracking on a non-tracking class."
+        assert cls._threadlocal.mptt_delayed_tree_changes is None, "mptt tracking is already started."
+        cls._threadlocal.mptt_delayed_tree_changes = set()
+
+    def _mptt_stop_tracking(cls):
+        assert cls is cls._mptt_tracking_base, "Can't start or stop mptt tracking on a non-tracking class."
+        assert cls._threadlocal.mptt_delayed_tree_changes is not None, "mptt tracking isn't started."
+        results = cls._threadlocal.mptt_delayed_tree_changes
+        cls._threadlocal.mptt_delayed_tree_changes = None
+        return results
+
+    def _mptt_track_tree_modified(cls, tree_id):
+        if not cls._mptt_is_tracking:
+            return
+        cls._threadlocal.mptt_delayed_tree_changes.add(tree_id)
+
+    def _mptt_track_tree_insertions(cls, tree_id, num_inserted):
+        changes = cls._threadlocal.mptt_delayed_tree_changes
+        if not num_inserted or not changes:
+            return
+
+        if num_inserted < 0:
+            deleted = range(tree_id + num_inserted, -num_inserted)
+            changes.difference_update(deleted)
+        new_changes = set([(t + num_inserted if t >= tree_id else t) for t in changes])
+        cls._threadlocal.mptt_delayed_tree_changes = new_changes
 
     @classmethod
     def register(meta, cls, **kwargs):
@@ -612,7 +658,7 @@ class MPTTModel(models.Model):
             return True
         return other.is_descendant_of(self)
 
-    def move_to(self, target, position='first-child'):
+    def move_to(self, target, position='first-child', save=True):
         """
         Convenience method for calling ``TreeManager.move_node`` with this
         model instance.
@@ -620,7 +666,7 @@ class MPTTModel(models.Model):
         NOTE: This is a low-level method; it does NOT respect ``MPTTMeta.order_insertion_by``.
         In most cases you should just move the node yourself by setting node.parent.
         """
-        self._tree_manager.move_node(self, target, position)
+        self._tree_manager.move_node(self, target, position, save=save)
 
     def _is_saved(self, using=None):
         if not self.pk or self._mpttfield('tree_id') is None:
@@ -653,6 +699,14 @@ class MPTTModel(models.Model):
         tree option set, the node will be inserted or moved to the
         appropriate position to maintain ordering by the specified field.
         """
+        do_updates = self.__class__._mptt_updates_enabled
+        track_updates = self.__class__._mptt_is_tracking
+
+        if not (do_updates or track_updates):
+            # inside manager.disable_mptt_updates(), do nothing.
+            # unless we're also inside TreeManager.delay_mptt_updates()
+            return super(MPTTModel, self).save(*args, **kwargs)
+
         opts = self._mptt_meta
         parent_id = opts.get_raw_field_value(self, opts.parent_attr)
 
@@ -688,7 +742,7 @@ class MPTTModel(models.Model):
                             update_cached_parent = False
 
                     if right_sibling:
-                        self.move_to(right_sibling, 'left')
+                        self.move_to(right_sibling, 'left', save=False)
                     else:
                         # Default movement
                         if parent_id is None:
@@ -699,7 +753,7 @@ class MPTTModel(models.Model):
                             except IndexError:
                                 pass
                         else:
-                            self.move_to(parent, position='last-child')
+                            self.move_to(parent, position='last-child', save=False)
 
                     if parent_id is not None and update_cached_parent:
                         # Update rght of cached parent
