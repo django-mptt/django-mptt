@@ -123,6 +123,7 @@ class MultiTableInheritanceB2(MultiTableInheritanceB1):
 # 3. abstract models
 
 class AbstractModel(MPTTModel):
+    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
     ghosts = models.CharField(max_length=50)
 
     class Meta:
@@ -130,7 +131,7 @@ class AbstractModel(MPTTModel):
 
 
 class ConcreteModel(AbstractModel):
-    puppies = models.CharField(max_length=50)
+    name = models.CharField(max_length=50)
 
 
 # 4. proxy models

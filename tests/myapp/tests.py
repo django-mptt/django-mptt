@@ -49,7 +49,7 @@ class TreeTestCase(TestCase):
         if not isinstance(tree2, basestring):
             tree2 = get_tree_details(tree2)
         tree2 = tree_details(tree2)
-        return self.assertEqual(tree1, tree2)
+        return self.assertEqual(tree1, tree2, "\n%r\n != \n%r" % (tree1, tree2))
 
 
 class DocTestTestCase(TreeTestCase):
@@ -463,3 +463,68 @@ class DisabledUpdatesTestCase(TreeTestCase):
 
         self.assertTrue(ConcreteModel._mptt_updates_enabled)
         self.assertTrue(DoubleProxyModel._mptt_updates_enabled)
+
+
+class DelayedUpdatesTestCase(TreeTestCase):
+    def setUp(self):
+        # a
+        # b
+        # -- c
+        # -- d
+        # e
+        self.a = ConcreteModel.objects.create(name="a")
+        self.b = ConcreteModel.objects.create(name="b")
+        self.c = ConcreteModel.objects.create(name="c", parent=self.b)
+        self.d = ConcreteModel.objects.create(name="d", parent=self.b)
+        self.e = ConcreteModel.objects.create(name="e")
+
+    def test_proxy(self):
+        self.assertFalse(ConcreteModel._mptt_is_tracking)
+        self.assertFalse(SingleProxyModel._mptt_is_tracking)
+
+        self.assertRaises(CantDisableUpdates, SingleProxyModel.objects.delay_mptt_updates().__enter__)
+
+        self.assertFalse(ConcreteModel._mptt_is_tracking)
+        self.assertFalse(SingleProxyModel._mptt_is_tracking)
+
+        with ConcreteModel.objects.delay_mptt_updates():
+            self.assertTrue(ConcreteModel._mptt_is_tracking)
+            self.assertTrue(SingleProxyModel._mptt_is_tracking)
+
+        self.assertFalse(ConcreteModel._mptt_is_tracking)
+        self.assertFalse(SingleProxyModel._mptt_is_tracking)
+
+    def test_double_context_manager(self):
+        with ConcreteModel.objects.delay_mptt_updates():
+            self.assertTrue(ConcreteModel._mptt_is_tracking)
+            with ConcreteModel.objects.delay_mptt_updates():
+                self.assertTrue(ConcreteModel._mptt_is_tracking)
+            self.assertTrue(ConcreteModel._mptt_is_tracking)
+        self.assertFalse(ConcreteModel._mptt_is_tracking)
+
+    def test_inserts(self):
+        self.assertTreeEqual(ConcreteModel.objects.all(), """
+            1 - 1 0 1 2
+            2 - 2 0 1 6
+            3 2 2 1 2 3
+            4 2 2 1 4 5
+            5 - 3 0 1 2
+        """)
+        with ConcreteModel.objects.delay_mptt_updates():
+            ConcreteModel.objects.create(name="f", parent=self.e)
+            self.assertTreeEqual(ConcreteModel.objects.all(), """
+                1 - 1 0 1 2
+                2 - 2 0 1 6
+                3 2 2 1 2 3
+                4 2 2 1 4 5
+                5 - 3 0 1 2
+                6 5 3 1 2 3
+            """)
+        self.assertTreeEqual(ConcreteModel.objects.all(), """
+            1 - 1 0 1 2
+            2 - 2 0 1 6
+            3 2 2 1 2 3
+            4 2 2 1 4 5
+            5 - 3 0 1 4
+            6 5 3 1 2 3
+        """)

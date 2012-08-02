@@ -131,7 +131,7 @@ class TreeManager(models.Manager):
                 # bulk updates.
         """
         with self.disable_mptt_updates():
-            if self.model._mptt_is_tracking():
+            if self.model._mptt_is_tracking:
                 # already tracking, noop.
                 yield
             else:
@@ -143,8 +143,8 @@ class TreeManager(models.Manager):
                     self.model._mptt_stop_tracking()
                     raise
                 results = self.model._mptt_stop_tracking()
-                # TODO process results
-                print results
+                for tree_id in results:
+                    self.partial_rebuild(tree_id)
 
     @property
     def parent_attr(self):
@@ -405,13 +405,21 @@ class TreeManager(models.Manager):
             idx += 1
             self._rebuild_helper(pk, 1, idx)
 
-    def _post_insert_update_cached_parent_right(self, instance, right_shift):
-        setattr(instance, self.right_attr, getattr(instance, self.right_attr) + right_shift)
-        attr = '_%s_cache' % self.parent_attr
-        if hasattr(instance, attr):
-            parent = getattr(instance, attr)
-            if parent:
-                self._post_insert_update_cached_parent_right(parent, right_shift)
+    def partial_rebuild(self, tree_id):
+        if self._base_manager:
+            return self._base_manager.partial_rebuild(tree_id)
+        opts = self.model._mptt_meta
+
+        qs = self._mptt_filter(parent__isnull=True, tree_id=tree_id)
+        if opts.order_insertion_by:
+            qs = qs.order_by(*opts.order_insertion_by)
+        pks = qs.values_list('pk', flat=True)
+        if not pks:
+            return
+        if len(pks) > 1:
+            raise RuntimeError("More than one root node with tree_id %d. That's invalid, do a full rebuild." % tree_id)
+
+        self._rebuild_helper(pks[0], 1, tree_id)
 
     def _rebuild_helper(self, pk, left, tree_id, level=0):
         opts = self.model._mptt_meta
@@ -434,6 +442,14 @@ class TreeManager(models.Manager):
         )
 
         return right + 1
+
+    def _post_insert_update_cached_parent_right(self, instance, right_shift):
+        setattr(instance, self.right_attr, getattr(instance, self.right_attr) + right_shift)
+        attr = '_%s_cache' % self.parent_attr
+        if hasattr(instance, attr):
+            parent = getattr(instance, attr)
+            if parent:
+                self._post_insert_update_cached_parent_right(parent, right_shift)
 
     def _calculate_inter_tree_move_values(self, node, target, position):
         """
