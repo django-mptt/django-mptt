@@ -38,10 +38,21 @@ def tree_details(text):
     readable format (says who?), to be compared with the result of using
     the ``get_tree_details`` function.
     """
-    return leading_whitespace_re.sub('', text)
+    return leading_whitespace_re.sub('', text.rstrip())
 
 
-class DocTestTestCase(TestCase):
+class TreeTestCase(TestCase):
+    def assertTreeEqual(self, tree1, tree2):
+        if not isinstance(tree1, basestring):
+            tree1 = get_tree_details(tree1)
+        tree1 = tree_details(tree1)
+        if not isinstance(tree2, basestring):
+            tree2 = get_tree_details(tree2)
+        tree2 = tree_details(tree2)
+        return self.assertEqual(tree1, tree2)
+
+
+class DocTestTestCase(TreeTestCase):
     def test_run_doctest(self):
         class DummyStream:
             content = ""
@@ -76,7 +87,7 @@ class DocTestTestCase(TestCase):
 # 11 9 2 1 4 5   +-- trpg
 
 
-class ReparentingTestCase(TestCase):
+class ReparentingTestCase(TreeTestCase):
     """
     Test that trees are in the appropriate state after reparenting and
     that reparented items have the correct tree attributes defined,
@@ -88,137 +99,144 @@ class ReparentingTestCase(TestCase):
         shmup = Genre.objects.get(id=6)
         shmup.parent = None
         shmup.save()
-        self.assertEqual(get_tree_details([shmup]), '6 - 3 0 1 6')
-        self.assertEqual(get_tree_details(Genre.objects.all()),
-                         tree_details("""1 - 1 0 1 10
-                                         2 1 1 1 2 9
-                                         3 2 1 2 3 4
-                                         4 2 1 2 5 6
-                                         5 2 1 2 7 8
-                                         9 - 2 0 1 6
-                                         10 9 2 1 2 3
-                                         11 9 2 1 4 5
-                                         6 - 3 0 1 6
-                                         7 6 3 1 2 3
-                                         8 6 3 1 4 5"""))
+        self.assertTreeEqual([shmup], '6 - 3 0 1 6')
+        self.assertTreeEqual(Genre.objects.all(), """
+            1 - 1 0 1 10
+            2 1 1 1 2 9
+            3 2 1 2 3 4
+            4 2 1 2 5 6
+            5 2 1 2 7 8
+            9 - 2 0 1 6
+            10 9 2 1 2 3
+            11 9 2 1 4 5
+            6 - 3 0 1 6
+            7 6 3 1 2 3
+            8 6 3 1 4 5
+        """)
 
     def test_new_root_from_leaf_with_siblings(self):
         platformer_2d = Genre.objects.get(id=3)
         platformer_2d.parent = None
         platformer_2d.save()
-        self.assertEqual(get_tree_details([platformer_2d]), '3 - 3 0 1 2')
-        self.assertEqual(get_tree_details(Genre.objects.all()),
-                         tree_details("""1 - 1 0 1 14
-                                         2 1 1 1 2 7
-                                         4 2 1 2 3 4
-                                         5 2 1 2 5 6
-                                         6 1 1 1 8 13
-                                         7 6 1 2 9 10
-                                         8 6 1 2 11 12
-                                         9 - 2 0 1 6
-                                         10 9 2 1 2 3
-                                         11 9 2 1 4 5
-                                         3 - 3 0 1 2"""))
+        self.assertTreeEqual([platformer_2d], '3 - 3 0 1 2')
+        self.assertTreeEqual(Genre.objects.all(), """
+            1 - 1 0 1 14
+            2 1 1 1 2 7
+            4 2 1 2 3 4
+            5 2 1 2 5 6
+            6 1 1 1 8 13
+            7 6 1 2 9 10
+            8 6 1 2 11 12
+            9 - 2 0 1 6
+            10 9 2 1 2 3
+            11 9 2 1 4 5
+            3 - 3 0 1 2
+        """)
 
     def test_new_child_from_root(self):
         action = Genre.objects.get(id=1)
         rpg = Genre.objects.get(id=9)
         action.parent = rpg
         action.save()
-        self.assertEqual(get_tree_details([action]), '1 9 2 1 6 21')
-        self.assertEqual(get_tree_details([rpg]), '9 - 2 0 1 22')
-        self.assertEqual(get_tree_details(Genre.objects.all()),
-                         tree_details("""9 - 2 0 1 22
-                                         10 9 2 1 2 3
-                                         11 9 2 1 4 5
-                                         1 9 2 1 6 21
-                                         2 1 2 2 7 14
-                                         3 2 2 3 8 9
-                                         4 2 2 3 10 11
-                                         5 2 2 3 12 13
-                                         6 1 2 2 15 20
-                                         7 6 2 3 16 17
-                                         8 6 2 3 18 19"""))
+        self.assertTreeEqual([action], '1 9 2 1 6 21')
+        self.assertTreeEqual([rpg], '9 - 2 0 1 22')
+        self.assertTreeEqual(Genre.objects.all(), """
+            9 - 2 0 1 22
+            10 9 2 1 2 3
+            11 9 2 1 4 5
+            1 9 2 1 6 21
+            2 1 2 2 7 14
+            3 2 2 3 8 9
+            4 2 2 3 10 11
+            5 2 2 3 12 13
+            6 1 2 2 15 20
+            7 6 2 3 16 17
+            8 6 2 3 18 19
+        """)
 
     def test_move_leaf_to_other_tree(self):
         shmup_horizontal = Genre.objects.get(id=8)
         rpg = Genre.objects.get(id=9)
         shmup_horizontal.parent = rpg
         shmup_horizontal.save()
-        self.assertEqual(get_tree_details([shmup_horizontal]), '8 9 2 1 6 7')
-        self.assertEqual(get_tree_details([rpg]), '9 - 2 0 1 8')
-        self.assertEqual(get_tree_details(Genre.objects.all()),
-                         tree_details("""1 - 1 0 1 14
-                                         2 1 1 1 2 9
-                                         3 2 1 2 3 4
-                                         4 2 1 2 5 6
-                                         5 2 1 2 7 8
-                                         6 1 1 1 10 13
-                                         7 6 1 2 11 12
-                                         9 - 2 0 1 8
-                                         10 9 2 1 2 3
-                                         11 9 2 1 4 5
-                                         8 9 2 1 6 7"""))
+        self.assertTreeEqual([shmup_horizontal], '8 9 2 1 6 7')
+        self.assertTreeEqual([rpg], '9 - 2 0 1 8')
+        self.assertTreeEqual(Genre.objects.all(), """
+            1 - 1 0 1 14
+            2 1 1 1 2 9
+            3 2 1 2 3 4
+            4 2 1 2 5 6
+            5 2 1 2 7 8
+            6 1 1 1 10 13
+            7 6 1 2 11 12
+            9 - 2 0 1 8
+            10 9 2 1 2 3
+            11 9 2 1 4 5
+            8 9 2 1 6 7
+        """)
 
     def test_move_subtree_to_other_tree(self):
         shmup = Genre.objects.get(id=6)
         trpg = Genre.objects.get(id=11)
         shmup.parent = trpg
         shmup.save()
-        self.assertEqual(get_tree_details([shmup]), '6 11 2 2 5 10')
-        self.assertEqual(get_tree_details([trpg]), '11 9 2 1 4 11')
-        self.assertEqual(get_tree_details(Genre.objects.all()),
-                         tree_details("""1 - 1 0 1 10
-                                         2 1 1 1 2 9
-                                         3 2 1 2 3 4
-                                         4 2 1 2 5 6
-                                         5 2 1 2 7 8
-                                         9 - 2 0 1 12
-                                         10 9 2 1 2 3
-                                         11 9 2 1 4 11
-                                         6 11 2 2 5 10
-                                         7 6 2 3 6 7
-                                         8 6 2 3 8 9"""))
+        self.assertTreeEqual([shmup], '6 11 2 2 5 10')
+        self.assertTreeEqual([trpg], '11 9 2 1 4 11')
+        self.assertTreeEqual(Genre.objects.all(), """
+            1 - 1 0 1 10
+            2 1 1 1 2 9
+            3 2 1 2 3 4
+            4 2 1 2 5 6
+            5 2 1 2 7 8
+            9 - 2 0 1 12
+            10 9 2 1 2 3
+            11 9 2 1 4 11
+            6 11 2 2 5 10
+            7 6 2 3 6 7
+            8 6 2 3 8 9
+        """)
 
     def test_move_child_up_level(self):
         shmup_horizontal = Genre.objects.get(id=8)
         action = Genre.objects.get(id=1)
         shmup_horizontal.parent = action
         shmup_horizontal.save()
-        self.assertEqual(get_tree_details([shmup_horizontal]), '8 1 1 1 14 15')
-        self.assertEqual(get_tree_details([action]), '1 - 1 0 1 16')
-        self.assertEqual(get_tree_details(Genre.objects.all()),
-                         tree_details("""1 - 1 0 1 16
-                                         2 1 1 1 2 9
-                                         3 2 1 2 3 4
-                                         4 2 1 2 5 6
-                                         5 2 1 2 7 8
-                                         6 1 1 1 10 13
-                                         7 6 1 2 11 12
-                                         8 1 1 1 14 15
-                                         9 - 2 0 1 6
-                                         10 9 2 1 2 3
-                                         11 9 2 1 4 5"""))
+        self.assertTreeEqual([shmup_horizontal], '8 1 1 1 14 15')
+        self.assertTreeEqual([action], '1 - 1 0 1 16')
+        self.assertTreeEqual(Genre.objects.all(), """
+            1 - 1 0 1 16
+            2 1 1 1 2 9
+            3 2 1 2 3 4
+            4 2 1 2 5 6
+            5 2 1 2 7 8
+            6 1 1 1 10 13
+            7 6 1 2 11 12
+            8 1 1 1 14 15
+            9 - 2 0 1 6
+            10 9 2 1 2 3
+            11 9 2 1 4 5
+        """)
 
     def test_move_subtree_down_level(self):
         shmup = Genre.objects.get(id=6)
         platformer = Genre.objects.get(id=2)
         shmup.parent = platformer
         shmup.save()
-        self.assertEqual(get_tree_details([shmup]), '6 2 1 2 9 14')
-        self.assertEqual(get_tree_details([platformer]), '2 1 1 1 2 15')
-        self.assertEqual(get_tree_details(Genre.objects.all()),
-                         tree_details("""1 - 1 0 1 16
-                                         2 1 1 1 2 15
-                                         3 2 1 2 3 4
-                                         4 2 1 2 5 6
-                                         5 2 1 2 7 8
-                                         6 2 1 2 9 14
-                                         7 6 1 3 10 11
-                                         8 6 1 3 12 13
-                                         9 - 2 0 1 6
-                                         10 9 2 1 2 3
-                                         11 9 2 1 4 5"""))
+        self.assertTreeEqual([shmup], '6 2 1 2 9 14')
+        self.assertTreeEqual([platformer], '2 1 1 1 2 15')
+        self.assertTreeEqual(Genre.objects.all(), """
+            1 - 1 0 1 16
+            2 1 1 1 2 15
+            3 2 1 2 3 4
+            4 2 1 2 5 6
+            5 2 1 2 7 8
+            6 2 1 2 9 14
+            7 6 1 3 10 11
+            8 6 1 3 12 13
+            9 - 2 0 1 6
+            10 9 2 1 2 3
+            11 9 2 1 4 5
+        """)
 
     def test_move_to(self):
         rpg = Genre.objects.get(pk=9)
@@ -261,7 +279,7 @@ class ReparentingTestCase(TestCase):
 # 10 8 1 2 17 18      +-- ps3_hardware
 
 
-class DeletionTestCase(TestCase):
+class DeletionTestCase(TreeTestCase):
     """
     Tests that the tree structure is maintained appropriately in various
     deletion scenarios.
@@ -274,62 +292,67 @@ class DeletionTestCase(TestCase):
                                                   'left', save=True)
         Category(name='Following root').insert_at(Category.objects.get(id=1),
                                                   'right', save=True)
-        self.assertEqual(get_tree_details(Category.objects.all()),
-                         tree_details("""11 - 1 0 1 2
-                                         1 - 2 0 1 20
-                                         2 1 2 1 2 7
-                                         3 2 2 2 3 4
-                                         4 2 2 2 5 6
-                                         5 1 2 1 8 13
-                                         6 5 2 2 9 10
-                                         7 5 2 2 11 12
-                                         8 1 2 1 14 19
-                                         9 8 2 2 15 16
-                                         10 8 2 2 17 18
-                                         12 - 3 0 1 2"""),
-                         'Setup for test produced unexpected result')
+        self.assertTreeEqual(Category.objects.all(), """
+            11 - 1 0 1 2
+            1 - 2 0 1 20
+            2 1 2 1 2 7
+            3 2 2 2 3 4
+            4 2 2 2 5 6
+            5 1 2 1 8 13
+            6 5 2 2 9 10
+            7 5 2 2 11 12
+            8 1 2 1 14 19
+            9 8 2 2 15 16
+            10 8 2 2 17 18
+            12 - 3 0 1 2
+        """)
 
         Category.objects.get(id=1).delete()
-        self.assertEqual(get_tree_details(Category.objects.all()),
-                         tree_details("""11 - 1 0 1 2
-                                         12 - 3 0 1 2"""))
+        self.assertTreeEqual(
+            Category.objects.all(), """
+            11 - 1 0 1 2
+            12 - 3 0 1 2
+        """)
 
     def test_delete_last_node_with_siblings(self):
         Category.objects.get(id=9).delete()
-        self.assertEqual(get_tree_details(Category.objects.all()),
-                         tree_details("""1 - 1 0 1 18
-                                         2 1 1 1 2 7
-                                         3 2 1 2 3 4
-                                         4 2 1 2 5 6
-                                         5 1 1 1 8 13
-                                         6 5 1 2 9 10
-                                         7 5 1 2 11 12
-                                         8 1 1 1 14 17
-                                         10 8 1 2 15 16"""))
+        self.assertTreeEqual(Category.objects.all(), """
+            1 - 1 0 1 18
+            2 1 1 1 2 7
+            3 2 1 2 3 4
+            4 2 1 2 5 6
+            5 1 1 1 8 13
+            6 5 1 2 9 10
+            7 5 1 2 11 12
+            8 1 1 1 14 17
+            10 8 1 2 15 16
+        """)
 
     def test_delete_last_node_with_descendants(self):
         Category.objects.get(id=8).delete()
-        self.assertEqual(get_tree_details(Category.objects.all()),
-                         tree_details("""1 - 1 0 1 14
-                                         2 1 1 1 2 7
-                                         3 2 1 2 3 4
-                                         4 2 1 2 5 6
-                                         5 1 1 1 8 13
-                                         6 5 1 2 9 10
-                                         7 5 1 2 11 12"""))
+        self.assertTreeEqual(Category.objects.all(), """
+            1 - 1 0 1 14
+            2 1 1 1 2 7
+            3 2 1 2 3 4
+            4 2 1 2 5 6
+            5 1 1 1 8 13
+            6 5 1 2 9 10
+            7 5 1 2 11 12
+        """)
 
     def test_delete_node_with_siblings(self):
         Category.objects.get(id=6).delete()
-        self.assertEqual(get_tree_details(Category.objects.all()),
-                         tree_details("""1 - 1 0 1 18
-                                         2 1 1 1 2 7
-                                         3 2 1 2 3 4
-                                         4 2 1 2 5 6
-                                         5 1 1 1 8 11
-                                         7 5 1 2 9 10
-                                         8 1 1 1 12 17
-                                         9 8 1 2 13 14
-                                         10 8 1 2 15 16"""))
+        self.assertTreeEqual(Category.objects.all(), """
+            1 - 1 0 1 18
+            2 1 1 1 2 7
+            3 2 1 2 3 4
+            4 2 1 2 5 6
+            5 1 1 1 8 11
+            7 5 1 2 9 10
+            8 1 1 1 12 17
+            9 8 1 2 13 14
+            10 8 1 2 15 16
+        """)
 
     def test_delete_node_with_descendants_and_siblings(self):
         """
@@ -339,29 +362,30 @@ class DeletionTestCase(TestCase):
         called.
         """
         Category.objects.get(id=5).delete()
-        self.assertEqual(get_tree_details(Category.objects.all()),
-                         tree_details("""1 - 1 0 1 14
-                                         2 1 1 1 2 7
-                                         3 2 1 2 3 4
-                                         4 2 1 2 5 6
-                                         8 1 1 1 8 13
-                                         9 8 1 2 9 10
-                                         10 8 1 2 11 12"""))
+        self.assertTreeEqual(Category.objects.all(), """
+            1 - 1 0 1 14
+            2 1 1 1 2 7
+            3 2 1 2 3 4
+            4 2 1 2 5 6
+            8 1 1 1 8 13
+            9 8 1 2 9 10
+            10 8 1 2 11 12
+        """)
 
 
-class IntraTreeMovementTestCase(TestCase):
+class IntraTreeMovementTestCase(TreeTestCase):
     pass
 
 
-class InterTreeMovementTestCase(TestCase):
+class InterTreeMovementTestCase(TreeTestCase):
     pass
 
 
-class PositionedInsertionTestCase(TestCase):
+class PositionedInsertionTestCase(TreeTestCase):
     pass
 
 
-class FeinCMSModelAdminTestCase(TestCase):
+class FeinCMSModelAdminTestCase(TreeTestCase):
     """
     Tests for FeinCMSModelAdmin.
     """
@@ -388,7 +412,7 @@ class FeinCMSModelAdminTestCase(TestCase):
             '<div class="drag_handle"></div>'])
 
 
-class CustomPKNameTestCase(TestCase):
+class CustomPKNameTestCase(TreeTestCase):
     def setUp(self):
         manager = CustomPKName.objects
         c1 = manager.create(name="c1")
@@ -407,7 +431,7 @@ class CustomPKNameTestCase(TestCase):
         self.assertTrue(sib is None)
 
 
-class DisabledUpdatesTestCase(TestCase):
+class DisabledUpdatesTestCase(TreeTestCase):
     def test_single_proxy(self):
         self.assertTrue(ConcreteModel._mptt_updates_enabled)
         self.assertTrue(SingleProxyModel._mptt_updates_enabled)
