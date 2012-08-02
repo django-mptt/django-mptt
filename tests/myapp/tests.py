@@ -474,14 +474,17 @@ class CustomPKNameTestCase(TreeTestCase):
 
 class DisabledUpdatesTestCase(TreeTestCase):
     def setUp(self):
-        # a
-        # -- b
-        # -- c
-        # d
         self.a = ConcreteModel.objects.create(name="a")
         self.b = ConcreteModel.objects.create(name="b", parent=self.a)
         self.c = ConcreteModel.objects.create(name="c", parent=self.a)
         self.d = ConcreteModel.objects.create(name="d")
+        # state is now:
+        self.assertTreeEqual(ConcreteModel.objects.all(), """
+            1 - 1 0 1 6
+            2 1 1 1 2 3
+            3 1 1 1 4 5
+            4 - 2 0 1 2
+        """)
 
     def test_single_proxy(self):
         self.assertTrue(ConcreteModel._mptt_updates_enabled)
@@ -516,12 +519,6 @@ class DisabledUpdatesTestCase(TreeTestCase):
         self.assertTrue(DoubleProxyModel._mptt_updates_enabled)
 
     def test_insert_child(self):
-        self.assertTreeEqual(ConcreteModel.objects.all(), """
-            1 - 1 0 1 6
-            2 1 1 1 2 3
-            3 1 1 1 4 5
-            4 - 2 0 1 2
-        """)
         with self.assertNumQueries(2):
             with ConcreteModel.objects.disable_mptt_updates():
                 # 1 query here:
@@ -546,12 +543,6 @@ class DisabledUpdatesTestCase(TreeTestCase):
         """)
 
     def test_insert_root(self):
-        self.assertTreeEqual(ConcreteModel.objects.all(), """
-            1 - 1 0 1 6
-            2 1 1 1 2 3
-            3 1 1 1 4 5
-            4 - 2 0 1 2
-        """)
         with self.assertNumQueries(2):
             with ConcreteModel.objects.disable_mptt_updates():
                 with self.assertNumQueries(1):
@@ -573,17 +564,116 @@ class DisabledUpdatesTestCase(TreeTestCase):
             4 - 2 0 1 2
         """)
 
+    def test_move_node_same_tree(self):
+        with self.assertNumQueries(3):
+            with ConcreteModel.objects.disable_mptt_updates():
+                with self.assertNumQueries(2):
+                    # 2 queries here:
+                    #  (django does a query to determine if the row is in the db yet)
+                    self.c.parent = self.b
+                    self.c.save()
+                # 3rd query here:
+                self.assertTreeEqual(ConcreteModel.objects.all(), """
+                    1 - 1 0 1 6
+                    2 1 1 1 2 3
+                    3 2 1 1 4 5
+                    4 - 2 0 1 2
+                """)
+
+        # yes, this is wrong. that's what disable_mptt_updates() does :/
+        self.assertTreeEqual(ConcreteModel.objects.all(), """
+            1 - 1 0 1 6
+            2 1 1 1 2 3
+            3 2 1 1 4 5
+            4 - 2 0 1 2
+        """)
+
+    def test_move_node_different_tree(self):
+        with self.assertNumQueries(3):
+            with ConcreteModel.objects.disable_mptt_updates():
+                with self.assertNumQueries(2):
+                    # 2 queries here:
+                    #  (django does a query to determine if the row is in the db yet)
+                    self.c.parent = self.d
+                    self.c.save()
+                # 3rd query here:
+                self.assertTreeEqual(ConcreteModel.objects.all(), """
+                    1 - 1 0 1 6
+                    2 1 1 1 2 3
+                    3 4 1 1 4 5
+                    4 - 2 0 1 2
+                """)
+
+        # yes, this is wrong. that's what disable_mptt_updates() does :/
+        self.assertTreeEqual(ConcreteModel.objects.all(), """
+            1 - 1 0 1 6
+            2 1 1 1 2 3
+            3 4 1 1 4 5
+            4 - 2 0 1 2
+        """)
+
+    def test_move_node_to_root(self):
+        with self.assertNumQueries(3):
+            with ConcreteModel.objects.disable_mptt_updates():
+                with self.assertNumQueries(2):
+                    # 2 queries here:
+                    #  (django does a query to determine if the row is in the db yet)
+                    self.c.parent = None
+                    self.c.save()
+                # 3rd query here:
+                self.assertTreeEqual(ConcreteModel.objects.all(), """
+                    1 - 1 0 1 6
+                    2 1 1 1 2 3
+                    3 - 1 1 4 5
+                    4 - 2 0 1 2
+                """)
+
+        # yes, this is wrong. that's what disable_mptt_updates() does :/
+        self.assertTreeEqual(ConcreteModel.objects.all(), """
+            1 - 1 0 1 6
+            2 1 1 1 2 3
+            3 - 1 1 4 5
+            4 - 2 0 1 2
+        """)
+
+    def test_move_root_to_child(self):
+        with self.assertNumQueries(3):
+            with ConcreteModel.objects.disable_mptt_updates():
+                with self.assertNumQueries(2):
+                    # 2 queries here:
+                    #  (django does a query to determine if the row is in the db yet)
+                    self.d.parent = self.c
+                    self.d.save()
+                # 3rd query here:
+                self.assertTreeEqual(ConcreteModel.objects.all(), """
+                    1 - 1 0 1 6
+                    2 1 1 1 2 3
+                    3 1 1 1 4 5
+                    4 3 2 0 1 2
+                """)
+
+        # yes, this is wrong. that's what disable_mptt_updates() does :/
+        self.assertTreeEqual(ConcreteModel.objects.all(), """
+            1 - 1 0 1 6
+            2 1 1 1 2 3
+            3 1 1 1 4 5
+            4 3 2 0 1 2
+        """)
+
 
 class DelayedUpdatesTestCase(TreeTestCase):
     def setUp(self):
-        # a
-        # -- b
-        # -- c
-        # d
         self.a = ConcreteModel.objects.create(name="a")
         self.b = ConcreteModel.objects.create(name="b", parent=self.a)
         self.c = ConcreteModel.objects.create(name="c", parent=self.a)
         self.d = ConcreteModel.objects.create(name="d")
+        # state is now:
+        self.assertTreeEqual(ConcreteModel.objects.all(), """
+            1 - 1 0 1 6
+            2 1 1 1 2 3
+            3 1 1 1 4 5
+            4 - 2 0 1 2
+        """)
 
     def test_proxy(self):
         self.assertFalse(ConcreteModel._mptt_is_tracking)
@@ -610,12 +700,6 @@ class DelayedUpdatesTestCase(TreeTestCase):
         self.assertFalse(ConcreteModel._mptt_is_tracking)
 
     def test_insert_child(self):
-        self.assertTreeEqual(ConcreteModel.objects.all(), """
-            1 - 1 0 1 6
-            2 1 1 1 2 3
-            3 1 1 1 4 5
-            4 - 2 0 1 2
-        """)
         with self.assertNumQueries(7):
             with ConcreteModel.objects.delay_mptt_updates():
                 with self.assertNumQueries(1):
@@ -640,12 +724,6 @@ class DelayedUpdatesTestCase(TreeTestCase):
         """)
 
     def test_insert_root(self):
-        self.assertTreeEqual(ConcreteModel.objects.all(), """
-            1 - 1 0 1 6
-            2 1 1 1 2 3
-            3 1 1 1 4 5
-            4 - 2 0 1 2
-        """)
         with self.assertNumQueries(3):
             with ConcreteModel.objects.delay_mptt_updates():
                 with self.assertNumQueries(2):
