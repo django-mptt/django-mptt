@@ -670,12 +670,30 @@ class MPTTModel(models.Model):
         do_updates = self.__class__._mptt_updates_enabled
         track_updates = self.__class__._mptt_is_tracking
 
+        opts = self._mptt_meta
+
         if not (do_updates or track_updates):
-            # inside manager.disable_mptt_updates(), do nothing.
+            # inside manager.disable_mptt_updates(), don't do any updates.
             # unless we're also inside TreeManager.delay_mptt_updates()
+            if self._mpttfield('left') is None:
+                # we need to set *some* values, though don't care too much what.
+                parent = getattr(self, '_%s_cache' % opts.parent_attr, None)
+                # if we have a cached parent, have a stab at getting possibly-correct values.
+                # otherwise, meh.
+                if parent:
+                    left = parent._mpttfield('left') + 1
+                    setattr(self, opts.left_attr, left)
+                    setattr(self, opts.right_attr, left + 1)
+                    setattr(self, opts.level_attr, parent._mpttfield('level') + 1)
+                    setattr(self, opts.tree_id_attr, parent._mpttfield('tree_id'))
+                    self._tree_manager._post_insert_update_cached_parent_right(parent, 2)
+                else:
+                    setattr(self, opts.left_attr, 1)
+                    setattr(self, opts.right_attr, 2)
+                    setattr(self, opts.level_attr, 0)
+                    setattr(self, opts.tree_id_attr, 0)
             return super(MPTTModel, self).save(*args, **kwargs)
 
-        opts = self._mptt_meta
         parent_id = opts.get_raw_field_value(self, opts.parent_attr)
 
         # determine whether this instance is already in the db
