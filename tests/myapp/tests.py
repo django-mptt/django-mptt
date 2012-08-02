@@ -476,10 +476,12 @@ class DisabledUpdatesTestCase(TreeTestCase):
     def setUp(self):
         # a
         # -- b
-        # c
+        # -- c
+        # d
         self.a = ConcreteModel.objects.create(name="a")
         self.b = ConcreteModel.objects.create(name="b", parent=self.a)
-        self.c = ConcreteModel.objects.create(name="c")
+        self.c = ConcreteModel.objects.create(name="c", parent=self.a)
+        self.d = ConcreteModel.objects.create(name="d")
 
     def test_single_proxy(self):
         self.assertTrue(ConcreteModel._mptt_updates_enabled)
@@ -515,54 +517,60 @@ class DisabledUpdatesTestCase(TreeTestCase):
 
     def test_insert_child(self):
         self.assertTreeEqual(ConcreteModel.objects.all(), """
-            1 - 1 0 1 4
+            1 - 1 0 1 6
             2 1 1 1 2 3
-            3 - 2 0 1 2
+            3 1 1 1 4 5
+            4 - 2 0 1 2
         """)
         with self.assertNumQueries(2):
             with ConcreteModel.objects.disable_mptt_updates():
                 # 1 query here:
                 with self.assertNumQueries(1):
-                    ConcreteModel.objects.create(name="d", parent=self.c)
+                    ConcreteModel.objects.create(name="e", parent=self.d)
                 # 2nd query here:
                 self.assertTreeEqual(ConcreteModel.objects.all(), """
-                    1 - 1 0 1 4
+                    1 - 1 0 1 6
                     2 1 1 1 2 3
-                    3 - 2 0 1 2
-                    4 3 2 1 2 3
+                    3 1 1 1 4 5
+                    4 - 2 0 1 2
+                    5 4 2 1 2 3
                 """)
 
         # yes, this is wrong. that's what disable_mptt_updates() does :/
         self.assertTreeEqual(ConcreteModel.objects.all(), """
-            1 - 1 0 1 4
+            1 - 1 0 1 6
             2 1 1 1 2 3
-            3 - 2 0 1 2
-            4 3 2 1 2 3
+            3 1 1 1 4 5
+            4 - 2 0 1 2
+            5 4 2 1 2 3
         """)
 
     def test_insert_root(self):
         self.assertTreeEqual(ConcreteModel.objects.all(), """
-            1 - 1 0 1 4
+            1 - 1 0 1 6
             2 1 1 1 2 3
-            3 - 2 0 1 2
+            3 1 1 1 4 5
+            4 - 2 0 1 2
         """)
         with self.assertNumQueries(2):
             with ConcreteModel.objects.disable_mptt_updates():
                 with self.assertNumQueries(1):
                     # 1 query here:
-                    ConcreteModel.objects.create(name="d")
+                    ConcreteModel.objects.create(name="e")
                 # 2nd query here:
                 self.assertTreeEqual(ConcreteModel.objects.all(), """
-                    4 - 0 0 1 2
-                    1 - 1 0 1 4
+                    5 - 0 0 1 2
+                    1 - 1 0 1 6
                     2 1 1 1 2 3
-                    3 - 2 0 1 2
+                    3 1 1 1 4 5
+                    4 - 2 0 1 2
                 """)
         self.assertTreeEqual(ConcreteModel.objects.all(), """
-            4 - 0 0 1 2
-            1 - 1 0 1 4
+            5 - 0 0 1 2
+            1 - 1 0 1 6
             2 1 1 1 2 3
-            3 - 2 0 1 2
+            3 1 1 1 4 5
+            4 - 2 0 1 2
         """)
 
 
@@ -570,10 +578,12 @@ class DelayedUpdatesTestCase(TreeTestCase):
     def setUp(self):
         # a
         # -- b
-        # c
+        # -- c
+        # d
         self.a = ConcreteModel.objects.create(name="a")
         self.b = ConcreteModel.objects.create(name="b", parent=self.a)
-        self.c = ConcreteModel.objects.create(name="c")
+        self.c = ConcreteModel.objects.create(name="c", parent=self.a)
+        self.d = ConcreteModel.objects.create(name="d")
 
     def test_proxy(self):
         self.assertFalse(ConcreteModel._mptt_is_tracking)
@@ -601,55 +611,61 @@ class DelayedUpdatesTestCase(TreeTestCase):
 
     def test_insert_child(self):
         self.assertTreeEqual(ConcreteModel.objects.all(), """
-            1 - 1 0 1 4
+            1 - 1 0 1 6
             2 1 1 1 2 3
-            3 - 2 0 1 2
+            3 1 1 1 4 5
+            4 - 2 0 1 2
         """)
         with self.assertNumQueries(7):
             with ConcreteModel.objects.delay_mptt_updates():
                 with self.assertNumQueries(1):
                     # 1 query here:
-                    ConcreteModel.objects.create(name="d", parent=self.c)
+                    ConcreteModel.objects.create(name="e", parent=self.d)
                 # 2nd query here:
                 self.assertTreeEqual(ConcreteModel.objects.all(), """
-                    1 - 1 0 1 4
+                    1 - 1 0 1 6
                     2 1 1 1 2 3
-                    3 - 2 0 1 2
-                    4 3 2 1 2 3
+                    3 1 1 1 4 5
+                    4 - 2 0 1 2
+                    5 4 2 1 2 3
                 """)
                 # remaining queries (3 through 7) are the partial rebuild process.
 
         self.assertTreeEqual(ConcreteModel.objects.all(), """
-            1 - 1 0 1 4
+            1 - 1 0 1 6
             2 1 1 1 2 3
-            3 - 2 0 1 4
-            4 3 2 1 2 3
+            3 1 1 1 4 5
+            4 - 2 0 1 4
+            5 4 2 1 2 3
         """)
 
     def test_insert_root(self):
         self.assertTreeEqual(ConcreteModel.objects.all(), """
-            1 - 1 0 1 4
+            1 - 1 0 1 6
             2 1 1 1 2 3
-            3 - 2 0 1 2
+            3 1 1 1 4 5
+            4 - 2 0 1 2
         """)
         with self.assertNumQueries(3):
             with ConcreteModel.objects.delay_mptt_updates():
                 with self.assertNumQueries(2):
                     # 2 queries required here:
                     # (one to get the correct tree_id, then one to insert)
-                    ConcreteModel.objects.create(name="d")
+                    ConcreteModel.objects.create(name="e")
                 # 3rd query here:
                 self.assertTreeEqual(ConcreteModel.objects.all(), """
-                    1 - 1 0 1 4
+                    1 - 1 0 1 6
                     2 1 1 1 2 3
-                    3 - 2 0 1 2
-                    4 - 3 0 1 2
+                    3 1 1 1 4 5
+                    4 - 2 0 1 2
+                    5 - 3 0 1 2
                 """)
                 # no partial rebuild necessary, as no trees were modified
                 # (newly created tree is already okay)
         self.assertTreeEqual(ConcreteModel.objects.all(), """
-            1 - 1 0 1 4
+            1 - 1 0 1 6
             2 1 1 1 2 3
-            3 - 2 0 1 2
-            4 - 3 0 1 2
+            3 1 1 1 4 5
+            4 - 2 0 1 2
+            5 - 3 0 1 2
         """)
