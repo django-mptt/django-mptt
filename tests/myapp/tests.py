@@ -747,3 +747,100 @@ class DelayedUpdatesTestCase(TreeTestCase):
             4 - 2 0 1 2
             5 - 3 0 1 2
         """)
+
+    def test_move_node_same_tree(self):
+        with self.assertNumQueries(10):
+            with ConcreteModel.objects.delay_mptt_updates():
+                with self.assertNumQueries(2):
+                    # 2 queries here:
+                    #  (django does a query to determine if the row is in the db yet)
+                    self.c.parent = self.b
+                    self.c.save()
+                # 3rd query here:
+                self.assertTreeEqual(ConcreteModel.objects.all(), """
+                    1 - 1 0 1 6
+                    2 1 1 1 2 3
+                    3 2 1 2 3 4
+                    4 - 2 0 1 2
+                """)
+            # the remaining 7 queries are the partial rebuild.
+
+        self.assertTreeEqual(ConcreteModel.objects.all(), """
+            1 - 1 0 1 6
+            2 1 1 1 2 5
+            3 2 1 2 3 4
+            4 - 2 0 1 2
+        """)
+
+    def test_move_node_different_tree(self):
+        with self.assertNumQueries(8):
+            with ConcreteModel.objects.delay_mptt_updates():
+                with self.assertNumQueries(2):
+                    # 2 queries here:
+                    #  (django does a query to determine if the row is in the db yet)
+                    self.c.parent = self.d
+                    self.c.save()
+                # 3rd query here:
+                self.assertTreeEqual(ConcreteModel.objects.all(), """
+                    1 - 1 0 1 6
+                    2 1 1 1 2 3
+                    4 - 2 0 1 2
+                    3 4 2 1 2 3
+                """)
+
+        self.assertTreeEqual(ConcreteModel.objects.all(), """
+            1 - 1 0 1 6
+            2 1 1 1 2 3
+            4 - 2 0 1 4
+            3 4 2 1 2 3
+        """)
+
+    def test_move_node_to_root(self):
+        with self.assertNumQueries(5):
+            with ConcreteModel.objects.delay_mptt_updates():
+                with self.assertNumQueries(4):
+                    # 4 queries here!
+                    #   1. find the next tree_id to move to
+                    #   2. update the tree_id on all nodes to the right of that
+                    #   3. django does a query to determine if this instance exists in the db
+                    #   4. update tree fields on self.c
+                    self.c.parent = None
+                    self.c.save()
+                # 5th query here:
+                self.assertTreeEqual(ConcreteModel.objects.all(), """
+                    1 - 1 0 1 6
+                    2 1 1 1 2 3
+                    4 - 2 0 1 2
+                    3 - 3 0 1 2
+                """)
+
+        self.assertTreeEqual(ConcreteModel.objects.all(), """
+            1 - 1 0 1 6
+            2 1 1 1 2 3
+            4 - 2 0 1 2
+            3 - 3 0 1 2
+        """)
+
+    def test_move_root_to_child(self):
+        with self.assertNumQueries(12):
+            with ConcreteModel.objects.delay_mptt_updates():
+                with self.assertNumQueries(2):
+                    # 2 queries here:
+                    #  (django does a query to determine if the row is in the db yet)
+                    self.d.parent = self.c
+                    self.d.save()
+                # 3rd query here:
+                self.assertTreeEqual(ConcreteModel.objects.all(), """
+                    1 - 1 0 1 6
+                    2 1 1 1 2 3
+                    3 1 1 1 4 5
+                    4 3 1 2 5 6
+                """)
+            # the remaining 9 queries are the partial rebuild.
+
+        self.assertTreeEqual(ConcreteModel.objects.all(), """
+            1 - 1 0 1 8
+            2 1 1 1 2 3
+            3 1 1 1 4 7
+            4 3 1 2 5 6
+        """)

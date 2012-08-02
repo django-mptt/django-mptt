@@ -735,7 +735,7 @@ class MPTTModel(models.Model):
                             root_nodes = self._tree_manager.root_nodes()
                             try:
                                 rightmost_sibling = root_nodes.exclude(pk=self.pk).order_by('-%s' % opts.tree_id_attr)[0]
-                                self.move_to(rightmost_sibling, position='right')
+                                self.move_to(rightmost_sibling, position='right', save=False)
                             except IndexError:
                                 pass
                         else:
