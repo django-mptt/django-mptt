@@ -443,13 +443,19 @@ class TreeManager(models.Manager):
 
         return right + 1
 
-    def _post_insert_update_cached_parent_right(self, instance, right_shift):
+    def _post_insert_update_cached_parent_right(self, instance, right_shift, seen=None):
         setattr(instance, self.right_attr, getattr(instance, self.right_attr) + right_shift)
         attr = '_%s_cache' % self.parent_attr
         if hasattr(instance, attr):
             parent = getattr(instance, attr)
             if parent:
-                self._post_insert_update_cached_parent_right(parent, right_shift)
+                if not seen:
+                    seen = set()
+                seen.add(instance)
+                if parent in seen:
+                    # detect infinite recursion and throw an error
+                    raise InvalidMove
+                self._post_insert_update_cached_parent_right(parent, right_shift, seen=seen)
 
     def _calculate_inter_tree_move_values(self, node, target, position):
         """
