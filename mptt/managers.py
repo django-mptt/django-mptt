@@ -70,17 +70,33 @@ class TreeManager(models.Manager):
     def disable_mptt_updates(self):
         """
         Context manager. Disables mptt updates.
-        Use this to speed up bulk updates. Afterwards, you'll need to do a tree rebuild.
 
-        This doesn't enforce any transactional behavior.
-        You should wrap this in a transaction to ensure database consistency.
+        NOTE that this context manager causes inconsistencies! MPTT model methods are
+        not guaranteed to return the correct results.
+
+        When to use this method:
+            If used correctly, this method can be used to speed up bulk updates.
+
+            This doesn't do anything clever. It *will* mess up your tree.
+            You should follow this method with a call to TreeManager.rebuild() to ensure your
+            tree stays sane, and you should wrap both calls in a transaction.
+
+            This is best for updates that span a large part of the table.
+            If you are doing localised changes (1 tree, or a few trees) consider
+            using delay_mptt_updates.
+            If you are making only minor changes to your tree, just let the updates happen.
+
+        Transactions:
+            This doesn't enforce any transactional behavior.
+            You should wrap this in a transaction to ensure database consistency.
 
         If updates are already disabled on the model, this is a noop.
 
         Usage:
-            with MyNode.disable_mptt_updates():
-                # bulk updates.
-            MyNode.objects.rebuild()
+            with transaction.commit_on_success():
+                with MyNode.objects.disable_mptt_updates():
+                    # bulk updates.
+                MyNode.objects.rebuild()
         """
         # Error cases:
         if self.model._meta.abstract:
@@ -121,17 +137,39 @@ class TreeManager(models.Manager):
     def delay_mptt_updates(self):
         """
         Context manager. Delays mptt updates until the end of a block of bulk processing.
-        Use this to speed up bulk updates.
 
-        This doesn't enforce any transactional behavior.
-        You should wrap this in a transaction to ensure database consistency.
+        NOTE that this context manager causes inconsistencies! MPTT model methods are
+        not guaranteed to return the correct results until the end of the context block.
 
-        If an exception occurs before the processing of the block, delayed updates
-        will not be applied.
+        When to use this method:
+            If used correctly, this method can be used to speed up bulk updates.
+            This is best for updates in a localised area of the db table, especially if all
+            the updates happen in a single tree and the rest of the forest is left untouched.
+            No subsequent rebuild is necessary.
+
+            delay_mptt_updates does a partial rebuild of the modified trees (not the whole table).
+            If used indiscriminately, this can actually be much slower than just letting the updates
+            occur when they're required.
+
+            The worst case occurs when every tree in the table is modified just once.
+            That results in a full rebuild of the table, which can be *very* slow.
+
+            If your updates will modify most of the trees in the table (not a small number of trees),
+            you should consider using TreeManager.disable_mptt_updates, as it does much fewer
+            queries.
+
+        Transactions:
+            This doesn't enforce any transactional behavior.
+            You should wrap this in a transaction to ensure database consistency.
+
+        Exceptions:
+            If an exception occurs before the processing of the block, delayed updates
+            will not be applied.
 
         Usage:
-            with MyNode.delay_mptt_updates():
-                # bulk updates.
+            with transaction.commit_on_success():
+                with MyNode.objects.delay_mptt_updates():
+                    # bulk updates.
         """
         with self.disable_mptt_updates():
             if self.model._mptt_is_tracking:
