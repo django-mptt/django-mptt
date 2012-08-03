@@ -12,7 +12,7 @@ except ImportError:
     feincms = False
 
 from mptt.exceptions import CantDisableUpdates, InvalidMove
-from myapp.models import Category, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel, ConcreteModel
+from myapp.models import Category, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel, ConcreteModel, OrderedInsertion
 
 
 def get_tree_details(nodes):
@@ -667,12 +667,14 @@ class DelayedUpdatesTestCase(TreeTestCase):
         self.b = ConcreteModel.objects.create(name="b", parent=self.a)
         self.c = ConcreteModel.objects.create(name="c", parent=self.a)
         self.d = ConcreteModel.objects.create(name="d")
+        self.z = ConcreteModel.objects.create(name="z")
         # state is now:
         self.assertTreeEqual(ConcreteModel.objects.all(), """
             1 - 1 0 1 6
             2 1 1 1 2 3
             3 1 1 1 4 5
             4 - 2 0 1 2
+            5 - 3 0 1 2
         """)
 
     def test_proxy(self):
@@ -711,7 +713,8 @@ class DelayedUpdatesTestCase(TreeTestCase):
                     2 1 1 1 2 3
                     3 1 1 1 4 5
                     4 - 2 0 1 2
-                    5 4 2 1 2 3
+                    6 4 2 1 2 3
+                    5 - 3 0 1 2
                 """)
                 # remaining queries (3 through 7) are the partial rebuild process.
 
@@ -720,7 +723,8 @@ class DelayedUpdatesTestCase(TreeTestCase):
             2 1 1 1 2 3
             3 1 1 1 4 5
             4 - 2 0 1 4
-            5 4 2 1 2 3
+            6 4 2 1 2 3
+            5 - 3 0 1 2
         """)
 
     def test_insert_root(self):
@@ -737,6 +741,7 @@ class DelayedUpdatesTestCase(TreeTestCase):
                     3 1 1 1 4 5
                     4 - 2 0 1 2
                     5 - 3 0 1 2
+                    6 - 4 0 1 2
                 """)
                 # no partial rebuild necessary, as no trees were modified
                 # (newly created tree is already okay)
@@ -746,6 +751,7 @@ class DelayedUpdatesTestCase(TreeTestCase):
             3 1 1 1 4 5
             4 - 2 0 1 2
             5 - 3 0 1 2
+            6 - 4 0 1 2
         """)
 
     def test_move_node_same_tree(self):
@@ -762,6 +768,7 @@ class DelayedUpdatesTestCase(TreeTestCase):
                     2 1 1 1 2 3
                     3 2 1 2 3 4
                     4 - 2 0 1 2
+                    5 - 3 0 1 2
                 """)
             # the remaining 7 queries are the partial rebuild.
 
@@ -770,29 +777,35 @@ class DelayedUpdatesTestCase(TreeTestCase):
             2 1 1 1 2 5
             3 2 1 2 3 4
             4 - 2 0 1 2
+            5 - 3 0 1 2
         """)
 
     def test_move_node_different_tree(self):
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(13):
             with ConcreteModel.objects.delay_mptt_updates():
-                with self.assertNumQueries(2):
-                    # 2 queries here:
-                    #  (django does a query to determine if the row is in the db yet)
-                    self.c.parent = self.d
-                    self.c.save()
-                # 3rd query here:
+                with self.assertNumQueries(3):
+                    # 3 queries here:
+                    #  1. django checks if the node is in the db
+                    #  2. update the node
+                    #  3. collapse old tree since it is now empty.
+                    self.d.parent = self.c
+                    self.d.save()
+                # 4th query here:
                 self.assertTreeEqual(ConcreteModel.objects.all(), """
                     1 - 1 0 1 6
                     2 1 1 1 2 3
-                    4 - 2 0 1 2
-                    3 4 2 1 2 3
+                    3 1 1 1 4 5
+                    4 3 1 2 5 6
+                    5 - 2 0 1 2
                 """)
+            # the other 9 queries are the partial rebuild
 
         self.assertTreeEqual(ConcreteModel.objects.all(), """
-            1 - 1 0 1 6
+            1 - 1 0 1 8
             2 1 1 1 2 3
-            4 - 2 0 1 4
-            3 4 2 1 2 3
+            3 1 1 1 4 7
+            4 3 1 2 5 6
+            5 - 2 0 1 2
         """)
 
     def test_move_node_to_root(self):
@@ -811,30 +824,35 @@ class DelayedUpdatesTestCase(TreeTestCase):
                     1 - 1 0 1 6
                     2 1 1 1 2 3
                     4 - 2 0 1 2
-                    3 - 3 0 1 2
+                    5 - 3 0 1 2
+                    3 - 4 0 1 2
                 """)
 
         self.assertTreeEqual(ConcreteModel.objects.all(), """
             1 - 1 0 1 6
             2 1 1 1 2 3
             4 - 2 0 1 2
-            3 - 3 0 1 2
+            5 - 3 0 1 2
+            3 - 4 0 1 2
         """)
 
     def test_move_root_to_child(self):
-        with self.assertNumQueries(12):
+        with self.assertNumQueries(13):
             with ConcreteModel.objects.delay_mptt_updates():
-                with self.assertNumQueries(2):
-                    # 2 queries here:
-                    #  (django does a query to determine if the row is in the db yet)
+                with self.assertNumQueries(3):
+                    # 3 queries here:
+                    #  1. django checks if the node is in the db
+                    #  2. update the node
+                    #  3. collapse old tree since it is now empty.
                     self.d.parent = self.c
                     self.d.save()
-                # 3rd query here:
+                # 4th query here:
                 self.assertTreeEqual(ConcreteModel.objects.all(), """
                     1 - 1 0 1 6
                     2 1 1 1 2 3
                     3 1 1 1 4 5
                     4 3 1 2 5 6
+                    5 - 2 0 1 2
                 """)
             # the remaining 9 queries are the partial rebuild.
 
@@ -843,4 +861,188 @@ class DelayedUpdatesTestCase(TreeTestCase):
             2 1 1 1 2 3
             3 1 1 1 4 7
             4 3 1 2 5 6
+            5 - 2 0 1 2
+        """)
+
+
+class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
+    def setUp(self):
+        self.c = OrderedInsertion.objects.create(name="c")
+        self.d = OrderedInsertion.objects.create(name="d", parent=self.c)
+        self.e = OrderedInsertion.objects.create(name="e", parent=self.c)
+        self.f = OrderedInsertion.objects.create(name="f")
+        self.z = OrderedInsertion.objects.create(name="z")
+        # state is now:
+        self.assertTreeEqual(OrderedInsertion.objects.all(), """
+            1 - 1 0 1 6
+            2 1 1 1 2 3
+            3 1 1 1 4 5
+            4 - 2 0 1 2
+            5 - 3 0 1 2
+        """)
+
+    def test_insert_child(self):
+        with self.assertNumQueries(11):
+            with OrderedInsertion.objects.delay_mptt_updates():
+                with self.assertNumQueries(1):
+                    # 1 query here:
+                    OrderedInsertion.objects.create(name="dd", parent=self.c)
+                # 2nd query here:
+                self.assertTreeEqual(OrderedInsertion.objects.all(), """
+                    1 - 1 0 1 6
+                    2 1 1 1 2 3
+                    3 1 1 1 4 5
+                    6 1 1 1 6 7
+                    4 - 2 0 1 2
+                    5 - 3 0 1 2
+                """)
+                # remaining 9 queries are the partial rebuild process.
+
+        self.assertTreeEqual(OrderedInsertion.objects.all(), """
+            1 - 1 0 1 8
+            2 1 1 1 2 3
+            6 1 1 1 4 5
+            3 1 1 1 6 7
+            4 - 2 0 1 2
+            5 - 3 0 1 2
+        """)
+
+    def test_insert_root(self):
+        with self.assertNumQueries(4):
+            with OrderedInsertion.objects.delay_mptt_updates():
+                with self.assertNumQueries(3):
+                    # 3 queries required here:
+                    #   1. get correct tree_id (delay_mptt_updates doesn't handle
+                    #       root-level ordering when using ordered insertion)
+                    #   2. increment tree_id of all following trees
+                    #   3. insert the object
+                    OrderedInsertion.objects.create(name="ee")
+                # 4th query here:
+                self.assertTreeEqual(OrderedInsertion.objects.all(), """
+                    1 - 1 0 1 6
+                    2 1 1 1 2 3
+                    3 1 1 1 4 5
+                    6 - 2 0 1 2
+                    4 - 3 0 1 2
+                    5 - 4 0 1 2
+                """)
+            # no partial rebuild is required
+        self.assertTreeEqual(OrderedInsertion.objects.all(), """
+            1 - 1 0 1 6
+            2 1 1 1 2 3
+            3 1 1 1 4 5
+            6 - 2 0 1 2
+            4 - 3 0 1 2
+            5 - 4 0 1 2
+        """)
+
+    def test_move_node_same_tree(self):
+        with self.assertNumQueries(10):
+            with OrderedInsertion.objects.delay_mptt_updates():
+                with self.assertNumQueries(2):
+                    # 2 queries here:
+                    #  (django does a query to determine if the row is in the db yet)
+                    self.e.name = 'before d'
+                    self.e.save()
+                # 3rd query here:
+                self.assertTreeEqual(OrderedInsertion.objects.all(), """
+                    1 - 1 0 1 6
+                    2 1 1 1 2 3
+                    3 1 1 1 4 5
+                    4 - 2 0 1 2
+                    5 - 3 0 1 2
+                """)
+            # the remaining 7 queries are the partial rebuild.
+
+        self.assertTreeEqual(OrderedInsertion.objects.all(), """
+            1 - 1 0 1 6
+            3 1 1 1 2 3
+            2 1 1 1 4 5
+            4 - 2 0 1 2
+            5 - 3 0 1 2
+        """)
+
+    def test_move_node_different_tree(self):
+        with self.assertNumQueries(13):
+            with OrderedInsertion.objects.delay_mptt_updates():
+                with self.assertNumQueries(3):
+                    # 3 queries here:
+                    #  1. django checks if the node is in the db
+                    #  2. update the node
+                    #  3. collapse old tree since it is now empty.
+                    self.f.parent = self.c
+                    self.f.name = 'dd'
+                    self.f.save()
+                # 4th query here:
+                self.assertTreeEqual(OrderedInsertion.objects.all(), """
+                    1 - 1 0 1 6
+                    2 1 1 1 2 3
+                    4 1 1 1 2 3
+                    3 1 1 1 4 5
+                    5 - 2 0 1 2
+                """)
+            # the remaining 9 queries are the partial rebuild
+
+        self.assertTreeEqual(OrderedInsertion.objects.all(), """
+            1 - 1 0 1 8
+            2 1 1 1 2 3
+            4 1 1 1 4 5
+            3 1 1 1 6 7
+            5 - 2 0 1 2
+        """)
+
+    def test_move_node_to_root(self):
+        with self.assertNumQueries(5):
+            with OrderedInsertion.objects.delay_mptt_updates():
+                with self.assertNumQueries(4):
+                    # 4 queries here!
+                    #   1. find the next tree_id to move to
+                    #   2. update the tree_id on all nodes to the right of that
+                    #   3. django does a query to determine if this instance exists in the db
+                    #   4. update tree fields on self.c
+                    self.e.parent = None
+                    self.e.save()
+                # 5th query here:
+                self.assertTreeEqual(OrderedInsertion.objects.all(), """
+                    1 - 1 0 1 6
+                    2 1 1 1 2 3
+                    3 - 2 0 1 2
+                    4 - 3 0 1 2
+                    5 - 4 0 1 2
+                """)
+
+        self.assertTreeEqual(OrderedInsertion.objects.all(), """
+            1 - 1 0 1 6
+            2 1 1 1 2 3
+            3 - 2 0 1 2
+            4 - 3 0 1 2
+            5 - 4 0 1 2
+        """)
+
+    def test_move_root_to_child(self):
+        with self.assertNumQueries(13):
+            with OrderedInsertion.objects.delay_mptt_updates():
+                with self.assertNumQueries(3):
+                    # 3 queries here:
+                    #  1. django checks if the node is in the db
+                    #  2. update the node
+                    #  3. collapse old tree since it is now empty.
+                    self.f.parent = self.e
+                    self.f.save()
+                # 4th query here:
+                self.assertTreeEqual(OrderedInsertion.objects.all(), """
+                    1 - 1 0 1 6
+                    2 1 1 1 2 3
+                    3 1 1 1 4 5
+                    4 3 1 2 5 6
+                    5 - 2 0 1 2
+                """)
+            # the remaining 9 queries are the partial rebuild.
+
+        self.assertTreeEqual(OrderedInsertion.objects.all(), """
+            1 - 1 0 1 8
+            2 1 1 1 2 3
+            3 1 1 1 4 7
+            4 3 1 2 5 6
+            5 - 2 0 1 2
         """)

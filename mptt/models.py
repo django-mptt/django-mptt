@@ -699,6 +699,7 @@ class MPTTModel(models.Model):
         # determine whether this instance is already in the db
         force_update = kwargs.get('force_update', False)
         force_insert = kwargs.get('force_insert', False)
+        collapse_old_tree = None
         if force_update or (not force_insert and self._is_saved(using=kwargs.get('using', None))):
             # it already exists, so do a move
             old_parent_id = self._mptt_cached_fields[opts.parent_attr]
@@ -708,6 +709,21 @@ class MPTTModel(models.Model):
                     if old_value != opts.get_raw_field_value(self, field_name):
                         same_order = False
                         break
+                if not do_updates and not same_order:
+                    same_order = True
+                    self.__class__._mptt_track_tree_modified(self._mpttfield('tree_id'))
+            elif not same_order and old_parent_id is None:
+                # the old tree no longer exists, so we need to collapse it.
+                collapse_old_tree = self._mpttfield('tree_id')
+                parent = getattr(self, opts.parent_attr)
+                tree_id = parent._mpttfield('tree_id')
+                left = parent._mpttfield('left') + 1
+                self.__class__._mptt_track_tree_modified(tree_id)
+                setattr(self, opts.tree_id_attr, tree_id)
+                setattr(self, opts.left_attr, left)
+                setattr(self, opts.right_attr, left + 1)
+                setattr(self, opts.level_attr, parent._mpttfield('level') + 1)
+                same_order = True
 
             if not same_order:
                 opts.set_raw_field_value(self, opts.parent_attr, old_parent_id)
@@ -749,6 +765,8 @@ class MPTTModel(models.Model):
                     # Make sure the new parent is always
                     # restored on the way out in case of errors.
                     opts.set_raw_field_value(self, opts.parent_attr, parent_id)
+            else:
+                opts.set_raw_field_value(self, opts.parent_attr, parent_id)
         else:
             # new node, do an insert
             if (getattr(self, opts.left_attr) and getattr(self, opts.right_attr)):
@@ -758,8 +776,12 @@ class MPTTModel(models.Model):
                 parent = getattr(self, opts.parent_attr)
 
                 right_sibling = None
-                if opts.order_insertion_by:
-                    right_sibling = opts.get_ordered_insertion_target(self, parent)
+                # if we're inside delay_mptt_updates, don't do queries to find sibling position.
+                # instead, do default insertion. correct positions will be found during partial rebuild later.
+                # *unless* this is a root node. (as update tracking doesn't handle re-ordering of trees.)
+                if do_updates or parent is None:
+                    if opts.order_insertion_by:
+                        right_sibling = opts.get_ordered_insertion_target(self, parent)
 
                 if right_sibling:
                     self.insert_at(right_sibling, 'left', allow_existing_pk=True)
@@ -772,7 +794,12 @@ class MPTTModel(models.Model):
                 else:
                     # Default insertion
                     self.insert_at(parent, position='last-child', allow_existing_pk=True)
-        super(MPTTModel, self).save(*args, **kwargs)
+        try:
+            super(MPTTModel, self).save(*args, **kwargs)
+        finally:
+            if collapse_old_tree is not None:
+                self._tree_manager._create_tree_space(collapse_old_tree, -1)
+
         self._mptt_saved = True
         opts.update_mptt_cached_fields(self)
 

@@ -501,14 +501,14 @@ class TreeManager(models.Manager):
         """
         self._manage_space(size, target, tree_id)
 
-    def _create_tree_space(self, target_tree_id):
+    def _create_tree_space(self, target_tree_id, num_trees=1):
         """
         Creates space for a new tree by incrementing all tree ids
         greater than ``target_tree_id``.
         """
         qs = self._mptt_filter(tree_id__gt=target_tree_id)
-        self._mptt_update(qs, tree_id=F(self.tree_id_attr) + 1)
-        self.tree_model._mptt_track_tree_insertions(target_tree_id + 1, 1)
+        self._mptt_update(qs, tree_id=F(self.tree_id_attr) + num_trees)
+        self.tree_model._mptt_track_tree_insertions(target_tree_id + 1, num_trees)
 
     def _get_next_tree_id(self):
         """
