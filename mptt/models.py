@@ -712,7 +712,7 @@ class MPTTModel(models.Model):
                 if not do_updates and not same_order:
                     same_order = True
                     self.__class__._mptt_track_tree_modified(self._mpttfield('tree_id'))
-            elif not same_order and old_parent_id is None:
+            elif (not do_updates) and not same_order and old_parent_id is None:
                 # the old tree no longer exists, so we need to collapse it.
                 collapse_old_tree = self._mpttfield('tree_id')
                 parent = getattr(self, opts.parent_attr)
