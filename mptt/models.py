@@ -141,7 +141,7 @@ class MPTTOptions(object):
                 # the same values.
                 order_by.append(opts.left_attr)
             else:
-                filters = filters & Q(**{'%s__isnull' % opts.parent_attr: True})
+                filters = filters & Q(**{opts.parent_attr: None})
                 # Fall back on tree id ordering if multiple root nodes have
                 # the same values.
                 order_by.append(opts.tree_id_attr)
@@ -471,7 +471,7 @@ class MPTTModel(models.Model):
         qs = self._tree_manager.filter(*filter_args, **filter_kwargs)
         if self.is_root_node():
             qs = self._tree_manager._mptt_filter(qs,
-                parent__isnull=True,
+                parent=None,
                 tree_id__gt=self._mpttfield('tree_id'),
             )
         else:
@@ -492,7 +492,7 @@ class MPTTModel(models.Model):
         qs = self._tree_manager.filter(*filter_args, **filter_kwargs)
         if self.is_root_node():
             qs = self._tree_manager._mptt_filter(qs,
-                parent__isnull=True,
+                parent=None,
                 tree_id__lt=self._mpttfield('tree_id'),
             )
             qs = qs.order_by('-%s' % opts.tree_id_attr)
@@ -515,7 +515,7 @@ class MPTTModel(models.Model):
 
         return self._tree_manager._mptt_filter(
             tree_id=self._mpttfield('tree_id'),
-            parent__isnull=True
+            parent=None,
         ).get()
 
     def get_siblings(self, include_self=False):
@@ -528,7 +528,7 @@ class MPTTModel(models.Model):
         include this model instance.
         """
         if self.is_root_node():
-            queryset = self._tree_manager._mptt_filter(parent__isnull=True)
+            queryset = self._tree_manager._mptt_filter(parent=None)
         else:
             parent_id = getattr(self, '%s_id' % self._mptt_meta.parent_attr)
             queryset = self._tree_manager._mptt_filter(parent__id=parent_id)
