@@ -417,7 +417,7 @@ class TreeManager(models.Manager):
         if self._base_manager:
             return self._base_manager.root_node(tree_id)
 
-        return self._mptt_filter(tree_id=tree_id, parent__isnull=True).get()
+        return self._mptt_filter(tree_id=tree_id, parent=None).get()
 
     def root_nodes(self):
         """
@@ -426,7 +426,7 @@ class TreeManager(models.Manager):
         if self._base_manager:
             return self._base_manager.root_nodes()
 
-        return self._mptt_filter(parent__isnull=True)
+        return self._mptt_filter(parent=None)
 
     def rebuild(self):
         """
@@ -438,7 +438,7 @@ class TreeManager(models.Manager):
 
         opts = self.model._mptt_meta
 
-        qs = self._mptt_filter(parent__isnull=True)
+        qs = self._mptt_filter(parent=None)
         if opts.order_insertion_by:
             qs = qs.order_by(*opts.order_insertion_by)
         pks = qs.values_list('pk', flat=True)
