@@ -9,9 +9,6 @@ DATABASES = {
         'NAME': 'mydatabase'
     }
 }
-# for django 1.1 compatibility
-DATABASE_ENGINE = 'sqlite3'
-DATABASE_NAME = 'test.db'
 
 INSTALLED_APPS = (
     'mptt',

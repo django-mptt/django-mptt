@@ -2,6 +2,7 @@
 Utilities for working with lists of model instances which represent
 trees.
 """
+
 import copy
 import csv
 import itertools
@@ -166,17 +167,3 @@ def print_debug_info(qs):
             row.append(getattr(n, field))
         row.append('%s%s' % ('- ' * level, unicode(n).encode('utf-8')))
         writer.writerow(row)
-
-
-# NOTE we don't support django 1.1 anymore, so this stuff is likely to get removed soon
-def _exists(qs):
-    """
-    For Django 1.1 compatibility. (QuerySet.exists() was added in 1.2)
-
-    This is not part of the supported mptt API, it may be removed without warning.
-    """
-    if hasattr(qs, 'exists'):
-        return qs.exists()
-    else:
-        qs = qs.extra(select={'_exists_check': '1'}).values_list('_exists_check', flat=True)[:1]
-        return bool(len(qs))

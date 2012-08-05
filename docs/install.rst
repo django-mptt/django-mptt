@@ -36,7 +36,7 @@ opening a Python interpreter and entering the following commands::
 
    >>> import mptt
    >>> mptt.VERSION
-   (0, 5, 2)
+   (0, 5, '+dev')
 
 When you want to update your copy of the source code, run ``git pull``
 from within the ``django-mptt`` directory.
