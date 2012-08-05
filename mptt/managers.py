@@ -366,7 +366,27 @@ class TreeManager(models.Manager):
             node.save()
         return node
 
-    def move_node(self, node, target, position='last-child', save=True):
+    def _move_node(self, node, target, position='last-child', save=True):
+        if self._base_manager:
+            return self._base_manager.move_node(node, target, position=position)
+
+        if self.tree_model._mptt_is_tracking:
+            # delegate to insert_node and clean up the gaps later.
+            return self.insert_node(node, target, position=position, save=save, allow_existing_pk=True)
+        else:
+            if target is None:
+                if node.is_child_node():
+                    self._make_child_root_node(node)
+            elif target.is_root_node() and position in ('left', 'right'):
+                self._make_sibling_of_root_node(node, target, position)
+            else:
+                if node.is_root_node():
+                    self._move_root_node(node, target, position)
+                else:
+                    self._move_child_node(node, target, position)
+            transaction.commit_unless_managed()
+
+    def move_node(self, node, target, position='last-child'):
         """
         Moves ``node`` relative to a given ``target`` node as specified
         by ``position`` (when appropriate), by examining both nodes and
@@ -388,25 +408,7 @@ class TreeManager(models.Manager):
         NOTE: This is a low-level method; it does NOT respect ``MPTTMeta.order_insertion_by``.
         In most cases you should just move the node yourself by setting node.parent.
         """
-
-        if self._base_manager:
-            return self._base_manager.move_node(node, target, position=position)
-
-        if self.tree_model._mptt_is_tracking:
-            # delegate to insert_node and clean up the gaps later.
-            return self.insert_node(node, target, position=position, save=save, allow_existing_pk=True)
-        else:
-            if target is None:
-                if node.is_child_node():
-                    self._make_child_root_node(node)
-            elif target.is_root_node() and position in ('left', 'right'):
-                self._make_sibling_of_root_node(node, target, position)
-            else:
-                if node.is_root_node():
-                    self._move_root_node(node, target, position)
-                else:
-                    self._move_child_node(node, target, position)
-            transaction.commit_unless_managed()
+        self._move_node(node, target, position=position)
 
     def root_node(self, tree_id):
         """

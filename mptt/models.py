@@ -626,7 +626,7 @@ class MPTTModel(models.Model):
             return True
         return other.is_descendant_of(self)
 
-    def move_to(self, target, position='first-child', save=True):
+    def move_to(self, target, position='first-child'):
         """
         Convenience method for calling ``TreeManager.move_node`` with this
         model instance.
@@ -634,7 +634,7 @@ class MPTTModel(models.Model):
         NOTE: This is a low-level method; it does NOT respect ``MPTTMeta.order_insertion_by``.
         In most cases you should just move the node yourself by setting node.parent.
         """
-        self._tree_manager.move_node(self, target, position, save=save)
+        self._tree_manager.move_node(self, target, position)
 
     def _is_saved(self, using=None):
         if not self.pk or self._mpttfield('tree_id') is None:
@@ -744,18 +744,18 @@ class MPTTModel(models.Model):
                             update_cached_parent = False
 
                     if right_sibling:
-                        self.move_to(right_sibling, 'left', save=False)
+                        self._tree_manager._move_node(self, right_sibling, 'left', save=False)
                     else:
                         # Default movement
                         if parent_id is None:
                             root_nodes = self._tree_manager.root_nodes()
                             try:
                                 rightmost_sibling = root_nodes.exclude(pk=self.pk).order_by('-%s' % opts.tree_id_attr)[0]
-                                self.move_to(rightmost_sibling, position='right', save=False)
+                                self._tree_manager._move_node(self, rightmost_sibling, 'right', save=False)
                             except IndexError:
                                 pass
                         else:
-                            self.move_to(parent, position='last-child', save=False)
+                            self._tree_manager._move_node(self, parent, 'last-child', save=False)
 
                     if parent_id is not None and update_cached_parent:
                         # Update rght of cached parent
