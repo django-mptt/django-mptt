@@ -3,7 +3,6 @@ from __future__ import with_statement
 
 import re
 import sys
-import unittest
 
 import django
 from django.conf import settings
@@ -432,31 +431,25 @@ class PositionedInsertionTestCase(TreeTestCase):
     pass
 
 
-class FeinCMSModelAdminTestCase(TreeTestCase):
-    """
-    Tests for FeinCMSModelAdmin.
-    """
-    fixtures = ['categories.json']
-
-    @unittest.skipIf(not feincms, "Requires feincms")
-    def test_actions_column(self):
+if feincms:
+    class FeinCMSModelAdminTestCase(TreeTestCase):
         """
-        The action column should have an "add" button inserted.
+        Tests for FeinCMSModelAdmin.
         """
-        from mptt.admin import FeinCMSModelAdmin
-        model_admin = FeinCMSModelAdmin(Category, admin.site)
+        fixtures = ['categories.json']
 
-        # See implementation notes.
-        if django.VERSION < (1, 4):
-            prefix = '/static/admin/img/admin/'
-        else:
-            prefix = '/static/admin/img/'
+        def test_actions_column(self):
+            """
+            The action column should have an "add" button inserted.
+            """
+            from mptt.admin import FeinCMSModelAdmin
+            model_admin = FeinCMSModelAdmin(Category, admin.site)
 
-        category = Category.objects.get(id=1)
-        self.assertEqual(model_admin._actions_column(category), [
-            u'<a href="add/?parent=1" title="Add child">'
-                u'<img src="%sicon_addlink.gif" alt="Add child" /></a>' % prefix,
-            '<div class="drag_handle"></div>'])
+            category = Category.objects.get(id=1)
+            self.assertTrue(
+                u'<a href="add/?parent=1" title="Add child">' in
+                model_admin._actions_column(category)[0]
+            )
 
 
 class CustomPKNameTestCase(TreeTestCase):
