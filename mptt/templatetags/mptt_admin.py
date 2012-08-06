@@ -1,3 +1,4 @@
+import django
 from django.conf import settings
 from django.contrib.admin.util import lookup_field, display_for_field
 from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
@@ -8,7 +9,13 @@ from django.utils.safestring import mark_safe
 from django.utils.encoding import smart_unicode, force_unicode
 from django.template import Library
 
-from django.contrib.admin.templatetags.admin_list import _boolean_icon, result_headers, result_hidden_fields
+from django.contrib.admin.templatetags.admin_list import _boolean_icon, result_headers
+
+
+if django.VERSION >= (1, 2, 3):
+    from django.contrib.admin.templatetags.admin_list import result_hidden_fields
+else:
+    result_hidden_fields = lambda cl: []
 
 
 register = Library()
