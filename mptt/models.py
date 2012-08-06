@@ -499,7 +499,7 @@ class MPTTModel(models.Model):
             qs = qs.order_by('-%s' % opts.tree_id_attr)
         else:
             qs = self._tree_manager._mptt_filter(qs,
-                parent__id=getattr(self, '%s_id' % opts.parent_attr),
+                parent__pk=getattr(self, '%s_id' % opts.parent_attr),
                 right__lt=self._mpttfield('left'),
             )
             qs = qs.order_by('-%s' % opts.right_attr)
@@ -532,7 +532,7 @@ class MPTTModel(models.Model):
             queryset = self._tree_manager._mptt_filter(parent__isnull=True)
         else:
             parent_id = getattr(self, '%s_id' % self._mptt_meta.parent_attr)
-            queryset = self._tree_manager._mptt_filter(parent__id=parent_id)
+            queryset = self._tree_manager._mptt_filter(parent__pk=parent_id)
         if not include_self:
             queryset = queryset.exclude(pk=self.pk)
         return queryset
