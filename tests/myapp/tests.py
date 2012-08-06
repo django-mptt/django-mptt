@@ -6,6 +6,7 @@ import sys
 import unittest
 
 import django
+from django.conf import settings
 from django.contrib import admin
 from django.test import TestCase
 
@@ -48,6 +49,11 @@ def tree_details(text):
 
 
 class TreeTestCase(TestCase):
+    def __init__(self, *args, **kwargs):
+        # required for assertNumQueries impl for django 1.2 below
+        settings.DEBUG = True
+        super(TreeTestCase, self).__init__(*args, **kwargs)
+
     def assertTreeEqual(self, tree1, tree2):
         if not isinstance(tree1, basestring):
             tree1 = get_tree_details(tree1)
@@ -70,13 +76,10 @@ class TreeTestCase(TestCase):
                     self.connection = connection
 
                 def __enter__(self):
-                    self.old_debug_cursor = self.connection.use_debug_cursor
-                    self.connection.use_debug_cursor = True
                     self.starting_queries = len(self.connection.queries)
                     return self
 
                 def __exit__(self, exc_type, exc_value, traceback):
-                    self.connection.use_debug_cursor = self.old_debug_cursor
                     if exc_type is not None:
                         return
 
