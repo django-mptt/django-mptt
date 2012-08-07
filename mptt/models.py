@@ -199,14 +199,14 @@ class MPTTModelBase(ModelBase):
         if cls is cls._mptt_tracking_base:
             cls._threadlocal = threading.local()
             cls._threadlocal.mptt_delayed_tree_changes = None
-            cls._mptt_updates_enabled = True
+            cls._threadlocal.mptt_updates_enabled = True
 
         return cls
 
     def _get_mptt_updates_enabled(cls):
         if not cls._mptt_tracking_base:
             return True
-        return cls._mptt_tracking_base._threadlocal.mptt_updates_enabled
+        return getattr(cls._mptt_tracking_base._threadlocal, 'mptt_updates_enabled', True)
 
     def _set_mptt_updates_enabled(cls, value):
         assert cls is cls._mptt_tracking_base, "Can't enable or disable mptt updates on a non-tracking class."
