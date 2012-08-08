@@ -198,8 +198,8 @@ class MPTTModelBase(ModelBase):
                 break
         if cls is cls._mptt_tracking_base:
             cls._threadlocal = threading.local()
-            cls._threadlocal.mptt_delayed_tree_changes = None
-            cls._threadlocal.mptt_updates_enabled = True
+            # set on first access (to make threading errors more obvious):
+            #    cls._threadlocal.mptt_delayed_tree_changes = None
 
         return cls
 
@@ -217,16 +217,19 @@ class MPTTModelBase(ModelBase):
     def _mptt_is_tracking(cls):
         if not cls._mptt_tracking_base:
             return False
+        if not hasattr(cls._threadlocal, 'mptt_delayed_tree_changes'):
+            # happens the first time this is called from each thread
+            cls._threadlocal.mptt_delayed_tree_changes = None
         return cls._threadlocal.mptt_delayed_tree_changes is not None
 
     def _mptt_start_tracking(cls):
         assert cls is cls._mptt_tracking_base, "Can't start or stop mptt tracking on a non-tracking class."
-        assert cls._threadlocal.mptt_delayed_tree_changes is None, "mptt tracking is already started."
+        assert not cls._mptt_is_tracking, "mptt tracking is already started."
         cls._threadlocal.mptt_delayed_tree_changes = set()
 
     def _mptt_stop_tracking(cls):
         assert cls is cls._mptt_tracking_base, "Can't start or stop mptt tracking on a non-tracking class."
-        assert cls._threadlocal.mptt_delayed_tree_changes is not None, "mptt tracking isn't started."
+        assert cls._mptt_is_tracking, "mptt tracking isn't started."
         results = cls._threadlocal.mptt_delayed_tree_changes
         cls._threadlocal.mptt_delayed_tree_changes = None
         return results
@@ -237,6 +240,8 @@ class MPTTModelBase(ModelBase):
         cls._threadlocal.mptt_delayed_tree_changes.add(tree_id)
 
     def _mptt_track_tree_insertions(cls, tree_id, num_inserted):
+        if not cls._mptt_is_tracking:
+            return
         changes = cls._threadlocal.mptt_delayed_tree_changes
         if not num_inserted or not changes:
             return
