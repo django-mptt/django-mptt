@@ -121,7 +121,7 @@ MPTTModel instance methods
 
 Subclasses of MPTTModel have the following instance methods:
 
-``get_ancestors(ascending=False)``
+``get_ancestors(ascending=False, include_self=False)``
 ----------------------------------
 
 creates a ``QuerySet`` containing the ancestors of the model instance.
@@ -129,6 +129,9 @@ creates a ``QuerySet`` containing the ancestors of the model instance.
 These default to being in descending order (root ancestor first,
 immediate parent last); passing ``True`` for the ``ascending`` argument
 will reverse the ordering (immediate parent first, root ancestor last).
+
+If ``include_self`` is ``True``, the ``QuerySet`` will also include the
+model instance itself.
 
 ``get_children()``
 ------------------
