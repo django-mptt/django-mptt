@@ -89,9 +89,12 @@ class MPTTOptions(object):
         so that the MPTT fields need to be updated.
         """
         instance._mptt_cached_fields = {}
-        field_names = [self.parent_attr]
+        field_names = set([self.parent_attr])
         if self.order_insertion_by:
-            field_names += self.order_insertion_by
+            for f in self.order_insertion_by:
+                if f.startswith('-'):
+                    f = f[1:]
+                field_names.add(f)
         for field_name in field_names:
             instance._mptt_cached_fields[field_name] = self.get_raw_field_value(instance, field_name)
 
@@ -113,9 +116,15 @@ class MPTTOptions(object):
         fields = []
         filters = []
         for field in order_insertion_by:
+            if field.startswith('-'):
+                field = field[1:]
+                filter_template = '%s__lt'
+            else:
+                filter_template = '%s__gt'
             value = getattr(instance, field)
-            filters.append(reduce(operator.and_, [Q(**{f: v}) for f, v in fields] +
-                                                 [Q(**{'%s__gt' % field: value})]))
+            q = Q(**{filter_template % field: value})
+
+            filters.append(reduce(operator.and_, [Q(**{f: v}) for f, v in fields] + [q]))
             fields.append((field, value))
         return reduce(operator.or_, filters)
 

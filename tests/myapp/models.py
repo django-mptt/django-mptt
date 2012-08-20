@@ -38,7 +38,7 @@ class MultiOrder(MPTTModel):
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
 
     class MPTTMeta:
-        order_insertion_by = ['name', 'size', 'date']
+        order_insertion_by = ['name', 'size', '-date']
 
     def __unicode__(self):
         return self.name
