@@ -28,9 +28,6 @@ class MPTTOptions(object):
     level_attr = 'level'
     parent_attr = 'parent'
 
-    # deprecated, don't use this
-    tree_manager_attr = 'tree'
-
     def __init__(self, opts=None, **kwargs):
         # Override defaults with options provided
         if opts:
@@ -40,10 +37,7 @@ class MPTTOptions(object):
         opts.extend(kwargs.items())
 
         if 'tree_manager_attr' in [opt[0] for opt in opts]:
-            warnings.warn(
-                _("`tree_manager_attr` is deprecated; just instantiate a TreeManager as a normal manager on your model"),
-                DeprecationWarning
-            )
+            raise ValueError("`tree_manager_attr` has been removed; you should instantiate a TreeManager as a normal manager on your model instead.")
 
         for key, value in opts:
             setattr(self, key, value)

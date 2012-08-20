@@ -77,9 +77,6 @@ class Person(MPTTModel):
     objects = models.Manager()
     my_tree_manager = CustomTreeManager()
 
-    class MPTTMeta:
-        tree_manager_attr = 'my_tree_manager'
-
     def __unicode__(self):
         return self.name
 
