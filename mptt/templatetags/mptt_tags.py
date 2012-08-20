@@ -272,7 +272,6 @@ class RecurseTreeNode(template.Node):
         bits = []
         context.push()
         for child in node.get_children():
-            context['node'] = child
             bits.append(self._render_node(context, child))
         context['node'] = node
         context['children'] = mark_safe(u''.join(bits))
