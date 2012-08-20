@@ -20,3 +20,6 @@ INSTALLED_APPS = (
 
 # Required for Django 1.4+
 STATIC_URL = '/static/'
+
+# Required for Django 1.5+
+SECRET_KEY = 'abc123'
