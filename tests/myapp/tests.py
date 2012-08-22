@@ -7,6 +7,7 @@ import sys
 import django
 from django.conf import settings
 from django.contrib import admin
+from django.db.models import get_models
 from django.test import TestCase
 
 try:
@@ -15,6 +16,7 @@ except ImportError:
     feincms = False
 
 from mptt.exceptions import CantDisableUpdates, InvalidMove
+from mptt.models import MPTTModel
 from myapp.models import Category, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel, ConcreteModel, OrderedInsertion
 
 
@@ -1045,3 +1047,39 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
             4 3 1 2 5 6
             5 - 2 0 1 2
         """)
+
+
+class BaseManagerInfiniteRecursion(TestCase):
+    """
+    Tests to avoid infinite recursion in managers, which seems to be a recurring bug.
+    """
+    def test_all_managers_are_different(self):
+        # all tree managers should be different. otherwise, possible infinite recursion.
+        seen = {}
+        for model in get_models():
+            if not issubclass(model, MPTTModel):
+                continue
+            tm = model._tree_manager
+            if tm in seen:
+                self.fail("Tree managers for %s and %s are the same manager" % (model.__name__, seen[tm].__name__))
+            seen[tm] = model
+
+    def test_all_managers_have_correct_model(self):
+        # all tree managers should have the correct model.
+        for model in get_models():
+            if not issubclass(model, MPTTModel):
+                continue
+            self.assertEqual(model._tree_manager.model, model)
+
+    def test_base_manager_infinite_recursion(self):
+        # repeatedly calling _base_manager should eventually return None
+        for model in get_models():
+            if not issubclass(model, MPTTModel):
+                continue
+            manager = model._tree_manager
+            for i in range(20):
+                manager = manager._base_manager
+                if manager is None:
+                    break
+            else:
+                self.fail("Detected infinite recursion in %s._tree_manager._base_manager" % model)

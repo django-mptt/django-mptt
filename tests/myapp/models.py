@@ -131,6 +131,22 @@ class ConcreteModel(AbstractModel):
     name = models.CharField(max_length=50)
 
 
+class AbstractConcreteAbstract(ConcreteModel):
+    # abstract --> concrete --> abstract
+    class Meta:
+        abstract = True
+
+
+class ConcreteAbstractConcreteAbstract(ConcreteModel):
+    # concrete --> abstract --> concrete --> abstract
+    pass
+
+
+class ConcreteConcrete(ConcreteModel):
+    # another subclass (concrete this time) of the root concrete model
+    pass
+
+
 # 4. proxy models
 
 class SingleProxyModel(ConcreteModel):
