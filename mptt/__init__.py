@@ -1,5 +1,5 @@
 
-VERSION = (0, 5, 3)
+VERSION = (0, 5, 4)
 
 
 # NOTE: This method was removed in 0.4.0, but restored in 0.4.2 after use-cases were
