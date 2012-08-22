@@ -323,6 +323,7 @@ class MPTTModelBase(ModelBase):
 
                         setattr(cls, tree_manager_attr, _WarningDescriptor(tree_manager))
                     elif hasattr(another, 'init_from_model'):
+                        another = another._copy_to_model(cls)
                         another.init_from_model(cls)
 
         return cls
