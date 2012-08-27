@@ -8,7 +8,7 @@ from django.utils.translation import ugettext as _
 from mptt.forms import MPTTAdminForm, TreeNodeChoiceField
 
 __all__ = ('MPTTChangeList', 'MPTTModelAdmin', 'MPTTAdminForm')
-IS_GRAPPELLI_INSTALLED = True if 'grappelli' in settings.INSTALLED_APPS else False
+IS_GRAPPELLI_INSTALLED = 'grappelli' in settings.INSTALLED_APPS
 
 
 class MPTTChangeList(ChangeList):
