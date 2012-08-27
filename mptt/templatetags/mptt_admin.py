@@ -22,6 +22,7 @@ register = Library()
 
 
 MPTT_ADMIN_LEVEL_INDENT = getattr(settings, 'MPTT_ADMIN_LEVEL_INDENT', 10)
+IS_GRAPPELLI_INSTALLED = True if 'grappelli' in settings.INSTALLED_APPS else False
 
 
 ###
@@ -158,4 +159,7 @@ def mptt_result_list(cl):
 
 # custom template is merely so we can strip out sortable-ness from the column headers
 # Based on admin/change_list_results.html (1.3.1)
-mptt_result_list = register.inclusion_tag("admin/mptt_change_list_results.html")(mptt_result_list)
+if IS_GRAPPELLI_INSTALLED:
+    mptt_result_list = register.inclusion_tag("admin/grappelli_mptt_change_list_results.html")(mptt_result_list)
+else:
+    mptt_result_list = register.inclusion_tag("admin/mptt_change_list_results.html")(mptt_result_list)
