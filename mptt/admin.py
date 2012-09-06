@@ -8,6 +8,7 @@ from django.utils.translation import ugettext as _
 from mptt.forms import MPTTAdminForm, TreeNodeChoiceField
 
 __all__ = ('MPTTChangeList', 'MPTTModelAdmin', 'MPTTAdminForm')
+IS_GRAPPELLI_INSTALLED = 'grappelli' in settings.INSTALLED_APPS
 
 
 class MPTTChangeList(ChangeList):
@@ -30,7 +31,10 @@ class MPTTModelAdmin(ModelAdmin):
     No extra editing functionality beyond what Django admin normally offers.
     """
 
-    change_list_template = 'admin/mptt_change_list.html'
+    if IS_GRAPPELLI_INSTALLED:
+        change_list_template = 'admin/grappelli_mptt_change_list.html'
+    else:
+        change_list_template = 'admin/mptt_change_list.html'
 
     form = MPTTAdminForm
 
