@@ -40,6 +40,8 @@ class MPTTOptions(object):
             raise ValueError("`tree_manager_attr` has been removed; you should instantiate a TreeManager as a normal manager on your model instead.")
 
         for key, value in opts:
+            if key.startswith('__'):
+                continue
             setattr(self, key, value)
 
         # Normalize order_insertion_by to a list
