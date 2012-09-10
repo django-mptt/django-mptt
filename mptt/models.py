@@ -46,6 +46,8 @@ class MPTTOptions(object):
             )
 
         for key, value in opts:
+            if key.startswith('__'):
+                continue
             setattr(self, key, value)
 
         # Normalize order_insertion_by to a list
