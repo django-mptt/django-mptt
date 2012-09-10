@@ -69,6 +69,13 @@ class Tree(MPTTModel):
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
 
 
+class NewStyleMPTTMeta(MPTTModel):
+    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+
+    class MPTTMeta(object):
+        left_attr = 'testing'
+
+
 class Person(MPTTModel):
     name = models.CharField(max_length=50)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
