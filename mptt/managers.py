@@ -453,7 +453,7 @@ class TreeManager(models.Manager):
             return self._base_manager.partial_rebuild(tree_id)
         opts = self.model._mptt_meta
 
-        qs = self._mptt_filter(parent__isnull=True, tree_id=tree_id)
+        qs = self._mptt_filter(parent=None, tree_id=tree_id)
         if opts.order_insertion_by:
             qs = qs.order_by(*opts.order_insertion_by)
         pks = qs.values_list('pk', flat=True)
