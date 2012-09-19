@@ -40,7 +40,7 @@ class MPTTOptions(object):
             raise ValueError("`tree_manager_attr` has been removed; you should instantiate a TreeManager as a normal manager on your model instead.")
 
         for key, value in opts:
-            if key.startswith('__'):
+            if key[:2] == '__':
                 continue
             setattr(self, key, value)
 
@@ -53,7 +53,7 @@ class MPTTOptions(object):
             self.order_insertion_by = []
 
     def __iter__(self):
-        return iter([(k, v) for (k, v) in self.__dict__.items() if not k.startswith('_')])
+        return iter([(k, v) for (k, v) in self.__dict__.items() if k[0] != '_'])
 
     # Helper methods for accessing tree attributes on models.
     def get_raw_field_value(self, instance, field_name):
@@ -88,7 +88,7 @@ class MPTTOptions(object):
         field_names = set([self.parent_attr])
         if self.order_insertion_by:
             for f in self.order_insertion_by:
-                if f.startswith('-'):
+                if f[0] == '-':
                     f = f[1:]
                 field_names.add(f)
         for field_name in field_names:
@@ -112,7 +112,7 @@ class MPTTOptions(object):
         fields = []
         filters = []
         for field in order_insertion_by:
-            if field.startswith('-'):
+            if field[0] == '-':
                 field = field[1:]
                 filter_template = '%s__lt'
             else:
