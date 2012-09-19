@@ -53,7 +53,7 @@ class MPTTOptions(object):
             self.order_insertion_by = []
 
     def __iter__(self):
-        return iter([(k, v) for (k, v) in self.__dict__.items() if k[0] != '_'])
+        return ((k, v) for k, v in self.__dict__.iteritems() if k[0] != '_')
 
     # Helper methods for accessing tree attributes on models.
     def get_raw_field_value(self, instance, field_name):
@@ -182,7 +182,7 @@ class MPTTModelBase(ModelBase):
         # extend MPTTMeta from base classes
         for base in bases:
             if hasattr(base, '_mptt_meta'):
-                for (name, value) in base._mptt_meta:
+                for name, value in base._mptt_meta:
                     if name == 'tree_manager_attr':
                         continue
                     if name not in initial_options:
@@ -279,8 +279,8 @@ class MPTTModelBase(ModelBase):
         # some discussion is here: https://github.com/divio/django-cms/issues/1079
         # This stuff is still documented as removed, and WILL be removed again in the next release.
         # All new code should use _mptt_meta rather than _meta for tree attributes.
-        attrs = set(['left_attr', 'right_attr', 'tree_id_attr', 'level_attr', 'parent_attr',
-                    'tree_manager_attr', 'order_insertion_by'])
+        attrs = set(('left_attr', 'right_attr', 'tree_id_attr', 'level_attr',
+		     'parent_attr', 'tree_manager_attr', 'order_insertion_by'))
         warned_attrs = set()
 
         class _MetaSubClass(cls._meta.__class__):
@@ -313,7 +313,7 @@ class MPTTModelBase(ModelBase):
                 # strip out bases that are strict superclasses of MPTTModel.
                 # (i.e. Model, object)
                 # this helps linearize the type hierarchy if possible
-                for i in range(len(bases) - 1, -1, -1):
+                for i in xrange(len(bases) - 1, -1, -1):
                     if issubclass(MPTTModel, bases[i]):
                         del bases[i]
 
@@ -710,12 +710,12 @@ class MPTTModel(models.Model):
         force_update = kwargs.get('force_update', False)
         force_insert = kwargs.get('force_insert', False)
         collapse_old_tree = None
-        if force_update or (not force_insert and self._is_saved(using=kwargs.get('using', None))):
+        if force_update or (not force_insert and self._is_saved(using=kwargs.get('using'))):
             # it already exists, so do a move
             old_parent_id = self._mptt_cached_fields[opts.parent_attr]
             same_order = old_parent_id == parent_id
             if same_order and len(self._mptt_cached_fields) > 1:
-                for field_name, old_value in self._mptt_cached_fields.items():
+                for field_name, old_value in self._mptt_cached_fields.iteritems():
                     if old_value != opts.get_raw_field_value(self, field_name):
                         same_order = False
                         break

@@ -209,7 +209,7 @@ class TreeManager(models.Manager):
 
     def _translate_lookups(self, **lookups):
         new_lookups = {}
-        for k, v in lookups.items():
+        for k, v in lookups.iteritems():
             parts = k.split('__')
             new_parts = []
             for part in parts:
