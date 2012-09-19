@@ -85,7 +85,7 @@ class MPTTOptions(object):
         so that the MPTT fields need to be updated.
         """
         instance._mptt_cached_fields = {}
-        field_names = set([self.parent_attr])
+        field_names = set((self.parent_attr,))
         field_names__add = field_names.add
         if self.order_insertion_by:
             for f in self.order_insertion_by:
@@ -182,7 +182,7 @@ class MPTTModelBase(ModelBase):
             class MPTTMeta:
                 pass
 
-        initial_options = set(dir(MPTTMeta))
+        initial_options = frozenset(dir(MPTTMeta))
 
         # extend MPTTMeta from base classes
         for base in bases:
@@ -284,8 +284,8 @@ class MPTTModelBase(ModelBase):
         # some discussion is here: https://github.com/divio/django-cms/issues/1079
         # This stuff is still documented as removed, and WILL be removed again in the next release.
         # All new code should use _mptt_meta rather than _meta for tree attributes.
-        attrs = set(('left_attr', 'right_attr', 'tree_id_attr', 'level_attr',
-		     'parent_attr', 'tree_manager_attr', 'order_insertion_by'))
+        attrs = ('left_attr', 'right_attr', 'tree_id_attr', 'level_attr',
+                 'parent_attr', 'tree_manager_attr', 'order_insertion_by')
         warned_attrs = set()
 
         class _MetaSubClass(cls._meta.__class__):
