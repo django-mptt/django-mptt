@@ -746,12 +746,10 @@ class MPTTModel(models.Model):
                         parent = getattr(self, opts.parent_attr)
                         # If we aren't already a descendant of the new parent, we need to update the parent.rght so
                         # things like get_children and get_descendant_count work correctly.
-                        if (getattr(self, opts.tree_id_attr) != getattr(parent, opts.tree_id_attr) or
+                        update_cached_parent = (
+                            getattr(self, opts.tree_id_attr) != getattr(parent, opts.tree_id_attr) or
                             getattr(self, opts.left_attr) < getattr(parent, opts.left_attr) or
-                            getattr(self, opts.right_attr) > getattr(parent, opts.right_attr)):
-                            update_cached_parent = True
-                        else:
-                            update_cached_parent = False
+                            getattr(self, opts.right_attr) > getattr(parent, opts.right_attr))
 
                     if right_sibling:
                         self._tree_manager._move_node(self, right_sibling, 'left', save=False)
