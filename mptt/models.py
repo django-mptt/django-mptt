@@ -114,11 +114,11 @@ class MPTTOptions(object):
         for field in order_insertion_by:
             if field[0] == '-':
                 field = field[1:]
-                filter_template = '%s__lt'
+                filter_suffix = '__lt'
             else:
-                filter_template = '%s__gt'
+                filter_suffix = '__gt'
             value = getattr(instance, field)
-            q = Q(**{filter_template % field: value})
+            q = Q(**{field + filter_suffix: value})
 
             filters.append(reduce(operator.and_, [Q(**{f: v}) for f, v in fields] + [q]))
             fields.append((field, value))
@@ -381,7 +381,7 @@ class MPTTModel(models.Model):
         self._mptt_meta.update_mptt_cached_fields(self)
 
     def _mpttfield(self, fieldname):
-        translated_fieldname = getattr(self._mptt_meta, '%s_attr' % fieldname)
+        translated_fieldname = getattr(self._mptt_meta, fieldname + '_attr')
         return getattr(self, translated_fieldname)
 
     def get_ancestors(self, ascending=False, include_self=False):
@@ -408,7 +408,7 @@ class MPTTModel(models.Model):
 
         order_by = opts.left_attr
         if ascending:
-            order_by = '-%s' % order_by
+            order_by = '-' + order_by
 
         left = getattr(self, opts.left_attr)
         right = getattr(self, opts.right_attr)
@@ -513,7 +513,7 @@ class MPTTModel(models.Model):
             )
         else:
             qs = self._tree_manager._mptt_filter(qs,
-                parent__pk=getattr(self, '%s_id' % self._mptt_meta.parent_attr),
+                parent__pk=getattr(self, self._mptt_meta.parent_attr + '_id'),
                 left__gt=self._mpttfield('right'),
             )
 
@@ -532,13 +532,13 @@ class MPTTModel(models.Model):
                 parent=None,
                 tree_id__lt=self._mpttfield('tree_id'),
             )
-            qs = qs.order_by('-%s' % opts.tree_id_attr)
+            qs = qs.order_by('-' + opts.tree_id_attr)
         else:
             qs = self._tree_manager._mptt_filter(qs,
-                parent__pk=getattr(self, '%s_id' % opts.parent_attr),
+                parent__pk=getattr(self, opts.parent_attr + '_id'),
                 right__lt=self._mpttfield('left'),
             )
-            qs = qs.order_by('-%s' % opts.right_attr)
+            qs = qs.order_by('-' + opts.right_attr)
 
         siblings = qs[:1]
         return siblings and siblings[0] or None
@@ -567,7 +567,7 @@ class MPTTModel(models.Model):
         if self.is_root_node():
             queryset = self._tree_manager._mptt_filter(parent=None)
         else:
-            parent_id = getattr(self, '%s_id' % self._mptt_meta.parent_attr)
+            parent_id = getattr(self, self._mptt_meta.parent_attr + '_id')
             queryset = self._tree_manager._mptt_filter(parent__pk=parent_id)
         if not include_self:
             queryset = queryset.exclude(pk=self.pk)
@@ -605,7 +605,7 @@ class MPTTModel(models.Model):
         Returns ``True`` if this model instance is a root node,
         ``False`` otherwise.
         """
-        return getattr(self, '%s_id' % self._mptt_meta.parent_attr) is None
+        return getattr(self, self._mptt_meta.parent_attr + '_id') is None
 
     def is_descendant_of(self, other, include_self=False):
         """
@@ -760,7 +760,7 @@ class MPTTModel(models.Model):
                         if parent_id is None:
                             root_nodes = self._tree_manager.root_nodes()
                             try:
-                                rightmost_sibling = root_nodes.exclude(pk=self.pk).order_by('-%s' % opts.tree_id_attr)[0]
+                                rightmost_sibling = root_nodes.exclude(pk=self.pk).order_by('-' + opts.tree_id_attr)[0]
                                 self._tree_manager._move_node(self, rightmost_sibling, 'right', save=False)
                             except IndexError:
                                 pass

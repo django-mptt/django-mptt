@@ -213,7 +213,7 @@ class TreeManager(models.Manager):
             parts = k.split('__')
             new_parts = []
             for part in parts:
-                new_parts.append(getattr(self, '%s_attr' % part, part))
+                new_parts.append(getattr(self, part + '_attr', part))
             new_lookups['__'.join(new_parts)] = v
         return new_lookups
 
