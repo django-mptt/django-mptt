@@ -86,11 +86,12 @@ class MPTTOptions(object):
         """
         instance._mptt_cached_fields = {}
         field_names = set([self.parent_attr])
+        field_names__add = field_names.add
         if self.order_insertion_by:
             for f in self.order_insertion_by:
                 if f[0] == '-':
                     f = f[1:]
-                field_names.add(f)
+                field_names__add(f)
         for field_name in field_names:
             instance._mptt_cached_fields[field_name] = self.get_raw_field_value(instance, field_name)
 
@@ -111,6 +112,10 @@ class MPTTOptions(object):
         """
         fields = []
         filters = []
+        fields__append = fields.append
+        filters__append = filters.append
+        and_ = operator.and_
+        or_ = operator.or_
         for field in order_insertion_by:
             if field[0] == '-':
                 field = field[1:]
@@ -120,9 +125,9 @@ class MPTTOptions(object):
             value = getattr(instance, field)
             q = Q(**{field + filter_suffix: value})
 
-            filters.append(reduce(operator.and_, [Q(**{f: v}) for f, v in fields] + [q]))
-            fields.append((field, value))
-        return reduce(operator.or_, filters)
+            filters__append(reduce(and_, [Q(**{f: v}) for f, v in fields] + [q]))
+            fields__append((field, value))
+        return reduce(or_, filters)
 
     def get_ordered_insertion_target(self, node, parent):
         """
@@ -715,8 +720,9 @@ class MPTTModel(models.Model):
             old_parent_id = self._mptt_cached_fields[opts.parent_attr]
             same_order = old_parent_id == parent_id
             if same_order and len(self._mptt_cached_fields) > 1:
+                get_raw_field_value = opts.get_raw_field_value
                 for field_name, old_value in self._mptt_cached_fields.iteritems():
-                    if old_value != opts.get_raw_field_value(self, field_name):
+                    if old_value != get_raw_field_value(self, field_name):
                         same_order = False
                         break
                 if not do_updates and not same_order:
