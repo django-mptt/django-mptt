@@ -184,8 +184,9 @@ class TreeManager(models.Manager):
                     self.model._mptt_stop_tracking()
                     raise
                 results = self.model._mptt_stop_tracking()
+                partial_rebuild = self.partial_rebuild
                 for tree_id in results:
-                    self.partial_rebuild(tree_id)
+                    partial_rebuild(tree_id)
 
     @property
     def parent_attr(self):
@@ -209,12 +210,14 @@ class TreeManager(models.Manager):
 
     def _translate_lookups(self, **lookups):
         new_lookups = {}
-        for k, v in lookups.items():
+        join_parts = '__'.join
+        for k, v in lookups.iteritems():
             parts = k.split('__')
             new_parts = []
+            new_parts__append = new_parts.append    
             for part in parts:
-                new_parts.append(getattr(self, '%s_attr' % part, part))
-            new_lookups['__'.join(new_parts)] = v
+                new_parts__append(getattr(self, part + '_attr', part))
+            new_lookups[join_parts(new_parts)] = v
         return new_lookups
 
     def _mptt_filter(self, qs=None, **filters):
@@ -443,17 +446,18 @@ class TreeManager(models.Manager):
             qs = qs.order_by(*opts.order_insertion_by)
         pks = qs.values_list('pk', flat=True)
 
+        rebuild_helper = self._rebuild_helper
         idx = 0
         for pk in pks:
             idx += 1
-            self._rebuild_helper(pk, 1, idx)
+            rebuild_helper(pk, 1, idx)
 
     def partial_rebuild(self, tree_id):
         if self._base_manager:
             return self._base_manager.partial_rebuild(tree_id)
         opts = self.model._mptt_meta
 
-        qs = self._mptt_filter(parent__isnull=True, tree_id=tree_id)
+        qs = self._mptt_filter(parent=None, tree_id=tree_id)
         if opts.order_insertion_by:
             qs = qs.order_by(*opts.order_insertion_by)
         pks = qs.values_list('pk', flat=True)
@@ -473,8 +477,9 @@ class TreeManager(models.Manager):
             qs = qs.order_by(*opts.order_insertion_by)
         child_ids = qs.values_list('pk', flat=True)
 
+        rebuild_helper = self._rebuild_helper
         for child_id in child_ids:
-            right = self._rebuild_helper(child_id, right, tree_id, level + 1)
+            right = rebuild_helper(child_id, right, tree_id, level + 1)
 
         qs = self.model._default_manager.filter(pk=pk)
         self._mptt_update(qs,
