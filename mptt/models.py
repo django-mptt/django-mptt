@@ -40,7 +40,7 @@ class MPTTOptions(object):
             raise ValueError("`tree_manager_attr` has been removed; you should instantiate a TreeManager as a normal manager on your model instead.")
 
         for key, value in opts:
-            if key.startswith('__'):
+            if key[:2] == '__':
                 continue
             setattr(self, key, value)
 
@@ -53,7 +53,7 @@ class MPTTOptions(object):
             self.order_insertion_by = []
 
     def __iter__(self):
-        return iter([(k, v) for (k, v) in self.__dict__.items() if not k.startswith('_')])
+        return ((k, v) for k, v in self.__dict__.iteritems() if k[0] != '_')
 
     # Helper methods for accessing tree attributes on models.
     def get_raw_field_value(self, instance, field_name):
@@ -85,12 +85,13 @@ class MPTTOptions(object):
         so that the MPTT fields need to be updated.
         """
         instance._mptt_cached_fields = {}
-        field_names = set([self.parent_attr])
+        field_names = set((self.parent_attr,))
+        field_names__add = field_names.add
         if self.order_insertion_by:
             for f in self.order_insertion_by:
-                if f.startswith('-'):
+                if f[0] == '-':
                     f = f[1:]
-                field_names.add(f)
+                field_names__add(f)
         for field_name in field_names:
             instance._mptt_cached_fields[field_name] = self.get_raw_field_value(instance, field_name)
 
@@ -111,18 +112,22 @@ class MPTTOptions(object):
         """
         fields = []
         filters = []
+        fields__append = fields.append
+        filters__append = filters.append
+        and_ = operator.and_
+        or_ = operator.or_
         for field in order_insertion_by:
-            if field.startswith('-'):
+            if field[0] == '-':
                 field = field[1:]
-                filter_template = '%s__lt'
+                filter_suffix = '__lt'
             else:
-                filter_template = '%s__gt'
+                filter_suffix = '__gt'
             value = getattr(instance, field)
-            q = Q(**{filter_template % field: value})
+            q = Q(**{field + filter_suffix: value})
 
-            filters.append(reduce(operator.and_, [Q(**{f: v}) for f, v in fields] + [q]))
-            fields.append((field, value))
-        return reduce(operator.or_, filters)
+            filters__append(reduce(and_, [Q(**{f: v}) for f, v in fields] + [q]))
+            fields__append((field, value))
+        return reduce(or_, filters)
 
     def get_ordered_insertion_target(self, node, parent):
         """
@@ -177,12 +182,12 @@ class MPTTModelBase(ModelBase):
             class MPTTMeta:
                 pass
 
-        initial_options = set(dir(MPTTMeta))
+        initial_options = frozenset(dir(MPTTMeta))
 
         # extend MPTTMeta from base classes
         for base in bases:
             if hasattr(base, '_mptt_meta'):
-                for (name, value) in base._mptt_meta:
+                for name, value in base._mptt_meta:
                     if name == 'tree_manager_attr':
                         continue
                     if name not in initial_options:
@@ -279,8 +284,8 @@ class MPTTModelBase(ModelBase):
         # some discussion is here: https://github.com/divio/django-cms/issues/1079
         # This stuff is still documented as removed, and WILL be removed again in the next release.
         # All new code should use _mptt_meta rather than _meta for tree attributes.
-        attrs = set(['left_attr', 'right_attr', 'tree_id_attr', 'level_attr', 'parent_attr',
-                    'tree_manager_attr', 'order_insertion_by'])
+        attrs = ('left_attr', 'right_attr', 'tree_id_attr', 'level_attr',
+                 'parent_attr', 'tree_manager_attr', 'order_insertion_by')
         warned_attrs = set()
 
         class _MetaSubClass(cls._meta.__class__):
@@ -313,7 +318,7 @@ class MPTTModelBase(ModelBase):
                 # strip out bases that are strict superclasses of MPTTModel.
                 # (i.e. Model, object)
                 # this helps linearize the type hierarchy if possible
-                for i in range(len(bases) - 1, -1, -1):
+                for i in xrange(len(bases) - 1, -1, -1):
                     if issubclass(MPTTModel, bases[i]):
                         del bases[i]
 
@@ -381,7 +386,7 @@ class MPTTModel(models.Model):
         self._mptt_meta.update_mptt_cached_fields(self)
 
     def _mpttfield(self, fieldname):
-        translated_fieldname = getattr(self._mptt_meta, '%s_attr' % fieldname)
+        translated_fieldname = getattr(self._mptt_meta, fieldname + '_attr')
         return getattr(self, translated_fieldname)
 
     def get_ancestors(self, ascending=False, include_self=False):
@@ -408,7 +413,7 @@ class MPTTModel(models.Model):
 
         order_by = opts.left_attr
         if ascending:
-            order_by = '-%s' % order_by
+            order_by = '-' + order_by
 
         left = getattr(self, opts.left_attr)
         right = getattr(self, opts.right_attr)
@@ -513,7 +518,7 @@ class MPTTModel(models.Model):
             )
         else:
             qs = self._tree_manager._mptt_filter(qs,
-                parent__pk=getattr(self, '%s_id' % self._mptt_meta.parent_attr),
+                parent__pk=getattr(self, self._mptt_meta.parent_attr + '_id'),
                 left__gt=self._mpttfield('right'),
             )
 
@@ -532,13 +537,13 @@ class MPTTModel(models.Model):
                 parent=None,
                 tree_id__lt=self._mpttfield('tree_id'),
             )
-            qs = qs.order_by('-%s' % opts.tree_id_attr)
+            qs = qs.order_by('-' + opts.tree_id_attr)
         else:
             qs = self._tree_manager._mptt_filter(qs,
-                parent__pk=getattr(self, '%s_id' % opts.parent_attr),
+                parent__pk=getattr(self, opts.parent_attr + '_id'),
                 right__lt=self._mpttfield('left'),
             )
-            qs = qs.order_by('-%s' % opts.right_attr)
+            qs = qs.order_by('-' + opts.right_attr)
 
         siblings = qs[:1]
         return siblings and siblings[0] or None
@@ -567,7 +572,7 @@ class MPTTModel(models.Model):
         if self.is_root_node():
             queryset = self._tree_manager._mptt_filter(parent=None)
         else:
-            parent_id = getattr(self, '%s_id' % self._mptt_meta.parent_attr)
+            parent_id = getattr(self, self._mptt_meta.parent_attr + '_id')
             queryset = self._tree_manager._mptt_filter(parent__pk=parent_id)
         if not include_self:
             queryset = queryset.exclude(pk=self.pk)
@@ -605,7 +610,7 @@ class MPTTModel(models.Model):
         Returns ``True`` if this model instance is a root node,
         ``False`` otherwise.
         """
-        return getattr(self, '%s_id' % self._mptt_meta.parent_attr) is None
+        return getattr(self, self._mptt_meta.parent_attr + '_id') is None
 
     def is_descendant_of(self, other, include_self=False):
         """
@@ -710,13 +715,14 @@ class MPTTModel(models.Model):
         force_update = kwargs.get('force_update', False)
         force_insert = kwargs.get('force_insert', False)
         collapse_old_tree = None
-        if force_update or (not force_insert and self._is_saved(using=kwargs.get('using', None))):
+        if force_update or (not force_insert and self._is_saved(using=kwargs.get('using'))):
             # it already exists, so do a move
             old_parent_id = self._mptt_cached_fields[opts.parent_attr]
             same_order = old_parent_id == parent_id
             if same_order and len(self._mptt_cached_fields) > 1:
-                for field_name, old_value in self._mptt_cached_fields.items():
-                    if old_value != opts.get_raw_field_value(self, field_name):
+                get_raw_field_value = opts.get_raw_field_value
+                for field_name, old_value in self._mptt_cached_fields.iteritems():
+                    if old_value != get_raw_field_value(self, field_name):
                         same_order = False
                         break
                 if not do_updates and not same_order:
@@ -746,12 +752,10 @@ class MPTTModel(models.Model):
                         parent = getattr(self, opts.parent_attr)
                         # If we aren't already a descendant of the new parent, we need to update the parent.rght so
                         # things like get_children and get_descendant_count work correctly.
-                        if (getattr(self, opts.tree_id_attr) != getattr(parent, opts.tree_id_attr) or
+                        update_cached_parent = (
+                            getattr(self, opts.tree_id_attr) != getattr(parent, opts.tree_id_attr) or
                             getattr(self, opts.left_attr) < getattr(parent, opts.left_attr) or
-                            getattr(self, opts.right_attr) > getattr(parent, opts.right_attr)):
-                            update_cached_parent = True
-                        else:
-                            update_cached_parent = False
+                            getattr(self, opts.right_attr) > getattr(parent, opts.right_attr))
 
                     if right_sibling:
                         self._tree_manager._move_node(self, right_sibling, 'left', save=False)
@@ -760,7 +764,7 @@ class MPTTModel(models.Model):
                         if parent_id is None:
                             root_nodes = self._tree_manager.root_nodes()
                             try:
-                                rightmost_sibling = root_nodes.exclude(pk=self.pk).order_by('-%s' % opts.tree_id_attr)[0]
+                                rightmost_sibling = root_nodes.exclude(pk=self.pk).order_by('-' + opts.tree_id_attr)[0]
                                 self._tree_manager._move_node(self, rightmost_sibling, 'right', save=False)
                             except IndexError:
                                 pass
