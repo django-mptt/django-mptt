@@ -389,7 +389,10 @@ class DeletionTestCase(TreeTestCase):
         """)
 
     def test_delete_node_with_siblings(self):
-        Category.objects.get(id=6).delete()
+        child = Category.objects.get(id=6)
+        parent = child.parent
+        self.assertEqual(parent.get_descendant_count(), 2)
+        child.delete()
         self.assertTreeEqual(Category.objects.all(), """
             1 - 1 0 1 18
             2 1 1 1 2 7
@@ -401,6 +404,9 @@ class DeletionTestCase(TreeTestCase):
             9 8 1 2 13 14
             10 8 1 2 15 16
         """)
+        self.assertEqual(parent.get_descendant_count(), 1)
+        parent = Category.objects.get(pk=parent.pk)
+        self.assertEqual(parent.get_descendant_count(), 1)
 
     def test_delete_node_with_descendants_and_siblings(self):
         """

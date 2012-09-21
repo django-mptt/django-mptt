@@ -823,4 +823,9 @@ class MPTTModel(models.Model):
         target_right = self._mpttfield('right')
         tree_id = self._mpttfield('tree_id')
         self._tree_manager._close_gap(tree_width, target_right, tree_id)
+        parent = getattr(self, '_%s_cache' % self._mptt_meta.parent_attr, None)
+        if parent:
+            right_shift = -self.get_descendant_count() - 2
+            self._tree_manager._post_insert_update_cached_parent_right(parent, right_shift)
+
         super(MPTTModel, self).delete(*args, **kwargs)
