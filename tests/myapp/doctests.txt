@@ -230,6 +230,9 @@ False
 >>> [g.name for g in Genre.objects.root_nodes()]
 [u'Action', u'Role-playing Game']
 
+>>> [g.parent for g in Genre.objects.only('parent')]
+[None, <Genre: Action>, <Genre: Platformer>, <Genre: Platformer>, <Genre: Platformer>, None, <Genre: Role-playing Game>, <Genre: Role-playing Game>]
+
 # Model Instance Methods ######################################################
 >>> action = Genre.objects.get(pk=action.pk)
 >>> [g.name for g in action.get_ancestors()]
