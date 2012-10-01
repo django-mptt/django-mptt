@@ -18,7 +18,7 @@ Start with a basic subclass of MPTTModel, something like this::
         name = models.CharField(max_length=50, unique=True)
         parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
 
-You must define a parent field which is a ``ForeignKey`` to ``'self'``. Recommended: use `TreeForeignKey`_. You can
+You must define a parent field which is a ``ForeignKey`` to ``'self'``. Recommended: use ``TreeForeignKey``. You can
 call it something different if you want - see `Model Options`_ below.
 
 Because you're inheriting from MPTTModel, your model will also have a number of
@@ -122,7 +122,7 @@ MPTTModel instance methods
 Subclasses of MPTTModel have the following instance methods:
 
 ``get_ancestors(ascending=False, include_self=False)``
-----------------------------------
+------------------------------------------------------
 
 creates a ``QuerySet`` containing the ancestors of the model instance.
 

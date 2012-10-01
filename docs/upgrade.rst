@@ -31,7 +31,7 @@ you'll now get a ``TreeManager`` by default (``.objects``.)
 Before 0.5, ``.tree`` was the default name for the ``TreeManager``. That's been removed, so we recommend
 updating your code to use ``.objects``.
 
-If you don't want to update ``.tree`` to ``.objects`` everywhere just yet, you should add explicit ``TreeManager``s
+If you don't want to update ``.tree`` to ``.objects`` everywhere just yet, you should add an explicit ``TreeManager``
 to your models::
 
     objects = tree = TreeManager()

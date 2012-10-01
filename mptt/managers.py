@@ -92,10 +92,11 @@ class TreeManager(models.Manager):
 
         If updates are already disabled on the model, this is a noop.
 
-        Usage:
+        Usage::
+
             with transaction.commit_on_success():
                 with MyNode.objects.disable_mptt_updates():
-                    # bulk updates.
+                    ## bulk updates.
                 MyNode.objects.rebuild()
         """
         # Error cases:
@@ -166,10 +167,11 @@ class TreeManager(models.Manager):
             If an exception occurs before the processing of the block, delayed updates
             will not be applied.
 
-        Usage:
+        Usage::
+
             with transaction.commit_on_success():
                 with MyNode.objects.delay_mptt_updates():
-                    # bulk updates.
+                    ## bulk updates.
         """
         with self.disable_mptt_updates():
             if self.model._mptt_is_tracking:
@@ -214,7 +216,7 @@ class TreeManager(models.Manager):
         for k, v in lookups.iteritems():
             parts = k.split('__')
             new_parts = []
-            new_parts__append = new_parts.append    
+            new_parts__append = new_parts.append
             for part in parts:
                 new_parts__append(getattr(self, part + '_attr', part))
             new_lookups[join_parts(new_parts)] = v
