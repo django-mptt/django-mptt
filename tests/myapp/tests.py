@@ -3,6 +3,7 @@ import re
 from django.test import TestCase
 
 from mptt.exceptions import InvalidMove
+from mptt.templatetags.mptt_tags import cache_tree_children
 from myapp.models import Category, Genre
 
 
@@ -346,3 +347,40 @@ class InterTreeMovementTestCase(TestCase):
 
 class PositionedInsertionTestCase(TestCase):
     pass
+
+
+class CacheTreeChildrenTestCase(TestCase):
+    """
+    We have a tree (plus means is published, minus means is unpublished):
+
+        - Shop
+            + Apparel & Accessories
+                - Subcategory (Apparel & Accessories)
+            - Automobiles & Motorcycles
+                + Subcategory (Automobiles & Motorcycles)
+
+    I want to show only published categories with cache_tree_children and will
+    get like that:
+
+        Apparel & Accessories
+        Subcategory (Automobiles & Motorcycles)
+    """
+    def setUp(self):
+        self.root = Category(name='Shop')
+        parents = [Category(name='Apparel & Accessories', is_published=True),
+                   Category(name='Automobiles & Motorcycles')]
+
+        self.root.save()
+
+        for category in parents:
+            category.insert_at(self.root, 'last-child', True)
+            published = Category(name='Subcategory (%s)' % category.name,
+                                 is_published=not category.is_published)
+            published.insert_at(category, 'last-child', True)
+
+    def test_wrong_order(self):
+        qs = self.root.get_descendants().filter(is_published=True)
+        tree = cache_tree_children(qs)
+        self.assertEqual(len(tree), 2)
+        self.assertEqual(tree[0].level, 1)
+        self.assertEqual(tree[1].level, 2)

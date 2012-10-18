@@ -232,34 +232,44 @@ def cache_tree_children(queryset):
     Returns a list of top-level nodes.
     """
 
-    current_path = []
     top_nodes = []
 
     if hasattr(queryset, 'order_by'):
         mptt_opts = queryset.model._mptt_meta
-        tree_id_attr = mptt_opts.tree_id_attr
         left_attr = mptt_opts.left_attr
+        tree_id_attr = mptt_opts.tree_id_attr
         queryset = queryset.order_by(tree_id_attr, left_attr)
 
-    if queryset:
-        root_level = None
-        for obj in queryset:
-            node_level = obj.get_level()
-            if root_level is None:
-                root_level = node_level
-            if node_level < root_level:
-                raise ValueError(_("cache_tree_children was passed nodes in the wrong order!"))
+    current_root = None
 
-            obj._cached_children = []
+    # List of pointers to entries by pk
+    tree_by_parent = {}
 
-            while len(current_path) > node_level - root_level:
-                current_path.pop(-1)
+    for obj in queryset:
+        obj._cached_children = []
+        left = obj._mpttfield('left')
+        right = obj._mpttfield('right')
 
-            if node_level == root_level:
-                top_nodes.append(obj)
-            else:
-                current_path[-1]._cached_children.append(obj)
-            current_path.append(obj)
+        if not current_root:
+            top_nodes.append(obj)
+            current_root = obj
+            tree_by_parent[obj.pk] = obj
+            continue
+
+        # We are looking for a top-end node is found in the selected top nodes
+        # Since all formed according to the "Left" filter value so each successive record
+        # It is a new leaf of the tree, or a new root-node
+        if left > current_root._mpttfield('left') and right < current_root._mpttfield('right'):
+            if obj.parent_id in tree_by_parent:
+                tree_by_parent[obj.parent_id]._cached_children.append(obj)
+
+            tree_by_parent[obj.pk] = obj
+        else:
+            top_nodes.append(obj)
+            current_root = obj
+
+            tree_by_parent[obj.pk] = obj
+
     return top_nodes
 
 
