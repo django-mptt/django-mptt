@@ -297,7 +297,11 @@ class MPTTModelBase(ModelBase):
                 # for backwards compatibility, add .tree too (or whatever's in tree_manager_attr)
                 tree_manager_attr = cls._mptt_meta.tree_manager_attr
                 if tree_manager_attr != 'objects':
-                    another = getattr(cls, tree_manager_attr, None)
+                    # Don't trigger the DepricationWarning by our-self
+                    # another = getattr(cls, tree_manager_attr, None)
+                    another = reduce(lambda acc, sup: acc or \
+                                     sup.__dict__.get(tree_manager_attr, None),
+                                     cls.__mro__, None)
                     if another is None:
                         # wrap with a warning on first use
                         from django.db.models.manager import ManagerDescriptor
