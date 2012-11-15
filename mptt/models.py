@@ -430,6 +430,32 @@ class MPTTModel(models.Model):
 
         return qs.order_by(order_by)
 
+    def get_branch(self):
+        """
+        Returns a ``QuerySet`` containing the branch of family (or "house")
+        of this model instance, in tree order. Basically this means a
+        combined list of its ancestors, the model instance itself and its
+        descendants.
+        """
+        opts = self._mptt_meta
+
+        left = getattr(self, opts.left_attr)
+        right = getattr(self, opts.right_attr)
+
+        ancestors = Q(**{
+            "%s__lte" % opts.left_attr: left,
+            "%s__gte" % opts.right_attr: right,
+            "tree_id": self._mpttfield('tree_id'),
+        })
+
+        descendants = Q(**{
+            "%s__gte" % opts.left_attr: left,
+            "%s__lte" % opts.left_attr: right,
+            "tree_id": self._mpttfield('tree_id'),
+        })
+
+        return self._tree_manager.filter(ancestors | descendants)
+
     def get_children(self):
         """
         Returns a ``QuerySet`` containing the immediate children of this
