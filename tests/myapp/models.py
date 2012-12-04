@@ -150,3 +150,13 @@ class SingleProxyModel(ConcreteModel):
 class DoubleProxyModel(SingleProxyModel):
     class Meta:
         proxy = True
+
+
+class CustomPKName(MPTTModel):
+    my_id = models.AutoField(db_column='my_custom_name', primary_key=True)
+    name = models.CharField(max_length=50)
+    parent = models.ForeignKey('self', null=True, blank=True,
+            related_name='children', db_column="my_cusom_parent")
+
+    def __unicode__(self):
+        return self.name

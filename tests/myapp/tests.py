@@ -6,7 +6,7 @@ from django.test import TestCase
 
 from mptt.exceptions import InvalidMove
 from mptt.models import MPTTModel
-from myapp.models import Category, Genre
+from myapp.models import Category, Genre, CustomPKName
 
 
 def get_tree_details(nodes):
@@ -385,3 +385,21 @@ class BaseManagerInfiniteRecursion(TestCase):
                     break
             else:
                 self.fail("Detected infinite recursion in %s._tree_manager._base_manager" % model)
+
+
+class CustomPKNameTestCase(TestCase):
+    def setUp(self):
+        c1 = CustomPKName.objects.create(name="c1")
+        c11 = CustomPKName.objects.create(name="c11", parent=c1)
+        c12 = CustomPKName.objects.create(name="c12", parent=c1)
+
+        c2 = CustomPKName.objects.create(name="c2")
+        c21 = CustomPKName.objects.create(name="c21", parent=c2)
+        c22 = CustomPKName.objects.create(name="c22", parent=c2)
+
+        c3 = CustomPKName.objects.create(name="c3")
+
+    def test_get_next_sibling(self):
+        root = CustomPKName.objects.get(name="c12")
+        sib = root.get_next_sibling()
+        self.assertTrue(sib is None)

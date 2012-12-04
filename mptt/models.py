@@ -477,7 +477,7 @@ class MPTTModel(models.Model):
             )
         else:
             qs = self._tree_manager._mptt_filter(qs,
-                parent__id=getattr(self, '%s_id' % self._mptt_meta.parent_attr),
+                parent__pk=getattr(self, '%s_id' % self._mptt_meta.parent_attr),
                 left__gt=self._mpttfield('right'),
             )
 
