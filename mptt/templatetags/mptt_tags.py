@@ -218,6 +218,16 @@ def tree_path(items, separator=' :: '):
     """
     return separator.join([force_unicode(i) for i in items])
 
+@register.filter
+def nodes_up_to(items, up_to):
+    """
+    Filter ``items``, returning only items with their ``level`` attributes greater than ``up_to``.
+
+    Example::
+
+       {{ some_list|nodes_up_to:4 }}
+    """
+    return [ item for item in items if item.level >= up_to]
 
 ### RECURSIVE TAGS
 
