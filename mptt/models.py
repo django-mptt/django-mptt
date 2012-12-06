@@ -474,7 +474,7 @@ class MPTTModel(models.Model):
         include this model instance.
         """
         
-        if down_to <= self.level:
+        if 0 <= down_to <= self.level:
             if down_to == self.level:
                 if include_self:
                     return self._tree_manager.filter(pk=self.pk)
