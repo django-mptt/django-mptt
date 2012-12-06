@@ -475,11 +475,13 @@ class MPTTModel(models.Model):
         """
         
         if down_to <= self.level:
-            if down_to:
+            if down_to == self.level:
                 if include_self:
                     return self._tree_manager.filter(pk=self.pk)
                 else:
                     return self._tree_manager.none()
+            else:
+                return self._tree_manager.none()
         
         if self.is_leaf_node():
             if not include_self:
