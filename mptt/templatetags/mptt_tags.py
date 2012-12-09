@@ -246,13 +246,10 @@ def cache_tree_children(queryset):
         queryset = queryset.order_by(tree_id_attr, left_attr)
 
     if queryset:
+        # Get the model's parent-attribute name
+        parent_attr = queryset[0]._mptt_meta.parent_attr
         root_level = None
-        parent_attr = None
         for obj in queryset:
-            # First iteration, so set the parent attribute name
-            if parent_attr is None:
-                parent_attr = obj._mptt_meta.parent_attr
-
             # Get the current mptt node level
             node_level = obj.get_level()
 
