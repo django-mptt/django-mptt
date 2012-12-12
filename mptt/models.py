@@ -389,7 +389,7 @@ class MPTTModel(models.Model):
         translated_fieldname = getattr(self._mptt_meta, fieldname + '_attr')
         return getattr(self, translated_fieldname)
 
-    def get_ancestors(self, ascending=False, include_self=False):
+    def get_ancestors(self, ascending=False, include_self=False, up_to=None):
         """
         Creates a ``QuerySet`` containing the ancestors of this model
         instance.
@@ -398,6 +398,8 @@ class MPTTModel(models.Model):
         immediate parent last); passing ``True`` for the ``ascending``
         argument will reverse the ordering (immediate parent first, root
         ancestor last).
+        
+        If ``up_to`` is a number, the ``QuerySet`` will only contain ancestors up to that level (0 being the root level).
 
         If ``include_self`` is ``True``, the ``QuerySet`` will also
         include this model instance.
@@ -422,11 +424,19 @@ class MPTTModel(models.Model):
             left -= 1
             right += 1
 
-        qs = self._tree_manager._mptt_filter(
-            left__lte=left,
-            right__gte=right,
-            tree_id=self._mpttfield('tree_id'),
-        )
+        if not up_to:
+            qs = self._tree_manager._mptt_filter(
+                      left__lte=left,
+                      right__gte=right,
+                      tree_id=self._mpttfield('tree_id'),
+                      )
+        else:
+            qs = self._tree_manager._mptt_filter(
+                      left__lte=left,
+                      right__gte=right,
+                      level_gte=up_to,
+                      tree_id=self._mpttfield('tree_id'),
+                      )
 
         return qs.order_by(order_by)
 
@@ -453,14 +463,26 @@ class MPTTModel(models.Model):
 
             return self._tree_manager._mptt_filter(parent=self)
 
-    def get_descendants(self, include_self=False):
+    def get_descendants(self, include_self=False, down_to=None):
         """
         Creates a ``QuerySet`` containing descendants of this model
         instance, in tree order.
+        
+        If ``down_to`` is a number, the ``QuerySet`` will only contain descendants down to that level.
 
         If ``include_self`` is ``True``, the ``QuerySet`` will also
         include this model instance.
         """
+        
+        if 0 <= down_to <= self.level:
+            if down_to == self.level:
+                if include_self:
+                    return self._tree_manager.filter(pk=self.pk)
+                else:
+                    return self._tree_manager.none()
+            else:
+                return self._tree_manager.none()
+        
         if self.is_leaf_node():
             if not include_self:
                 return self._tree_manager.none()
@@ -475,11 +497,19 @@ class MPTTModel(models.Model):
             left += 1
             right -= 1
 
-        return self._tree_manager._mptt_filter(
-            tree_id=self._mpttfield('tree_id'),
-            left__gte=left,
-            left__lte=right
-        )
+        if not down_to:
+            return self._tree_manager._mptt_filter(
+                        tree_id=self._mpttfield('tree_id'),
+                        left__gte=left,
+                        left__lte=right
+                        )
+        else:
+            return self._tree_manager._mptt_filter(
+                        tree_id=self._mpttfield('tree_id'),
+                        left__gte=left,
+                        left__lte=right,
+                        level__lte=down_to
+                        )
 
     def get_descendant_count(self):
         """
