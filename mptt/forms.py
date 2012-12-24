@@ -155,7 +155,8 @@ class MoveNodeForm(forms.Form):
             self.node.move_to(self.cleaned_data['target'],
                               self.cleaned_data['position'])
             return self.node
-        except InvalidMove, e:
+        except InvalidMove:
+            _, e, _ = sys.exc_info()
             self.errors[NON_FIELD_ERRORS] = ErrorList(e)
             raise
 

@@ -8,6 +8,17 @@ import csv
 import itertools
 import sys
 
+try:
+    from django.utils.six import PY3, text_type
+except ImportError:
+    PY3 = False
+    text_type = unicode
+
+if PY3:
+    izip = zip
+else:
+    izip = itertools.izip
+
 __all__ = ('previous_current_next', 'tree_item_iterator',
            'drilldown_tree_for_node')
 
@@ -21,14 +32,19 @@ def previous_current_next(items):
     available.
     """
     extend = itertools.chain([None], items, [None])
-    previous, current, next = itertools.tee(extend, 3)
+    prev, cur, nex = itertools.tee(extend, 3)
     try:
-        current.next()
-        next.next()
-        next.next()
+        if PY3:
+            next(cur)
+            next(nex)
+            next(nex)
+        else:
+            cur.next()
+            nex.next()
+            nex.next()
     except StopIteration:
         pass
-    return itertools.izip(previous, current, next)
+    return izip(prev, cur, nex)
 
 
 def tree_item_iterator(items, ancestors=False):
@@ -85,7 +101,7 @@ def tree_item_iterator(items, ancestors=False):
                 # If the current node is the start of a new level, add its
                 # parent to the ancestors list.
                 if structure['new_level']:
-                    structure['ancestors'].append(unicode(previous))
+                    structure['ancestors'].append(text_type(previous))
         else:
             structure['new_level'] = True
             if ancestors:
@@ -165,5 +181,5 @@ def print_debug_info(qs):
         row = []
         for field in header[:-1]:
             row.append(getattr(n, field))
-        row.append('%s%s' % ('- ' * level, unicode(n).encode('utf-8')))
+        row.append('%s%s' % ('- ' * level, text_type(n).encode('utf-8')))
         writer.writerow(row)
