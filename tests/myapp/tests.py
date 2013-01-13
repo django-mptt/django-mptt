@@ -1057,7 +1057,7 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
         """)
 
 
-class BaseManagerInfiniteRecursion(TestCase):
+class BaseManagerInfiniteRecursion(TreeTestCase):
     """
     Tests to avoid infinite recursion in managers, which seems to be a recurring bug.
     """
@@ -1093,7 +1093,7 @@ class BaseManagerInfiniteRecursion(TestCase):
                 self.fail("Detected infinite recursion in %s._tree_manager._base_manager" % model)
 
 
-class CacheTreeChildrenTestCase(TestCase):
+class CacheTreeChildrenTestCase(TreeTestCase):
     """
     Tests for the ``cache_tree_children`` template filter.
     """
