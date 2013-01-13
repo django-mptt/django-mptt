@@ -1115,7 +1115,7 @@ class CacheTreeChildrenTestCase(TreeTestCase):
             self.assertEqual(games, wii_games.parent.parent)
 
 
-class RegisteredRemoteModel(TestCase):
+class RegisteredRemoteModel(TreeTestCase):
     def test_save_registered_model(self):
         g1 = Group.objects.create(name='group 1')
         g1.save()
