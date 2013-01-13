@@ -18,6 +18,7 @@ except ImportError:
 
 from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.models import MPTTModel
+from mptt.templatetags.mptt_tags import cache_tree_children
 from myapp.models import Category, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel, ConcreteModel, OrderedInsertion
 
 
@@ -1090,6 +1091,28 @@ class BaseManagerInfiniteRecursion(TestCase):
                     break
             else:
                 self.fail("Detected infinite recursion in %s._tree_manager._base_manager" % model)
+
+
+class CacheTreeChildrenTestCase(TestCase):
+    """
+    Tests for the ``cache_tree_children`` template filter.
+    """
+    fixtures = ['categories.json']
+
+    def test_cache_tree_children_caches_parents(self):
+        """
+        Ensures that each node's parent is cached by ``cache_tree_children``.
+        """
+        # Ensure only 1 query is used during this test
+        with self.assertNumQueries(1):
+            roots = cache_tree_children(Category.objects.all())
+            games = roots[0]
+            wii = games.get_children()[0]
+            wii_games = wii.get_children()[0]
+            # Ensure that ``wii`` is cached as ``parent`` on ``wii_games``, and
+            # likewise for ``games`` being ``parent`` on the attached ``wii``
+            self.assertEqual(wii, wii_games.parent)
+            self.assertEqual(games, wii_games.parent.parent)
 
 
 class RegisteredRemoteModel(TestCase):
