@@ -7,6 +7,7 @@ import sys
 import django
 from django.conf import settings
 from django.contrib import admin
+from django.contrib.auth.models import Group
 from django.db.models import get_models
 from django.test import TestCase
 
@@ -1089,3 +1090,9 @@ class BaseManagerInfiniteRecursion(TestCase):
                     break
             else:
                 self.fail("Detected infinite recursion in %s._tree_manager._base_manager" % model)
+
+
+class RegisteredRemoteModel(TestCase):
+    def test_save_registered_model(self):
+        g1 = Group.objects.create(name='group 1')
+        g1.save()

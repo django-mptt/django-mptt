@@ -8,4 +8,10 @@ else
     export DJANGO_ADMIN=django-admin
 fi
 
-$DJANGO_ADMIN test --settings=$DJANGO_SETTINGS_MODULE --pythonpath="../" "$@"
+export args="$@"
+if [ -z "$args" ] ; then
+    # avoid running the tests for django.contrib.* (they're in INSTALLED_APPS)
+    export args=myapp
+fi
+
+$DJANGO_ADMIN test --settings=$DJANGO_SETTINGS_MODULE --pythonpath="../" "$args"

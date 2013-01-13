@@ -1,6 +1,8 @@
+from django.contrib.auth.models import Group
 from django.db import models
 
-from mptt.models import MPTTModel
+import mptt
+from mptt.models import MPTTModel, TreeForeignKey
 from mptt.managers import TreeManager
 
 
@@ -164,3 +166,8 @@ class SingleProxyModel(ConcreteModel):
 class DoubleProxyModel(SingleProxyModel):
     class Meta:
         proxy = True
+
+
+# test registering of remote model
+TreeForeignKey(Group, blank=True, null=True).contribute_to_class(Group, 'parent')
+mptt.register(Group, order_insertion_by=('name',))
