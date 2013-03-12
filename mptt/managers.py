@@ -6,17 +6,14 @@ from __future__ import with_statement
 
 import contextlib
 
-from django.db import connection, models, transaction
+from django.db import models, transaction, connections, router
 from django.db.models import F, Max
 from django.utils.translation import ugettext as _
-
-from django.db import connections, router
 
 from mptt.exceptions import CantDisableUpdates, InvalidMove
 
 __all__ = ('TreeManager',)
 
-qn = connection.ops.quote_name
 
 COUNT_SUBQUERY = """(
     SELECT COUNT(*)
@@ -244,8 +241,8 @@ class TreeManager(models.Manager):
             qs = self.get_query_set()
         return qs.update(**self._translate_lookups(**items))
 
-    def _get_connection(self, node):
-        return connections[router.db_for_write(node)]
+    def _get_connection(self, **hints):
+        return connections[router.db_for_write(self.model, **hints)]
 
     def add_related_count(self, queryset, rel_model, rel_field, count_attr,
                           cumulative=False):
@@ -273,6 +270,9 @@ class TreeManager(models.Manager):
            If ``True``, the count will be for each item and all of its
            descendants, otherwise it will be for each item itself.
         """
+        connection = self._get_connection()
+        qn = connection.ops.quote_name
+
         meta = self.model._meta
         if cumulative:
             subquery = CUMULATIVE_COUNT_SUBQUERY % {
@@ -589,6 +589,9 @@ class TreeManager(models.Manager):
         have its parent field set to ``NULL``. Otherwise, ``node`` will
         have ``parent_pk`` set for its parent field.
         """
+        connection = self._get_connection(instance=node)
+        qn = connection.ops.quote_name
+
         opts = self.model._meta
         inter_tree_move_query = """
         UPDATE %(table)s
@@ -644,8 +647,7 @@ class TreeManager(models.Manager):
         if parent_pk is not None:
             params.insert(-1, parent_pk)
 
-        cursor = self._get_connection(node).cursor()
-
+        cursor = connection.cursor()
         cursor.execute(inter_tree_move_query, params)
 
     def _make_child_root_node(self, node, new_tree_id=None):
@@ -743,6 +745,9 @@ class TreeManager(models.Manager):
             else:
                 raise ValueError(_('An invalid position was given: %s.') % position)
 
+            connection = self._get_connection(instance=node)
+            qn = connection.ops.quote_name
+
             root_sibling_query = """
             UPDATE %(table)s
             SET %(tree_id)s = CASE
@@ -754,7 +759,7 @@ class TreeManager(models.Manager):
                 'tree_id': qn(opts.get_field(self.tree_id_attr).column),
             }
 
-            cursor = self._get_connection(node).cursor()
+            cursor = connection.cursor()
             cursor.execute(root_sibling_query, [tree_id, new_tree_id, shift,
                                                 lower_bound, upper_bound])
             setattr(node, self.tree_id_attr, new_tree_id)
@@ -768,6 +773,9 @@ class TreeManager(models.Manager):
         if self.tree_model._mptt_is_tracking:
             self.tree_model._mptt_track_tree_modified(tree_id)
         else:
+            connection = self._get_connection()
+            qn = connection.ops.quote_name
+
             opts = self.model._meta
             space_query = """
             UPDATE %(table)s
@@ -786,7 +794,7 @@ class TreeManager(models.Manager):
                 'right': qn(opts.get_field(self.right_attr).column),
                 'tree_id': qn(opts.get_field(self.tree_id_attr).column),
             }
-            cursor = self._get_connection(self.model).cursor()
+            cursor = connection.cursor()
             cursor.execute(space_query, [target, size, target, size, tree_id,
                                          target, target])
 
@@ -908,6 +916,9 @@ class TreeManager(models.Manager):
         if left_right_change > 0:
             gap_size = -gap_size
 
+        connection = self._get_connection(instance=node)
+        qn = connection.ops.quote_name
+
         opts = self.model._meta
         # The level update must come before the left update to keep
         # MySQL happy - left seems to refer to the updated value
@@ -945,7 +956,7 @@ class TreeManager(models.Manager):
             'tree_id': qn(opts.get_field(self.tree_id_attr).column),
         }
 
-        cursor = self._get_connection(node).cursor()
+        cursor = connection.cursor()
         cursor.execute(move_subtree_query, [
             left, right, level_change,
             left, right, left_right_change,
@@ -991,6 +1002,9 @@ class TreeManager(models.Manager):
         self._create_space(width, space_target, new_tree_id)
 
         # Move the root node, making it a child node
+        connection = self._get_connection(instance=node)
+        qn = connection.ops.quote_name
+
         opts = self.model._meta
         move_tree_query = """
         UPDATE %(table)s
@@ -1013,7 +1027,7 @@ class TreeManager(models.Manager):
             'pk': qn(opts.pk.column),
         }
 
-        cursor = self._get_connection(node).cursor()
+        cursor = connection.cursor()
         cursor.execute(move_tree_query, [level_change, left_right_change,
             left_right_change, new_tree_id, node.pk, parent.pk, left, right,
             tree_id])
