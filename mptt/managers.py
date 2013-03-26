@@ -128,11 +128,11 @@ class TreeManager(models.Manager):
             # already disabled, noop.
             yield
         else:
-            self.model._mptt_updates_enabled = False
+            self.model._set_mptt_updates_enabled(False)
             try:
                 yield
             finally:
-                self.model._mptt_updates_enabled = True
+                self.model._set_mptt_updates_enabled(True)
 
     @contextlib.contextmanager
     def delay_mptt_updates(self):

@@ -11,6 +11,32 @@ from mptt.fields import TreeForeignKey, TreeOneToOneField, TreeManyToManyField
 from mptt.managers import TreeManager
 
 
+class _classproperty(object):
+    def __init__(self, getter, setter=None):
+        self.fget = getter
+        self.fset = setter
+
+    def __get__(self, cls, owner):
+        return self.fget(owner)
+
+    def __set__(self, cls, owner, value):
+        if not self.fset:
+            raise AttributeError("This classproperty is read only")
+        self.fset(owner, value)
+
+
+class classpropertytype(property):
+    def __init__(self, name, bases=(), members={}):
+        return super(classpropertytype, self).__init__(
+            members.get('__get__'),
+            members.get('__set__'),
+            members.get('__delete__'),
+            members.get('__doc__')
+        )
+
+classproperty = classpropertytype('classproperty')
+
+
 class MPTTOptions(object):
     """
     Options class for MPTT models. Use this as an inner class called ``MPTTMeta``::
@@ -213,55 +239,6 @@ class MPTTModelBase(ModelBase):
 
         return cls
 
-    def _get_mptt_updates_enabled(cls):
-        if not cls._mptt_tracking_base:
-            return True
-        return getattr(cls._mptt_tracking_base._threadlocal, 'mptt_updates_enabled', True)
-
-    def _set_mptt_updates_enabled(cls, value):
-        assert cls is cls._mptt_tracking_base, "Can't enable or disable mptt updates on a non-tracking class."
-        cls._threadlocal.mptt_updates_enabled = value
-    _mptt_updates_enabled = property(_get_mptt_updates_enabled, _set_mptt_updates_enabled)
-
-    @property
-    def _mptt_is_tracking(cls):
-        if not cls._mptt_tracking_base:
-            return False
-        if not hasattr(cls._threadlocal, 'mptt_delayed_tree_changes'):
-            # happens the first time this is called from each thread
-            cls._threadlocal.mptt_delayed_tree_changes = None
-        return cls._threadlocal.mptt_delayed_tree_changes is not None
-
-    def _mptt_start_tracking(cls):
-        assert cls is cls._mptt_tracking_base, "Can't start or stop mptt tracking on a non-tracking class."
-        assert not cls._mptt_is_tracking, "mptt tracking is already started."
-        cls._threadlocal.mptt_delayed_tree_changes = set()
-
-    def _mptt_stop_tracking(cls):
-        assert cls is cls._mptt_tracking_base, "Can't start or stop mptt tracking on a non-tracking class."
-        assert cls._mptt_is_tracking, "mptt tracking isn't started."
-        results = cls._threadlocal.mptt_delayed_tree_changes
-        cls._threadlocal.mptt_delayed_tree_changes = None
-        return results
-
-    def _mptt_track_tree_modified(cls, tree_id):
-        if not cls._mptt_is_tracking:
-            return
-        cls._threadlocal.mptt_delayed_tree_changes.add(tree_id)
-
-    def _mptt_track_tree_insertions(cls, tree_id, num_inserted):
-        if not cls._mptt_is_tracking:
-            return
-        changes = cls._threadlocal.mptt_delayed_tree_changes
-        if not num_inserted or not changes:
-            return
-
-        if num_inserted < 0:
-            deleted = range(tree_id + num_inserted, -num_inserted)
-            changes.difference_update(deleted)
-        new_changes = set([(t + num_inserted if t >= tree_id else t) for t in changes])
-        cls._threadlocal.mptt_delayed_tree_changes = new_changes
-
     @classmethod
     def register(meta, cls, **kwargs):
         """
@@ -388,6 +365,62 @@ class MPTTModel(models.Model):
     def _mpttfield(self, fieldname):
         translated_fieldname = getattr(self._mptt_meta, fieldname + '_attr')
         return getattr(self, translated_fieldname)
+
+    @_classproperty
+    def _mptt_updates_enabled(cls):
+        if not cls._mptt_tracking_base:
+            return True
+        return getattr(cls._mptt_tracking_base._threadlocal, 'mptt_updates_enabled', True)
+
+    # ideally this'd be part of the _mptt_updates_enabled classproperty, but it seems
+    # that settable classproperties are very, very hard to do! suggestions please :)
+    @classmethod
+    def _set_mptt_updates_enabled(cls, value):
+        assert cls is cls._mptt_tracking_base, "Can't enable or disable mptt updates on a non-tracking class."
+        cls._threadlocal.mptt_updates_enabled = value
+
+    @_classproperty
+    def _mptt_is_tracking(cls):
+        if not cls._mptt_tracking_base:
+            return False
+        if not hasattr(cls._threadlocal, 'mptt_delayed_tree_changes'):
+            # happens the first time this is called from each thread
+            cls._threadlocal.mptt_delayed_tree_changes = None
+        return cls._threadlocal.mptt_delayed_tree_changes is not None
+
+    @classmethod
+    def _mptt_start_tracking(cls):
+        assert cls is cls._mptt_tracking_base, "Can't start or stop mptt tracking on a non-tracking class."
+        assert not cls._mptt_is_tracking, "mptt tracking is already started."
+        cls._threadlocal.mptt_delayed_tree_changes = set()
+
+    @classmethod
+    def _mptt_stop_tracking(cls):
+        assert cls is cls._mptt_tracking_base, "Can't start or stop mptt tracking on a non-tracking class."
+        assert cls._mptt_is_tracking, "mptt tracking isn't started."
+        results = cls._threadlocal.mptt_delayed_tree_changes
+        cls._threadlocal.mptt_delayed_tree_changes = None
+        return results
+
+    @classmethod
+    def _mptt_track_tree_modified(cls, tree_id):
+        if not cls._mptt_is_tracking:
+            return
+        cls._threadlocal.mptt_delayed_tree_changes.add(tree_id)
+
+    @classmethod
+    def _mptt_track_tree_insertions(cls, tree_id, num_inserted):
+        if not cls._mptt_is_tracking:
+            return
+        changes = cls._threadlocal.mptt_delayed_tree_changes
+        if not num_inserted or not changes:
+            return
+
+        if num_inserted < 0:
+            deleted = range(tree_id + num_inserted, -num_inserted)
+            changes.difference_update(deleted)
+        new_changes = set([(t + num_inserted if t >= tree_id else t) for t in changes])
+        cls._threadlocal.mptt_delayed_tree_changes = new_changes
 
     def get_ancestors(self, ascending=False, include_self=False):
         """
