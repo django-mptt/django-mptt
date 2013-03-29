@@ -325,8 +325,8 @@ class ReparentingTestCase(TreeTestCase):
         self.assertRaises(InvalidMove, platformer.save)
 
         # New parent is still set when an error occurs
-        self.assertEquals(action.parent, platformer_4d)
-        self.assertEquals(platformer.parent, platformer_4d)
+        self.assertEqual(action.parent, platformer_4d)
+        self.assertEqual(platformer.parent, platformer_4d)
 
 # categories.json defines the following tree structure:
 #
