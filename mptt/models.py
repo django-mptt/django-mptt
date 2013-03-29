@@ -1,3 +1,4 @@
+from functools import reduce
 import operator
 import threading
 import warnings
@@ -5,6 +6,10 @@ import warnings
 from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.query import Q
+try:
+    from django.utils.six import string_types
+except ImportError:
+    string_types = basestring
 from django.utils.translation import ugettext as _
 
 from mptt.fields import TreeForeignKey, TreeOneToOneField, TreeManyToManyField
@@ -57,7 +62,7 @@ class MPTTOptions(object):
     def __init__(self, opts=None, **kwargs):
         # Override defaults with options provided
         if opts:
-            opts = opts.__dict__.items()
+            opts = list(opts.__dict__.items())
         else:
             opts = []
         opts.extend(kwargs.items())
@@ -71,7 +76,7 @@ class MPTTOptions(object):
             setattr(self, key, value)
 
         # Normalize order_insertion_by to a list
-        if isinstance(self.order_insertion_by, basestring):
+        if isinstance(self.order_insertion_by, string_types):
             self.order_insertion_by = [self.order_insertion_by]
         elif isinstance(self.order_insertion_by, tuple):
             self.order_insertion_by = list(self.order_insertion_by)
@@ -79,7 +84,7 @@ class MPTTOptions(object):
             self.order_insertion_by = []
 
     def __iter__(self):
-        return ((k, v) for k, v in self.__dict__.iteritems() if k[0] != '_')
+        return ((k, v) for k, v in self.__dict__.items() if k[0] != '_')
 
     # Helper methods for accessing tree attributes on models.
     def get_raw_field_value(self, instance, field_name):
@@ -347,13 +352,15 @@ class MPTTModelBase(ModelBase):
         return cls
 
 
-class MPTTModel(models.Model):
+_MPTTModel = MPTTModelBase('_MPTTModel', (models.Model,), {
+    '__module__': __name__,
+    '_default_manager': TreeManager(),
+    'Meta': type('Meta', (object,), {'abstract': True}),
+    })
+class MPTTModel(_MPTTModel):
     """
     Base class for tree models.
     """
-
-    __metaclass__ = MPTTModelBase
-    _default_manager = TreeManager()
 
     class Meta:
         abstract = True
@@ -522,7 +529,7 @@ class MPTTModel(models.Model):
             # node not saved yet
             return 0
         else:
-            return (self._mpttfield('right') - self._mpttfield('left') - 1) / 2
+            return (self._mpttfield('right') - self._mpttfield('left') - 1) // 2
 
     def get_leafnodes(self, include_self=False):
         """
@@ -754,7 +761,7 @@ class MPTTModel(models.Model):
             same_order = old_parent_id == parent_id
             if same_order and len(self._mptt_cached_fields) > 1:
                 get_raw_field_value = opts.get_raw_field_value
-                for field_name, old_value in self._mptt_cached_fields.iteritems():
+                for field_name, old_value in self._mptt_cached_fields.items():
                     if old_value != get_raw_field_value(self, field_name):
                         same_order = False
                         break

@@ -9,6 +9,10 @@ from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.db.models import get_models
+try:
+    from django.utils.six import string_types
+except ImportError:
+    string_types = basestring
 from django.test import TestCase
 
 try:
@@ -64,10 +68,10 @@ class TreeTestCase(TestCase):
         super(TreeTestCase, self).__init__(*args, **kwargs)
 
     def assertTreeEqual(self, tree1, tree2):
-        if not isinstance(tree1, basestring):
+        if not isinstance(tree1, string_types):
             tree1 = get_tree_details(tree1)
         tree1 = tree_details(tree1)
-        if not isinstance(tree2, basestring):
+        if not isinstance(tree2, string_types):
             tree2 = get_tree_details(tree2)
         tree2 = tree_details(tree2)
         return self.assertEqual(tree1, tree2, "\n%r\n != \n%r" % (tree1, tree2))
@@ -113,9 +117,13 @@ class DocTestTestCase(TreeTestCase):
     def test_run_doctest(self):
         class DummyStream:
             content = ""
+            encoding = 'utf8'
 
             def write(self, text):
                 self.content += text
+
+            def flush(self):
+                pass
 
         dummy_stream = DummyStream()
         before = sys.stdout
@@ -125,7 +133,7 @@ class DocTestTestCase(TreeTestCase):
         sys.stdout = before
         content = dummy_stream.content
         if content:
-            print >>sys.stderr, content
+            sys.stderr.write(content+'\n')
             self.fail()
 
 # genres.json defines the following tree structure

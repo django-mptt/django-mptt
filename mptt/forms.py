@@ -4,7 +4,10 @@ Form components for working with trees.
 from django import forms
 from django.forms.forms import NON_FIELD_ERRORS
 from django.forms.util import ErrorList
-from django.utils.encoding import smart_unicode
+try:
+    from django.utils.encoding import smart_text
+except ImportError:
+    from django.utils.encoding import smart_unicode as smart_text
 from django.utils.html import conditional_escape, mark_safe
 from django.utils.translation import ugettext_lazy as _
 
@@ -37,7 +40,7 @@ class TreeNodeChoiceField(forms.ModelChoiceField):
         generating option labels.
         """
         level_indicator = self._get_level_indicator(obj)
-        return mark_safe(level_indicator + ' ' + conditional_escape(smart_unicode(obj)))
+        return mark_safe(level_indicator + ' ' + conditional_escape(smart_text(obj)))
 
 
 class TreeNodeMultipleChoiceField(TreeNodeChoiceField, forms.ModelMultipleChoiceField):
@@ -152,7 +155,8 @@ class MoveNodeForm(forms.Form):
             self.node.move_to(self.cleaned_data['target'],
                               self.cleaned_data['position'])
             return self.node
-        except InvalidMove, e:
+        except InvalidMove:
+            _, e, _ = sys.exc_info()
             self.errors[NON_FIELD_ERRORS] = ErrorList(e)
             raise
 

@@ -1,5 +1,9 @@
 from django.contrib.auth.models import Group
 from django.db import models
+try:
+    from django.utils.six import PY3
+except ImportError:
+    PY3 = False
 
 import mptt
 from mptt.models import MPTTModel, TreeForeignKey
@@ -17,6 +21,12 @@ class Category(MPTTModel):
     def __unicode__(self):
         return self.name
 
+    def __str__(self):
+        if PY3:
+            return self.name
+        else:
+            return self.name.encode('utf-8')
+
     def delete(self):
         super(Category, self).delete()
 
@@ -27,6 +37,12 @@ class Genre(MPTTModel):
 
     def __unicode__(self):
         return self.name
+
+    def __str__(self):
+        if PY3:
+            return self.name
+        else:
+            return self.name.encode('utf-8')
 
 
 class Insert(MPTTModel):
@@ -44,6 +60,12 @@ class MultiOrder(MPTTModel):
 
     def __unicode__(self):
         return self.name
+
+    def __str__(self):
+        if PY3:
+            return self.name
+        else:
+            return self.name.encode('utf-8')
 
 
 class Node(MPTTModel):
@@ -65,6 +87,12 @@ class OrderedInsertion(MPTTModel):
 
     def __unicode__(self):
         return self.name
+
+    def __str__(self):
+        if PY3:
+            return self.name
+        else:
+            return self.name.encode('utf-8')
 
 
 class Tree(MPTTModel):
@@ -89,6 +117,12 @@ class Person(MPTTModel):
     def __unicode__(self):
         return self.name
 
+    def __str__(self):
+        if PY3:
+            return self.name
+        else:
+            return self.name.encode('utf-8')
+
 
 class Student(Person):
     type = models.CharField(max_length=50)
@@ -102,6 +136,12 @@ class CustomPKName(MPTTModel):
 
     def __unicode__(self):
         return self.name
+
+    def __str__(self):
+        if PY3:
+            return self.name
+        else:
+            return self.name.encode('utf-8')
 
 
 # for testing various types of inheritance:
