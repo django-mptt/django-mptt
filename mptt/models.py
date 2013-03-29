@@ -300,7 +300,7 @@ class MPTTModelBase(ModelBase):
                 # strip out bases that are strict superclasses of MPTTModel.
                 # (i.e. Model, object)
                 # this helps linearize the type hierarchy if possible
-                for i in xrange(len(bases) - 1, -1, -1):
+                for i in range(len(bases) - 1, -1, -1):
                     if issubclass(MPTTModel, bases[i]):
                         del bases[i]
 

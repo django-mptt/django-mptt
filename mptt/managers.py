@@ -572,7 +572,7 @@ class TreeManager(models.Manager):
         by this manager.
         """
         qs = self.get_query_set()
-        max_tree_id = list(qs.aggregate(Max(self.tree_id_attr)).values())[0]
+        max_tree_id = qs.aggregate(Max(self.tree_id_attr))['tree_id__max']
 
         max_tree_id = max_tree_id or 0
         return max_tree_id + 1
