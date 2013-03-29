@@ -21,7 +21,7 @@ __all__ = ('TreeNodeChoiceField', 'TreeNodeMultipleChoiceField', 'TreeNodePositi
 class TreeNodeChoiceField(forms.ModelChoiceField):
     """A ModelChoiceField for tree nodes."""
     def __init__(self, queryset, *args, **kwargs):
-        self.level_indicator = kwargs.pop('level_indicator', u'---')
+        self.level_indicator = kwargs.pop('level_indicator', '---')
 
         # if a queryset is supplied, enforce ordering
         if hasattr(queryset, 'model'):
@@ -47,7 +47,7 @@ class TreeNodeMultipleChoiceField(TreeNodeChoiceField, forms.ModelMultipleChoice
     """A ModelMultipleChoiceField for tree nodes."""
 
     def __init__(self, queryset, *args, **kwargs):
-        self.level_indicator = kwargs.pop('level_indicator', u'---')
+        self.level_indicator = kwargs.pop('level_indicator', '---')
 
         # if a queryset is supplied, enforce ordering
         if hasattr(queryset, 'model'):

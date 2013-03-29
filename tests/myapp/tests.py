@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import re
 import sys
 
@@ -468,7 +470,7 @@ if feincms:
 
             category = Category.objects.get(id=1)
             self.assertTrue(
-                u'<a href="add/?parent=1" title="Add child">' in
+                '<a href="add/?parent=1" title="Add child">' in
                 model_admin._actions_column(category)[0]
             )
 

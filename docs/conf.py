@@ -41,8 +41,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'django-mptt'
-copyright = u'2007 - 2011, Jonathan Buchanan and others'
+project = 'django-mptt'
+copyright = '2007 - 2011, Jonathan Buchanan and others'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -181,8 +181,8 @@ htmlhelp_basename = 'django-mpttdoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'django-mptt.tex', u'django-mptt Documentation',
-   u'Craig de Stigter', 'manual'),
+  ('index', 'django-mptt.tex', 'django-mptt Documentation',
+   'Craig de Stigter', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -214,6 +214,6 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'django-mptt', u'django-mptt Documentation',
-     [u'Craig de Stigter'], 1)
+    ('index', 'django-mptt', 'django-mptt Documentation',
+     ['Craig de Stigter'], 1)
 ]

@@ -65,7 +65,7 @@ class MPTTOptions(object):
             opts = list(opts.__dict__.items())
         else:
             opts = []
-        opts.extend(kwargs.items())
+        opts.extend(list(kwargs.items()))
 
         if 'tree_manager_attr' in [opt[0] for opt in opts]:
             raise ValueError("`tree_manager_attr` has been removed; you should instantiate a TreeManager as a normal manager on your model instead.")

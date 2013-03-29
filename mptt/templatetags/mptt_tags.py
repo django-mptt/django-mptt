@@ -264,7 +264,7 @@ def cache_tree_children(queryset):
                 # ``queryset`` was a list or other iterable (unable to order),
                 # and was provided in an order other than depth-first
                 raise ValueError(
-                    _(u'Node %s not in depth-first order') % (type(queryset),)
+                    _('Node %s not in depth-first order') % (type(queryset),)
                 )
 
             # Set up the attribute on the node that will store cached children,
@@ -306,7 +306,7 @@ class RecurseTreeNode(template.Node):
         for child in node.get_children():
             bits.append(self._render_node(context, child))
         context['node'] = node
-        context['children'] = mark_safe(u''.join(bits))
+        context['children'] = mark_safe(''.join(bits))
         rendered = self.template_nodes.render(context)
         context.pop()
         return rendered

@@ -6,6 +6,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.utils.html import escape, conditional_escape
 from django.utils.safestring import mark_safe
+import collections
 try:
     from django.utils.encoding import smart_text, force_text
 except ImportError:
@@ -48,7 +49,7 @@ def mptt_items_for_result(cl, result, form):
             except models.FieldDoesNotExist:
                 if mptt_indent_field is None:
                     attr = getattr(result, field_name, None)
-                    if callable(attr):
+                    if isinstance(attr, collections.Callable):
                         # first callable field, use this if we can't find any model fields
                         mptt_indent_field = field_name
             else:
@@ -68,7 +69,7 @@ def mptt_items_for_result(cl, result, form):
             result_repr = EMPTY_CHANGELIST_VALUE
         else:
             if f is None:
-                if field_name == u'action_checkbox':
+                if field_name == 'action_checkbox':
                     row_class = ' class="action-checkbox"'
                 allow_tags = getattr(attr, 'allow_tags', False)
                 boolean = getattr(attr, 'boolean', False)
@@ -121,7 +122,7 @@ def mptt_items_for_result(cl, result, form):
             value = result.serializable_value(attr)
             result_id = repr(force_text(value))[1:]
             ##### MPTT SUBSTITUTION START
-            yield mark_safe(u'<%s%s%s><a href="%s"%s>%s</a></%s>' % \
+            yield mark_safe('<%s%s%s><a href="%s"%s>%s</a></%s>' % \
                 (table_tag, row_class, padding_attr, url, (cl.is_popup and ' onclick="opener.dismissRelatedLookupPopup(window, %s); return false;"' % result_id or ''), conditional_escape(result_repr), table_tag))
             ##### MPTT SUBSTITUTION END
         else:
@@ -136,10 +137,10 @@ def mptt_items_for_result(cl, result, form):
             else:
                 result_repr = conditional_escape(result_repr)
             ##### MPTT SUBSTITUTION START
-            yield mark_safe(u'<td%s%s>%s</td>' % (row_class, padding_attr, result_repr))
+            yield mark_safe('<td%s%s>%s</td>' % (row_class, padding_attr, result_repr))
             ##### MPTT SUBSTITUTION END
     if form and not form[cl.model._meta.pk.name].is_hidden:
-        yield mark_safe(u'<td>%s</td>' % force_text(form[cl.model._meta.pk.name]))
+        yield mark_safe('<td>%s</td>' % force_text(form[cl.model._meta.pk.name]))
 
 
 def mptt_results(cl):
