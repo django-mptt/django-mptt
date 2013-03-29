@@ -1,9 +1,6 @@
 """
 A custom manager for working with trees of objects.
 """
-# for python 2.5
-from __future__ import with_statement
-
 import contextlib
 
 from django.db import connection, models, transaction
