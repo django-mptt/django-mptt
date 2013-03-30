@@ -125,11 +125,13 @@ class DocTestTestCase(TreeTestCase):
         dummy_stream = DummyStream()
         before = sys.stdout
         sys.stdout = dummy_stream
+
         import doctest
         doctest.testfile(
             'doctests.txt',
             optionflags=doctest.IGNORE_EXCEPTION_DETAIL,
-            encoding='utf-8'
+            encoding='utf-8',
+            raise_on_error=True,
         )
         sys.stdout = before
         content = dummy_stream.content
