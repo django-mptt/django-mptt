@@ -1,7 +1,9 @@
 from __future__ import unicode_literals
 
+import os
 import re
 import sys
+import tempfile
 
 import django
 from django.conf import settings
@@ -19,7 +21,7 @@ except ImportError:
 from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.models import MPTTModel
 from mptt.templatetags.mptt_tags import cache_tree_children
-from mptt.vendor.six import string_types
+from mptt.vendor.six import string_types, PY3, b
 from myapp.models import Category, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel, ConcreteModel, OrderedInsertion
 
 extra_queries_per_update = 0
@@ -124,20 +126,34 @@ class DocTestTestCase(TreeTestCase):
 
         dummy_stream = DummyStream()
         before = sys.stdout
-        sys.stdout = dummy_stream
+        #sys.stdout = dummy_stream
 
-        import doctest
-        doctest.testfile(
-            'doctests.txt',
-            optionflags=doctest.IGNORE_EXCEPTION_DETAIL,
-            encoding='utf-8',
-            raise_on_error=True,
-        )
-        sys.stdout = before
-        content = dummy_stream.content
-        if content:
-            sys.stderr.write(content+'\n')
-            self.fail()
+        with open(os.path.join(os.path.dirname(__file__), 'doctests.txt')) as f:
+            with tempfile.NamedTemporaryFile() as temp:
+                text = f.read()
+
+                if PY3:
+                    # unicode literals in the doctests screw up doctest on py3.
+                    # this is pretty icky, but I can't find any other
+                    # workarounds :(
+                    text = re.sub(r"""\bu(["\'])""", r"\1", text)
+                    temp.write(b(text))
+
+                temp.flush()
+
+                import doctest
+                doctest.testfile(
+                    # for some reason doctest only handles module-relative paths (!?)
+                    os.path.relpath(temp.name, __file__),
+                    optionflags=doctest.IGNORE_EXCEPTION_DETAIL,
+                    encoding='utf-8',
+                    raise_on_error=True,
+                )
+                sys.stdout = before
+                content = dummy_stream.content
+                if content:
+                    sys.stderr.write(content+'\n')
+                    self.fail()
 
 # genres.json defines the following tree structure
 #

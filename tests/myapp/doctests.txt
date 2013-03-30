@@ -1,4 +1,3 @@
->>> from __future__ import unicode_literals
 >>> from datetime import date
 >>> from mptt.exceptions import InvalidMove
 >>> from myapp.models import Genre, Insert, MultiOrder, Node, OrderedInsertion, Tree, Person, Student
@@ -63,25 +62,25 @@
 >>> for i,s in tree_item_iterator(Genre.objects.all(), ancestors=True):
 ...     print((i, s['new_level'], s['ancestors'], list(s['closed_levels'])))
 (<Genre: Action>, True, [], [])
-(<Genre: Platformer>, True, ['Action'], [])
-(<Genre: 2D Platformer>, True, ['Action', 'Platformer'], [])
-(<Genre: 3D Platformer>, False, ['Action', 'Platformer'], [])
-(<Genre: 4D Platformer>, False, ['Action', 'Platformer'], [2, 1])
+(<Genre: Platformer>, True, [u'Action'], [])
+(<Genre: 2D Platformer>, True, [u'Action', u'Platformer'], [])
+(<Genre: 3D Platformer>, False, [u'Action', u'Platformer'], [])
+(<Genre: 4D Platformer>, False, [u'Action', u'Platformer'], [2, 1])
 (<Genre: Role-playing Game>, False, [], [])
-(<Genre: Action RPG>, True, ['Role-playing Game'], [])
-(<Genre: Tactical RPG>, False, ['Role-playing Game'], [1, 0])
+(<Genre: Action RPG>, True, [u'Role-playing Game'], [])
+(<Genre: Tactical RPG>, False, [u'Role-playing Game'], [1, 0])
 
 >>> action = Genre.objects.get(pk=action.pk)
 >>> [item.name for item in drilldown_tree_for_node(action)]
-['Action', 'Platformer']
+[u'Action', u'Platformer']
 
 >>> platformer = Genre.objects.get(pk=platformer.pk)
 >>> [item.name for item in drilldown_tree_for_node(platformer)]
-['Action', 'Platformer', '2D Platformer', '3D Platformer', '4D Platformer']
+[u'Action', u'Platformer', u'2D Platformer', u'3D Platformer', u'4D Platformer']
 
 >>> platformer_3d = Genre.objects.get(pk=platformer_3d.pk)
 >>> [item.name for item in drilldown_tree_for_node(platformer_3d)]
-['Action', 'Platformer', '3D Platformer']
+[u'Action', u'Platformer', u'3D Platformer']
 
 # Forms #######################################################################
 >>> from mptt.forms import TreeNodeChoiceField, MoveNodeForm
@@ -114,7 +113,7 @@
 <option value="8">--- Tactical RPG</option>
 </select>
 
->>> f = TreeNodeChoiceField(queryset=Genre.objects.all(), empty_label='None of the below')
+>>> f = TreeNodeChoiceField(queryset=Genre.objects.all(), empty_label=u'None of the below')
 >>> print(f.widget.render("test", None))
 <select name="test">
 <option value="" selected="selected">None of the below</option>
@@ -128,7 +127,7 @@
 <option value="8">--- Tactical RPG</option>
 </select>
 
->>> f = TreeNodeChoiceField(queryset=Genre.objects.all(), required=False, empty_label='None of the below')
+>>> f = TreeNodeChoiceField(queryset=Genre.objects.all(), required=False, empty_label=u'None of the below')
 >>> print(f.widget.render("test", None))
 <select name="test">
 <option value="" selected="selected">None of the below</option>
@@ -142,7 +141,7 @@
 <option value="8">--- Tactical RPG</option>
 </select>
 
->>> f = TreeNodeChoiceField(queryset=Genre.objects.all(), level_indicator='+--')
+>>> f = TreeNodeChoiceField(queryset=Genre.objects.all(), level_indicator=u'+--')
 >>> print(f.widget.render("test", None))
 <select name="test">
 <option value="" selected="selected">---------</option>
@@ -169,7 +168,7 @@
 <option value="8">--- Tactical RPG</option>
 </select>
 
->>> form = MoveNodeForm(Genre.objects.get(pk=7), level_indicator='+--', target_select_size=5)
+>>> form = MoveNodeForm(Genre.objects.get(pk=7), level_indicator=u'+--', target_select_size=5)
 >>> print(form['target'])
 <select id="id_target" name="target" size="5">
 <option value="" selected="selected">---------</option>
@@ -217,7 +216,7 @@ False
 ...     raise
 
 >>> [g.name for g in Genre.objects.root_nodes()]
-['Action', 'Role-playing Game']
+[u'Action', u'Role-playing Game']
 
 >>> [g.parent for g in Genre.objects.only('parent')]
 [None, <Genre: Action>, <Genre: Platformer>, <Genre: Platformer>, <Genre: Platformer>, None, <Genre: Role-playing Game>, <Genre: Role-playing Game>]
@@ -229,17 +228,17 @@ False
 >>> [g.name for g in action.get_ancestors(ascending=True)]
 []
 >>> [g.name for g in action.get_children()]
-['Platformer']
+[u'Platformer']
 >>> [g.name for g in action.get_descendants()]
-['Platformer', '2D Platformer', '3D Platformer', '4D Platformer']
+[u'Platformer', u'2D Platformer', u'3D Platformer', u'4D Platformer']
 >>> [g.name for g in action.get_descendants(include_self=True)]
-['Action', 'Platformer', '2D Platformer', '3D Platformer', '4D Platformer']
+[u'Action', u'Platformer', u'2D Platformer', u'3D Platformer', u'4D Platformer']
 >>> [g.name for g in action.get_leafnodes()]
-['2D Platformer', '3D Platformer', '4D Platformer']
+[u'2D Platformer', u'3D Platformer', u'4D Platformer']
 >>> [g.name for g in action.get_leafnodes(include_self=False)]
-['2D Platformer', '3D Platformer', '4D Platformer']
+[u'2D Platformer', u'3D Platformer', u'4D Platformer']
 >>> [g.name for g in action.get_leafnodes(include_self=True)]
-['2D Platformer', '3D Platformer', '4D Platformer']
+[u'2D Platformer', u'3D Platformer', u'4D Platformer']
 >>> action.get_descendant_count()
 4
 >>> action.get_previous_sibling()
@@ -248,9 +247,9 @@ False
 >>> action.get_root()
 <Genre: Action>
 >>> [g.name for g in action.get_siblings()]
-['Role-playing Game']
+[u'Role-playing Game']
 >>> [g.name for g in action.get_siblings(include_self=True)]
-['Action', 'Role-playing Game']
+[u'Action', u'Role-playing Game']
 >>> action.is_root_node()
 True
 >>> action.is_child_node()
@@ -268,19 +267,19 @@ True
 
 >>> platformer = Genre.objects.get(pk=platformer.pk)
 >>> [g.name for g in platformer.get_ancestors()]
-['Action']
+[u'Action']
 >>> [g.name for g in platformer.get_ancestors(ascending=True)]
-['Action']
+[u'Action']
 >>> [g.name for g in platformer.get_children()]
-['2D Platformer', '3D Platformer', '4D Platformer']
+[u'2D Platformer', u'3D Platformer', u'4D Platformer']
 >>> [g.name for g in platformer.get_descendants()]
-['2D Platformer', '3D Platformer', '4D Platformer']
+[u'2D Platformer', u'3D Platformer', u'4D Platformer']
 >>> [g.name for g in platformer.get_descendants(include_self=True)]
-['Platformer', '2D Platformer', '3D Platformer', '4D Platformer']
+[u'Platformer', u'2D Platformer', u'3D Platformer', u'4D Platformer']
 >>> [g.name for g in platformer.get_leafnodes()]
-['2D Platformer', '3D Platformer', '4D Platformer']
+[u'2D Platformer', u'3D Platformer', u'4D Platformer']
 >>> [g.name for g in platformer.get_leafnodes(include_self=True)]
-['2D Platformer', '3D Platformer', '4D Platformer']
+[u'2D Platformer', u'3D Platformer', u'4D Platformer']
 >>> platformer.get_descendant_count()
 3
 >>> platformer.get_previous_sibling()
@@ -290,7 +289,7 @@ True
 >>> [g.name for g in platformer.get_siblings()]
 []
 >>> [g.name for g in platformer.get_siblings(include_self=True)]
-['Platformer']
+[u'Platformer']
 >>> platformer.is_root_node()
 False
 >>> platformer.is_child_node()
@@ -308,19 +307,19 @@ True
 
 >>> platformer_3d = Genre.objects.get(pk=platformer_3d.pk)
 >>> [g.name for g in platformer_3d.get_ancestors()]
-['Action', 'Platformer']
+[u'Action', u'Platformer']
 >>> [g.name for g in platformer_3d.get_ancestors(ascending=True)]
-['Platformer', 'Action']
+[u'Platformer', u'Action']
 >>> [g.name for g in platformer_3d.get_children()]
 []
 >>> [g.name for g in platformer_3d.get_descendants()]
 []
 >>> [g.name for g in platformer_3d.get_descendants(include_self=True)]
-['3D Platformer']
+[u'3D Platformer']
 >>> [g.name for g in platformer_3d.get_leafnodes()]
 []
 >>> [g.name for g in platformer_3d.get_leafnodes(include_self=True)]
-['3D Platformer']
+[u'3D Platformer']
 >>> platformer_3d.get_descendant_count()
 0
 >>> platformer_3d.get_previous_sibling()
@@ -330,9 +329,9 @@ True
 >>> platformer_3d.get_root()
 <Genre: Action>
 >>> [g.name for g in platformer_3d.get_siblings()]
-['2D Platformer', '4D Platformer']
+[u'2D Platformer', u'4D Platformer']
 >>> [g.name for g in platformer_3d.get_siblings(include_self=True)]
-['2D Platformer', '3D Platformer', '4D Platformer']
+[u'2D Platformer', u'3D Platformer', u'4D Platformer']
 >>> platformer_3d.is_root_node()
 False
 >>> platformer_3d.is_child_node()
@@ -386,26 +385,26 @@ True
 >>> root = Node.objects.get(pk=root.pk)
 >>> Node.objects.move_node(root, root, position='first-child')
 Traceback (most recent call last):
-  ...
+    ...
 InvalidMove: A node may not be made a child of itself.
 >>> c_1 = Node.objects.get(pk=c_1.pk)
 >>> c_1_1 = Node.objects.get(pk=c_1_1.pk)
 >>> Node.objects.move_node(c_1, c_1_1, position='last-child')
 Traceback (most recent call last):
-  ...
+    ...
 InvalidMove: A node may not be made a child of any of its descendants.
 >>> Node.objects.move_node(root, root, position='right')
 Traceback (most recent call last):
-  ...
+    ...
 InvalidMove: A node may not be made a sibling of itself.
 >>> c_2 = Node.objects.get(pk=c_2.pk)
 >>> Node.objects.move_node(c_1, c_1_1, position='left')
 Traceback (most recent call last):
-  ...
+    ...
 InvalidMove: A node may not be made a sibling of any of its descendants.
 >>> Node.objects.move_node(c_1, c_2, position='cheese')
 Traceback (most recent call last):
-  ...
+    ...
 ValueError: An invalid position was given: cheese.
 
 # Move up the tree using first-child
@@ -770,11 +769,11 @@ I guess we're covered :)
 # Validate exceptions are raised appropriately
 >>> Node.objects.move_node(root, c_1, position='first-child')
 Traceback (most recent call last):
-  ...
+    ...
 InvalidMove: A node may not be made a child of any of its descendants.
 >>> Node.objects.move_node(new_root, c_1, position='cheese')
 Traceback (most recent call last):
-  ...
+    ...
 ValueError: An invalid position was given: cheese.
 
 >>> new_root = Node.objects.get(pk=new_root.pk)
@@ -849,11 +848,11 @@ ValueError: An invalid position was given: cheese.
 >>> root = Node.objects.get(pk=root.pk)
 >>> Node.objects.move_node(root, root, position='left')
 Traceback (most recent call last):
-  ...
+    ...
 InvalidMove: A node may not be made a sibling of itself.
 >>> Node.objects.move_node(root, root, position='right')
 Traceback (most recent call last):
-  ...
+    ...
 InvalidMove: A node may not be made a sibling of itself.
 
 >>> r1 = Tree.objects.create()
@@ -1029,7 +1028,7 @@ InvalidMove: A node may not be made a sibling of itself.
 
 >>> c1.insert_at(r2)
 Traceback (most recent call last):
-  ...
+    ...
 ValueError: Cannot insert a node which has already been saved.
 
 # First child
