@@ -233,7 +233,6 @@ class MPTTModelBase(ModelBase):
                         setattr(MPTTMeta, name, value)
 
         class_dict['_mptt_meta'] = MPTTOptions(MPTTMeta)
-        class_dict.setdefault('_default_manager', TreeManager())
         cls = super_new(meta, class_name, bases, class_dict)
         cls = meta.register(cls)
 
@@ -366,6 +365,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
     """
     Base class for tree models.
     """
+    _default_manager = TreeManager()
 
     class Meta:
         abstract = True
