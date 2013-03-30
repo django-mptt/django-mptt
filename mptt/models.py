@@ -207,8 +207,9 @@ class MPTTModelBase(ModelBase):
          - adds the MPTT fields to the class
          - adds a TreeManager to the model
         """
-        super_new = super(MPTTModelBase, meta).__new__
         if class_name == 'NewBase' and class_dict == {}:
+            # skip ModelBase, on django < 1.5 it doesn't handle NewBase.
+            super_new = super(ModelBase, meta).__new__
             return super_new(meta, class_name, bases, class_dict)
         is_MPTTModel = False
         try:
@@ -233,6 +234,7 @@ class MPTTModelBase(ModelBase):
                         setattr(MPTTMeta, name, value)
 
         class_dict['_mptt_meta'] = MPTTOptions(MPTTMeta)
+        super_new = super(MPTTModelBase, meta).__new__
         cls = super_new(meta, class_name, bases, class_dict)
         cls = meta.register(cls)
 
