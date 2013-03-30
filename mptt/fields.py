@@ -1,6 +1,7 @@
 """
 Model fields for working with trees.
 """
+from __future__ import unicode_literals
 
 __all__ = ('TreeForeignKey', 'TreeOneToOneField', 'TreeManyToManyField')
 

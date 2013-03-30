@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 #
 # django-mptt documentation build configuration file, created by
 # sphinx-quickstart on Wed Sep  8 20:11:06 2010.

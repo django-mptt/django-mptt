@@ -1,4 +1,4 @@
-
+from __future__ import unicode_literals
 import django
 from django.conf import settings
 from django.contrib.admin.views.main import ChangeList

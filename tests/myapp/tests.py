@@ -8,10 +8,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.db.models import get_models
-try:
-    from django.utils.six import string_types
-except ImportError:
-    string_types = basestring
+
 from django.test import TestCase
 
 try:
@@ -22,6 +19,7 @@ except ImportError:
 from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.models import MPTTModel
 from mptt.templatetags.mptt_tags import cache_tree_children
+from mptt.vendor.six import string_types
 from myapp.models import Category, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel, ConcreteModel, OrderedInsertion
 
 extra_queries_per_update = 0
@@ -128,7 +126,11 @@ class DocTestTestCase(TreeTestCase):
         before = sys.stdout
         sys.stdout = dummy_stream
         import doctest
-        doctest.testfile('doctests.txt')
+        doctest.testfile(
+            'doctests.txt',
+            optionflags=doctest.IGNORE_EXCEPTION_DETAIL,
+            encoding='utf-8'
+        )
         sys.stdout = before
         content = dummy_stream.content
         if content:

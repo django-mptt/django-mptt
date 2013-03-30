@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from functools import reduce
 import operator
 import threading
@@ -6,10 +7,8 @@ import warnings
 from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.query import Q
-try:
-    from django.utils.six import string_types
-except ImportError:
-    string_types = basestring
+
+from mptt.vendor import six
 from django.utils.translation import ugettext as _
 
 from mptt.fields import TreeForeignKey, TreeOneToOneField, TreeManyToManyField
@@ -76,7 +75,7 @@ class MPTTOptions(object):
             setattr(self, key, value)
 
         # Normalize order_insertion_by to a list
-        if isinstance(self.order_insertion_by, string_types):
+        if isinstance(self.order_insertion_by, six.string_types):
             self.order_insertion_by = [self.order_insertion_by]
         elif isinstance(self.order_insertion_by, tuple):
             self.order_insertion_by = list(self.order_insertion_by)
@@ -208,6 +207,15 @@ class MPTTModelBase(ModelBase):
          - adds the MPTT fields to the class
          - adds a TreeManager to the model
         """
+        super_new = super(MPTTModelBase, meta).__new__
+        if class_name == 'NewBase' and class_dict == {}:
+            return super_new(meta, class_name, bases, class_dict)
+        is_MPTTModel = False
+        try:
+            MPTTModel
+        except NameError:
+            is_MPTTModel = True
+
         MPTTMeta = class_dict.pop('MPTTMeta', None)
         if not MPTTMeta:
             class MPTTMeta:
@@ -225,15 +233,17 @@ class MPTTModelBase(ModelBase):
                         setattr(MPTTMeta, name, value)
 
         class_dict['_mptt_meta'] = MPTTOptions(MPTTMeta)
-        cls = super(MPTTModelBase, meta).__new__(meta, class_name, bases, class_dict)
-
+        class_dict.setdefault('_default_manager', TreeManager())
+        cls = super_new(meta, class_name, bases, class_dict)
         cls = meta.register(cls)
 
         # see error cases in TreeManager.disable_mptt_updates for the reasoning here.
         cls._mptt_tracking_base = None
-        for base in cls.mro():
-            if not isinstance(base, MPTTModelBase):
-                continue
+        if is_MPTTModel:
+            bases = [cls]
+        else:
+            bases = [base for base in cls.mro() if issubclass(base, MPTTModel)]
+        for base in bases:
             if not (base._meta.abstract or base._meta.proxy) and base._tree_manager.tree_model is base:
                 cls._mptt_tracking_base = base
                 break
@@ -352,12 +362,7 @@ class MPTTModelBase(ModelBase):
         return cls
 
 
-_MPTTModel = MPTTModelBase('_MPTTModel', (models.Model,), {
-    '__module__': __name__,
-    '_default_manager': TreeManager(),
-    'Meta': type('Meta', (object,), {'abstract': True}),
-    })
-class MPTTModel(_MPTTModel):
+class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
     """
     Base class for tree models.
     """

@@ -1,13 +1,11 @@
+from __future__ import unicode_literals
 from django.contrib.auth.models import Group
 from django.db import models
-try:
-    from django.utils.six import PY3
-except ImportError:
-    PY3 = False
 
 import mptt
 from mptt.models import MPTTModel, TreeForeignKey
 from mptt.managers import TreeManager
+from mptt.utils import python_2_unicode_compatible
 
 
 class CustomTreeManager(TreeManager):
@@ -18,14 +16,9 @@ class Category(MPTTModel):
     name = models.CharField(max_length=50)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
 
-    def __unicode__(self):
-        return self.name
-
+    @python_2_unicode_compatible
     def __str__(self):
-        if PY3:
-            return self.name
-        else:
-            return self.name.encode('utf-8')
+        return self.name
 
     def delete(self):
         super(Category, self).delete()
@@ -35,14 +28,9 @@ class Genre(MPTTModel):
     name = models.CharField(max_length=50, unique=True)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
 
-    def __unicode__(self):
-        return self.name
-
+    @python_2_unicode_compatible
     def __str__(self):
-        if PY3:
-            return self.name
-        else:
-            return self.name.encode('utf-8')
+        return self.name
 
 
 class Insert(MPTTModel):
@@ -58,14 +46,9 @@ class MultiOrder(MPTTModel):
     class MPTTMeta:
         order_insertion_by = ['name', 'size', '-date']
 
-    def __unicode__(self):
-        return self.name
-
+    @python_2_unicode_compatible
     def __str__(self):
-        if PY3:
-            return self.name
-        else:
-            return self.name.encode('utf-8')
+        return self.name
 
 
 class Node(MPTTModel):
@@ -85,14 +68,9 @@ class OrderedInsertion(MPTTModel):
     class MPTTMeta:
         order_insertion_by = ['name']
 
-    def __unicode__(self):
-        return self.name
-
+    @python_2_unicode_compatible
     def __str__(self):
-        if PY3:
-            return self.name
-        else:
-            return self.name.encode('utf-8')
+        return self.name
 
 
 class Tree(MPTTModel):
@@ -114,14 +92,9 @@ class Person(MPTTModel):
     objects = models.Manager()
     my_tree_manager = CustomTreeManager()
 
-    def __unicode__(self):
-        return self.name
-
+    @python_2_unicode_compatible
     def __str__(self):
-        if PY3:
-            return self.name
-        else:
-            return self.name.encode('utf-8')
+        return self.name
 
 
 class Student(Person):
@@ -134,14 +107,9 @@ class CustomPKName(MPTTModel):
     parent = models.ForeignKey('self', null=True, blank=True,
             related_name='children', db_column="my_cusom_parent")
 
-    def __unicode__(self):
-        return self.name
-
+    @python_2_unicode_compatible
     def __str__(self):
-        if PY3:
-            return self.name
-        else:
-            return self.name.encode('utf-8')
+        return self.name
 
 
 # for testing various types of inheritance:
