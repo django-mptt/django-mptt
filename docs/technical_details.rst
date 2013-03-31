@@ -82,6 +82,25 @@ of nodes which are retrieved for the whole tree or any subtree::
    node.get_descendants().filter(level__lte=node.level + 2)
 
 
+Concurrency
+===========
+
+Most CRUD methods involve the execution of multiple queries. These
+methods need to be made mutually exclusive, otherwise corrupt hierarchies might get created.
+Mutual exclusivity is usually achieved by placing the queries between
+**LOCK TABLE** and **UNLOCK TABLE** statements. However, mptt
+can't do the locking itself because the `LOCK/UNLOCK statements are not transaction safe`_
+and would therefore mess up the client code's transactions. This means that it's
+the client code's responsibility to ensure that calls to mptt CRUD methods are mutually
+exclusive.
+
+Note: In the above paragraph 'client code' means any django app that uses mptt base models.
+
+.. _`LOCK/UNLOCK statements are not transaction safe`: http://dev.mysql.com/doc/refman/5.0/en/lock-tables-and-transactions.html
+
+ 
+
+
 Running the test suite
 ======================
 
