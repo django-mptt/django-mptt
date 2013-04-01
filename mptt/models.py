@@ -8,7 +8,7 @@ from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.query import Q
 
-from mptt.vendor import six
+from django.utils import six
 from django.utils.translation import ugettext as _
 
 from mptt.fields import TreeForeignKey, TreeOneToOneField, TreeManyToManyField

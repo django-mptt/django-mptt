@@ -10,8 +10,8 @@ from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.db.models import get_models
-
 from django.test import TestCase
+from django.utils.six import string_types, PY3, b
 
 try:
     import feincms
@@ -21,7 +21,6 @@ except ImportError:
 from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.models import MPTTModel
 from mptt.templatetags.mptt_tags import cache_tree_children
-from mptt.vendor.six import string_types, PY3, b
 from myapp.models import Category, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel, ConcreteModel, OrderedInsertion
 
 extra_queries_per_update = 0

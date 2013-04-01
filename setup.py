@@ -20,7 +20,7 @@ setup(
     author=str('Craig de Stigter'),
     author_email=str('craig.ds@gmail.com'),
     url=str('http://github.com/django-mptt/django-mptt'),
-    packages=[str('mptt'), str('mptt.templatetags'), str('mptt.vendor')],
+    packages=[str('mptt'), str('mptt.templatetags')],
     package_data={str('mptt'): [str('templates/admin/*'), str('locale/*/*/*.*')]},
     classifiers=[
         str('Development Status :: 4 - Beta'),

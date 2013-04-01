@@ -8,28 +8,11 @@ import csv
 import itertools
 import sys
 
-from mptt.vendor.six import next, text_type, PY3
-from mptt.vendor.six.moves import zip
+from django.utils.six import next, text_type
+from django.utils.six.moves import zip
 
 __all__ = ('previous_current_next', 'tree_item_iterator',
            'drilldown_tree_for_node')
-
-
-# copied from django.utils.encoding.
-# was added to django in 1.4.2, so can be removed once we drop support
-# for django 1.3
-def python_2_unicode_compatible(klass):
-    """
-    A decorator that defines __unicode__ and __str__ methods under Python 2.
-    Under Python 3 it does nothing.
-
-    To support Python 2 and 3 with a single code base, define a __str__ method
-    returning text and apply this decorator to the class.
-    """
-    if not PY3:
-        klass.__unicode__ = klass.__str__
-        klass.__str__ = lambda self: self.__unicode__().encode('utf-8')
-    return klass
 
 
 def previous_current_next(items):
