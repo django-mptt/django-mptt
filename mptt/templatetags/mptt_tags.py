@@ -5,7 +5,10 @@ trees.
 from django import template
 from django.db.models import get_model
 from django.db.models.fields import FieldDoesNotExist
-from django.utils.encoding import force_unicode
+try:
+    from django.utils.encoding import force_text
+except ImportError:
+    from django.utils.encoding import force_unicode as force_text
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 
@@ -216,7 +219,7 @@ def tree_path(items, separator=' :: '):
        {{ some_node.get_ancestors|tree_path:" > " }}
 
     """
-    return separator.join([force_unicode(i) for i in items])
+    return separator.join([force_text(i) for i in items])
 
 
 ### RECURSIVE TAGS

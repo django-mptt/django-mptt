@@ -4,11 +4,11 @@
 
 >>> def print_tree_details(nodes):
 ...     opts = nodes[0]._mptt_meta
-...     print '\n'.join(['%s %s %s %s %s %s' % \
+...     print('\n'.join(['%s %s %s %s %s %s' % \
 ...                      (n.pk, getattr(n, '%s_id' % opts.parent_attr) or '-',
 ...                       getattr(n, opts.tree_id_attr), getattr(n, opts.level_attr),
 ...                       getattr(n, opts.left_attr), getattr(n, opts.right_attr)) \
-...                      for n in nodes])
+...                      for n in nodes]))
 
 
 # Creation ####################################################################
@@ -38,7 +38,7 @@
 >>> from mptt.utils import previous_current_next, tree_item_iterator, drilldown_tree_for_node
 
 >>> for p,c,n in previous_current_next(Genre.objects.all()):
-...     print (p,c,n)
+...     print((p,c,n))
 (None, <Genre: Action>, <Genre: Platformer>)
 (<Genre: Action>, <Genre: Platformer>, <Genre: 2D Platformer>)
 (<Genre: Platformer>, <Genre: 2D Platformer>, <Genre: 3D Platformer>)
@@ -49,7 +49,7 @@
 (<Genre: Action RPG>, <Genre: Tactical RPG>, None)
 
 >>> for i,s in tree_item_iterator(Genre.objects.all()):
-...     print (i, s['new_level'], s['closed_levels'])
+...     print((i, s['new_level'], list(s['closed_levels'])))
 (<Genre: Action>, True, [])
 (<Genre: Platformer>, True, [])
 (<Genre: 2D Platformer>, True, [])
@@ -60,7 +60,7 @@
 (<Genre: Tactical RPG>, False, [1, 0])
 
 >>> for i,s in tree_item_iterator(Genre.objects.all(), ancestors=True):
-...     print (i, s['new_level'], s['ancestors'], s['closed_levels'])
+...     print((i, s['new_level'], s['ancestors'], list(s['closed_levels'])))
 (<Genre: Action>, True, [], [])
 (<Genre: Platformer>, True, [u'Action'], [])
 (<Genre: 2D Platformer>, True, [u'Action', u'Platformer'], [])
