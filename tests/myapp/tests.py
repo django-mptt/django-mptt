@@ -142,8 +142,8 @@ class DocTestTestCase(TreeTestCase):
 
                 import doctest
                 doctest.testfile(
-                    # for some reason doctest only handles module-relative paths (!?)
-                    os.path.relpath(temp.name, __file__),
+                    temp.name,
+                    module_relative=False,
                     optionflags=doctest.IGNORE_EXCEPTION_DETAIL,
                     encoding='utf-8',
                     raise_on_error=True,
