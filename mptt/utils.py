@@ -108,11 +108,11 @@ def tree_item_iterator(items, ancestors=False):
 
 
 def drilldown_tree_for_node(node, rel_cls=None, rel_field=None, count_attr=None,
-                            cumulative=False):
+                            cumulative=False, all_descendants=False):
     """
     Creates a drilldown tree for the given node. A drilldown tree
-    consists of a node's ancestors, itself and its immediate children,
-    all in tree order.
+    consists of a node's ancestors, itself and its immediate children
+    or all descendants, all in tree order.
 
     Optional arguments may be given to specify a ``Model`` class which
     is related to the node's class, for the purpose of adding related
@@ -133,12 +133,17 @@ def drilldown_tree_for_node(node, rel_cls=None, rel_field=None, count_attr=None,
     ``cumulative``
        If ``True``, the count will be for each child and all of its
        descendants, otherwise it will be for each child itself.
+
+    ``all_descendants``
+       If ``True``, return all descendants, not just immediate children.
     """
-    if rel_cls and rel_field and count_attr:
-        children = node._tree_manager.add_related_count(
-            node.get_children(), rel_cls, rel_field, count_attr, cumulative)
+    if all_descendants:
+        children = node.get_descendants()
     else:
         children = node.get_children()
+    if rel_cls and rel_field and count_attr:
+        children = node._tree_manager.add_related_count(
+            children, rel_cls, rel_field, count_attr, cumulative)
     return itertools.chain(node.get_ancestors(), [node], children)
 
 
