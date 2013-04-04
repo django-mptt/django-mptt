@@ -96,8 +96,8 @@ Populates a template variable with the drilldown tree for a given node,
 optionally counting the number of items associated with its children.
 
 A drilldown tree consists of a node's ancestors, itself and its
-immediate children. For example, a drilldown tree for a book category
-"Personal Finance" might look something like::
+immediate children or all descendants. For example, a drilldown tree
+for a book category "Personal Finance" might look something like::
 
    Books
       Business, Finance & Law
@@ -111,6 +111,7 @@ Usage::
 
 Extended usage::
 
+   {% drilldown_tree_for_node [node] as [varname] all_descendants %}
    {% drilldown_tree_for_node [node] as [varname] count [foreign_key] in [count_attr] %}
    {% drilldown_tree_for_node [node] as [varname] cumulative count [foreign_key] in [count_attr] %}
 

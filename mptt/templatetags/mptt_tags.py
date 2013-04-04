@@ -34,12 +34,13 @@ class FullTreeForModelNode(template.Node):
 
 class DrilldownTreeForNodeNode(template.Node):
     def __init__(self, node, context_var, foreign_key=None, count_attr=None,
-                 cumulative=False):
+                 cumulative=False, all_descendants=False):
         self.node = template.Variable(node)
         self.context_var = context_var
         self.foreign_key = foreign_key
         self.count_attr = count_attr
         self.cumulative = cumulative
+        self.all_descendants = all_descendants
 
     def render(self, context):
         # Let any VariableDoesNotExist raised bubble up
@@ -61,7 +62,7 @@ class DrilldownTreeForNodeNode(template.Node):
                 )
             args.extend([cls, fk_attr, self.count_attr, self.cumulative])
 
-        context[self.context_var] = drilldown_tree_for_node(*args)
+        context[self.context_var] = drilldown_tree_for_node(*args, all_descendants=self.all_descendants)
         return ''
 
 
@@ -98,8 +99,8 @@ def do_drilldown_tree_for_node(parser, token):
     children.
 
     A drilldown tree consists of a node's ancestors, itself and its
-    immediate children. For example, a drilldown tree for a book
-    category "Personal Finance" might look something like::
+    immediate children or all descendants. For example, a drilldown tree
+    for a book category "Personal Finance" might look something like::
 
        Books
           Business, Finance & Law
@@ -113,6 +114,7 @@ def do_drilldown_tree_for_node(parser, token):
 
     Extended usage::
 
+       {% drilldown_tree_for_node [node] as [varname] all_descendants %}
        {% drilldown_tree_for_node [node] as [varname] count [foreign_key] in [count_attr] %}
        {% drilldown_tree_for_node [node] as [varname] cumulative count [foreign_key] in [count_attr] %}
 
@@ -136,12 +138,20 @@ def do_drilldown_tree_for_node(parser, token):
     """  # noqa
     bits = token.contents.split()
     len_bits = len(bits)
-    if len_bits not in (4, 8, 9):
+    if len_bits not in (4, 5, 8, 9, 10):
         raise template.TemplateSyntaxError(
-            _('%s tag requires either three, seven or eight arguments') % bits[0])
+            _('%s tag requires either three, four, seven, eight, or nine arguments') % bits[0])
     if bits[2] != 'as':
         raise template.TemplateSyntaxError(
             _("second argument to %s tag must be 'as'") % bits[0])
+
+    all_descendants = False
+    if len_bits > 4:
+        if bits[4] == 'all_descendants':
+            len_bits -= 1
+            bits.pop(4)
+            all_descendants = True
+
     if len_bits == 8:
         if bits[4] != 'count':
             raise template.TemplateSyntaxError(
@@ -151,7 +161,7 @@ def do_drilldown_tree_for_node(parser, token):
             raise template.TemplateSyntaxError(
                 _("if seven arguments are given, sixth argument to %s tag must be 'in'")
                 % bits[0])
-        return DrilldownTreeForNodeNode(bits[1], bits[3], bits[5], bits[7])
+        return DrilldownTreeForNodeNode(bits[1], bits[3], bits[5], bits[7], all_descendants=all_descendants)
     elif len_bits == 9:
         if bits[4] != 'cumulative':
             raise template.TemplateSyntaxError(
@@ -165,9 +175,9 @@ def do_drilldown_tree_for_node(parser, token):
             raise template.TemplateSyntaxError(
                 _("if eight arguments are given, seventh argument to %s tag must be 'in'")
                 % bits[0])
-        return DrilldownTreeForNodeNode(bits[1], bits[3], bits[6], bits[8], cumulative=True)
+        return DrilldownTreeForNodeNode(bits[1], bits[3], bits[6], bits[8], cumulative=True, all_descendants=all_descendants)
     else:
-        return DrilldownTreeForNodeNode(bits[1], bits[3])
+        return DrilldownTreeForNodeNode(bits[1], bits[3], all_descendants=all_descendants)
 
 
 @register.filter
