@@ -1,4 +1,4 @@
-
+from __future__ import unicode_literals
 import django
 from django.conf import settings
 from django.contrib.admin.views.main import ChangeList
@@ -84,7 +84,7 @@ if getattr(settings, 'MPTT_USE_FEINCMS', True):
                 else:
                     admin_img_prefix = "%simg/admin/" % settings.ADMIN_MEDIA_PREFIX
                 actions.insert(0,
-                    u'<a href="add/?%s=%s" title="%s"><img src="%sicon_addlink.gif" alt="%s" /></a>' % (
+                    '<a href="add/?%s=%s" title="%s"><img src="%sicon_addlink.gif" alt="%s" /></a>' % (
                         self.model._mptt_meta.parent_attr,
                         obj.pk,
                         _('Add child'),
@@ -93,7 +93,7 @@ if getattr(settings, 'MPTT_USE_FEINCMS', True):
 
                 if hasattr(obj, 'get_absolute_url'):
                     actions.insert(0,
-                        u'<a href="%s" title="%s" target="_blank"><img src="%sselector-search.gif" alt="%s" /></a>' % (
+                        '<a href="%s" title="%s" target="_blank"><img src="%sselector-search.gif" alt="%s" /></a>' % (
                             obj.get_absolute_url(),
                             _('View on site'),
                             admin_img_prefix,

@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+from functools import reduce
 import operator
 import threading
 import warnings
@@ -5,6 +7,8 @@ import warnings
 from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.query import Q
+
+from django.utils import six
 from django.utils.translation import ugettext as _
 
 from mptt.fields import TreeForeignKey, TreeOneToOneField, TreeManyToManyField
@@ -57,10 +61,10 @@ class MPTTOptions(object):
     def __init__(self, opts=None, **kwargs):
         # Override defaults with options provided
         if opts:
-            opts = opts.__dict__.items()
+            opts = list(opts.__dict__.items())
         else:
             opts = []
-        opts.extend(kwargs.items())
+        opts.extend(list(kwargs.items()))
 
         if 'tree_manager_attr' in [opt[0] for opt in opts]:
             raise ValueError("`tree_manager_attr` has been removed; you should instantiate a TreeManager as a normal manager on your model instead.")
@@ -71,7 +75,7 @@ class MPTTOptions(object):
             setattr(self, key, value)
 
         # Normalize order_insertion_by to a list
-        if isinstance(self.order_insertion_by, basestring):
+        if isinstance(self.order_insertion_by, six.string_types):
             self.order_insertion_by = [self.order_insertion_by]
         elif isinstance(self.order_insertion_by, tuple):
             self.order_insertion_by = list(self.order_insertion_by)
@@ -79,7 +83,7 @@ class MPTTOptions(object):
             self.order_insertion_by = []
 
     def __iter__(self):
-        return ((k, v) for k, v in self.__dict__.iteritems() if k[0] != '_')
+        return ((k, v) for k, v in self.__dict__.items() if k[0] != '_')
 
     # Helper methods for accessing tree attributes on models.
     def get_raw_field_value(self, instance, field_name):
@@ -203,6 +207,16 @@ class MPTTModelBase(ModelBase):
          - adds the MPTT fields to the class
          - adds a TreeManager to the model
         """
+        if class_name == 'NewBase' and class_dict == {}:
+            # skip ModelBase, on django < 1.5 it doesn't handle NewBase.
+            super_new = super(ModelBase, meta).__new__
+            return super_new(meta, class_name, bases, class_dict)
+        is_MPTTModel = False
+        try:
+            MPTTModel
+        except NameError:
+            is_MPTTModel = True
+
         MPTTMeta = class_dict.pop('MPTTMeta', None)
         if not MPTTMeta:
             class MPTTMeta:
@@ -220,15 +234,17 @@ class MPTTModelBase(ModelBase):
                         setattr(MPTTMeta, name, value)
 
         class_dict['_mptt_meta'] = MPTTOptions(MPTTMeta)
-        cls = super(MPTTModelBase, meta).__new__(meta, class_name, bases, class_dict)
-
+        super_new = super(MPTTModelBase, meta).__new__
+        cls = super_new(meta, class_name, bases, class_dict)
         cls = meta.register(cls)
 
         # see error cases in TreeManager.disable_mptt_updates for the reasoning here.
         cls._mptt_tracking_base = None
-        for base in cls.mro():
-            if not isinstance(base, MPTTModelBase):
-                continue
+        if is_MPTTModel:
+            bases = [cls]
+        else:
+            bases = [base for base in cls.mro() if issubclass(base, MPTTModel)]
+        for base in bases:
             if not (base._meta.abstract or base._meta.proxy) and base._tree_manager.tree_model is base:
                 cls._mptt_tracking_base = base
                 break
@@ -295,7 +311,7 @@ class MPTTModelBase(ModelBase):
                 # strip out bases that are strict superclasses of MPTTModel.
                 # (i.e. Model, object)
                 # this helps linearize the type hierarchy if possible
-                for i in xrange(len(bases) - 1, -1, -1):
+                for i in range(len(bases) - 1, -1, -1):
                     if issubclass(MPTTModel, bases[i]):
                         del bases[i]
 
@@ -347,12 +363,10 @@ class MPTTModelBase(ModelBase):
         return cls
 
 
-class MPTTModel(models.Model):
+class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
     """
     Base class for tree models.
     """
-
-    __metaclass__ = MPTTModelBase
     _default_manager = TreeManager()
 
     class Meta:
@@ -522,7 +536,7 @@ class MPTTModel(models.Model):
             # node not saved yet
             return 0
         else:
-            return (self._mpttfield('right') - self._mpttfield('left') - 1) / 2
+            return (self._mpttfield('right') - self._mpttfield('left') - 1) // 2
 
     def get_leafnodes(self, include_self=False):
         """
@@ -754,7 +768,7 @@ class MPTTModel(models.Model):
             same_order = old_parent_id == parent_id
             if same_order and len(self._mptt_cached_fields) > 1:
                 get_raw_field_value = opts.get_raw_field_value
-                for field_name, old_value in self._mptt_cached_fields.iteritems():
+                for field_name, old_value in self._mptt_cached_fields.items():
                     if old_value != get_raw_field_value(self, field_name):
                         same_order = False
                         break

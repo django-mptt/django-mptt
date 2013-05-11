@@ -2,10 +2,14 @@
 Template tags for working with lists of model instances which represent
 trees.
 """
+from __future__ import unicode_literals
 from django import template
 from django.db.models import get_model
 from django.db.models.fields import FieldDoesNotExist
-from django.utils.encoding import force_unicode
+try:
+    from django.utils.encoding import force_text
+except ImportError:
+    from django.utils.encoding import force_unicode as force_text
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 
@@ -216,7 +220,7 @@ def tree_path(items, separator=' :: '):
        {{ some_node.get_ancestors|tree_path:" > " }}
 
     """
-    return separator.join([force_unicode(i) for i in items])
+    return separator.join([force_text(i) for i in items])
 
 
 ### RECURSIVE TAGS
@@ -261,7 +265,7 @@ def cache_tree_children(queryset):
                 # ``queryset`` was a list or other iterable (unable to order),
                 # and was provided in an order other than depth-first
                 raise ValueError(
-                    _(u'Node %s not in depth-first order') % (type(queryset),)
+                    _('Node %s not in depth-first order') % (type(queryset),)
                 )
 
             # Set up the attribute on the node that will store cached children,
@@ -303,7 +307,7 @@ class RecurseTreeNode(template.Node):
         for child in node.get_children():
             bits.append(self._render_node(context, child))
         context['node'] = node
-        context['children'] = mark_safe(u''.join(bits))
+        context['children'] = mark_safe(''.join(bits))
         rendered = self.template_nodes.render(context)
         context.pop()
         return rendered

@@ -1,5 +1,7 @@
+from __future__ import unicode_literals
 from django.contrib.auth.models import Group
 from django.db import models
+from django.utils.encoding import python_2_unicode_compatible
 
 import mptt
 from mptt.models import MPTTModel, TreeForeignKey
@@ -14,7 +16,8 @@ class Category(MPTTModel):
     name = models.CharField(max_length=50)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
 
-    def __unicode__(self):
+    @python_2_unicode_compatible
+    def __str__(self):
         return self.name
 
     def delete(self):
@@ -25,7 +28,8 @@ class Genre(MPTTModel):
     name = models.CharField(max_length=50, unique=True)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
 
-    def __unicode__(self):
+    @python_2_unicode_compatible
+    def __str__(self):
         return self.name
 
 
@@ -42,7 +46,8 @@ class MultiOrder(MPTTModel):
     class MPTTMeta:
         order_insertion_by = ['name', 'size', '-date']
 
-    def __unicode__(self):
+    @python_2_unicode_compatible
+    def __str__(self):
         return self.name
 
 
@@ -63,7 +68,8 @@ class OrderedInsertion(MPTTModel):
     class MPTTMeta:
         order_insertion_by = ['name']
 
-    def __unicode__(self):
+    @python_2_unicode_compatible
+    def __str__(self):
         return self.name
 
 
@@ -86,7 +92,8 @@ class Person(MPTTModel):
     objects = models.Manager()
     my_tree_manager = CustomTreeManager()
 
-    def __unicode__(self):
+    @python_2_unicode_compatible
+    def __str__(self):
         return self.name
 
 
@@ -100,7 +107,8 @@ class CustomPKName(MPTTModel):
     parent = models.ForeignKey('self', null=True, blank=True,
             related_name='children', db_column="my_cusom_parent")
 
-    def __unicode__(self):
+    @python_2_unicode_compatible
+    def __str__(self):
         return self.name
 
 

@@ -1,9 +1,7 @@
 """
 A custom manager for working with trees of objects.
 """
-# for python 2.5
-from __future__ import with_statement
-
+from __future__ import unicode_literals
 import contextlib
 
 from django.db import connection, models, transaction
@@ -213,7 +211,7 @@ class TreeManager(models.Manager):
     def _translate_lookups(self, **lookups):
         new_lookups = {}
         join_parts = '__'.join
-        for k, v in lookups.iteritems():
+        for k, v in lookups.items():
             parts = k.split('__')
             new_parts = []
             new_parts__append = new_parts.append
@@ -572,8 +570,7 @@ class TreeManager(models.Manager):
         by this manager.
         """
         qs = self.get_query_set()
-        max_tree_id = qs.aggregate(Max(self.tree_id_attr)).values()[0]
-
+        max_tree_id = list(qs.aggregate(Max(self.tree_id_attr)).values())[0]
         max_tree_id = max_tree_id or 0
         return max_tree_id + 1
 

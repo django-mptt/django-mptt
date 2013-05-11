@@ -1,8 +1,9 @@
-# for python 2.5
-from __future__ import with_statement
+from __future__ import unicode_literals
 
+import os
 import re
 import sys
+import tempfile
 
 import django
 from django.conf import settings
@@ -10,6 +11,7 @@ from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.db.models import get_models
 from django.test import TestCase
+from django.utils.six import string_types, PY3, b
 
 try:
     import feincms
@@ -20,6 +22,12 @@ from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.models import MPTTModel
 from mptt.templatetags.mptt_tags import cache_tree_children
 from myapp.models import Category, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel, ConcreteModel, OrderedInsertion
+
+extra_queries_per_update = 0
+if django.VERSION < (1, 6):
+    # before django 1.6, Model.save() did a select then an update/insert.
+    # now, Model.save() does an update followed an insert if the update changed 0 rows.
+    extra_queries_per_update = 1
 
 
 def get_tree_details(nodes):
@@ -58,10 +66,10 @@ class TreeTestCase(TestCase):
         super(TreeTestCase, self).__init__(*args, **kwargs)
 
     def assertTreeEqual(self, tree1, tree2):
-        if not isinstance(tree1, basestring):
+        if not isinstance(tree1, string_types):
             tree1 = get_tree_details(tree1)
         tree1 = tree_details(tree1)
-        if not isinstance(tree2, basestring):
+        if not isinstance(tree2, string_types):
             tree2 = get_tree_details(tree2)
         tree2 = tree_details(tree2)
         return self.assertEqual(tree1, tree2, "\n%r\n != \n%r" % (tree1, tree2))
@@ -107,20 +115,44 @@ class DocTestTestCase(TreeTestCase):
     def test_run_doctest(self):
         class DummyStream:
             content = ""
+            encoding = 'utf8'
 
             def write(self, text):
                 self.content += text
 
+            def flush(self):
+                pass
+
         dummy_stream = DummyStream()
         before = sys.stdout
-        sys.stdout = dummy_stream
-        import doctest
-        doctest.testfile('doctests.txt')
-        sys.stdout = before
-        content = dummy_stream.content
-        if content:
-            print >>sys.stderr, content
-            self.fail()
+        #sys.stdout = dummy_stream
+
+        with open(os.path.join(os.path.dirname(__file__), 'doctests.txt')) as f:
+            with tempfile.NamedTemporaryFile() as temp:
+                text = f.read()
+
+                if PY3:
+                    # unicode literals in the doctests screw up doctest on py3.
+                    # this is pretty icky, but I can't find any other
+                    # workarounds :(
+                    text = re.sub(r"""\bu(["\'])""", r"\1", text)
+                    temp.write(b(text))
+
+                temp.flush()
+
+                import doctest
+                doctest.testfile(
+                    temp.name,
+                    module_relative=False,
+                    optionflags=doctest.IGNORE_EXCEPTION_DETAIL,
+                    encoding='utf-8',
+                    raise_on_error=True,
+                )
+                sys.stdout = before
+                content = dummy_stream.content
+                if content:
+                    sys.stderr.write(content+'\n')
+                    self.fail()
 
 # genres.json defines the following tree structure
 #
@@ -312,8 +344,8 @@ class ReparentingTestCase(TreeTestCase):
         self.assertRaises(InvalidMove, platformer.save)
 
         # New parent is still set when an error occurs
-        self.assertEquals(action.parent, platformer_4d)
-        self.assertEquals(platformer.parent, platformer_4d)
+        self.assertEqual(action.parent, platformer_4d)
+        self.assertEqual(platformer.parent, platformer_4d)
 
 # categories.json defines the following tree structure:
 #
@@ -457,7 +489,7 @@ if feincms:
 
             category = Category.objects.get(id=1)
             self.assertTrue(
-                u'<a href="add/?parent=1" title="Add child">' in
+                '<a href="add/?parent=1" title="Add child">' in
                 model_admin._actions_column(category)[0]
             )
 
@@ -574,9 +606,9 @@ class DisabledUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_node_same_tree(self):
-        with self.assertNumQueries(3):
+        with self.assertNumQueries(2 + extra_queries_per_update):
             with ConcreteModel.objects.disable_mptt_updates():
-                with self.assertNumQueries(2):
+                with self.assertNumQueries(1 + extra_queries_per_update):
                     # 2 queries here:
                     #  (django does a query to determine if the row is in the db yet)
                     self.c.parent = self.b
@@ -598,14 +630,13 @@ class DisabledUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_node_different_tree(self):
-        with self.assertNumQueries(3):
+        with self.assertNumQueries(2 + extra_queries_per_update):
             with ConcreteModel.objects.disable_mptt_updates():
-                with self.assertNumQueries(2):
-                    # 2 queries here:
-                    #  (django does a query to determine if the row is in the db yet)
+                with self.assertNumQueries(1 + extra_queries_per_update):
+                    # 1 update query
                     self.c.parent = self.d
                     self.c.save()
-                # 3rd query here:
+                # query 2 here:
                 self.assertTreeEqual(ConcreteModel.objects.all(), """
                     1 - 1 0 1 6
                     2 1 1 1 2 3
@@ -622,14 +653,13 @@ class DisabledUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_node_to_root(self):
-        with self.assertNumQueries(3):
+        with self.assertNumQueries(2 + extra_queries_per_update):
             with ConcreteModel.objects.disable_mptt_updates():
-                with self.assertNumQueries(2):
-                    # 2 queries here:
-                    #  (django does a query to determine if the row is in the db yet)
+                with self.assertNumQueries(1 + extra_queries_per_update):
+                    # 1 update query
                     self.c.parent = None
                     self.c.save()
-                # 3rd query here:
+                # query 2 here:
                 self.assertTreeEqual(ConcreteModel.objects.all(), """
                     1 - 1 0 1 6
                     2 1 1 1 2 3
@@ -646,14 +676,13 @@ class DisabledUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_root_to_child(self):
-        with self.assertNumQueries(3):
+        with self.assertNumQueries(2 + extra_queries_per_update):
             with ConcreteModel.objects.disable_mptt_updates():
-                with self.assertNumQueries(2):
-                    # 2 queries here:
-                    #  (django does a query to determine if the row is in the db yet)
+                with self.assertNumQueries(1 + extra_queries_per_update):
+                    # 1 update query
                     self.d.parent = self.c
                     self.d.save()
-                # 3rd query here:
+                # query 2 here:
                 self.assertTreeEqual(ConcreteModel.objects.all(), """
                     1 - 1 0 1 6
                     2 1 1 1 2 3
@@ -764,14 +793,13 @@ class DelayedUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_node_same_tree(self):
-        with self.assertNumQueries(10):
+        with self.assertNumQueries(9 + extra_queries_per_update):
             with ConcreteModel.objects.delay_mptt_updates():
-                with self.assertNumQueries(2):
-                    # 2 queries here:
-                    #  (django does a query to determine if the row is in the db yet)
+                with self.assertNumQueries(1 + extra_queries_per_update):
+                    # 1 update query
                     self.c.parent = self.b
                     self.c.save()
-                # 3rd query here:
+                # query 2 here:
                 self.assertTreeEqual(ConcreteModel.objects.all(), """
                     1 - 1 0 1 6
                     2 1 1 1 2 3
@@ -790,16 +818,15 @@ class DelayedUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_node_different_tree(self):
-        with self.assertNumQueries(13):
+        with self.assertNumQueries(12 + extra_queries_per_update):
             with ConcreteModel.objects.delay_mptt_updates():
-                with self.assertNumQueries(3):
-                    # 3 queries here:
-                    #  1. django checks if the node is in the db
-                    #  2. update the node
-                    #  3. collapse old tree since it is now empty.
+                with self.assertNumQueries(2 + extra_queries_per_update):
+                    # 2 queries here:
+                    #  1. update the node
+                    #  2. collapse old tree since it is now empty.
                     self.d.parent = self.c
                     self.d.save()
-                # 4th query here:
+                # query 3 here:
                 self.assertTreeEqual(ConcreteModel.objects.all(), """
                     1 - 1 0 1 6
                     2 1 1 1 2 3
@@ -818,17 +845,16 @@ class DelayedUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_node_to_root(self):
-        with self.assertNumQueries(5):
+        with self.assertNumQueries(4 + extra_queries_per_update):
             with ConcreteModel.objects.delay_mptt_updates():
-                with self.assertNumQueries(4):
-                    # 4 queries here!
+                with self.assertNumQueries(3 + extra_queries_per_update):
+                    # 3 queries here!
                     #   1. find the next tree_id to move to
                     #   2. update the tree_id on all nodes to the right of that
-                    #   3. django does a query to determine if this instance exists in the db
-                    #   4. update tree fields on self.c
+                    #   3. update tree fields on self.c
                     self.c.parent = None
                     self.c.save()
-                # 5th query here:
+                # 4th query here:
                 self.assertTreeEqual(ConcreteModel.objects.all(), """
                     1 - 1 0 1 6
                     2 1 1 1 2 3
@@ -846,16 +872,15 @@ class DelayedUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_root_to_child(self):
-        with self.assertNumQueries(13):
+        with self.assertNumQueries(12 + extra_queries_per_update):
             with ConcreteModel.objects.delay_mptt_updates():
-                with self.assertNumQueries(3):
-                    # 3 queries here:
-                    #  1. django checks if the node is in the db
-                    #  2. update the node
-                    #  3. collapse old tree since it is now empty.
+                with self.assertNumQueries(2 + extra_queries_per_update):
+                    # 2 queries here:
+                    #  1. update the node
+                    #  2. collapse old tree since it is now empty.
                     self.d.parent = self.c
                     self.d.save()
-                # 4th query here:
+                # query 3 here:
                 self.assertTreeEqual(ConcreteModel.objects.all(), """
                     1 - 1 0 1 6
                     2 1 1 1 2 3
@@ -946,14 +971,13 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_node_same_tree(self):
-        with self.assertNumQueries(10):
+        with self.assertNumQueries(9 + extra_queries_per_update):
             with OrderedInsertion.objects.delay_mptt_updates():
-                with self.assertNumQueries(2):
-                    # 2 queries here:
-                    #  (django does a query to determine if the row is in the db yet)
+                with self.assertNumQueries(1 + extra_queries_per_update):
+                    # 1 update query
                     self.e.name = 'before d'
                     self.e.save()
-                # 3rd query here:
+                # query 2 here:
                 self.assertTreeEqual(OrderedInsertion.objects.all(), """
                     1 - 1 0 1 6
                     2 1 1 1 2 3
@@ -972,17 +996,16 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_node_different_tree(self):
-        with self.assertNumQueries(13):
+        with self.assertNumQueries(12 + extra_queries_per_update):
             with OrderedInsertion.objects.delay_mptt_updates():
-                with self.assertNumQueries(3):
-                    # 3 queries here:
-                    #  1. django checks if the node is in the db
-                    #  2. update the node
-                    #  3. collapse old tree since it is now empty.
+                with self.assertNumQueries(2 + extra_queries_per_update):
+                    # 2 queries here:
+                    #  1. update the node
+                    #  2. collapse old tree since it is now empty.
                     self.f.parent = self.c
                     self.f.name = 'dd'
                     self.f.save()
-                # 4th query here:
+                # query 3 here:
                 self.assertTreeEqual(OrderedInsertion.objects.all(), """
                     1 - 1 0 1 6
                     2 1 1 1 2 3
@@ -1001,17 +1024,16 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_node_to_root(self):
-        with self.assertNumQueries(5):
+        with self.assertNumQueries(4 + extra_queries_per_update):
             with OrderedInsertion.objects.delay_mptt_updates():
-                with self.assertNumQueries(4):
-                    # 4 queries here!
+                with self.assertNumQueries(3 + extra_queries_per_update):
+                    # 3 queries here!
                     #   1. find the next tree_id to move to
                     #   2. update the tree_id on all nodes to the right of that
-                    #   3. django does a query to determine if this instance exists in the db
-                    #   4. update tree fields on self.c
+                    #   3. update tree fields on self.c
                     self.e.parent = None
                     self.e.save()
-                # 5th query here:
+                # query 4 here:
                 self.assertTreeEqual(OrderedInsertion.objects.all(), """
                     1 - 1 0 1 6
                     2 1 1 1 2 3
@@ -1029,16 +1051,15 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_root_to_child(self):
-        with self.assertNumQueries(13):
+        with self.assertNumQueries(12 + extra_queries_per_update):
             with OrderedInsertion.objects.delay_mptt_updates():
-                with self.assertNumQueries(3):
-                    # 3 queries here:
-                    #  1. django checks if the node is in the db
-                    #  2. update the node
-                    #  3. collapse old tree since it is now empty.
+                with self.assertNumQueries(2 + extra_queries_per_update):
+                    # 2 queries here:
+                    #  1. update the node
+                    #  2. collapse old tree since it is now empty.
                     self.f.parent = self.e
                     self.f.save()
-                # 4th query here:
+                # query 3 here:
                 self.assertTreeEqual(OrderedInsertion.objects.all(), """
                     1 - 1 0 1 6
                     2 1 1 1 2 3

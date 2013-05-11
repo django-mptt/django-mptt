@@ -1,10 +1,14 @@
 """
 Form components for working with trees.
 """
+from __future__ import unicode_literals
 from django import forms
 from django.forms.forms import NON_FIELD_ERRORS
 from django.forms.util import ErrorList
-from django.utils.encoding import smart_unicode
+try:
+    from django.utils.encoding import smart_text
+except ImportError:
+    from django.utils.encoding import smart_unicode as smart_text
 from django.utils.html import conditional_escape, mark_safe
 from django.utils.translation import ugettext_lazy as _
 
@@ -18,7 +22,7 @@ __all__ = ('TreeNodeChoiceField', 'TreeNodeMultipleChoiceField', 'TreeNodePositi
 class TreeNodeChoiceField(forms.ModelChoiceField):
     """A ModelChoiceField for tree nodes."""
     def __init__(self, queryset, *args, **kwargs):
-        self.level_indicator = kwargs.pop('level_indicator', u'---')
+        self.level_indicator = kwargs.pop('level_indicator', '---')
 
         # if a queryset is supplied, enforce ordering
         if hasattr(queryset, 'model'):
@@ -37,14 +41,14 @@ class TreeNodeChoiceField(forms.ModelChoiceField):
         generating option labels.
         """
         level_indicator = self._get_level_indicator(obj)
-        return mark_safe(level_indicator + ' ' + conditional_escape(smart_unicode(obj)))
+        return mark_safe(level_indicator + ' ' + conditional_escape(smart_text(obj)))
 
 
 class TreeNodeMultipleChoiceField(TreeNodeChoiceField, forms.ModelMultipleChoiceField):
     """A ModelMultipleChoiceField for tree nodes."""
 
     def __init__(self, queryset, *args, **kwargs):
-        self.level_indicator = kwargs.pop('level_indicator', u'---')
+        self.level_indicator = kwargs.pop('level_indicator', '---')
 
         # if a queryset is supplied, enforce ordering
         if hasattr(queryset, 'model'):
@@ -152,7 +156,7 @@ class MoveNodeForm(forms.Form):
             self.node.move_to(self.cleaned_data['target'],
                               self.cleaned_data['position'])
             return self.node
-        except InvalidMove, e:
+        except InvalidMove as e:
             self.errors[NON_FIELD_ERRORS] = ErrorList(e)
             raise
 
