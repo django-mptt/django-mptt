@@ -43,11 +43,9 @@ def mptt_items_for_result(cl, result, form):
             try:
                 f = cl.lookup_opts.get_field(field_name)
             except models.FieldDoesNotExist:
-                if mptt_indent_field is None:
-                    attr = getattr(result, field_name, None)
-                    if callable(attr):
-                        # first callable field, use this if we can't find any model fields
-                        mptt_indent_field = field_name
+                if (mptt_indent_field is None and
+                    field_name != 'action_checkbox'):
+                    mptt_indent_field = field_name
             else:
                 # first model field, use this one
                 mptt_indent_field = field_name
