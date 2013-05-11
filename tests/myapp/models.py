@@ -176,6 +176,14 @@ class DoubleProxyModel(SingleProxyModel):
         proxy = True
 
 
+class AutoNowDateFieldModel(MPTTModel):
+    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+    now = models.DateTimeField(auto_now_add=True)
+
+    class MPTTMeta:
+        order_insertion_by = ('now',)
+
+
 # test registering of remote model
 TreeForeignKey(Group, blank=True, null=True).contribute_to_class(Group, 'parent')
 mptt.register(Group, order_insertion_by=('name',))

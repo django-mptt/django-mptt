@@ -22,7 +22,7 @@ except ImportError:
 from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.models import MPTTModel
 from mptt.templatetags.mptt_tags import cache_tree_children
-from myapp.models import Category, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel, ConcreteModel, OrderedInsertion
+from myapp.models import Category, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel, ConcreteModel, OrderedInsertion, AutoNowDateFieldModel
 
 extra_queries_per_update = 0
 if django.VERSION < (1, 6):
@@ -1173,6 +1173,14 @@ class RecurseTreeTestCase(TreeTestCase):
             '<ul><li>PlayStation 3<ul class="children">'
             '<li>Games</li><li>Hardware &amp; Accessories</li></ul></li></ul>'
         ))
+
+
+class TestAutoNowDateFieldModel(TreeTestCase):
+    # https://github.com/django-mptt/django-mptt/issues/175
+
+    def test_save_auto_now_date_field_model(self):
+        a = AutoNowDateFieldModel()
+        a.save()
 
 
 class RegisteredRemoteModel(TreeTestCase):

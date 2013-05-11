@@ -146,17 +146,22 @@ class MPTTOptions(object):
         filters__append = filters.append
         and_ = operator.and_
         or_ = operator.or_
-        for field in order_insertion_by:
-            if field[0] == '-':
-                field = field[1:]
+        for field_name in order_insertion_by:
+            if field_name[0] == '-':
+                field_name = field_name[1:]
                 filter_suffix = '__lt'
             else:
                 filter_suffix = '__gt'
-            value = getattr(instance, field)
-            q = Q(**{field + filter_suffix: value})
+            value = getattr(instance, field_name)
+            if value is None:
+                # node isn't saved yet. get the insertion value from pre_save.
+                field = instance._meta.get_field(field_name)
+                value = field.pre_save(instance, True)
+
+            q = Q(**{field_name + filter_suffix: value})
 
             filters__append(reduce(and_, [Q(**{f: v}) for f, v in fields] + [q]))
-            fields__append((field, value))
+            fields__append((field_name, value))
         return reduce(or_, filters)
 
     def get_ordered_insertion_target(self, node, parent):
