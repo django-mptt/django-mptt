@@ -30,6 +30,8 @@ setup(
         str('License :: OSI Approved :: BSD License'),
         str('Operating System :: OS Independent'),
         str('Programming Language :: Python'),
+        str('Programming Language :: Python :: 2'),
+        str('Programming Language :: Python :: 3'),
         str('Topic :: Utilities'),
     ],
 )
