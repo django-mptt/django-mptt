@@ -10,6 +10,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.db.models import get_models
+from django.template import Template, Context
 from django.test import TestCase
 from django.utils.six import string_types, PY3, b
 
@@ -1134,6 +1135,44 @@ class CacheTreeChildrenTestCase(TreeTestCase):
             # likewise for ``games`` being ``parent`` on the attached ``wii``
             self.assertEqual(wii, wii_games.parent)
             self.assertEqual(games, wii_games.parent.parent)
+
+
+class RecurseTreeTestCase(TreeTestCase):
+    """
+    Tests for the ``recursetree`` template filter.
+    """
+    fixtures = ['categories.json']
+    template = (
+        '{% load mptt_tags %}'
+        '<ul>'
+            '{% recursetree nodes %}'
+                '<li>'
+                    '{{ node.name }}'
+                    '{% if not node.is_leaf_node %}'
+                        '<ul class="children">'
+                            '{{ children }}'
+                        '</ul>'
+                    '{% endif %}'
+                '</li>'
+            '{% endrecursetree %}'
+        '</ul>'
+    )
+
+    def test_leaf_html(self):
+        html = Template(self.template).render(Context({
+            'nodes': Category.objects.filter(pk=10),
+        }))
+        self.assertEqual(html, '<ul><li>Hardware &amp; Accessories</li></ul>')
+
+    def test_nonleaf_html(self):
+        qs = Category.objects.get(pk=8).get_descendants(include_self=True)
+        html = Template(self.template).render(Context({
+            'nodes': qs,
+        }))
+        self.assertEqual(html, (
+            '<ul><li>PlayStation 3<ul class="children">'
+            '<li>Games</li><li>Hardware &amp; Accessories</li></ul></li></ul>'
+        ))
 
 
 class RegisteredRemoteModel(TreeTestCase):
