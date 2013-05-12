@@ -9,7 +9,7 @@ Django Models and working with trees of Model instances.
 
 Project home: http://github.com/django-mptt/django-mptt/
 
-Documentation: http://django-mptt.github.com/django-mptt/
+Documentation: http://django-mptt.github.io/django-mptt/
 
 Discussion group: http://groups.google.com/group/django-mptt-dev
 
