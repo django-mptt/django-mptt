@@ -61,11 +61,6 @@ def tree_details(text):
 
 
 class TreeTestCase(TestCase):
-    def __init__(self, *args, **kwargs):
-        # required for assertNumQueries impl for django 1.2 below
-        settings.DEBUG = True
-        super(TreeTestCase, self).__init__(*args, **kwargs)
-
     def assertTreeEqual(self, tree1, tree2):
         if not isinstance(tree1, string_types):
             tree1 = get_tree_details(tree1)
@@ -74,42 +69,6 @@ class TreeTestCase(TestCase):
             tree2 = get_tree_details(tree2)
         tree2 = tree_details(tree2)
         return self.assertEqual(tree1, tree2, "\n%r\n != \n%r" % (tree1, tree2))
-
-    if django.VERSION < (1, 3):
-        # backport
-
-        def assertNumQueries(self, num, func=None, *args, **kwargs):
-            from django.db import connection
-
-            class _AssertNumQueriesContext(object):
-                def __init__(self, test_case, num, connection):
-                    self.test_case = test_case
-                    self.num = num
-                    self.connection = connection
-
-                def __enter__(self):
-                    self.starting_queries = len(self.connection.queries)
-                    return self
-
-                def __exit__(self, exc_type, exc_value, traceback):
-                    if exc_type is not None:
-                        return
-
-                    final_queries = len(self.connection.queries)
-                    executed = final_queries - self.starting_queries
-
-                    self.test_case.assertEqual(
-                        executed, self.num, "%d queries executed, %d expected" % (
-                            executed, self.num
-                        )
-                    )
-
-            context = _AssertNumQueriesContext(self, num, connection)
-            if func is None:
-                return context
-
-            with context:
-                func(*args, **kwargs)
 
 
 class DocTestTestCase(TreeTestCase):
