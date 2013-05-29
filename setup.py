@@ -21,6 +21,8 @@ setup(
     author_email=str('craig.ds@gmail.com'),
     url=str('http://github.com/django-mptt/django-mptt'),
     packages=[str('mptt'), str('mptt.templatetags')],
+    install_requires = (
+        'Django>=1.4.2',),
     package_data={str('mptt'): [str('templates/admin/*'), str('locale/*/*/*.*')]},
     classifiers=[
         str('Development Status :: 4 - Beta'),
