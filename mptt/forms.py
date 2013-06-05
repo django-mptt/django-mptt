@@ -19,8 +19,7 @@ __all__ = ('TreeNodeChoiceField', 'TreeNodeMultipleChoiceField', 'TreeNodePositi
 # Fields ######################################################################
 
 
-class TreeNodeChoiceField(forms.ModelChoiceField):
-    """A ModelChoiceField for tree nodes."""
+class TreeNodeChoiceFieldMixin(object):
     def __init__(self, queryset, *args, **kwargs):
         self.level_indicator = kwargs.pop('level_indicator', '---')
 
@@ -29,7 +28,7 @@ class TreeNodeChoiceField(forms.ModelChoiceField):
             mptt_opts = queryset.model._mptt_meta
             queryset = queryset.order_by(mptt_opts.tree_id_attr, mptt_opts.left_attr)
 
-        super(TreeNodeChoiceField, self).__init__(queryset, *args, **kwargs)
+        super(TreeNodeChoiceFieldMixin, self).__init__(queryset, *args, **kwargs)
 
     def _get_level_indicator(self, obj):
         level = getattr(obj, obj._mptt_meta.level_attr)
@@ -44,21 +43,12 @@ class TreeNodeChoiceField(forms.ModelChoiceField):
         return mark_safe(level_indicator + ' ' + conditional_escape(smart_text(obj)))
 
 
-class TreeNodeMultipleChoiceField(TreeNodeChoiceField, forms.ModelMultipleChoiceField):
+class TreeNodeChoiceField(TreeNodeChoiceFieldMixin, forms.ModelChoiceField):
+    """A ModelChoiceField for tree nodes."""
+
+
+class TreeNodeMultipleChoiceField(TreeNodeChoiceFieldMixin, forms.ModelMultipleChoiceField):
     """A ModelMultipleChoiceField for tree nodes."""
-
-    def __init__(self, queryset, *args, **kwargs):
-        self.level_indicator = kwargs.pop('level_indicator', '---')
-
-        # if a queryset is supplied, enforce ordering
-        if hasattr(queryset, 'model'):
-            mptt_opts = queryset.model._mptt_meta
-            queryset = queryset.order_by(mptt_opts.tree_id_attr, mptt_opts.left_attr)
-
-        # For some reason ModelMultipleChoiceField constructor passes kwargs
-        # as args to its super(), which causes 'multiple values for keyword arg'
-        # error sometimes. So we skip it (that constructor does nothing anyway!)
-        forms.ModelChoiceField.__init__(self, queryset, *args, **kwargs)
 
 
 class TreeNodePositionField(forms.ChoiceField):
