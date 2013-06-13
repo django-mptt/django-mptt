@@ -156,6 +156,19 @@ class MPTTAdminForm(forms.ModelForm):
     A form which validates that the chosen parent for a node isn't one of
     its descendants.
     """
+
+    def __init__(self, *args, **kwargs):
+        super(MPTTAdminForm, self).__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            parent_field = self._meta.model._mptt_meta.parent_attr
+            parent_qs = self.fields[parent_field].queryset
+            parent_qs = parent_qs.exclude(pk=self.instance.pk)
+            descendants = self.instance.get_descendants()
+            if descendants.exists():
+                descendants_pks = descendants.values('pk').query
+                parent_qs = parent_qs.exclude(pk__in=descendants_pks)
+            self.fields[parent_field].queryset = parent_qs
+
     def clean(self):
         cleaned_data = super(MPTTAdminForm, self).clean()
         opts = self._meta.model._mptt_meta
