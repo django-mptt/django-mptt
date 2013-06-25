@@ -870,6 +870,13 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         opts.update_mptt_cached_fields(self)
 
     def delete(self, *args, **kwargs):
+        """Calling ``delete`` on a node will delete it as well as its full subtree, as
+        opposed to reattaching all the subnodes to its parent node.
+
+        There are no argument specific to a MPTT model, all the arguments will be passed
+        directly to the django's ``Model.delete``.
+
+        ``delete`` will not return anything. """
         tree_width = (self._mpttfield('right') -
                       self._mpttfield('left') + 1)
         target_right = self._mpttfield('right')

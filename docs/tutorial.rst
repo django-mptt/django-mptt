@@ -7,7 +7,7 @@ Tutorial
 The Problem
 ===========
 
-You've created a Django project, and you need to manage some hierarchical data. For instance you've got a bunch of hierarchical pages in a CMS, and sometimes pages are *chidren* of other pages
+You've created a Django project, and you need to manage some hierarchical data. For instance you've got a bunch of hierarchical pages in a CMS, and sometimes pages are *children* of other pages
 
 Now suppose you want to show a breadcrumb on your site, like this::
 
