@@ -73,18 +73,24 @@ class TreeManager(models.Manager):
         filters = []
         assert self.model is queryset.model
         opts = queryset.model._mptt_meta
+        if not queryset:
+            return self.none()
+        filters = None
         for node in queryset:
             lft, rght = node.lft, node.rght
             if include_self:
                 lft -= 1
                 rght += 1
-            filters.append(Q(**{
+            q = Q(**{
                 opts.tree_id_attr: getattr(node, opts.tree_id_attr),
                 '%s__gt' % opts.left_attr: lft,
                 '%s__lt' % opts.right_attr: rght,
-            }))
-        q = reduce(operator.or_, filters)
-        return self.filter(q)
+            })
+            if filters is None:
+                filters = q
+            else:
+                filters |= q
+        return self.filter(filters)
 
     @contextlib.contextmanager
     def disable_mptt_updates(self):
