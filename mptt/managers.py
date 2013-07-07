@@ -3,9 +3,10 @@ A custom manager for working with trees of objects.
 """
 from __future__ import unicode_literals
 import contextlib
+import operator
 
 from django.db import models, transaction, connections, router
-from django.db.models import F, Max
+from django.db.models import F, Max, Q
 from django.utils.translation import ugettext as _
 
 from mptt.exceptions import CantDisableUpdates, InvalidMove
@@ -60,6 +61,30 @@ class TreeManager(models.Manager):
         if self.tree_model is not model:
             # _base_manager is the treemanager on tree_model
             self._base_manager = self.tree_model._tree_manager
+
+    def get_queryset_descendants(self, queryset, include_self=False):
+        """
+        Returns a queryset containing the descendants of all nodes in the
+        given queryset.
+
+        If ``include_self=True``, nodes in ``queryset`` will also
+        be included in the result.
+        """
+        filters = []
+        assert self.model is queryset.model
+        opts = queryset.model._mptt_meta
+        for node in queryset:
+            lft, rght = node.lft, node.rght
+            if include_self:
+                lft -= 1
+                rght += 1
+            filters.append(Q(**{
+                opts.tree_id_attr: getattr(node, opts.tree_id_attr),
+                '%s__gt' % opts.left_attr: lft,
+                '%s__lt' % opts.right_attr: rght,
+            }))
+        q = reduce(operator.or_, filters)
+        return self.filter(q)
 
     @contextlib.contextmanager
     def disable_mptt_updates(self):

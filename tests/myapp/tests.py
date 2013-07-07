@@ -1038,10 +1038,9 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
         """)
 
 
-class BaseManagerInfiniteRecursion(TreeTestCase):
-    """
-    Tests to avoid infinite recursion in managers, which seems to be a recurring bug.
-    """
+class ManagerTests(TreeTestCase):
+    fixtures = ['categories.json']
+
     def test_all_managers_are_different(self):
         # all tree managers should be different. otherwise, possible infinite recursion.
         seen = {}
@@ -1072,6 +1071,21 @@ class BaseManagerInfiniteRecursion(TreeTestCase):
                     break
             else:
                 self.fail("Detected infinite recursion in %s._tree_manager._base_manager" % model)
+
+    def test_get_queryset_descendants(self):
+        def get_desc_names(qs, include_self=False):
+            desc = Category.objects.get_queryset_descendants(qs, include_self=include_self)
+            return list(desc.values_list('name', flat=True).order_by('name'))
+
+        qs = Category.objects.filter(name='Nintendo Wii')
+        self.assertEqual(
+            get_desc_names(qs),
+            ['Games', 'Hardware & Accessories'],
+        )
+        self.assertEqual(
+            get_desc_names(qs, include_self=True),
+            ['Games', 'Hardware & Accessories', 'Nintendo Wii'],
+        )
 
 
 class CacheTreeChildrenTestCase(TreeTestCase):
