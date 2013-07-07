@@ -2,24 +2,30 @@
 Upgrade notes
 =============
 
-Development version (since 0.5.4)
+Development version (since 0.5.5)
 =================================
 
 mptt now requires Python 2.5+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We started using context managers, which means we can't support python 2.4 anymore. If you absolutely can't upgrade your Python version, you'll need to stick to mptt 0.5.4 until you can.
+We started using context managers, which means we can't support python 2.4 anymore. If you absolutely can't upgrade your Python version, you'll need to stick to mptt 0.5.5 until you can.
 
 No more implicit ``empty_label=True`` on form fields
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Until 0.5.4, ``TreeNodeChoiceField`` and ``TreeNodeMultipleChoiceField`` implicitly set ``empty_label=True``.
+Until 0.5, ``TreeNodeChoiceField`` and ``TreeNodeMultipleChoiceField`` implicitly set ``empty_label=True``.
 This was around since a long time ago, for unknown reasons. It has been removed in 0.6 as it caused occasional headaches for users.
 
 If you were relying on this behavior, you'll need to explicitly pass ``empty_label=True`` to any of those fields you use,
 otherwise you will start seeing new '--------' choices appearing in them.
 
-0.4.2 to 0.5.4
+Deprecated FeinCMSModelAdmin
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you were using ``mptt.admin.FeinCMSModelAdmin``, you should switch to using 
+``feincms.admin.tree_editor.TreeEditor`` instead, or you'll get a loud deprecation warning.
+
+0.4.2 to 0.5.5
 ==============
 
 ``TreeManager`` is now the default manager, ``YourModel.tree`` removed

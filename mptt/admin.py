@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 import django
+import warnings
 from django.conf import settings
 from django.contrib.admin.views.main import ChangeList
 from django.contrib.admin.options import ModelAdmin
@@ -70,6 +71,14 @@ if getattr(settings, 'MPTT_USE_FEINCMS', True):
             """
 
             form = MPTTAdminForm
+
+            def __init__(self, *args, **kwargs):
+                warnings.warn(
+                    "mptt.admin.FeinCMSModelAdmin has been deprecated, use "
+                    "feincms.admin.tree_editor.TreeEditor instead.",
+                    UserWarning,
+                )
+                super(FeinCMSModelAdmin, self).__init__(*args, **kwargs)
 
             def _actions_column(self, obj):
                 actions = super(FeinCMSModelAdmin, self)._actions_column(obj)
