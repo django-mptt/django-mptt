@@ -275,32 +275,6 @@ class MPTTModelBase(ModelBase):
 
         abstract = getattr(cls._meta, 'abstract', False)
 
-        # For backwards compatibility with existing libraries, we copy the
-        # _mptt_meta options into _meta.
-        # This was removed in 0.5 but added back in 0.5.1 since it caused compatibility
-        # issues with django-cms 2.2.0.
-        # some discussion is here: https://github.com/divio/django-cms/issues/1079
-        # This stuff is still documented as removed, and WILL be removed again in the next release.
-        # All new code should use _mptt_meta rather than _meta for tree attributes.
-        attrs = ('left_attr', 'right_attr', 'tree_id_attr', 'level_attr',
-                 'parent_attr', 'tree_manager_attr', 'order_insertion_by')
-        warned_attrs = set()
-
-        class _MetaSubClass(cls._meta.__class__):
-            def __getattr__(self, attr):
-                if attr in attrs:
-                    if attr not in warned_attrs:
-                        warnings.warn(
-                            "%s._meta.%s is deprecated and will be removed in mptt 0.6"
-                            % (cls.__name__, attr),
-                            #don't use DeprecationWarning, that gets ignored by default
-                            UserWarning,
-                        )
-                        warned_attrs.add(attr)
-                    return getattr(cls._mptt_meta, attr)
-                return super(_MetaSubClass, self).__getattr__(attr)
-        cls._meta.__class__ = _MetaSubClass
-
         try:
             MPTTModel
         except NameError:
