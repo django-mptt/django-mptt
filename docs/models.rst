@@ -227,7 +227,8 @@ otherwise.
 -------------------------------------------
 
 Moves the model instance elsewhere in the tree based on ``target`` and
-``position`` (when appropriate).
+``position`` (when appropriate). If moved without any exceptions
+raised then the signal ``node_moved`` will be sent.
 
 .. note::
    It is assumed that when you call this method, the tree fields in the

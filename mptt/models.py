@@ -13,6 +13,7 @@ from django.utils.translation import ugettext as _
 
 from mptt.fields import TreeForeignKey, TreeOneToOneField, TreeManyToManyField
 from mptt.managers import TreeManager
+from mptt.signals import node_moved
 
 
 class _classproperty(object):
@@ -676,6 +677,8 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         In most cases you should just move the node yourself by setting node.parent.
         """
         self._tree_manager.move_node(self, target, position)
+        node_moved.send(sender=self.__class__, instance=self,
+                        target=target, position=position)
 
     def _is_saved(self, using=None):
         if not self.pk or self._mpttfield('tree_id') is None:
