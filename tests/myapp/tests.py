@@ -6,10 +6,10 @@ import sys
 import tempfile
 
 import django
-from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.db.models import get_models
+from django.forms.models import modelform_factory
 from django.template import Template, Context
 from django.test import TestCase
 from django.utils.six import string_types, PY3, b
@@ -20,6 +20,7 @@ except ImportError:
     feincms = False
 
 from mptt.exceptions import CantDisableUpdates, InvalidMove
+from mptt.forms import MPTTAdminForm
 from mptt.models import MPTTModel
 from mptt.templatetags.mptt_tags import cache_tree_children
 from myapp.models import Category, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel, ConcreteModel, OrderedInsertion, AutoNowDateFieldModel
@@ -111,7 +112,7 @@ class DocTestTestCase(TreeTestCase):
                 sys.stdout = before
                 content = dummy_stream.content
                 if content:
-                    sys.stderr.write(content+'\n')
+                    sys.stderr.write(content + '\n')
                     self.fail()
 
 # genres.json defines the following tree structure
@@ -1160,3 +1161,13 @@ class RegisteredRemoteModel(TreeTestCase):
     def test_save_registered_model(self):
         g1 = Group.objects.create(name='group 1')
         g1.save()
+
+
+class TestForms(TreeTestCase):
+    fixtures = ['categories.json']
+
+    def test_adminform_instantiation(self):
+        # https://github.com/django-mptt/django-mptt/issues/264
+        c = Category.objects.get(name='Nintendo Wii')
+        CategoryForm = modelform_factory(Category, form=MPTTAdminForm)
+        CategoryForm(instance=c)
