@@ -44,6 +44,12 @@ to use MPTT with your own Django models.
 It takes care of the details of managing a database table as a tree
 structure and provides tools for working with trees of model instances.
 
+Requirements
+------------
+
+Python 2.6+ (with experimental support for python 3.2+)
+Django 1.4.2+
+
 Feature overview
 ----------------
 
