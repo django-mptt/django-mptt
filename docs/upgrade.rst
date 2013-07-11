@@ -5,10 +5,14 @@ Upgrade notes
 Development version (since 0.5.5)
 =================================
 
-mptt now requires Python 2.5+
+mptt now requires Python 2.6+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We started using context managers, which means we can't support python 2.4 anymore. If you absolutely can't upgrade your Python version, you'll need to stick to mptt 0.5.5 until you can.
+mptt 0.6 drops support for both Python 2.4 and 2.5.
+
+This was done to make it easier to support Python 3, as well as support the new context managers (delay_mptt_updates and disable_mptt_updates).
+
+If you absolutely can't upgrade your Python version, you'll need to stick to mptt 0.5.5 until you can.
 
 No more implicit ``empty_label=True`` on form fields
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

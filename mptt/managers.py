@@ -3,7 +3,6 @@ A custom manager for working with trees of objects.
 """
 from __future__ import unicode_literals
 import contextlib
-import operator
 
 from django.db import models, transaction, connections, router
 from django.db.models import F, Max, Q
