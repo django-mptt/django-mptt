@@ -10,6 +10,7 @@ from django.db.models import F, Max, Q
 from django.utils.translation import ugettext as _
 
 from mptt.exceptions import CantDisableUpdates, InvalidMove
+from mptt.signals import node_moved
 
 __all__ = ('TreeManager',)
 
@@ -443,6 +444,8 @@ class TreeManager(models.Manager):
         In most cases you should just move the node yourself by setting node.parent.
         """
         self._move_node(node, target, position=position)
+        node_moved.send(sender=node.__class__, instance=node,
+                        target=target, position=position)
 
     def root_node(self, tree_id):
         """

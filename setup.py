@@ -23,6 +23,8 @@ setup(
     packages=[str('mptt'), str('mptt.templatetags')],
     install_requires = (
         'Django>=1.4.2',),
+    test_requires = (
+        'mock-django>=0.6.5',),
     package_data={str('mptt'): [str('templates/admin/*'), str('locale/*/*/*.*')]},
     classifiers=[
         str('Development Status :: 4 - Beta'),

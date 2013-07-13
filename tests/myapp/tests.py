@@ -14,6 +14,8 @@ from django.template import Template, Context
 from django.test import TestCase
 from django.utils.six import string_types, PY3, b
 
+from mock_django import mock_signal_receiver
+
 try:
     import feincms
 except ImportError:
@@ -22,6 +24,7 @@ except ImportError:
 from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.models import MPTTModel
 from mptt.templatetags.mptt_tags import cache_tree_children
+from mptt.signals import node_moved
 from myapp.models import Category, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel, ConcreteModel, OrderedInsertion, AutoNowDateFieldModel
 
 extra_queries_per_update = 0
@@ -1160,3 +1163,53 @@ class RegisteredRemoteModel(TreeTestCase):
     def test_save_registered_model(self):
         g1 = Group.objects.create(name='group 1')
         g1.save()
+
+
+class Signals(TestCase):
+    fixtures = ['categories.json']
+
+    def setUp(self):
+        self.signal = node_moved
+        self.wii = Category.objects.get(pk=2)
+        self.ps3 = Category.objects.get(pk=8)
+
+    def test_signal_should_not_be_sent_when_parent_hasnt_changed(self):
+        with mock_signal_receiver(self.signal, sender=Category) as receiver:
+            self.wii.name = 'Woo'
+            self.wii.save()
+
+            self.assertEqual(receiver.call_count, 0)
+
+    def test_signal_should_not_be_sent_when_model_created(self):
+        with mock_signal_receiver(self.signal, sender=Category) as receiver:
+            Category.objects.create(name='Descriptive name')
+
+            self.assertEqual(receiver.call_count, 0)
+
+    def test_move_by_using_move_to_should_send_signal(self):
+        with mock_signal_receiver(self.signal, sender=Category) as receiver:
+            self.wii.move_to(self.ps3)
+
+            receiver.assert_called_once_with(
+                instance=self.wii,
+                signal=self.signal,
+                target=self.ps3,
+                sender=Category,
+                position='first-child'
+            )
+
+    def test_move_by_changing_parent_should_send_signal(self):
+        '''position is not set when sent from save(). I assume it
+        would be the default(first-child) but didn't feel comfortable
+        setting it.
+        '''
+        with mock_signal_receiver(self.signal, sender=Category) as receiver:
+            self.wii.parent = self.ps3
+            self.wii.save()
+
+            receiver.assert_called_once_with(
+                instance=self.wii,
+                signal=self.signal,
+                target=self.ps3,
+                sender=Category
+            )

@@ -677,8 +677,6 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         In most cases you should just move the node yourself by setting node.parent.
         """
         self._tree_manager.move_node(self, target, position)
-        node_moved.send(sender=self.__class__, instance=self,
-                        target=target, position=position)
 
     def _is_saved(self, using=None):
         if not self.pk or self._mpttfield('tree_id') is None:
@@ -808,6 +806,10 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                     # Make sure the new parent is always
                     # restored on the way out in case of errors.
                     opts.set_raw_field_value(self, opts.parent_attr, parent_id)
+
+                # If there were no exceptions raised then send a moved signal
+                node_moved.send(sender=self.__class__, instance=self,
+                                target=getattr(self, opts.parent_attr))
             else:
                 opts.set_raw_field_value(self, opts.parent_attr, parent_id)
         else:
