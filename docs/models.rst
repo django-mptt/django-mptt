@@ -353,7 +353,7 @@ model.
    If ``True``, the count will be for each item and all of its
    descendants, otherwise it will be for each item itself.
 
-``get_root(tree_id)``
+``root_node(tree_id)``
 ~~~~~~~~~~~~~~~~~~~~~
 
 Returns the root node of tree with the given id.
