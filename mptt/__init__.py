@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-VERSION = (0, 6, 'rc1')
+VERSION = (0, 6, 'rc2')
 
 
 # NOTE: This method was removed in 0.4.0, but restored in 0.4.2 after use-cases were
