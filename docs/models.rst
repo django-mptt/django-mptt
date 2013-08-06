@@ -354,7 +354,7 @@ model.
    descendants, otherwise it will be for each item itself.
 
 ``root_node(tree_id)``
-~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 Returns the root node of tree with the given id.
 
