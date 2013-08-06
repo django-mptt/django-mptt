@@ -1,13 +1,19 @@
 #!/usr/bin/env python
 from __future__ import unicode_literals
-from distutils.core import setup
 
 from mptt import VERSION
+
+requires=('Django>=1.4.2',)
+try:
+    from setuptools import setup
+    kwargs ={'install_requires': requires}
+except ImportError:
+    from distutils.core import setup
+    kwargs = {'requires': requires}
 
 # Dynamically calculate the version based on mptt.VERSION
 version_tuple = VERSION
 version = ".".join([str(v) for v in version_tuple])
-
 
 # on py3, all these are text strings
 # on py2, they're all byte strings.
@@ -21,8 +27,6 @@ setup(
     author_email=str('craig.ds@gmail.com'),
     url=str('http://github.com/django-mptt/django-mptt'),
     packages=[str('mptt'), str('mptt.templatetags')],
-    install_requires = (
-        'Django>=1.4.2',),
     package_data={str('mptt'): [str('templates/admin/*'), str('locale/*/*/*.*')]},
     classifiers=[
         str('Development Status :: 4 - Beta'),
@@ -36,4 +40,5 @@ setup(
         str('Programming Language :: Python :: 3'),
         str('Topic :: Utilities'),
     ],
+    **kwargs
 )
