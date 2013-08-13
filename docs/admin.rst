@@ -2,13 +2,8 @@
 Admin classes
 =============
 
-.. versionadded:: 0.4
-
-To add admin functionality to your tree model, use one of the ``ModelAdmin``
-classes in ``django-mptt.admin``:
-
-MPTTModelAdmin
---------------
+``mptt.admin.MPTTModelAdmin``
+-----------------------------
 
 This is a bare-bones tree admin. All it does is enforce ordering, and indent the nodes
 in the tree to make a pretty tree list view.
@@ -47,15 +42,3 @@ to your MPTTModelAdmin::
     class CustomMPTTModelAdmin(MPTTModelAdmin)
         mptt_indent_field = "some_node_field"
     # …
-
-FeinCMSModelAdmin
------------------
-
-This requires `FeinCMS`_ to be installed.
-
-In addition to enforcing ordering and indenting the nodes, it has:
-
- - Javascript expand/collapse for parent nodes
- - Javascript widgets for moving nodes on the list view page
-
-.. _`FeinCMS`: http://www.feincms.org/
