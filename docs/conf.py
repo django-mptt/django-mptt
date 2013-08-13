@@ -43,7 +43,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'django-mptt'
-copyright = '2007 - 2011, Jonathan Buchanan and others'
+copyright = '2007 - 2013, Craig de Stigter, Jonathan Buchanan and others'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
