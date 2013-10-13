@@ -1169,5 +1169,9 @@ class TestForms(TreeTestCase):
     def test_adminform_instantiation(self):
         # https://github.com/django-mptt/django-mptt/issues/264
         c = Category.objects.get(name='Nintendo Wii')
-        CategoryForm = modelform_factory(Category, form=MPTTAdminForm)
+        CategoryForm = modelform_factory(
+            Category,
+            form=MPTTAdminForm,
+            fields=('name', 'parent'),
+        )
         CategoryForm(instance=c)
