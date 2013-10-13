@@ -86,7 +86,7 @@ class DocTestTestCase(TreeTestCase):
 
         dummy_stream = DummyStream()
         before = sys.stdout
-        #sys.stdout = dummy_stream
+        sys.stdout = dummy_stream
 
         with open(os.path.join(os.path.dirname(__file__), 'doctests.txt')) as f:
             with tempfile.NamedTemporaryFile() as temp:
@@ -107,12 +107,11 @@ class DocTestTestCase(TreeTestCase):
                     module_relative=False,
                     optionflags=doctest.IGNORE_EXCEPTION_DETAIL,
                     encoding='utf-8',
-                    raise_on_error=True,
                 )
                 sys.stdout = before
                 content = dummy_stream.content
                 if content:
-                    sys.stderr.write(content + '\n')
+                    before.write(content + '\n')
                     self.fail()
 
 # genres.json defines the following tree structure
