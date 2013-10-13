@@ -120,7 +120,7 @@ class TreeManager(models.Manager):
 
         Usage::
 
-            with transaction.commit_on_success():
+            with transaction.atomic():
                 with MyNode.objects.disable_mptt_updates():
                     ## bulk updates.
                 MyNode.objects.rebuild()
@@ -195,7 +195,7 @@ class TreeManager(models.Manager):
 
         Usage::
 
-            with transaction.commit_on_success():
+            with transaction.atomic():
                 with MyNode.objects.delay_mptt_updates():
                     ## bulk updates.
         """
@@ -428,7 +428,6 @@ class TreeManager(models.Manager):
                     self._move_root_node(node, target, position)
                 else:
                     self._move_child_node(node, target, position)
-            transaction.commit_unless_managed()
 
     def move_node(self, node, target, position='last-child'):
         """
