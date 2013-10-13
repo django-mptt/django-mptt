@@ -16,7 +16,7 @@ Start with a basic subclass of MPTTModel, something like this::
     
     class Genre(MPTTModel):
         name = models.CharField(max_length=50, unique=True)
-        parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
+        parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
 
 You must define a parent field which is a ``ForeignKey`` to ``'self'``. Recommended: use ``TreeForeignKey``. You can
 call it something different if you want - see `Model Options`_ below.
@@ -42,7 +42,7 @@ To change the names, create an ``MPTTMeta`` class inside your class::
 
     class Genre(MPTTModel):
         name = models.CharField(max_length=50, unique=True)
-        parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
+        parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
         
         class MPTTMeta:
             level_attr = 'mptt_level'
@@ -58,7 +58,7 @@ The available options for the MPTTMeta class are:
    Users are responsible for setting this field up on the model class,
    which can be done like so::
 
-      parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
+      parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
 
 For the following four arguments, if fields with the given names do not
 exist, they will be added to the model dynamically:
@@ -105,7 +105,7 @@ exist, they will be added to the model dynamically:
 Registration of existing models
 ===============================
 
-The preferred way to do model registration in ``django-mptt`` 0.4 is by subclassing ``MPTTModel``.
+The preferred way to do model registration in ``django-mptt`` is by subclassing ``MPTTModel``.
 
 However, sometimes that doesn't quite work. For instance, suppose you want to modify Django's Group model to be hierarchical.
 
@@ -116,11 +116,9 @@ You can't subclass MPTTModel without modifying the Group source. Instead, you ca
     from django.contrib.auth.models import Group
     
     # add a parent foreign key
-    TreeForeignKey(Group, blank=True, null=True).contribute_to_class(Group, 'parent')
+    TreeForeignKey(Group, blank=True, null=True, db_index=True).contribute_to_class(Group, 'parent')
     
     mptt.register(Group, order_insertion_by=['name'])
-
-``mptt.register()`` was removed in 0.4.0 but restored in 0.4.2, when this use case was reported.
 
 
 MPTTModel instance methods
