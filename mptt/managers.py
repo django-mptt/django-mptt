@@ -4,6 +4,7 @@ A custom manager for working with trees of objects.
 from __future__ import unicode_literals
 import contextlib
 
+import django
 from django.db import models, transaction, connections, router
 from django.db.models import F, Max, Q
 from django.utils.translation import ugettext as _
@@ -255,7 +256,7 @@ class TreeManager(models.Manager):
             return self._base_manager._mptt_filter(qs=qs, **filters)
 
         if qs is None:
-            qs = self.get_query_set()
+            qs = self.get_queryset()
         return qs.filter(**self._translate_lookups(**filters))
 
     def _mptt_update(self, qs=None, **items):
@@ -266,7 +267,7 @@ class TreeManager(models.Manager):
             return self._base_manager._mptt_update(qs=qs, **items)
 
         if qs is None:
-            qs = self.get_query_set()
+            qs = self.get_queryset()
         return qs.update(**self._translate_lookups(**items))
 
     def _get_connection(self, **hints):
@@ -321,14 +322,24 @@ class TreeManager(models.Manager):
             }
         return queryset.extra(select={count_attr: subquery})
 
-    def get_query_set(self):
+    # rant: why oh why would you rename something so widely used?
+    def get_queryset(self):
         """
         Returns a ``QuerySet`` which contains all tree items, ordered in
         such a way that that root nodes appear in tree id order and
         their subtrees appear in depth-first order.
         """
-        return super(TreeManager, self).get_query_set().order_by(
-            self.tree_id_attr, self.left_attr)
+        super_ = super(TreeManager, self)
+        if django.VERSION < (1, 7):
+            qs = super_.get_query_set()
+        else:
+            qs = super_.get_queryset()
+        return qs.order_by(self.tree_id_attr, self.left_attr)
+
+    if django.VERSION < (1, 7):
+        # in 1.7+, get_query_set gets defined by the base manager and complains if it's called.
+        # otherwise, we have to define it ourselves.
+        get_query_set = get_queryset
 
     def insert_node(self, node, target, position='last-child', save=False, allow_existing_pk=False):
         """
@@ -599,7 +610,7 @@ class TreeManager(models.Manager):
         Determines the next largest unused tree id for the tree managed
         by this manager.
         """
-        qs = self.get_query_set()
+        qs = self.get_queryset()
         max_tree_id = list(qs.aggregate(Max(self.tree_id_attr)).values())[0]
         max_tree_id = max_tree_id or 0
         return max_tree_id + 1
