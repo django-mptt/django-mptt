@@ -12,11 +12,11 @@ class CustomTreeManager(TreeManager):
     pass
 
 
+@python_2_unicode_compatible
 class Category(MPTTModel):
     name = models.CharField(max_length=50)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
 
-    @python_2_unicode_compatible
     def __str__(self):
         return self.name
 
@@ -24,11 +24,11 @@ class Category(MPTTModel):
         super(Category, self).delete()
 
 
+@python_2_unicode_compatible
 class Genre(MPTTModel):
     name = models.CharField(max_length=50, unique=True)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
 
-    @python_2_unicode_compatible
     def __str__(self):
         return self.name
 
@@ -37,6 +37,7 @@ class Insert(MPTTModel):
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
 
 
+@python_2_unicode_compatible
 class MultiOrder(MPTTModel):
     name = models.CharField(max_length=50)
     size = models.PositiveIntegerField()
@@ -46,7 +47,6 @@ class MultiOrder(MPTTModel):
     class MPTTMeta:
         order_insertion_by = ['name', 'size', '-date']
 
-    @python_2_unicode_compatible
     def __str__(self):
         return self.name
 
@@ -61,6 +61,7 @@ class Node(MPTTModel):
         tree_id_attr = 'work'
 
 
+@python_2_unicode_compatible
 class OrderedInsertion(MPTTModel):
     name = models.CharField(max_length=50)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
@@ -68,7 +69,6 @@ class OrderedInsertion(MPTTModel):
     class MPTTMeta:
         order_insertion_by = ['name']
 
-    @python_2_unicode_compatible
     def __str__(self):
         return self.name
 
@@ -84,6 +84,7 @@ class NewStyleMPTTMeta(MPTTModel):
         left_attr = 'testing'
 
 
+@python_2_unicode_compatible
 class Person(MPTTModel):
     name = models.CharField(max_length=50)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
@@ -92,7 +93,6 @@ class Person(MPTTModel):
     objects = models.Manager()
     my_tree_manager = CustomTreeManager()
 
-    @python_2_unicode_compatible
     def __str__(self):
         return self.name
 
@@ -101,13 +101,13 @@ class Student(Person):
     type = models.CharField(max_length=50)
 
 
+@python_2_unicode_compatible
 class CustomPKName(MPTTModel):
     my_id = models.AutoField(db_column='my_custom_name', primary_key=True)
     name = models.CharField(max_length=50)
     parent = models.ForeignKey('self', null=True, blank=True,
             related_name='children', db_column="my_cusom_parent")
 
-    @python_2_unicode_compatible
     def __str__(self):
         return self.name
 
