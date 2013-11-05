@@ -239,7 +239,7 @@ False
 [u'2D Platformer', u'3D Platformer', u'4D Platformer']
 >>> [g.name for g in action.get_leafnodes(include_self=True)]
 [u'2D Platformer', u'3D Platformer', u'4D Platformer']
->>> [g.name for g in platformer.get_branch()]
+>>> [g.name for g in platformer.get_tree()]
 [u'Action', u'Platformer', u'2D Platformer', u'3D Platformer', u'4D Platformer']
 >>> action.get_descendant_count()
 4
