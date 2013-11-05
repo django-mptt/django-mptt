@@ -9,7 +9,7 @@ Django Models and working with trees of Model instances.
 
 Project home: http://github.com/django-mptt/django-mptt/
 
-Documentation: http://django-mptt.github.com/django-mptt/
+Documentation: http://django-mptt.github.io/django-mptt/
 
 Discussion group: http://groups.google.com/group/django-mptt-dev
 
@@ -43,6 +43,12 @@ to use MPTT with your own Django models.
 
 It takes care of the details of managing a database table as a tree
 structure and provides tools for working with trees of model instances.
+
+Requirements
+------------
+
+* Python 2.6+ (with experimental support for python 3.2+)
+* Django 1.4.2+
 
 Feature overview
 ----------------

@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+from functools import reduce
 import operator
 import threading
 import warnings
@@ -5,10 +7,38 @@ import warnings
 from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.query import Q
+
+from django.utils import six
 from django.utils.translation import ugettext as _
 
 from mptt.fields import TreeForeignKey, TreeOneToOneField, TreeManyToManyField
 from mptt.managers import TreeManager
+
+
+class _classproperty(object):
+    def __init__(self, getter, setter=None):
+        self.fget = getter
+        self.fset = setter
+
+    def __get__(self, cls, owner):
+        return self.fget(owner)
+
+    def __set__(self, cls, owner, value):
+        if not self.fset:
+            raise AttributeError("This classproperty is read only")
+        self.fset(owner, value)
+
+
+class classpropertytype(property):
+    def __init__(self, name, bases=(), members={}):
+        return super(classpropertytype, self).__init__(
+            members.get('__get__'),
+            members.get('__set__'),
+            members.get('__delete__'),
+            members.get('__doc__')
+        )
+
+classproperty = classpropertytype('classproperty')
 
 
 class MPTTOptions(object):
@@ -31,10 +61,10 @@ class MPTTOptions(object):
     def __init__(self, opts=None, **kwargs):
         # Override defaults with options provided
         if opts:
-            opts = opts.__dict__.items()
+            opts = list(opts.__dict__.items())
         else:
             opts = []
-        opts.extend(kwargs.items())
+        opts.extend(list(kwargs.items()))
 
         if 'tree_manager_attr' in [opt[0] for opt in opts]:
             raise ValueError("`tree_manager_attr` has been removed; you should instantiate a TreeManager as a normal manager on your model instead.")
@@ -45,7 +75,7 @@ class MPTTOptions(object):
             setattr(self, key, value)
 
         # Normalize order_insertion_by to a list
-        if isinstance(self.order_insertion_by, basestring):
+        if isinstance(self.order_insertion_by, six.string_types):
             self.order_insertion_by = [self.order_insertion_by]
         elif isinstance(self.order_insertion_by, tuple):
             self.order_insertion_by = list(self.order_insertion_by)
@@ -53,7 +83,7 @@ class MPTTOptions(object):
             self.order_insertion_by = []
 
     def __iter__(self):
-        return ((k, v) for k, v in self.__dict__.iteritems() if k[0] != '_')
+        return ((k, v) for k, v in self.__dict__.items() if k[0] != '_')
 
     # Helper methods for accessing tree attributes on models.
     def get_raw_field_value(self, instance, field_name):
@@ -116,17 +146,22 @@ class MPTTOptions(object):
         filters__append = filters.append
         and_ = operator.and_
         or_ = operator.or_
-        for field in order_insertion_by:
-            if field[0] == '-':
-                field = field[1:]
+        for field_name in order_insertion_by:
+            if field_name[0] == '-':
+                field_name = field_name[1:]
                 filter_suffix = '__lt'
             else:
                 filter_suffix = '__gt'
-            value = getattr(instance, field)
-            q = Q(**{field + filter_suffix: value})
+            value = getattr(instance, field_name)
+            if value is None:
+                # node isn't saved yet. get the insertion value from pre_save.
+                field = instance._meta.get_field(field_name)
+                value = field.pre_save(instance, True)
+
+            q = Q(**{field_name + filter_suffix: value})
 
             filters__append(reduce(and_, [Q(**{f: v}) for f, v in fields] + [q]))
-            fields__append((field, value))
+            fields__append((field_name, value))
         return reduce(or_, filters)
 
     def get_ordered_insertion_target(self, node, parent):
@@ -177,6 +212,16 @@ class MPTTModelBase(ModelBase):
          - adds the MPTT fields to the class
          - adds a TreeManager to the model
         """
+        if class_name == 'NewBase' and class_dict == {}:
+            # skip ModelBase, on django < 1.5 it doesn't handle NewBase.
+            super_new = super(ModelBase, meta).__new__
+            return super_new(meta, class_name, bases, class_dict)
+        is_MPTTModel = False
+        try:
+            MPTTModel
+        except NameError:
+            is_MPTTModel = True
+
         MPTTMeta = class_dict.pop('MPTTMeta', None)
         if not MPTTMeta:
             class MPTTMeta:
@@ -194,15 +239,17 @@ class MPTTModelBase(ModelBase):
                         setattr(MPTTMeta, name, value)
 
         class_dict['_mptt_meta'] = MPTTOptions(MPTTMeta)
-        cls = super(MPTTModelBase, meta).__new__(meta, class_name, bases, class_dict)
-
+        super_new = super(MPTTModelBase, meta).__new__
+        cls = super_new(meta, class_name, bases, class_dict)
         cls = meta.register(cls)
 
         # see error cases in TreeManager.disable_mptt_updates for the reasoning here.
         cls._mptt_tracking_base = None
-        for base in cls.mro():
-            if not isinstance(base, MPTTModelBase):
-                continue
+        if is_MPTTModel:
+            bases = [cls]
+        else:
+            bases = [base for base in cls.mro() if issubclass(base, MPTTModel)]
+        for base in bases:
             if not (base._meta.abstract or base._meta.proxy) and base._tree_manager.tree_model is base:
                 cls._mptt_tracking_base = base
                 break
@@ -212,55 +259,6 @@ class MPTTModelBase(ModelBase):
             #    cls._threadlocal.mptt_delayed_tree_changes = None
 
         return cls
-
-    def _get_mptt_updates_enabled(cls):
-        if not cls._mptt_tracking_base:
-            return True
-        return getattr(cls._mptt_tracking_base._threadlocal, 'mptt_updates_enabled', True)
-
-    def _set_mptt_updates_enabled(cls, value):
-        assert cls is cls._mptt_tracking_base, "Can't enable or disable mptt updates on a non-tracking class."
-        cls._threadlocal.mptt_updates_enabled = value
-    _mptt_updates_enabled = property(_get_mptt_updates_enabled, _set_mptt_updates_enabled)
-
-    @property
-    def _mptt_is_tracking(cls):
-        if not cls._mptt_tracking_base:
-            return False
-        if not hasattr(cls._threadlocal, 'mptt_delayed_tree_changes'):
-            # happens the first time this is called from each thread
-            cls._threadlocal.mptt_delayed_tree_changes = None
-        return cls._threadlocal.mptt_delayed_tree_changes is not None
-
-    def _mptt_start_tracking(cls):
-        assert cls is cls._mptt_tracking_base, "Can't start or stop mptt tracking on a non-tracking class."
-        assert not cls._mptt_is_tracking, "mptt tracking is already started."
-        cls._threadlocal.mptt_delayed_tree_changes = set()
-
-    def _mptt_stop_tracking(cls):
-        assert cls is cls._mptt_tracking_base, "Can't start or stop mptt tracking on a non-tracking class."
-        assert cls._mptt_is_tracking, "mptt tracking isn't started."
-        results = cls._threadlocal.mptt_delayed_tree_changes
-        cls._threadlocal.mptt_delayed_tree_changes = None
-        return results
-
-    def _mptt_track_tree_modified(cls, tree_id):
-        if not cls._mptt_is_tracking:
-            return
-        cls._threadlocal.mptt_delayed_tree_changes.add(tree_id)
-
-    def _mptt_track_tree_insertions(cls, tree_id, num_inserted):
-        if not cls._mptt_is_tracking:
-            return
-        changes = cls._threadlocal.mptt_delayed_tree_changes
-        if not num_inserted or not changes:
-            return
-
-        if num_inserted < 0:
-            deleted = range(tree_id + num_inserted, -num_inserted)
-            changes.difference_update(deleted)
-        new_changes = set([(t + num_inserted if t >= tree_id else t) for t in changes])
-        cls._threadlocal.mptt_delayed_tree_changes = new_changes
 
     @classmethod
     def register(meta, cls, **kwargs):
@@ -277,32 +275,6 @@ class MPTTModelBase(ModelBase):
 
         abstract = getattr(cls._meta, 'abstract', False)
 
-        # For backwards compatibility with existing libraries, we copy the
-        # _mptt_meta options into _meta.
-        # This was removed in 0.5 but added back in 0.5.1 since it caused compatibility
-        # issues with django-cms 2.2.0.
-        # some discussion is here: https://github.com/divio/django-cms/issues/1079
-        # This stuff is still documented as removed, and WILL be removed again in the next release.
-        # All new code should use _mptt_meta rather than _meta for tree attributes.
-        attrs = ('left_attr', 'right_attr', 'tree_id_attr', 'level_attr',
-                 'parent_attr', 'tree_manager_attr', 'order_insertion_by')
-        warned_attrs = set()
-
-        class _MetaSubClass(cls._meta.__class__):
-            def __getattr__(self, attr):
-                if attr in attrs:
-                    if attr not in warned_attrs:
-                        warnings.warn(
-                            "%s._meta.%s is deprecated and will be removed in mptt 0.6"
-                            % (cls.__name__, attr),
-                            #don't use DeprecationWarning, that gets ignored by default
-                            UserWarning,
-                        )
-                        warned_attrs.add(attr)
-                    return getattr(cls._mptt_meta, attr)
-                return super(_MetaSubClass, self).__getattr__(attr)
-        cls._meta.__class__ = _MetaSubClass
-
         try:
             MPTTModel
         except NameError:
@@ -318,7 +290,7 @@ class MPTTModelBase(ModelBase):
                 # strip out bases that are strict superclasses of MPTTModel.
                 # (i.e. Model, object)
                 # this helps linearize the type hierarchy if possible
-                for i in xrange(len(bases) - 1, -1, -1):
+                for i in range(len(bases) - 1, -1, -1):
                     if issubclass(MPTTModel, bases[i]):
                         del bases[i]
 
@@ -370,12 +342,10 @@ class MPTTModelBase(ModelBase):
         return cls
 
 
-class MPTTModel(models.Model):
+class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
     """
     Base class for tree models.
     """
-
-    __metaclass__ = MPTTModelBase
     _default_manager = TreeManager()
 
     class Meta:
@@ -388,6 +358,62 @@ class MPTTModel(models.Model):
     def _mpttfield(self, fieldname):
         translated_fieldname = getattr(self._mptt_meta, fieldname + '_attr')
         return getattr(self, translated_fieldname)
+
+    @_classproperty
+    def _mptt_updates_enabled(cls):
+        if not cls._mptt_tracking_base:
+            return True
+        return getattr(cls._mptt_tracking_base._threadlocal, 'mptt_updates_enabled', True)
+
+    # ideally this'd be part of the _mptt_updates_enabled classproperty, but it seems
+    # that settable classproperties are very, very hard to do! suggestions please :)
+    @classmethod
+    def _set_mptt_updates_enabled(cls, value):
+        assert cls is cls._mptt_tracking_base, "Can't enable or disable mptt updates on a non-tracking class."
+        cls._threadlocal.mptt_updates_enabled = value
+
+    @_classproperty
+    def _mptt_is_tracking(cls):
+        if not cls._mptt_tracking_base:
+            return False
+        if not hasattr(cls._threadlocal, 'mptt_delayed_tree_changes'):
+            # happens the first time this is called from each thread
+            cls._threadlocal.mptt_delayed_tree_changes = None
+        return cls._threadlocal.mptt_delayed_tree_changes is not None
+
+    @classmethod
+    def _mptt_start_tracking(cls):
+        assert cls is cls._mptt_tracking_base, "Can't start or stop mptt tracking on a non-tracking class."
+        assert not cls._mptt_is_tracking, "mptt tracking is already started."
+        cls._threadlocal.mptt_delayed_tree_changes = set()
+
+    @classmethod
+    def _mptt_stop_tracking(cls):
+        assert cls is cls._mptt_tracking_base, "Can't start or stop mptt tracking on a non-tracking class."
+        assert cls._mptt_is_tracking, "mptt tracking isn't started."
+        results = cls._threadlocal.mptt_delayed_tree_changes
+        cls._threadlocal.mptt_delayed_tree_changes = None
+        return results
+
+    @classmethod
+    def _mptt_track_tree_modified(cls, tree_id):
+        if not cls._mptt_is_tracking:
+            return
+        cls._threadlocal.mptt_delayed_tree_changes.add(tree_id)
+
+    @classmethod
+    def _mptt_track_tree_insertions(cls, tree_id, num_inserted):
+        if not cls._mptt_is_tracking:
+            return
+        changes = cls._threadlocal.mptt_delayed_tree_changes
+        if not num_inserted or not changes:
+            return
+
+        if num_inserted < 0:
+            deleted = range(tree_id + num_inserted, -num_inserted)
+            changes.difference_update(deleted)
+        new_changes = set([(t + num_inserted if t >= tree_id else t) for t in changes])
+        cls._threadlocal.mptt_delayed_tree_changes = new_changes
 
     def get_ancestors(self, ascending=False, include_self=False):
         """
@@ -515,7 +541,7 @@ class MPTTModel(models.Model):
             # node not saved yet
             return 0
         else:
-            return (self._mpttfield('right') - self._mpttfield('left') - 1) / 2
+            return (self._mpttfield('right') - self._mpttfield('left') - 1) // 2
 
     def get_leafnodes(self, include_self=False):
         """
@@ -747,7 +773,7 @@ class MPTTModel(models.Model):
             same_order = old_parent_id == parent_id
             if same_order and len(self._mptt_cached_fields) > 1:
                 get_raw_field_value = opts.get_raw_field_value
-                for field_name, old_value in self._mptt_cached_fields.iteritems():
+                for field_name, old_value in self._mptt_cached_fields.items():
                     if old_value != get_raw_field_value(self, field_name):
                         same_order = False
                         break
@@ -844,6 +870,13 @@ class MPTTModel(models.Model):
         opts.update_mptt_cached_fields(self)
 
     def delete(self, *args, **kwargs):
+        """Calling ``delete`` on a node will delete it as well as its full subtree, as
+        opposed to reattaching all the subnodes to its parent node.
+
+        There are no argument specific to a MPTT model, all the arguments will be passed
+        directly to the django's ``Model.delete``.
+
+        ``delete`` will not return anything. """
         tree_width = (self._mpttfield('right') -
                       self._mpttfield('left') + 1)
         target_right = self._mpttfield('right')

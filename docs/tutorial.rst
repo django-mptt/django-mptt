@@ -7,7 +7,7 @@ Tutorial
 The Problem
 ===========
 
-You've created a Django project, and you need to manage some hierarchical data. For instance you've got a bunch of hierarchical pages in a CMS, and sometimes pages are *chidren* of other pages
+You've created a Django project, and you need to manage some hierarchical data. For instance you've got a bunch of hierarchical pages in a CMS, and sometimes pages are *children* of other pages
 
 Now suppose you want to show a breadcrumb on your site, like this::
 
@@ -28,7 +28,7 @@ The Solution
 
 Modified Preorder Tree Traversal can be a bit daunting at first, but it's one of the best ways to solve this problem.
 
-If you want to go into the details, there's a good explanation here: `Storing Hierarchical Data in a Database`_
+If you want to go into the details, there's a good explanation here: `Storing Hierarchical Data in a Database`_ or `Managing Hierarchical Data in Mysql`_
 
 tl;dr: MPTT makes most tree operations much cheaper in terms of queries. In fact all these operations take at most one query, and sometimes zero:
  * get descendants of a node
@@ -40,6 +40,7 @@ And this one takes zero queries:
  * count the descendants of a given node
 
 .. _`Storing Hierarchical Data in a Database`: http://www.sitepoint.com/hierarchical-data-database/
+.. _`Managing Hierarchical Data in Mysql`: http://mikehillyer.com/articles/managing-hierarchical-data-in-mysql/
 
 Enough intro. Let's get started.
 
@@ -70,7 +71,7 @@ Start with a basic subclass of MPTTModel, something like this::
     
     class Genre(MPTTModel):
         name = models.CharField(max_length=50, unique=True)
-        parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
+        parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
 
         class MPTTMeta:
             order_insertion_by = ['name']

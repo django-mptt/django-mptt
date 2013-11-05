@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import os
 
 DIRNAME = os.path.dirname(__file__)
@@ -11,6 +12,8 @@ DATABASES = {
 }
 
 INSTALLED_APPS = (
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
     'mptt',
     'myapp',
 )

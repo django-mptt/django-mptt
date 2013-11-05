@@ -1,22 +1,18 @@
 """
 A custom manager for working with trees of objects.
 """
-# for python 2.5
-from __future__ import with_statement
-
+from __future__ import unicode_literals
 import contextlib
 
-from django.db import connection, models, transaction
-from django.db.models import F, Max
+import django
+from django.db import models, transaction, connections, router
+from django.db.models import F, Max, Q
 from django.utils.translation import ugettext as _
-
-from django.db import connections, router
 
 from mptt.exceptions import CantDisableUpdates, InvalidMove
 
 __all__ = ('TreeManager',)
 
-qn = connection.ops.quote_name
 
 COUNT_SUBQUERY = """(
     SELECT COUNT(*)
@@ -66,6 +62,36 @@ class TreeManager(models.Manager):
             # _base_manager is the treemanager on tree_model
             self._base_manager = self.tree_model._tree_manager
 
+    def get_queryset_descendants(self, queryset, include_self=False):
+        """
+        Returns a queryset containing the descendants of all nodes in the
+        given queryset.
+
+        If ``include_self=True``, nodes in ``queryset`` will also
+        be included in the result.
+        """
+        filters = []
+        assert self.model is queryset.model
+        opts = queryset.model._mptt_meta
+        if not queryset:
+            return self.none()
+        filters = None
+        for node in queryset:
+            lft, rght = node.lft, node.rght
+            if include_self:
+                lft -= 1
+                rght += 1
+            q = Q(**{
+                opts.tree_id_attr: getattr(node, opts.tree_id_attr),
+                '%s__gt' % opts.left_attr: lft,
+                '%s__lt' % opts.right_attr: rght,
+            })
+            if filters is None:
+                filters = q
+            else:
+                filters |= q
+        return self.filter(filters)
+
     @contextlib.contextmanager
     def disable_mptt_updates(self):
         """
@@ -94,7 +120,7 @@ class TreeManager(models.Manager):
 
         Usage::
 
-            with transaction.commit_on_success():
+            with transaction.atomic():
                 with MyNode.objects.disable_mptt_updates():
                     ## bulk updates.
                 MyNode.objects.rebuild()
@@ -128,11 +154,11 @@ class TreeManager(models.Manager):
             # already disabled, noop.
             yield
         else:
-            self.model._mptt_updates_enabled = False
+            self.model._set_mptt_updates_enabled(False)
             try:
                 yield
             finally:
-                self.model._mptt_updates_enabled = True
+                self.model._set_mptt_updates_enabled(True)
 
     @contextlib.contextmanager
     def delay_mptt_updates(self):
@@ -169,7 +195,7 @@ class TreeManager(models.Manager):
 
         Usage::
 
-            with transaction.commit_on_success():
+            with transaction.atomic():
                 with MyNode.objects.delay_mptt_updates():
                     ## bulk updates.
         """
@@ -213,7 +239,7 @@ class TreeManager(models.Manager):
     def _translate_lookups(self, **lookups):
         new_lookups = {}
         join_parts = '__'.join
-        for k, v in lookups.iteritems():
+        for k, v in lookups.items():
             parts = k.split('__')
             new_parts = []
             new_parts__append = new_parts.append
@@ -230,7 +256,7 @@ class TreeManager(models.Manager):
             return self._base_manager._mptt_filter(qs=qs, **filters)
 
         if qs is None:
-            qs = self.get_query_set()
+            qs = self.get_queryset()
         return qs.filter(**self._translate_lookups(**filters))
 
     def _mptt_update(self, qs=None, **items):
@@ -241,11 +267,11 @@ class TreeManager(models.Manager):
             return self._base_manager._mptt_update(qs=qs, **items)
 
         if qs is None:
-            qs = self.get_query_set()
+            qs = self.get_queryset()
         return qs.update(**self._translate_lookups(**items))
 
-    def _get_connection(self, node):
-        return connections[router.db_for_write(node)]
+    def _get_connection(self, **hints):
+        return connections[router.db_for_write(self.model, **hints)]
 
     def add_related_count(self, queryset, rel_model, rel_field, count_attr,
                           cumulative=False):
@@ -273,6 +299,9 @@ class TreeManager(models.Manager):
            If ``True``, the count will be for each item and all of its
            descendants, otherwise it will be for each item itself.
         """
+        connection = self._get_connection()
+        qn = connection.ops.quote_name
+
         meta = self.model._meta
         if cumulative:
             subquery = CUMULATIVE_COUNT_SUBQUERY % {
@@ -293,14 +322,24 @@ class TreeManager(models.Manager):
             }
         return queryset.extra(select={count_attr: subquery})
 
-    def get_query_set(self):
+    # rant: why oh why would you rename something so widely used?
+    def get_queryset(self):
         """
         Returns a ``QuerySet`` which contains all tree items, ordered in
         such a way that that root nodes appear in tree id order and
         their subtrees appear in depth-first order.
         """
-        return super(TreeManager, self).get_query_set().order_by(
-            self.tree_id_attr, self.left_attr)
+        super_ = super(TreeManager, self)
+        if django.VERSION < (1, 7):
+            qs = super_.get_query_set()
+        else:
+            qs = super_.get_queryset()
+        return qs.order_by(self.tree_id_attr, self.left_attr)
+
+    if django.VERSION < (1, 7):
+        # in 1.7+, get_query_set gets defined by the base manager and complains if it's called.
+        # otherwise, we have to define it ourselves.
+        get_query_set = get_queryset
 
     def insert_node(self, node, target, position='last-child', save=False, allow_existing_pk=False):
         """
@@ -389,7 +428,6 @@ class TreeManager(models.Manager):
                     self._move_root_node(node, target, position)
                 else:
                     self._move_child_node(node, target, position)
-            transaction.commit_unless_managed()
 
     def move_node(self, node, target, position='last-child'):
         """
@@ -571,9 +609,8 @@ class TreeManager(models.Manager):
         Determines the next largest unused tree id for the tree managed
         by this manager.
         """
-        qs = self.get_query_set()
-        max_tree_id = qs.aggregate(Max(self.tree_id_attr)).values()[0]
-
+        qs = self.get_queryset()
+        max_tree_id = list(qs.aggregate(Max(self.tree_id_attr)).values())[0]
         max_tree_id = max_tree_id or 0
         return max_tree_id + 1
 
@@ -589,6 +626,9 @@ class TreeManager(models.Manager):
         have its parent field set to ``NULL``. Otherwise, ``node`` will
         have ``parent_pk`` set for its parent field.
         """
+        connection = self._get_connection(instance=node)
+        qn = connection.ops.quote_name
+
         opts = self.model._meta
         inter_tree_move_query = """
         UPDATE %(table)s
@@ -644,8 +684,7 @@ class TreeManager(models.Manager):
         if parent_pk is not None:
             params.insert(-1, parent_pk)
 
-        cursor = self._get_connection(node).cursor()
-
+        cursor = connection.cursor()
         cursor.execute(inter_tree_move_query, params)
 
     def _make_child_root_node(self, node, new_tree_id=None):
@@ -743,6 +782,9 @@ class TreeManager(models.Manager):
             else:
                 raise ValueError(_('An invalid position was given: %s.') % position)
 
+            connection = self._get_connection(instance=node)
+            qn = connection.ops.quote_name
+
             root_sibling_query = """
             UPDATE %(table)s
             SET %(tree_id)s = CASE
@@ -754,7 +796,7 @@ class TreeManager(models.Manager):
                 'tree_id': qn(opts.get_field(self.tree_id_attr).column),
             }
 
-            cursor = self._get_connection(node).cursor()
+            cursor = connection.cursor()
             cursor.execute(root_sibling_query, [tree_id, new_tree_id, shift,
                                                 lower_bound, upper_bound])
             setattr(node, self.tree_id_attr, new_tree_id)
@@ -768,6 +810,9 @@ class TreeManager(models.Manager):
         if self.tree_model._mptt_is_tracking:
             self.tree_model._mptt_track_tree_modified(tree_id)
         else:
+            connection = self._get_connection()
+            qn = connection.ops.quote_name
+
             opts = self.model._meta
             space_query = """
             UPDATE %(table)s
@@ -786,7 +831,7 @@ class TreeManager(models.Manager):
                 'right': qn(opts.get_field(self.right_attr).column),
                 'tree_id': qn(opts.get_field(self.tree_id_attr).column),
             }
-            cursor = self._get_connection(self.model).cursor()
+            cursor = connection.cursor()
             cursor.execute(space_query, [target, size, target, size, tree_id,
                                          target, target])
 
@@ -908,6 +953,9 @@ class TreeManager(models.Manager):
         if left_right_change > 0:
             gap_size = -gap_size
 
+        connection = self._get_connection(instance=node)
+        qn = connection.ops.quote_name
+
         opts = self.model._meta
         # The level update must come before the left update to keep
         # MySQL happy - left seems to refer to the updated value
@@ -945,7 +993,7 @@ class TreeManager(models.Manager):
             'tree_id': qn(opts.get_field(self.tree_id_attr).column),
         }
 
-        cursor = self._get_connection(node).cursor()
+        cursor = connection.cursor()
         cursor.execute(move_subtree_query, [
             left, right, level_change,
             left, right, left_right_change,
@@ -991,6 +1039,9 @@ class TreeManager(models.Manager):
         self._create_space(width, space_target, new_tree_id)
 
         # Move the root node, making it a child node
+        connection = self._get_connection(instance=node)
+        qn = connection.ops.quote_name
+
         opts = self.model._meta
         move_tree_query = """
         UPDATE %(table)s
@@ -1013,7 +1064,7 @@ class TreeManager(models.Manager):
             'pk': qn(opts.pk.column),
         }
 
-        cursor = self._get_connection(node).cursor()
+        cursor = connection.cursor()
         cursor.execute(move_tree_query, [level_change, left_right_change,
             left_right_change, new_tree_id, node.pk, parent.pk, left, right,
             tree_id])

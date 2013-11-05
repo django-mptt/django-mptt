@@ -1,5 +1,6 @@
-
+from __future__ import unicode_literals
 import django
+import warnings
 from django.conf import settings
 from django.contrib.admin.views.main import ChangeList
 from django.contrib.admin.options import ModelAdmin
@@ -12,12 +13,8 @@ IS_GRAPPELLI_INSTALLED = 'grappelli' in settings.INSTALLED_APPS
 
 
 class MPTTChangeList(ChangeList):
-    def get_query_set(self, request=None):
-        # request arg was added in django r16144 (after 1.3)
-        if request is not None and django.VERSION >= (1, 4):
-            qs = super(MPTTChangeList, self).get_query_set(request)
-        else:
-            qs = super(MPTTChangeList, self).get_query_set()
+    def get_query_set(self, request):
+        qs = super(MPTTChangeList, self).get_query_set(request)
 
         # always order by (tree_id, left)
         tree_id = qs.model._mptt_meta.tree_id_attr
@@ -75,6 +72,14 @@ if getattr(settings, 'MPTT_USE_FEINCMS', True):
 
             form = MPTTAdminForm
 
+            def __init__(self, *args, **kwargs):
+                warnings.warn(
+                    "mptt.admin.FeinCMSModelAdmin has been deprecated, use "
+                    "feincms.admin.tree_editor.TreeEditor instead.",
+                    UserWarning,
+                )
+                super(FeinCMSModelAdmin, self).__init__(*args, **kwargs)
+
             def _actions_column(self, obj):
                 actions = super(FeinCMSModelAdmin, self)._actions_column(obj)
                 # compatibility with Django 1.4 admin images (issue #191):
@@ -84,7 +89,7 @@ if getattr(settings, 'MPTT_USE_FEINCMS', True):
                 else:
                     admin_img_prefix = "%simg/admin/" % settings.ADMIN_MEDIA_PREFIX
                 actions.insert(0,
-                    u'<a href="add/?%s=%s" title="%s"><img src="%sicon_addlink.gif" alt="%s" /></a>' % (
+                    '<a href="add/?%s=%s" title="%s"><img src="%sicon_addlink.gif" alt="%s" /></a>' % (
                         self.model._mptt_meta.parent_attr,
                         obj.pk,
                         _('Add child'),
@@ -93,7 +98,7 @@ if getattr(settings, 'MPTT_USE_FEINCMS', True):
 
                 if hasattr(obj, 'get_absolute_url'):
                     actions.insert(0,
-                        u'<a href="%s" title="%s" target="_blank"><img src="%sselector-search.gif" alt="%s" /></a>' % (
+                        '<a href="%s" title="%s" target="_blank"><img src="%sselector-search.gif" alt="%s" /></a>' % (
                             obj.get_absolute_url(),
                             _('View on site'),
                             admin_img_prefix,

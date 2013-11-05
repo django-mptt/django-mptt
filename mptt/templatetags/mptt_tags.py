@@ -2,10 +2,14 @@
 Template tags for working with lists of model instances which represent
 trees.
 """
+from __future__ import unicode_literals
 from django import template
 from django.db.models import get_model
 from django.db.models.fields import FieldDoesNotExist
-from django.utils.encoding import force_unicode
+try:
+    from django.utils.encoding import force_text
+except ImportError:
+    from django.utils.encoding import force_unicode as force_text
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 
@@ -216,7 +220,7 @@ def tree_path(items, separator=' :: '):
        {{ some_node.get_ancestors|tree_path:" > " }}
 
     """
-    return separator.join([force_unicode(i) for i in items])
+    return separator.join([force_text(i) for i in items])
 
 
 ### RECURSIVE TAGS
@@ -225,16 +229,20 @@ def tree_path(items, separator=' :: '):
 def cache_tree_children(queryset):
     """
     Takes a list/queryset of model objects in MPTT left (depth-first) order,
-    and caches the children on each node so that no further queries are needed.
-    This makes it possible to have a recursively included template without worrying
-    about database queries.
+    caches the children on each node, as well as the parent of each child node,
+    allowing up and down traversal through the tree without the need for
+    further queries. This makes it possible to have a recursively included
+    template without worrying about database queries.
 
-    Returns a list of top-level nodes.
+    Returns a list of top-level nodes. If a single tree was provided in its
+    entirety, the list will of course consist of just the tree's root node.
+
     """
 
     current_path = []
     top_nodes = []
 
+    # If ``queryset`` is QuerySet-like, set ordering to depth-first
     if hasattr(queryset, 'order_by'):
         mptt_opts = queryset.model._mptt_meta
         tree_id_attr = mptt_opts.tree_id_attr
@@ -242,24 +250,49 @@ def cache_tree_children(queryset):
         queryset = queryset.order_by(tree_id_attr, left_attr)
 
     if queryset:
+        # Get the model's parent-attribute name
+        parent_attr = queryset[0]._mptt_meta.parent_attr
         root_level = None
         for obj in queryset:
+            # Get the current mptt node level
             node_level = obj.get_level()
-            if root_level is None:
-                root_level = node_level
-            if node_level < root_level:
-                raise ValueError(_("cache_tree_children was passed nodes in the wrong order!"))
 
+            if root_level is None:
+                # First iteration, so set the root level to the top node level
+                root_level = node_level
+
+            if node_level < root_level:
+                # ``queryset`` was a list or other iterable (unable to order),
+                # and was provided in an order other than depth-first
+                raise ValueError(
+                    _('Node %s not in depth-first order') % (type(queryset),)
+                )
+
+            # Set up the attribute on the node that will store cached children,
+            # which is used by ``MPTTModel.get_children``
             obj._cached_children = []
 
+            # Remove nodes not in the current branch
             while len(current_path) > node_level - root_level:
                 current_path.pop(-1)
 
             if node_level == root_level:
+                # Add the root to the list of top nodes, which will be returned
                 top_nodes.append(obj)
             else:
-                current_path[-1]._cached_children.append(obj)
+                # Cache the parent on the current node, and attach the current
+                # node to the parent's list of children
+                _parent = current_path[-1]
+                setattr(obj, parent_attr, _parent)
+                _parent._cached_children.append(obj)
+
+            # Add the current node to end of the current path - the last node
+            # in the current path is the parent for the next iteration, unless
+            # the next iteration is higher up the tree (a new branch), in which
+            # case the paths below it (e.g., this one) will be removed from the
+            # current path during the next iteration
             current_path.append(obj)
+
     return top_nodes
 
 
@@ -274,7 +307,7 @@ class RecurseTreeNode(template.Node):
         for child in node.get_children():
             bits.append(self._render_node(context, child))
         context['node'] = node
-        context['children'] = mark_safe(u''.join(bits))
+        context['children'] = mark_safe(''.join(bits))
         rendered = self.template_nodes.render(context)
         context.pop()
         return rendered

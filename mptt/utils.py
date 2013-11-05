@@ -2,11 +2,14 @@
 Utilities for working with lists of model instances which represent
 trees.
 """
-
+from __future__ import unicode_literals
 import copy
 import csv
 import itertools
 import sys
+
+from django.utils.six import next, text_type
+from django.utils.six.moves import zip
 
 __all__ = ('previous_current_next', 'tree_item_iterator',
            'drilldown_tree_for_node')
@@ -21,14 +24,14 @@ def previous_current_next(items):
     available.
     """
     extend = itertools.chain([None], items, [None])
-    previous, current, next = itertools.tee(extend, 3)
+    prev, cur, nex = itertools.tee(extend, 3)
     try:
-        current.next()
-        next.next()
-        next.next()
+        next(cur)
+        next(nex)
+        next(nex)
     except StopIteration:
         pass
-    return itertools.izip(previous, current, next)
+    return zip(prev, cur, nex)
 
 
 def tree_item_iterator(items, ancestors=False):
@@ -85,7 +88,7 @@ def tree_item_iterator(items, ancestors=False):
                 # If the current node is the start of a new level, add its
                 # parent to the ancestors list.
                 if structure['new_level']:
-                    structure['ancestors'].append(unicode(previous))
+                    structure['ancestors'].append(text_type(previous))
         else:
             structure['new_level'] = True
             if ancestors:
@@ -94,12 +97,12 @@ def tree_item_iterator(items, ancestors=False):
 
             first_item_level = current_level
         if next:
-            structure['closed_levels'] = range(current_level,
+            structure['closed_levels'] = list(range(current_level,
                                                getattr(next,
-                                                       opts.level_attr), -1)
+                                                       opts.level_attr), -1))
         else:
             # All remaining levels need to be closed
-            structure['closed_levels'] = range(current_level, first_item_level - 1, -1)
+            structure['closed_levels'] = list(range(current_level, first_item_level - 1, -1))
 
         # Return a deep copy of the structure dict so this function can
         # be used in situations where the iterator is consumed
@@ -165,5 +168,5 @@ def print_debug_info(qs):
         row = []
         for field in header[:-1]:
             row.append(getattr(n, field))
-        row.append('%s%s' % ('- ' * level, unicode(n).encode('utf-8')))
+        row.append('%s%s' % ('- ' * level, text_type(n).encode('utf-8')))
         writer.writerow(row)
