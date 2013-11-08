@@ -456,7 +456,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
 
         return qs.order_by(order_by)
 
-    def get_tree(self):
+    def get_family(self):
         """
         Returns a ``QuerySet`` containing the ancestors, the model itself
         and the descendants, in tree order.
