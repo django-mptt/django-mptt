@@ -165,6 +165,12 @@ Returns the number of descendants the model instance has, based on its
 left and right tree node edge indicators. As such, this does not incur
 any database access.
 
+``get_family()``
+----------------
+
+Returns a ``QuerySet`` containing the ancestors, the model itself
+and the descendants, in tree order.
+
 ``get_next_sibling()``
 ----------------------
 
