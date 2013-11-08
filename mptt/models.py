@@ -456,6 +456,30 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
 
         return qs.order_by(order_by)
 
+    def get_tree(self):
+        """
+        Returns a ``QuerySet`` containing the ancestors, the model itself
+        and the descendants, in tree order.
+        """
+        opts = self._mptt_meta
+
+        left = getattr(self, opts.left_attr)
+        right = getattr(self, opts.right_attr)
+
+        ancestors = Q(**{
+            "%s__lte" % opts.left_attr: left,
+            "%s__gte" % opts.right_attr: right,
+            opts.tree_id_attr: self._mpttfield('tree_id'),
+        })
+
+        descendants = Q(**{
+            "%s__gte" % opts.left_attr: left,
+            "%s__lte" % opts.left_attr: right,
+            opts.tree_id_attr: self._mpttfield('tree_id'),
+        })
+
+        return self._tree_manager.filter(ancestors | descendants)
+
     def get_children(self):
         """
         Returns a ``QuerySet`` containing the immediate children of this
