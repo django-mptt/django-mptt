@@ -3,3 +3,5 @@
 build
 dist
 .tox
+MANIFEST
+tests/mydatabase
