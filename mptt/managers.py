@@ -16,7 +16,7 @@ __all__ = ('TreeManager',)
 COUNT_SUBQUERY = """(
     SELECT COUNT(*)
     FROM %(rel_table)s
-    WHERE %(mptt_fk)s = %(mptt_table)s.%(mptt_pk)s
+    WHERE %(mptt_fk)s = %(mptt_table)s.%(mptt_rel_to)s
 )"""
 
 CUMULATIVE_COUNT_SUBQUERY = """(
@@ -24,7 +24,7 @@ CUMULATIVE_COUNT_SUBQUERY = """(
     FROM %(rel_table)s
     WHERE %(mptt_fk)s IN
     (
-        SELECT m2.%(mptt_pk)s
+        SELECT m2.%(mptt_rel_to)s
         FROM %(mptt_table)s m2
         WHERE m2.%(tree_id)s = %(mptt_table)s.%(tree_id)s
           AND m2.%(left)s BETWEEN %(mptt_table)s.%(left)s
