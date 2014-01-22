@@ -473,7 +473,7 @@ class TreeManager(models.Manager):
 
     def rebuild(self):
         """
-        Rebuilds whole tree in database using `parent` link.
+        Rebuilds all trees in the database table using `parent` link.
         """
 
         if self._base_manager:
@@ -493,6 +493,10 @@ class TreeManager(models.Manager):
             rebuild_helper(pk, 1, idx)
 
     def partial_rebuild(self, tree_id):
+        """
+        Partially rebuilds a tree i.e. It rebuilds only the tree with given tree_id in database
+        table using `parent` link.
+        """
         if self._base_manager:
             return self._base_manager.partial_rebuild(tree_id)
         opts = self.model._mptt_meta
