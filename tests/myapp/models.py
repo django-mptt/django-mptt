@@ -1,5 +1,5 @@
 from __future__ import unicode_literals
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, User
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 
@@ -111,6 +111,12 @@ class CustomPKName(MPTTModel):
     def __str__(self):
         return self.name
 
+class SetOwnTreeID(MPTTModel):
+    user = models.ForeignKey(User)
+    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+
+    class MPTTMeta(object):
+        tree_id_attr = "user"
 
 # for testing various types of inheritance:
 
