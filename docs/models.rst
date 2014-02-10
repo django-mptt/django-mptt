@@ -74,11 +74,14 @@ exist, they will be added to the model dynamically:
 
 ``tree_id_attr``
    The name of a field which contains the tree id of each node, which
-   should be a ``PositiveIntegerField``. Defaults to ``'tree_id'``.
+   is normally a ``PositiveIntegerField``. Defaults to ``'tree_id'``.
 
    Items which do not have a parent are considered to be "root" nodes in
    the tree and will be allocated a new tree id. All descendants of root
    nodes will be given the same tree id as their root node.
+
+   If the field is not compatible with ``PositiveIntegerField`` then it
+   must be manually specified on the root node.
 
 ``level_attr``
    The name of a field which contains the (zero-based) level at which an
