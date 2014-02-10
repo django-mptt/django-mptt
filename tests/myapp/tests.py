@@ -7,7 +7,7 @@ import tempfile
 
 import django
 from django.contrib import admin
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, User
 from django.db.models import get_models
 from django.forms.models import modelform_factory
 from django.template import Template, Context
@@ -23,7 +23,7 @@ from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.forms import MPTTAdminForm
 from mptt.models import MPTTModel
 from mptt.templatetags.mptt_tags import cache_tree_children
-from myapp.models import Category, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel, ConcreteModel, OrderedInsertion, AutoNowDateFieldModel
+from myapp.models import Category, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel, ConcreteModel, OrderedInsertion, AutoNowDateFieldModel, SetOwnTreeID
 
 extra_queries_per_update = 0
 if django.VERSION < (1, 6):
@@ -1174,3 +1174,18 @@ class TestForms(TreeTestCase):
             fields=('name', 'parent'),
         )
         CategoryForm(instance=c)
+
+class TestSetOwnTreeID(TreeTestCase):
+    # https://github.com/django-mptt/django-mptt/issues/189
+
+    def setUp(self):
+        self.usr = User.objects.create(username="user1")
+
+    def tearDown(self):
+        self.usr.delete()
+
+    def test_manual_tree_id(self):
+        tree = SetOwnTreeID(user=self.usr)
+        tree.save()
+
+        self.assertEqual(tree.user, self.usr)

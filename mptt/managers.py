@@ -366,11 +366,12 @@ class TreeManager(models.Manager):
             raise ValueError(_('Cannot insert a node which has already been saved.'))
 
         if target is None:
-            tree_id = self._get_next_tree_id()
+            if getattr(node, self.tree_id_attr) is None:
+                tree_id = self._get_next_tree_id()
+                setattr(node, self.tree_id_attr, tree_id)
             setattr(node, self.left_attr, 1)
             setattr(node, self.right_attr, 2)
             setattr(node, self.level_attr, 0)
-            setattr(node, self.tree_id_attr, tree_id)
             setattr(node, self.parent_attr, None)
         elif target.is_root_node() and position in ['left', 'right']:
             target_tree_id = getattr(target, self.tree_id_attr)
