@@ -3,13 +3,13 @@ from __future__ import unicode_literals
 
 from mptt import VERSION
 
-requires=('Django>=1.4.2',)
+requires=(str('Django>=1.4.2'),)
 try:
     from setuptools import setup
-    kwargs ={'install_requires': requires}
+    kwargs ={str('install_requires'): requires}
 except ImportError:
     from distutils.core import setup
-    kwargs = {'requires': requires}
+    kwargs = {str('requires'): requires}
 
 # Dynamically calculate the version based on mptt.VERSION
 version_tuple = VERSION
