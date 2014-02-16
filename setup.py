@@ -33,7 +33,7 @@ setup(
         str('Environment :: Web Environment'),
         str('Framework :: Django'),
         str('Intended Audience :: Developers'),
-        str('License :: OSI Approved :: BSD License'),
+        str('License :: OSI Approved :: MIT License'),
         str('Operating System :: OS Independent'),
         str('Programming Language :: Python'),
         str('Programming Language :: Python :: 2'),
