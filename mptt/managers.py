@@ -92,6 +92,27 @@ class TreeManager(models.Manager):
                 filters |= q
         return self.filter(filters)
 
+    def get_queryset_ancestors(self, queryset):
+        """
+            Returns a queryset containing the ancestors
+            of all nodes in the given queryset.
+        """
+        filters = []
+        assert self.model is queryset.model
+        if not queryset:
+            return self.none()
+        filters = None
+        for node in queryset:
+            for ancestor in node.get_ancestors():
+                q = Q(**{
+                        'id': ancestor.id
+                })
+                if filters is None:
+                    filters = q
+                else:
+                    filters |= q
+        return self.filter(filters)
+        
     @contextlib.contextmanager
     def disable_mptt_updates(self):
         """
