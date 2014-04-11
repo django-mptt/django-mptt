@@ -82,25 +82,3 @@ Feature overview
 * Utility functions for tree models.
 
 * Template tags and filters for rendering trees.
-
-
-What's different about this fork?
----------------------------------
-
-The only difference at this time is that this version includes a manager method called ``get_queryset_ancestors``. This method is similar to ``get_queryset_descendants`` only it works in the opposite direction. You may be wondering "What's the point? Why can't you use get_ancestors()?" What if you wanted to filter a queryset using characteristics of its descendants to determine the results of the filter?
-
-Here's an example of such a query using files and directories arranged in the usual hierarchical fashion that we're all familiar with. In this scenario we are determining whether a user has access to a directory based off of the content, or _type_ of file or files that exist within said directory. So we start with this:
-
-``>>> Directory.objects.filter(file__filetype__accessible_filetypes__users = 1)
-[<Directory: /Files/2010/July>, <Directory: /Files/2010/June]```
-
-We see from the output above that the user with the id ``1`` can access ``/Files/2010/{June,July}`` but what if we wanted to list the intermediate directories as well? We'd have to retrieve the ancestors of each object in the results, store them somewhere, and filter them for duplicates. But this will result in our having a list of ancestor directories, not a chainable queryset. We want a queryset so we can narrow down our results with more filters if we need to. That's where ``get_queryset_ancestors`` comes in, observe:
-
-``>>> Directory.tree_manager.get_queryset_ancestors(Directory.objects.filter(file__filetype__accessible_filetypes__users = 1))
-[<Directory: /Files/2010>, <Directory: /Files>]``
-
-Now we have queryset of intermediate directories that we can filter even further:
-
-``>>> Directory.tree_manager.get_queryset_ancestors(Directory.objects.filter(file__filetype__accessible_filetypes__users = 1)).filter(parent = 1)
-[<Directory: /Files/2010>]``
-
