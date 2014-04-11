@@ -92,7 +92,7 @@ class TreeManager(models.Manager):
                 filters |= q
         return self.filter(filters)
 
-    def get_queryset_ancestors(self, queryset):
+    def get_queryset_ancestors(self, queryset, include_self = False):
         """
             Returns a queryset containing the ancestors
             of all nodes in the given queryset.
@@ -103,7 +103,7 @@ class TreeManager(models.Manager):
             return self.none()
         filters = None
         for node in queryset:
-            for ancestor in node.get_ancestors():
+            for ancestor in node.get_ancestors(include_self = include_self):
                 q = Q(**{
                         'id': ancestor.id
                 })
