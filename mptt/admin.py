@@ -3,7 +3,7 @@ import django
 import warnings
 from django.conf import settings
 from django.contrib.admin.views.main import ChangeList
-from django.contrib.admin.options import ModelAdmin
+from django.contrib.admin.options import ModelAdmin, TabularInline, StackedInline
 from django.utils.translation import ugettext as _
 
 from mptt.forms import MPTTAdminForm, TreeNodeChoiceField
@@ -21,18 +21,7 @@ class MPTTChangeList(ChangeList):
         left = qs.model._mptt_meta.left_attr
         return qs.order_by(tree_id, left)
 
-
-class MPTTModelAdmin(ModelAdmin):
-    """
-    A basic admin class that displays tree items according to their position in the tree.
-    No extra editing functionality beyond what Django admin normally offers.
-    """
-
-    if IS_GRAPPELLI_INSTALLED:
-        change_list_template = 'admin/grappelli_mptt_change_list.html'
-    else:
-        change_list_template = 'admin/mptt_change_list.html'
-
+class MPTTAdminMixin(object):
     form = MPTTAdminForm
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
@@ -43,16 +32,32 @@ class MPTTModelAdmin(ModelAdmin):
             defaults = dict(form_class=TreeNodeChoiceField, queryset=db_field.rel.to.objects.all(), required=False)
             defaults.update(kwargs)
             kwargs = defaults
-        return super(MPTTModelAdmin, self).formfield_for_foreignkey(db_field,
+        return super(MPTTAdminMixin, self).formfield_for_foreignkey(db_field,
                                                                     request,
                                                                     **kwargs)
+
+class MPTTModelAdmin(MPTTAdminMixin, ModelAdmin):
+    """
+    A basic admin class that displays tree items according to their position in the tree.
+    No extra editing functionality beyond what Django admin normally offers.
+    """
+
+    if IS_GRAPPELLI_INSTALLED:
+        change_list_template = 'admin/grappelli_mptt_change_list.html'
+    else:
+        change_list_template = 'admin/mptt_change_list.html'
 
     def get_changelist(self, request, **kwargs):
         """
         Returns the ChangeList class for use on the changelist page.
         """
         return MPTTChangeList
+        
+class MPTTTabularInlineAdmin(MPTTAdminMixin, TabularInline):
+    pass
 
+class MPTTStackedInlineAdmin(MPTTAdminMixin, StackedInline):
+    pass
 
 if getattr(settings, 'MPTT_USE_FEINCMS', True):
     _feincms_tree_editor = None
