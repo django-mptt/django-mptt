@@ -62,13 +62,19 @@ class TreeManager(models.Manager):
             # _base_manager is the treemanager on tree_model
             self._base_manager = self.tree_model._tree_manager
 
-    def get_queryset_descendants(self, queryset, include_self=False):
+    def _get_queryset_relatives(self, queryset, direction, include_self):
         """
-        Returns a queryset containing the descendants of all nodes in the
-        given queryset.
+        Returns a queryset containing either the descendants ``direction == desc``
+        or the ancestors ``direction == asc`` of a given queryset.
 
-        If ``include_self=True``, nodes in ``queryset`` will also
-        be included in the result.
+        This function is not meant to be called directly, although there is no
+        harm in doing so.
+
+        Instead, it should be used via ``get_queryset_descendants()`` and/or
+        ``get_queryset_ancestors()``.
+
+        This function exists mainly to consolidate the nearly duplicate code
+        that exists between the two aforementioned functions.
         """
         filters = []
         assert self.model is queryset.model
@@ -78,13 +84,22 @@ class TreeManager(models.Manager):
         filters = None
         for node in queryset:
             lft, rght = node.lft, node.rght
-            if include_self:
-                lft -= 1
-                rght += 1
+            if direction == 'asc':
+                if include_self:
+                    lft += 1
+                    rght -= 1
+                lft_op = 'lt'
+                rght_op = 'gt'
+            elif direction == 'desc':
+                if include_self:
+                    lft -= 1
+                    rght += 1
+                lft_op = 'gt'
+                rght_op = 'lt'
             q = Q(**{
                 opts.tree_id_attr: getattr(node, opts.tree_id_attr),
-                '%s__gt' % opts.left_attr: lft,
-                '%s__lt' % opts.right_attr: rght,
+                '%s__%s' % (opts.left_attr, lft_op): lft,
+                '%s__%s' % (opts.right_attr, rght_op): rght,
             })
             if filters is None:
                 filters = q
@@ -92,26 +107,25 @@ class TreeManager(models.Manager):
                 filters |= q
         return self.filter(filters)
 
+
+    def get_queryset_descendants(self, queryset, include_self=False):
+        """
+        Returns a queryset containing the descendants of all nodes in the
+        given queryset.
+
+        If ``include_self=True``, nodes in ``queryset`` will also
+        be included in the result.
+        """
+        return self._get_queryset_relatives(queryset, 'desc', include_self)
+
+
     def get_queryset_ancestors(self, queryset, include_self = False):
         """
             Returns a queryset containing the ancestors
             of all nodes in the given queryset.
         """
-        filters = []
-        assert self.model is queryset.model
-        if not queryset:
-            return self.none()
-        filters = None
-        for node in queryset:
-            for ancestor in node.get_ancestors(include_self = include_self):
-                q = Q(**{
-                        'id': ancestor.id
-                })
-                if filters is None:
-                    filters = q
-                else:
-                    filters |= q
-        return self.filter(filters)
+        return self._get_queryset_relatives(queryset, 'asc', include_self)
+
         
     @contextlib.contextmanager
     def disable_mptt_updates(self):

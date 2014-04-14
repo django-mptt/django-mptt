@@ -1087,6 +1087,21 @@ class ManagerTests(TreeTestCase):
             ['Games', 'Hardware & Accessories', 'Nintendo Wii'],
         )
 
+    def test_get_queryset_ancestors(self):
+        def get_anc_names(qs, include_self=False):
+            anc = Category.objects.get_queryset_ancestors(qs, include_self=include_self)
+            return list(anc.values_list('name', flat=True).order_by('name'))
+
+        qs = Category.objects.filter(name='Nintendo Wii')
+        self.assertEqual(
+            get_anc_names(qs),
+            ['PC & Video Games'],
+        )
+        self.assertEqual(
+            get_anc_names(qs, include_self=True),
+            ['Nintendo Wii', 'PC & Video Games'],
+        )
+
 
 class CacheTreeChildrenTestCase(TreeTestCase):
     """
