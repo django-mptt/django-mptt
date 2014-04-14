@@ -121,8 +121,11 @@ class TreeManager(models.Manager):
 
     def get_queryset_ancestors(self, queryset, include_self = False):
         """
-            Returns a queryset containing the ancestors
-            of all nodes in the given queryset.
+        Returns a queryset containing the ancestors
+        of all nodes in the given queryset.
+
+        If ``include_self=True``, nodes in ``queryset`` will also
+        be included in the result.
         """
         return self._get_queryset_relatives(queryset, 'asc', include_self)
 
