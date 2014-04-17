@@ -13,8 +13,8 @@ IS_GRAPPELLI_INSTALLED = 'grappelli' in settings.INSTALLED_APPS
 
 
 class MPTTChangeList(ChangeList):
-    def get_query_set(self, request):
-        qs = super(MPTTChangeList, self).get_query_set(request)
+    def get_queryset(self, request):
+        qs = super(MPTTChangeList, self).get_queryset(request)
 
         # always order by (tree_id, left)
         tree_id = qs.model._mptt_meta.tree_id_attr
