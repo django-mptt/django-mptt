@@ -76,7 +76,6 @@ class TreeManager(models.Manager):
         This function exists mainly to consolidate the nearly duplicate code
         that exists between the two aforementioned functions.
         """
-        filters = []
         assert self.model is queryset.model
         opts = queryset.model._mptt_meta
         if not queryset:
