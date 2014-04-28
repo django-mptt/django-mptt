@@ -13,13 +13,23 @@ IS_GRAPPELLI_INSTALLED = 'grappelli' in settings.INSTALLED_APPS
 
 
 class MPTTChangeList(ChangeList):
-    def get_query_set(self, request):
-        qs = super(MPTTChangeList, self).get_query_set(request)
+    # rant: why oh why would you rename something so widely used?
+    def get_queryset(self, request):
+        super_ = super(MPTTChangeList, self)
+        if django.VERSION < (1, 7):
+            qs = super_.get_query_set(request)
+        else:
+            qs = super_.get_queryset(request)
 
         # always order by (tree_id, left)
         tree_id = qs.model._mptt_meta.tree_id_attr
         left = qs.model._mptt_meta.left_attr
         return qs.order_by(tree_id, left)
+
+    if django.VERSION < (1, 7):
+        # in 1.7+, get_query_set gets defined by the base ChangeList and complains if it's called.
+        # otherwise, we have to define it ourselves.
+        get_query_set = get_queryset
 
 
 class MPTTModelAdmin(ModelAdmin):
