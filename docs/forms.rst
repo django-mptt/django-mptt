@@ -22,7 +22,7 @@ each node when generating option labels.
 
 For example, where a form which used a ``ModelChoiceField``::
 
-   category = ModelChoiceField(queryset=Category.tree.all())
+   category = ModelChoiceField(queryset=Category.objects.all())
 
 ...would result in a select with the following options::
 
@@ -36,7 +36,7 @@ For example, where a form which used a ``ModelChoiceField``::
 
 Using a ``TreeNodeChoiceField`` instead::
 
-   category = TreeNodeChoiceField(queryset=Category.tree.all())
+   category = TreeNodeChoiceField(queryset=Category.objects.all())
 
 ...would result in a select with the following options::
 
@@ -50,7 +50,7 @@ Using a ``TreeNodeChoiceField`` instead::
 The text used to indicate a tree level can by customised by providing a
 ``level_indicator`` argument::
 
-   category = TreeNodeChoiceField(queryset=Category.tree.all(),
+   category = TreeNodeChoiceField(queryset=Category.objects.all(),
                                   level_indicator=u'+--')
 
 ...which for this example would result in a select with the following
@@ -183,7 +183,7 @@ A sample view which shows basic usage of the form is provided below::
        return render_to_response('faqs/move_category.html', {
            'form': form,
            'category': category,
-           'category_tree': Category.tree.all(),
+           'category_tree': Category.objects.all(),
        })
 
 .. _`move_to method`: models.html#move-to-target-position-first-child
