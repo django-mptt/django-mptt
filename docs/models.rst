@@ -409,7 +409,7 @@ Retrieving a list of root Categories which have a ``question_count``
 attribute containing the number of Questions associated with each root
 and all of its descendants::
 
-   roots = Category.objects.add_related_count(Category.tree.root_nodes(), Question,
+   roots = Category.objects.add_related_count(Category.objects.root_nodes(), Question,
                                            'category', 'question_counts',
                                            cumulative=True)
 
