@@ -76,7 +76,7 @@ implement using Django's ORM. For example, limiting the number of levels
 of nodes which are retrieved for the whole tree or any subtree::
 
    # Retrieve root nodes and their immediate children only
-   SomeModel.tree.filter(level__lte=1)
+   SomeModel.objects.filter(level__lte=1)
 
    # Retrieve descendants of a node up to two levels below it
    node.get_descendants().filter(level__lte=node.level + 2)
