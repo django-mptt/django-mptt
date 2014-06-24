@@ -47,7 +47,7 @@ structure and provides tools for working with trees of model instances.
 Requirements
 ------------
 
-* Python 2.6+ (with experimental support for python 3.2+)
+* Python 2.6+ (with experimental support for python 3.2+ and PyPy)
 * Django 1.4.2+
 
 Feature overview
