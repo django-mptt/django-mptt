@@ -43,6 +43,7 @@ setup(
         str("Programming Language :: Python :: 3.1"),
         str("Programming Language :: Python :: 3.2"),
         str("Programming Language :: Python :: 3.3"),
+        str("Programming Language :: Python :: 3.4"),
         str("Programming Language :: Python :: Implementation :: CPython"),
         str("Programming Language :: Python :: Implementation :: PyPy"),
         str('Topic :: Utilities'),
