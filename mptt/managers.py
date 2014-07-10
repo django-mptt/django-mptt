@@ -3,6 +3,7 @@ A custom manager for working with trees of objects.
 """
 from __future__ import unicode_literals
 import contextlib
+from itertools import groupby
 
 from django.db import models, connections, router
 from django.db.models import F, ManyToManyField, Max, Q
@@ -115,37 +116,55 @@ class TreeManager(models.Manager):
         Instead, it should be used via ``get_queryset_descendants()`` and/or
         ``get_queryset_ancestors()``.
 
-        This function exists mainly to consolidate the nearly duplicate code
-        that exists between the two aforementioned functions.
+        This function works by grouping contiguous siblings, finding the smallest
+        left and greatest right attributes in the group, and using those to create
+        a query that requests ranges of models rather than querying for each
+        individual model. The net result is a simpler query and fewer SQL variables.
         """
         assert self.model is queryset.model
+
         opts = queryset.model._mptt_meta
+
         if not queryset:
             return self.none()
-        filters = None
-        for node in queryset:
-            lft, rght = node.lft, node.rght
-            if direction == 'asc':
-                if include_self:
-                    lft += 1
-                    rght -= 1
-                lft_op = 'lt'
-                rght_op = 'gt'
-            elif direction == 'desc':
-                if include_self:
-                    lft -= 1
-                    rght += 1
-                lft_op = 'gt'
-                rght_op = 'lt'
-            q = Q(**{
-                opts.tree_id_attr: getattr(node, opts.tree_id_attr),
-                '%s__%s' % (opts.left_attr, lft_op): lft,
-                '%s__%s' % (opts.right_attr, rght_op): rght,
-            })
-            if filters is None:
-                filters = q
-            else:
-                filters |= q
+
+        filters = Q()
+
+        e = 'e' if include_self else ''
+        if direction == 'asc':
+            lft_op = 'lt' + e
+            rght_op = 'gt' + e
+        elif direction == 'desc':
+            lft_op = 'gt' + e
+            rght_op = 'lt' + e
+
+        l_key = '%s__%s' % (opts.left_attr, lft_op)
+        r_key = '%s__%s' % (opts.right_attr, rght_op)
+        t_key = opts.tree_id_attr
+
+        q = queryset.order_by(opts.tree_id_attr, opts.parent_attr, opts.left_attr)
+
+        for group in groupby(q, key = lambda n: (getattr(n, opts.tree_id_attr), getattr(n, opts.parent_attr))):
+            next_lft = None
+            for node in list(group[1]):
+                tree, lft, rght = (getattr(node, opts.tree_id_attr),
+                                   getattr(node, opts.left_attr),
+                                   getattr(node, opts.right_attr))
+                if next_lft is None:
+                    next_lft = rght + 1
+                    minl_maxr = {'lft': lft, 'rght': rght}
+                elif lft == next_lft:
+                    if lft < minl_maxr['lft']:
+                        minl_maxr['lft'] = lft
+                    if rght > minl_maxr['rght']:
+                        minl_maxr['rght'] = rght
+                    next_lft = rght + 1
+                elif lft != next_lft:
+                    filters |= Q(**{t_key: tree, l_key: minl_maxr['lft'], r_key: minl_maxr['rght']})
+                    minl_maxr = {'lft': lft, 'rght': rght}
+                    next_lft = rght + 1
+            filters |= Q(**{t_key: tree, l_key: minl_maxr['lft'], r_key: minl_maxr['rght']})
+
         return self.filter(filters)
 
     def get_queryset_descendants(self, queryset, include_self=False):
