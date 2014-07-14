@@ -6,9 +6,11 @@ import sys
 import tempfile
 
 import django
+from django.conf import settings
+from django.db import OperationalError
 from django.contrib import admin
 from django.contrib.auth.models import Group
-from django.db.models import get_models
+from django.db.models import get_models, Q
 from django.forms.models import modelform_factory
 from django.template import Template, Context
 from django.test import TestCase
@@ -23,7 +25,8 @@ from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.forms import MPTTAdminForm
 from mptt.models import MPTTModel
 from mptt.templatetags.mptt_tags import cache_tree_children
-from myapp.models import Category, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel, ConcreteModel, OrderedInsertion, AutoNowDateFieldModel
+from myapp.models import Category, Genre, Title, CustomPKName, SingleProxyModel, DoubleProxyModel, ConcreteModel, OrderedInsertion, AutoNowDateFieldModel
+
 
 extra_queries_per_update = 0
 if django.VERSION < (1, 6):
@@ -1039,7 +1042,9 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
 
 
 class ManagerTests(TreeTestCase):
-    fixtures = ['categories.json']
+    fixtures = ['categories.json',
+                'titles.json',
+                'genres.json']
 
     def test_all_managers_are_different(self):
         # all tree managers should be different. otherwise, possible infinite recursion.
@@ -1073,11 +1078,12 @@ class ManagerTests(TreeTestCase):
                 self.fail("Detected infinite recursion in %s._tree_manager._base_manager" % model)
 
     def test_get_queryset_descendants(self):
-        def get_desc_names(qs, include_self=False):
-            desc = Category.objects.get_queryset_descendants(qs, include_self=include_self)
+        def get_desc_names(qs, include_self=False, distinct_parents=False):
+            desc=Category.objects.get_queryset_descendants(
+                qs, include_self=include_self, distinct_parents=distinct_parents)
             return list(desc.values_list('name', flat=True).order_by('name'))
 
-        qs = Category.objects.filter(name='Nintendo Wii')
+        qs=Category.objects.filter(name='Nintendo Wii')
         self.assertEqual(
             get_desc_names(qs),
             ['Games', 'Hardware & Accessories'],
@@ -1087,12 +1093,35 @@ class ManagerTests(TreeTestCase):
             ['Games', 'Hardware & Accessories', 'Nintendo Wii'],
         )
 
+        qs=Category.objects.filter(
+            Q(game_title__category=3) |
+            Q(game_title__category=6) |
+            Q(game_title__category=9))
+
+        db_type = settings.DATABASES.get('default').get('ENGINE')
+        if db_type == 'django.db.backends.sqlite3':
+            """
+            This test passes as long as the database backend remains sqlite
+            or some other lightweight database that supports <1000 SQL variables
+            in a single query.
+            """
+            self.assertRaises(
+                OperationalError, get_desc_names, qs, include_self=True)
+
+        self.assertEqual(
+            get_desc_names(qs, include_self=True, distinct_parents=True),
+            ['Games', 'Games', 'Games']
+        )
+
+
     def test_get_queryset_ancestors(self):
-        def get_anc_names(qs, include_self=False):
-            anc = Category.objects.get_queryset_ancestors(qs, include_self=include_self)
+
+        def get_anc_names(qs, include_self=False, distinct_parents=False):
+            anc=Category.objects.get_queryset_ancestors(
+                qs, include_self=include_self, distinct_parents=distinct_parents)
             return list(anc.values_list('name', flat=True).order_by('name'))
 
-        qs = Category.objects.filter(name='Nintendo Wii')
+        qs=Category.objects.filter(name='Nintendo Wii')
         self.assertEqual(
             get_anc_names(qs),
             ['PC & Video Games'],
@@ -1101,6 +1130,32 @@ class ManagerTests(TreeTestCase):
             get_anc_names(qs, include_self=True),
             ['Nintendo Wii', 'PC & Video Games'],
         )
+
+        self.assertEqual(
+           get_anc_names(qs, include_self=True, distinct_parents=True),
+           ['Nintendo Wii', 'PC & Video Games'],
+        )
+
+        qs=Category.objects.filter(
+            Q(game_title__genre=1) | Q(game_title__genre=9))
+
+        db_type = settings.DATABASES.get('default').get('ENGINE')
+        if db_type == 'django.db.backends.sqlite3':
+            """
+            This test passes as long as the database backend remains sqlite
+            or some other lightweight database that supports <1000 SQL variables
+            in a single query.
+            """
+            self.assertRaises(
+                OperationalError, get_anc_names, qs, include_self=True)
+
+        self.assertEqual(
+            get_anc_names(qs, include_self=True, distinct_parents=True),
+            ['Games', 'Games', 'Games', 'Nintendo Wii', 'PC & Video Games', 'PlayStation 3', 'Xbox 360']
+        )
+
+
+
 
 
 class CacheTreeChildrenTestCase(TreeTestCase):

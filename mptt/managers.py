@@ -62,7 +62,8 @@ class TreeManager(models.Manager):
             # _base_manager is the treemanager on tree_model
             self._base_manager = self.tree_model._tree_manager
 
-    def _get_queryset_relatives(self, queryset, direction, include_self):
+    def _get_queryset_relatives(
+        self, queryset, direction, include_self, distinct_parents):
         """
         Returns a queryset containing either the descendants ``direction == desc``
         or the ancestors ``direction == asc`` of a given queryset.
@@ -81,8 +82,18 @@ class TreeManager(models.Manager):
         if not queryset:
             return self.none()
         filters = None
+        last_parent_id = None
         for node in queryset:
-            lft, rght = node.lft, node.rght
+            try:
+                this_parent_id = getattr(node, opts.parent_attr).pk
+            except AttributeError:
+                this_parent_id = getattr(node, opts.parent_attr)
+            if distinct_parents and this_parent_id == last_parent_id:
+                continue
+            else:
+                last_parent_id = this_parent_id
+            lft, rght = (getattr(node, opts.left_attr),
+                         getattr(node, opts.right_attr))
             if direction == 'asc':
                 if include_self:
                     lft += 1
@@ -107,7 +118,8 @@ class TreeManager(models.Manager):
         return self.filter(filters)
 
 
-    def get_queryset_descendants(self, queryset, include_self=False):
+    def get_queryset_descendants(
+        self, queryset, include_self=False, distinct_parents=False):
         """
         Returns a queryset containing the descendants of all nodes in the
         given queryset.
@@ -115,10 +127,12 @@ class TreeManager(models.Manager):
         If ``include_self=True``, nodes in ``queryset`` will also
         be included in the result.
         """
-        return self._get_queryset_relatives(queryset, 'desc', include_self)
+        return self._get_queryset_relatives(
+            queryset, 'desc', include_self, distinct_parents)
 
 
-    def get_queryset_ancestors(self, queryset, include_self = False):
+    def get_queryset_ancestors(
+        self, queryset, include_self = False, distinct_parents=False):
         """
         Returns a queryset containing the ancestors
         of all nodes in the given queryset.
@@ -126,7 +140,8 @@ class TreeManager(models.Manager):
         If ``include_self=True``, nodes in ``queryset`` will also
         be included in the result.
         """
-        return self._get_queryset_relatives(queryset, 'asc', include_self)
+        return self._get_queryset_relatives(
+            queryset, 'asc', include_self, distinct_parents)
 
         
     @contextlib.contextmanager
