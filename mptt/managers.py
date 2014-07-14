@@ -64,7 +64,6 @@ class TreeManager(models.Manager):
 
     def _get_queryset_relatives(
         self, queryset, direction, include_self, distinct_parents):
-        import time
         """
         Returns a queryset containing either the descendants ``direction == desc``
         or the ancestors ``direction == asc`` of a given queryset.
@@ -78,7 +77,6 @@ class TreeManager(models.Manager):
         This function exists mainly to consolidate the nearly duplicate code
         that exists between the two aforementioned functions.
         """
-        starttime = time.time()
         assert self.model is queryset.model
         opts = queryset.model._mptt_meta
         if not queryset:
@@ -117,10 +115,6 @@ class TreeManager(models.Manager):
                 filters = q
             else:
                 filters |= q
-        endtime = time.time()
-        elapsedtime = endtime - starttime
-        #print filters
-        print("Finished! Elapsed time: %f" % elapsedtime)
         return self.filter(filters)
 
 

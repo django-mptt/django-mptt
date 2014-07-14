@@ -6,6 +6,7 @@ import sys
 import tempfile
 
 import django
+from django.conf import settings
 from django.db import OperationalError
 from django.contrib import admin
 from django.contrib.auth.models import Group
@@ -25,6 +26,7 @@ from mptt.forms import MPTTAdminForm
 from mptt.models import MPTTModel
 from mptt.templatetags.mptt_tags import cache_tree_children
 from myapp.models import Category, Genre, Title, CustomPKName, SingleProxyModel, DoubleProxyModel, ConcreteModel, OrderedInsertion, AutoNowDateFieldModel
+
 
 extra_queries_per_update = 0
 if django.VERSION < (1, 6):
@@ -1096,13 +1098,15 @@ class ManagerTests(TreeTestCase):
             Q(game_title__category=6) |
             Q(game_title__category=9))
 
-        """
-        This test passes as long as the database backend remains sqlite
-        or some other lightweight database that supports <1000 SQL variables
-        in a single query.
-        """
-        self.assertRaises(
-            OperationalError, get_desc_names, qs, include_self=True)
+        db_type = settings.DATABASES.get('default').get('ENGINE')
+        if db_type == 'django.db.backends.sqlite3':
+            """
+            This test passes as long as the database backend remains sqlite
+            or some other lightweight database that supports <1000 SQL variables
+            in a single query.
+            """
+            self.assertRaises(
+                OperationalError, get_desc_names, qs, include_self=True)
 
         self.assertEqual(
             get_desc_names(qs, include_self=True, distinct_parents=True),
@@ -1135,13 +1139,15 @@ class ManagerTests(TreeTestCase):
         qs=Category.objects.filter(
             Q(game_title__genre=1) | Q(game_title__genre=9))
 
-        """
-        This test passes as long as the database backend remains sqlite
-        or some other lightweight database that supports <1000 SQL variables
-        in a single query.
-        """
-        self.assertRaises(
-            OperationalError, get_anc_names, qs, include_self=True)
+        db_type = settings.DATABASES.get('default').get('ENGINE')
+        if db_type == 'django.db.backends.sqlite3':
+            """
+            This test passes as long as the database backend remains sqlite
+            or some other lightweight database that supports <1000 SQL variables
+            in a single query.
+            """
+            self.assertRaises(
+                OperationalError, get_anc_names, qs, include_self=True)
 
         self.assertEqual(
             get_anc_names(qs, include_self=True, distinct_parents=True),
