@@ -293,7 +293,7 @@ class TreeManager(models.Manager):
             return self._base_manager._mptt_filter(qs=qs, **filters)
 
         if qs is None:
-            qs = self.get_queryset()
+            qs = self.get_queryset_compat()
         return qs.filter(**self._translate_lookups(**filters))
 
     def _mptt_update(self, qs=None, **items):
@@ -304,7 +304,7 @@ class TreeManager(models.Manager):
             return self._base_manager._mptt_update(qs=qs, **items)
 
         if qs is None:
-            qs = self.get_queryset()
+            qs = self.get_queryset_compat()
         return qs.update(**self._translate_lookups(**items))
 
     def _get_connection(self, **hints):
@@ -358,25 +358,19 @@ class TreeManager(models.Manager):
                 'mptt_pk': qn(meta.pk.column),
             }
         return queryset.extra(select={count_attr: subquery})
-
-    # rant: why oh why would you rename something so widely used?
-    def get_queryset(self):
+    
+    def get_queryset_compat(self, *args, **kwargs):
         """
-        Returns a ``QuerySet`` which contains all tree items, ordered in
-        such a way that that root nodes appear in tree id order and
-        their subtrees appear in depth-first order.
+        rant: why oh why would you rename something so widely used?
+        In Django 1.7, a DeprecationWarning appears whenever get_query
         """
-        super_ = super(TreeManager, self)
-        if django.VERSION < (1, 7):
-            qs = super_.get_query_set()
+        if django.VERSION >= (1, 7):
+            # in 1.7+, get_queryset gets defined by the base manager and complains if it's called.
+            # otherwise, we have to define it ourselves.
+            get_queryset = self.get_queryset
         else:
-            qs = super_.get_queryset()
-        return qs.order_by(self.tree_id_attr, self.left_attr)
-
-    if django.VERSION < (1, 7):
-        # in 1.7+, get_query_set gets defined by the base manager and complains if it's called.
-        # otherwise, we have to define it ourselves.
-        get_query_set = get_queryset
+            get_queryset = self.get_query_set
+        return get_queryset(*args, **kwargs)
 
     def insert_node(self, node, target, position='last-child', save=False, allow_existing_pk=False):
         """
@@ -650,7 +644,7 @@ class TreeManager(models.Manager):
         Determines the next largest unused tree id for the tree managed
         by this manager.
         """
-        qs = self.get_queryset()
+        qs = self.get_queryset_compat()
         max_tree_id = list(qs.aggregate(Max(self.tree_id_attr)).values())[0]
         max_tree_id = max_tree_id or 0
         return max_tree_id + 1
