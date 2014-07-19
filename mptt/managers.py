@@ -362,7 +362,15 @@ class TreeManager(models.Manager):
     def get_queryset_compat(self, *args, **kwargs):
         """
         rant: why oh why would you rename something so widely used?
-        In Django 1.7, a DeprecationWarning appears whenever get_query
+        benjaoming:
+        In Django 1.7, a DeprecationWarning appears whenever get_queryset
+        is called. This is an unfortunate decision by django core devs
+        because a lot of custom manager inheritance relies on the naming
+        of get_query_set etc. In this case, the DeprecationWarnings firstly
+        broke django-mptt, and then the django-mptt fix broke all the
+        Django<1.7 custom managers with custom querysets.
+        
+        See issue: #316
         """
         if django.VERSION >= (1, 7):
             # in 1.7+, get_queryset gets defined by the base manager and complains if it's called.
