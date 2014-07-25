@@ -162,14 +162,15 @@ class MPTTAdminForm(forms.ModelForm):
         if self.instance and self.instance.pk:
             instance = self.instance
             opts = self._meta.model._mptt_meta
-            parent_field = self.fields[opts.parent_attr]
-            parent_qs = parent_field.queryset
-            parent_qs = parent_qs.exclude(
-                pk__in=instance.get_descendants(
-                    include_self=True
-                ).values_list('pk', flat=True)
-            )
-            parent_field.queryset = parent_qs
+            parent_field = self.fields.get(opts.parent_attr)
+            if parent_field:
+                parent_qs = parent_field.queryset
+                parent_qs = parent_qs.exclude(
+                    pk__in=instance.get_descendants(
+                        include_self=True
+                    ).values_list('pk', flat=True)
+                )
+                parent_field.queryset = parent_qs
 
     def clean(self):
         cleaned_data = super(MPTTAdminForm, self).clean()
