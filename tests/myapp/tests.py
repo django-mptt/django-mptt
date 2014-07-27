@@ -23,7 +23,7 @@ from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.forms import MPTTAdminForm
 from mptt.models import MPTTModel
 from mptt.templatetags.mptt_tags import cache_tree_children
-from myapp.models import Category, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel, ConcreteModel, OrderedInsertion, AutoNowDateFieldModel
+from myapp.models import Category, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel, ConcreteModel, OrderedInsertion, AutoNowDateFieldModel, Person
 
 extra_queries_per_update = 0
 if django.VERSION < (1, 6):
@@ -1100,6 +1100,16 @@ class ManagerTests(TreeTestCase):
         self.assertEqual(
             get_anc_names(qs, include_self=True),
             ['Nintendo Wii', 'PC & Video Games'],
+        )
+    
+    def test_custom_querysets(self):
+        """
+        Test that a custom manager also provides custom querysets.
+        """
+        
+        self.assertEqual(
+            type(Person.objects.all()),
+            type(Person.objects.root_nodes())
         )
 
 

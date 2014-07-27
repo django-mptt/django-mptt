@@ -6,10 +6,17 @@ from django.utils.encoding import python_2_unicode_compatible
 import mptt
 from mptt.models import MPTTModel, TreeForeignKey
 from mptt.managers import TreeManager
+from django.db.models.query import QuerySet
+
+
+class CustomTreeQueryset(QuerySet):
+    pass
 
 
 class CustomTreeManager(TreeManager):
-    pass
+    
+    def get_query_set(self):
+        return CustomTreeQueryset(model=self.model, using=self.using)
 
 
 @python_2_unicode_compatible
@@ -90,7 +97,6 @@ class Person(MPTTModel):
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
 
     # just testing it's actually possible to override the tree manager
-    objects = models.Manager()
     my_tree_manager = CustomTreeManager()
 
     def __str__(self):
