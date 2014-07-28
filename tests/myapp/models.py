@@ -16,7 +16,7 @@ class CustomTreeQueryset(QuerySet):
 class CustomTreeManager(TreeManager):
     
     def get_query_set(self):
-        return CustomTreeQueryset(model=self.model, using=self.using)
+        return CustomTreeQueryset(model=self.model, using=self._db)
 
 
 @python_2_unicode_compatible
