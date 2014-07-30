@@ -785,7 +785,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
     def _get_user_field_names(self):
         """ Returns the list of user defined (i.e. non-mptt internal) field names. """
         from django.db.models.fields import AutoField
-        
+
         field_names = []
         internal_fields = (self._mptt_meta.left_attr, self._mptt_meta.right_attr, self._mptt_meta.tree_id_attr,
                            self._mptt_meta.level_attr, self._mptt_meta.parent_attr)

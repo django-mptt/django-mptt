@@ -1690,3 +1690,46 @@ class TreeManagerTestCase(TreeTestCase):
         for c in Category.objects.add_related_count(
                 queryset, Item, 'category_pk', 'item_count', cumulative=False):
             self.assertEqual(c.item_count, c.items_by_pk.count())
+
+
+class TestOrderedInsertionBFS(TreeTestCase):
+    def test_insert_dfs(self):
+        music = OrderedInsertion.objects.create(name="Music")
+
+        rock = OrderedInsertion.objects.create(name="Rock", parent=music)
+
+        led_zeppelin = OrderedInsertion.objects.create(name="Led Zeppelin", parent=rock)
+        OrderedInsertion.objects.create(name="Bonham", parent=led_zeppelin)
+
+        classical = OrderedInsertion.objects.create(name="Classical", parent=music)
+        OrderedInsertion.objects.create(name="Bach", parent=classical)
+
+        self.assertTreeEqual(OrderedInsertion.objects.all(), """
+            1 - 1 0 1 12
+            5 1 1 1 2 5
+            6 5 1 2 3 4
+            2 1 1 1 6 11
+            3 2 1 2 7 10
+            4 3 1 3 8 9
+        """)
+
+    def test_insert_bfs(self):
+        rock = OrderedInsertion.objects.create(name="Rock")
+
+        self.assertTreeEqual(OrderedInsertion.objects.all(), """
+            1 - 1 0 1 2
+        """)
+
+        OrderedInsertion.objects.create(name="Classical")
+
+        self.assertTreeEqual(OrderedInsertion.objects.all(), """
+            2 - 1 0 1 2
+            1 - 1 0 3 4
+        """)
+
+        OrderedInsertion.objects.create(name="Led Zeppelin", parent=rock)
+        self.assertTreeEqual(OrderedInsertion.objects.all(), """
+            2 - 1 0 1 2
+            1 - 1 0 3 6
+            3 1 1 1 4 5
+        """)
