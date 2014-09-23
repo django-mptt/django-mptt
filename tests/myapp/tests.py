@@ -6,6 +6,7 @@ import sys
 import tempfile
 
 import django
+from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.db.models import get_models
@@ -24,6 +25,7 @@ from mptt.forms import MPTTAdminForm
 from mptt.models import MPTTModel
 from mptt.templatetags.mptt_tags import cache_tree_children
 from myapp.models import Category, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel, ConcreteModel, OrderedInsertion, AutoNowDateFieldModel, Person
+
 
 extra_queries_per_update = 0
 if django.VERSION < (1, 6):
@@ -1039,7 +1041,8 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
 
 
 class ManagerTests(TreeTestCase):
-    fixtures = ['categories.json']
+    fixtures = ['categories.json',
+                'genres.json']
 
     def test_all_managers_are_different(self):
         # all tree managers should be different. otherwise, possible infinite recursion.
@@ -1072,33 +1075,61 @@ class ManagerTests(TreeTestCase):
             else:
                 self.fail("Detected infinite recursion in %s._tree_manager._base_manager" % model)
 
+
     def test_get_queryset_descendants(self):
-        def get_desc_names(qs, include_self=False):
-            desc = Category.objects.get_queryset_descendants(qs, include_self=include_self)
+        def get_desc_names(qs, include_self=False, aggregate=False):
+            desc = Category.objects.get_queryset_descendants(
+                qs, include_self=include_self, aggregate=aggregate)
             return list(desc.values_list('name', flat=True).order_by('name'))
 
         qs = Category.objects.filter(name='Nintendo Wii')
+
         self.assertEqual(
             get_desc_names(qs),
             ['Games', 'Hardware & Accessories'],
         )
+
+        self.assertEqual(
+            get_desc_names(qs, aggregate=True),
+            ['Games', 'Hardware & Accessories'],
+        )
+
         self.assertEqual(
             get_desc_names(qs, include_self=True),
             ['Games', 'Hardware & Accessories', 'Nintendo Wii'],
         )
 
+        self.assertEqual(
+            get_desc_names(qs, include_self=True, aggregate=True),
+            ['Games', 'Hardware & Accessories', 'Nintendo Wii'],
+        )        
+
+
     def test_get_queryset_ancestors(self):
-        def get_anc_names(qs, include_self=False):
-            anc = Category.objects.get_queryset_ancestors(qs, include_self=include_self)
+        def get_anc_names(qs, include_self=False, aggregate=False):
+            anc = Category.objects.get_queryset_ancestors(
+                qs, include_self=include_self, aggregate=aggregate)
             return list(anc.values_list('name', flat=True).order_by('name'))
 
         qs = Category.objects.filter(name='Nintendo Wii')
+
         self.assertEqual(
             get_anc_names(qs),
             ['PC & Video Games'],
+        )        
+
+        self.assertEqual(
+            get_anc_names(qs, aggregate=True),
+            ['PC & Video Games'],
         )
+
         self.assertEqual(
             get_anc_names(qs, include_self=True),
+            ['Nintendo Wii', 'PC & Video Games'],
+        )        
+
+        self.assertEqual(
+            get_anc_names(qs, include_self=True, aggregate=True),
             ['Nintendo Wii', 'PC & Video Games'],
         )
     
@@ -1111,6 +1142,9 @@ class ManagerTests(TreeTestCase):
             type(Person.objects.all()),
             type(Person.objects.root_nodes())
         )
+
+
+
 
 
 class CacheTreeChildrenTestCase(TreeTestCase):

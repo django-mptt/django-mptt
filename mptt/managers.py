@@ -62,7 +62,8 @@ class TreeManager(models.Manager):
             # _base_manager is the treemanager on tree_model
             self._base_manager = self.tree_model._tree_manager
 
-    def _get_queryset_relatives(self, queryset, direction, include_self):
+    def _get_queryset_relatives(
+        self, queryset, direction, include_self, aggregate):
         """
         Returns a queryset containing either the descendants ``direction == desc``
         or the ancestors ``direction == asc`` of a given queryset.
@@ -81,33 +82,78 @@ class TreeManager(models.Manager):
         if not queryset:
             return self.none()
         filters = None
+        trees = {}
         for node in queryset:
-            lft, rght = node.lft, node.rght
-            if direction == 'asc':
-                if include_self:
-                    lft += 1
-                    rght -= 1
-                lft_op = 'lt'
-                rght_op = 'gt'
-            elif direction == 'desc':
-                if include_self:
-                    lft -= 1
-                    rght += 1
-                lft_op = 'gt'
-                rght_op = 'lt'
-            q = Q(**{
-                opts.tree_id_attr: getattr(node, opts.tree_id_attr),
-                '%s__%s' % (opts.left_attr, lft_op): lft,
-                '%s__%s' % (opts.right_attr, rght_op): rght,
-            })
-            if filters is None:
-                filters = q
+            tree, lft, rght = (getattr(node, opts.tree_id_attr),
+                               getattr(node, opts.left_attr),
+                               getattr(node, opts.right_attr))
+
+            if aggregate:
+                parent_id = node.parent_id
+                if not trees.get(tree):
+                    trees[tree] = {}
+                if not trees.get(tree).get(parent_id):
+                    trees[tree][parent_id] = {'lft': lft, 'rght': rght}
+                if direction == 'asc':
+                    if include_self:
+                        lft += 1
+                        rght -= 1
+                    if lft > trees[tree][parent_id]['lft']:
+                        trees[tree][parent_id]['lft'] = lft
+                    if rght < trees[tree][parent_id]['rght']:
+                        trees[tree][parent_id]['rght'] = rght
+                    trees[tree][parent_id]['lft_op'] = 'lt'
+                    trees[tree][parent_id]['rght_op'] = 'gt'
+                elif direction == 'desc':
+                    if include_self:
+                        lft -= 1
+                        rght += 1
+                    if lft < trees[tree][parent_id]['lft']:
+                        trees[tree][parent_id]['lft'] = lft
+                    if rght > trees[tree][parent_id]['rght']:
+                        trees[tree][parent_id]['rght'] = rght
+                    trees[tree][parent_id]['lft_op'] = 'gt'
+                    trees[tree][parent_id]['rght_op'] = 'lt'
             else:
-                filters |= q
+                if direction == 'asc':
+                    if include_self:
+                        lft += 1
+                        rght -= 1
+                    lft_op = 'lt'
+                    rght_op = 'gt'
+                elif direction == 'desc':
+                    if include_self:
+                        lft -= 1
+                        rght += 1
+                    lft_op = 'gt'
+                    rght_op = 'lt'
+                q = Q(**{
+                    opts.tree_id_attr: tree,
+                    '%s__%s' % (opts.left_attr, lft_op): lft,
+                    '%s__%s' % (opts.right_attr, rght_op): rght,
+                })
+                if filters is None:
+                    filters = q
+                else:
+                    filters |= q
+
+        if aggregate:
+            for tree in trees:
+                for parent_id in trees[tree]:
+                    q = Q(**{
+                        opts.tree_id_attr: tree,
+                        '%s__%s' % (opts.left_attr, trees[tree][parent_id]['lft_op']): trees[tree][parent_id]['lft'],
+                        '%s__%s' % (opts.right_attr, trees[tree][parent_id]['rght_op']): trees[tree][parent_id]['rght']
+                    })
+                    if filters is None:
+                        filters = q
+                    else:
+                        filters |= q
         return self.filter(filters)
 
 
-    def get_queryset_descendants(self, queryset, include_self=False):
+    def get_queryset_descendants(
+        self, queryset, include_self=False, aggregate=False):
         """
         Returns a queryset containing the descendants of all nodes in the
         given queryset.
@@ -115,10 +161,12 @@ class TreeManager(models.Manager):
         If ``include_self=True``, nodes in ``queryset`` will also
         be included in the result.
         """
-        return self._get_queryset_relatives(queryset, 'desc', include_self)
+        return self._get_queryset_relatives(
+            queryset, 'desc', include_self, aggregate)
 
 
-    def get_queryset_ancestors(self, queryset, include_self = False):
+    def get_queryset_ancestors(
+        self, queryset, include_self = False, aggregate=False):
         """
         Returns a queryset containing the ancestors
         of all nodes in the given queryset.
@@ -126,7 +174,9 @@ class TreeManager(models.Manager):
         If ``include_self=True``, nodes in ``queryset`` will also
         be included in the result.
         """
-        return self._get_queryset_relatives(queryset, 'asc', include_self)
+        return self._get_queryset_relatives(
+            queryset, 'asc', include_self, aggregate)
+
 
 
     @contextlib.contextmanager
