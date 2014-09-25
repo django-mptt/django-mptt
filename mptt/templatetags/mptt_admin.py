@@ -103,8 +103,10 @@ def mptt_items_for_result(cl, result, form):
         if field_name == mptt_indent_field:
             level = getattr(result, result._mptt_meta.level_attr)
             padding_attr = ' style="padding-left:%spx"' % (5 + mptt_level_indent * level)
+            mptt_level_attr = ' data-mptt-level="%s"' % (level)
         else:
             padding_attr = ''
+            mptt_level_attr = ''
         ##### MPTT ADDITION END
 
         # If list_display_links not defined, add the link tag to the first field
@@ -121,8 +123,8 @@ def mptt_items_for_result(cl, result, form):
             value = result.serializable_value(attr)
             result_id = repr(force_text(value))[1:]
             ##### MPTT SUBSTITUTION START
-            yield mark_safe('<%s%s%s><a href="%s"%s>%s</a></%s>' % \
-                (table_tag, row_class, padding_attr, url, (cl.is_popup and ' onclick="opener.dismissRelatedLookupPopup(window, %s); return false;"' % result_id or ''), conditional_escape(result_repr), table_tag))
+            yield mark_safe('<%s%s%s%s><a href="%s"%s>%s</a></%s>' % \
+                (table_tag, row_class, padding_attr, mptt_level_attr, url, (cl.is_popup and ' onclick="opener.dismissRelatedLookupPopup(window, %s); return false;"' % result_id or ''), conditional_escape(result_repr), table_tag))
             ##### MPTT SUBSTITUTION END
         else:
             # By default the fields come from ModelAdmin.list_editable, but if we pull
@@ -136,7 +138,7 @@ def mptt_items_for_result(cl, result, form):
             else:
                 result_repr = conditional_escape(result_repr)
             ##### MPTT SUBSTITUTION START
-            yield mark_safe('<td%s%s>%s</td>' % (row_class, padding_attr, result_repr))
+            yield mark_safe('<td%s%s%s>%s</td>' % (row_class, padding_attr, mptt_level_attr, result_repr))
             ##### MPTT SUBSTITUTION END
     if form and not form[cl.model._meta.pk.name].is_hidden:
         yield mark_safe('<td>%s</td>' % force_text(form[cl.model._meta.pk.name]))
