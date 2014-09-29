@@ -14,11 +14,6 @@ from django.template import Template, Context
 from django.test import TestCase
 from django.utils.six import string_types, PY3, b
 
-try:
-    import feincms
-except ImportError:
-    feincms = False
-
 from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.forms import MPTTAdminForm
 from mptt.models import MPTTModel
@@ -431,27 +426,6 @@ class InterTreeMovementTestCase(TreeTestCase):
 
 class PositionedInsertionTestCase(TreeTestCase):
     pass
-
-
-if feincms:
-    class FeinCMSModelAdminTestCase(TreeTestCase):
-        """
-        Tests for FeinCMSModelAdmin.
-        """
-        fixtures = ['categories.json']
-
-        def test_actions_column(self):
-            """
-            The action column should have an "add" button inserted.
-            """
-            from mptt.admin import FeinCMSModelAdmin
-            model_admin = FeinCMSModelAdmin(Category, admin.site)
-
-            category = Category.objects.get(id=1)
-            self.assertTrue(
-                '<a href="add/?parent=1" title="Add child">' in
-                model_admin._actions_column(category)[0]
-            )
 
 
 class CustomPKNameTestCase(TreeTestCase):
