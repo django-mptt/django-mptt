@@ -1101,12 +1101,12 @@ class ManagerTests(TreeTestCase):
             get_anc_names(qs, include_self=True),
             ['Nintendo Wii', 'PC & Video Games'],
         )
-    
+
     def test_custom_querysets(self):
         """
         Test that a custom manager also provides custom querysets.
         """
-        
+
         self.assertEqual(
             type(Person.objects.all()),
             type(Person.objects.root_nodes())
@@ -1140,33 +1140,32 @@ class RecurseTreeTestCase(TreeTestCase):
     Tests for the ``recursetree`` template filter.
     """
     fixtures = ['categories.json']
-    template = (
-        '{% load mptt_tags %}'
-        '<ul>'
-            '{% recursetree nodes %}'
-                '<li>'
-                    '{{ node.name }}'
-                    '{% if not node.is_leaf_node %}'
-                        '<ul class="children">'
-                            '{{ children }}'
-                        '</ul>'
-                    '{% endif %}'
-                '</li>'
-            '{% endrecursetree %}'
-        '</ul>'
-    )
+    template = '''\
+{% load mptt_tags %}
+<ul>
+{% recursetree nodes %}
+<li>
+{{ node.name }}
+{% if not node.is_leaf_node %}
+<ul class="children">
+{{ children }}
+</ul>
+{% endif %}
+</li>
+{% endrecursetree %}
+</ul>'''
 
     def test_leaf_html(self):
         html = Template(self.template).render(Context({
             'nodes': Category.objects.filter(pk=10),
-        }))
+        })).replace('\n', '')
         self.assertEqual(html, '<ul><li>Hardware &amp; Accessories</li></ul>')
 
     def test_nonleaf_html(self):
         qs = Category.objects.get(pk=8).get_descendants(include_self=True)
         html = Template(self.template).render(Context({
             'nodes': qs,
-        }))
+        })).replace('\n', '')
         self.assertEqual(html, (
             '<ul><li>PlayStation 3<ul class="children">'
             '<li>Games</li><li>Hardware &amp; Accessories</li></ul></li></ul>'

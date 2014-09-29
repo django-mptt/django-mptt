@@ -18,7 +18,7 @@ from mptt.utils import tree_item_iterator, drilldown_tree_for_node
 register = template.Library()
 
 
-### ITERATIVE TAGS
+# ## ITERATIVE TAGS
 
 class FullTreeForModelNode(template.Node):
     def __init__(self, model, context_var):
@@ -53,7 +53,7 @@ class DrilldownTreeForNodeNode(template.Node):
             cls = get_model(app_label, model_name)
             if cls is None:
                 raise template.TemplateSyntaxError(
-                    _('drilldown_tree_for_node tag was given an invalid model: %s') % \
+                    _('drilldown_tree_for_node tag was given an invalid model: %s') %
                     '.'.join([app_label, model_name])
                 )
             try:
@@ -223,7 +223,7 @@ def tree_path(items, separator=' :: '):
     return separator.join([force_text(i) for i in items])
 
 
-### RECURSIVE TAGS
+# ## RECURSIVE TAGS
 
 @register.filter
 def cache_tree_children(queryset):

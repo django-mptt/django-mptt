@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 from functools import reduce
 import operator
 import threading
-import warnings
 
 from django.db import models
 from django.db.models.base import ModelBase
@@ -13,6 +12,12 @@ from django.utils.translation import ugettext as _
 
 from mptt.fields import TreeForeignKey, TreeOneToOneField, TreeManyToManyField
 from mptt.managers import TreeManager
+
+
+__all__ = (
+    'TreeForeignKey', 'TreeOneToOneField', 'TreeManyToManyField',
+    'TreeManager', 'MPTTOptions', 'MPTTModelBase', 'MPTTModel',
+)
 
 
 class _classproperty(object):

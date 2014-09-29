@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 import contextlib
 
 import django
-from django.db import models, transaction, connections, router
+from django.db import models, connections, router
 from django.db.models import F, Max, Q
 from django.utils.translation import ugettext as _
 
@@ -106,7 +106,6 @@ class TreeManager(models.Manager):
                 filters |= q
         return self.filter(filters)
 
-
     def get_queryset_descendants(self, queryset, include_self=False):
         """
         Returns a queryset containing the descendants of all nodes in the
@@ -117,8 +116,7 @@ class TreeManager(models.Manager):
         """
         return self._get_queryset_relatives(queryset, 'desc', include_self)
 
-
-    def get_queryset_ancestors(self, queryset, include_self = False):
+    def get_queryset_ancestors(self, queryset, include_self=False):
         """
         Returns a queryset containing the ancestors
         of all nodes in the given queryset.
@@ -127,7 +125,6 @@ class TreeManager(models.Manager):
         be included in the result.
         """
         return self._get_queryset_relatives(queryset, 'asc', include_self)
-
 
     @contextlib.contextmanager
     def disable_mptt_updates(self):
@@ -573,7 +570,8 @@ class TreeManager(models.Manager):
             right = rebuild_helper(child_id, right, tree_id, level + 1)
 
         qs = self.model._default_manager.filter(pk=pk)
-        self._mptt_update(qs,
+        self._mptt_update(
+            qs,
             left=left,
             right=right,
             level=level,

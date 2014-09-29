@@ -70,7 +70,7 @@ def tree_item_iterator(items, ancestors=False):
     structure = {}
     opts = None
     first_item_level = 0
-    for previous, current, next in previous_current_next(items):
+    for previous, current, next_ in previous_current_next(items):
         if opts is None:
             opts = current._mptt_meta
 
@@ -96,9 +96,9 @@ def tree_item_iterator(items, ancestors=False):
                 structure['ancestors'] = []
 
             first_item_level = current_level
-        if next:
+        if next_:
             structure['closed_levels'] = list(range(current_level,
-                                               getattr(next,
+                                               getattr(next_,
                                                        opts.level_attr), -1))
         else:
             # All remaining levels need to be closed
