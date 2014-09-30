@@ -5,6 +5,7 @@ import os
 import re
 import sys
 import tempfile
+import uuid
 
 import django
 from django.contrib.auth.models import Group, User
@@ -16,7 +17,13 @@ except ImportError:  # pragma: no cover (Django 1.6 compatibility)
 from django.forms.models import modelform_factory
 from django.template import Template, TemplateSyntaxError, Context
 from django.test import TestCase
-from django.utils.six import string_types, PY3, b, assertRaisesRegex
+from django.utils.six import (
+    assertRaisesRegex,
+    b,
+    integer_types,
+    PY3,
+    string_types,
+)
 
 from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.forms import (
@@ -29,7 +36,7 @@ from mptt.utils import print_debug_info
 from myapp.models import (
     Category, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel,
     ConcreteModel, OrderedInsertion, AutoNowDateFieldModel, Person,
-    CustomTreeQueryset, Node, ReferencingModel)
+    CustomTreeQueryset, Node, ReferencingModel, UUIDNode)
 
 extra_queries_per_update = 0
 if django.VERSION < (1, 6):
@@ -1333,6 +1340,17 @@ class RegisteredRemoteModel(TreeTestCase):
     def test_save_registered_model(self):
         g1 = Group.objects.create(name='group 1')
         g1.save()
+
+
+class UUIDPrimaryKey(TreeTestCase):
+    def test_save_uuid_model(self):
+        n1 = UUIDNode.objects.create(name='node')
+        n2 = UUIDNode.objects.create(name='sub_node',
+                                     parent=n1)
+        self.assertEqual(n1.name, 'node')
+        self.assertEqual(n1.tree_id, n2.tree_id)
+        self.assertEqual(n2.parent, n1)
+        self.assertTrue(isinstance(uuid.UUID(hex=n1.pk).int, integer_types))
 
 
 class TestForms(TreeTestCase):
