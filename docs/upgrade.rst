@@ -2,6 +2,22 @@
 Upgrade notes
 =============
 
+0.7.a
+=====
+
+Minor: ``TreeManager.get_queryset`` no longer provided on Django < 1.6
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Django renamed ``get_query_set`` to ``get_queryset`` in Django 1.6. For backward compatibility django-mptt had both methods
+available for 1.4-1.5 users.
+
+This has been removed. You should use ``get_query_set`` on Django 1.4-1.5, and ``get_queryset`` if you're on 1.6+.
+
+Removed FeinCMSModelAdmin
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Deprecated in 0.6.0, this has now been removed.
+
 0.6.0
 =====
 
