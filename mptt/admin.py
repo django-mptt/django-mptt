@@ -1,10 +1,8 @@
 from __future__ import unicode_literals
 import django
-import warnings
 from django.conf import settings
 from django.contrib.admin.views.main import ChangeList
 from django.contrib.admin.options import ModelAdmin
-from django.utils.translation import ugettext as _
 
 from mptt.forms import MPTTAdminForm, TreeNodeChoiceField
 

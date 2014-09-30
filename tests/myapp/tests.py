@@ -6,7 +6,6 @@ import sys
 import tempfile
 
 import django
-from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.db.models import get_models
 from django.forms.models import modelform_factory
