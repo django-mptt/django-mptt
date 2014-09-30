@@ -1117,20 +1117,21 @@ class RecurseTreeTestCase(TreeTestCase):
     Tests for the ``recursetree`` template filter.
     """
     fixtures = ['categories.json']
-    template = '''\
-{% load mptt_tags %}
-<ul>
-{% recursetree nodes %}
-<li>
-{{ node.name }}
-{% if not node.is_leaf_node %}
-<ul class="children">
-{{ children }}
-</ul>
-{% endif %}
-</li>
-{% endrecursetree %}
-</ul>'''
+    template = re.sub(r'^[\s]+', '', '''
+        {% load mptt_tags %}
+        <ul>
+            {% recursetree nodes %}
+                <li>
+                    {{ node.name }}
+                    {% if not node.is_leaf_node %}
+                        <ul class="children">
+                            {{ children }}
+                        </ul>
+                    {% endif %}
+                </li>
+            {% endrecursetree %}
+        </ul>
+    ''', flags=re.MULTILINE)
 
     def test_leaf_html(self):
         html = Template(self.template).render(Context({
