@@ -61,8 +61,21 @@ class TreeManager(models.Manager):
             # _base_manager is the treemanager on tree_model
             self._base_manager = self.tree_model._tree_manager
 
-        if not model._meta.ordering:
-            model._meta.ordering = (self.tree_id_attr, self.left_attr)
+    def get_query_set(self, *args, **kwargs):
+        """
+        Ensures that this manager always returns nodes in tree order.
+
+        This method can be removed when support for Django < 1.6 is dropped.
+        """
+        return super(TreeManager, self).get_query_set(*args, **kwargs).order_by(
+            self.tree_id_attr, self.left_attr)
+
+    def get_queryset(self, *args, **kwargs):
+        """
+        Ensures that this manager always returns nodes in tree order.
+        """
+        return super(TreeManager, self).get_queryset(*args, **kwargs).order_by(
+            self.tree_id_attr, self.left_attr)
 
     def _get_queryset_relatives(self, queryset, direction, include_self):
         """
