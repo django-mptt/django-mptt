@@ -62,25 +62,8 @@ class TreeManager(models.Manager):
             # _base_manager is the treemanager on tree_model
             self._base_manager = self.tree_model._tree_manager
 
-        # Halfway emulate, what Django's method renaming metaclass does.
-        # Also see https://github.com/django-mptt/django-mptt/issues/316
-        is_get_queryset_defined = hasattr(self, 'get_queryset')
-        is_get_query_set_defined = hasattr(self, 'get_query_set')
-
-        if django.VERSION > (1, 8):
-            self.get_queryset = lambda: super(self.__class__, self).get_queryset().order_by(self.tree_id_attr, self.left_attr)
-
-        elif django.VERSION >= (1, 6):
-            if not is_get_queryset_defined and is_get_query_set_defined:
-                self.get_queryset = lambda: super(self.__class__, self).get_query_set().order_by(self.tree_id_attr, self.left_attr)
-                self.get_query_set = self.get_queryset
-
-            else:
-                self.get_queryset = lambda: super(self.__class__, self).get_queryset().order_by(self.tree_id_attr, self.left_attr)
-
-        else:
-            self.get_query_set = lambda: super(self.__class__, self).get_query_set().order_by(
-                self.tree_id_attr, self.left_attr)
+        if not model._meta.ordering:
+            model._meta.ordering = (self.tree_id_attr, self.left_attr)
 
     def _get_queryset_relatives(self, queryset, direction, include_self):
         """
