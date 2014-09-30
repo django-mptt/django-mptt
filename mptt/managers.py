@@ -4,7 +4,6 @@ A custom manager for working with trees of objects.
 from __future__ import unicode_literals
 import contextlib
 
-import django
 from django.db import models, connections, router
 from django.db.models import F, Max, Q
 from django.utils.translation import ugettext as _
