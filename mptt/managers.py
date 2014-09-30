@@ -62,6 +62,26 @@ class TreeManager(models.Manager):
             # _base_manager is the treemanager on tree_model
             self._base_manager = self.tree_model._tree_manager
 
+        # Halfway emulate, what Django's method renaming metaclass does.
+        # Also see https://github.com/django-mptt/django-mptt/issues/316
+        is_get_queryset_defined = hasattr(self, 'get_queryset')
+        is_get_query_set_defined = hasattr(self, 'get_query_set')
+
+        if django.VERSION > (1, 8):
+            self.get_queryset = lambda: super(self.__class__, self).get_queryset().order_by(self.tree_id_attr, self.left_attr)
+
+        elif django.VERSION >= (1, 6):
+            if not is_get_queryset_defined and is_get_query_set_defined:
+                self.get_queryset = lambda: super(self.__class__, self).get_query_set().order_by(self.tree_id_attr, self.left_attr)
+                self.get_query_set = self.get_queryset
+
+            else:
+                self.get_queryset = lambda: super(self.__class__, self).get_queryset().order_by(self.tree_id_attr, self.left_attr)
+
+        else:
+            self.get_query_set = lambda: super(self.__class__, self).get_query_set().order_by(
+                self.tree_id_attr, self.left_attr)
+
     def _get_queryset_relatives(self, queryset, direction, include_self):
         """
         Returns a queryset containing either the descendants ``direction == desc``
@@ -290,7 +310,7 @@ class TreeManager(models.Manager):
             return self._base_manager._mptt_filter(qs=qs, **filters)
 
         if qs is None:
-            qs = self._get_queryset_compat()
+            qs = self
         return qs.filter(**self._translate_lookups(**filters))
 
     def _mptt_update(self, qs=None, **items):
@@ -301,7 +321,7 @@ class TreeManager(models.Manager):
             return self._base_manager._mptt_update(qs=qs, **items)
 
         if qs is None:
-            qs = self._get_queryset_compat()
+            qs = self
         return qs.update(**self._translate_lookups(**items))
 
     def _get_connection(self, **hints):
@@ -355,35 +375,6 @@ class TreeManager(models.Manager):
                 'mptt_pk': qn(meta.pk.column),
             }
         return queryset.extra(select={count_attr: subquery})
-
-    def _get_queryset_compat(self, *args, **kwargs):
-        """
-        rant: why oh why would you rename something so widely used?
-        benjaoming:
-        In Django 1.6, a DeprecationWarning appears whenever get_query_set
-        is called. This is an unfortunate decision by django core devs
-        because a lot of custom manager inheritance relies on the naming
-        of get_query_set/get_queryset. In this case, the DeprecationWarnings
-        firstly broke django-mptt, and then the django-mptt fix broke all the
-        Django<1.6 custom managers with custom querysets defined using `get_query_set`.
-
-        See issue: #316
-        """
-        if django.VERSION >= (1, 6):
-            # in 1.6+, get_queryset gets defined by the base manager and complains if it's called.
-            # otherwise, we have to define it ourselves.
-            get_queryset = self.get_queryset
-        else:
-            get_queryset = self.get_query_set
-        return get_queryset(*args, **kwargs)
-
-    if django.VERSION < (1, 6):
-        # Backwards compatibility hack.
-        # Before fixing #316, we always provided a get_queryset() method even on django < 1.6.
-        # So if anyone's relying on it, need to preserve this until django 1.6 is the minimum supported version.
-        # Then we can get rid of this since it will be provided by models.Model anyway.
-        def get_queryset(self, *args, **kwargs):
-            return self.get_query_set(*args, **kwargs)
 
     def insert_node(self, node, target, position='last-child', save=False, allow_existing_pk=False):
         """
@@ -658,8 +649,7 @@ class TreeManager(models.Manager):
         Determines the next largest unused tree id for the tree managed
         by this manager.
         """
-        qs = self._get_queryset_compat()
-        max_tree_id = list(qs.aggregate(Max(self.tree_id_attr)).values())[0]
+        max_tree_id = list(self.aggregate(Max(self.tree_id_attr)).values())[0]
         max_tree_id = max_tree_id or 0
         return max_tree_id + 1
 
