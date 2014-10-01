@@ -70,6 +70,14 @@
 (<Genre: Action RPG>, True, [])
 (<Genre: Tactical RPG>, False, [1, 0])
 
+>>> for i,s in tree_item_iterator(rpg.get_descendants()):
+...     print((i, s['new_level'], list(s['closed_levels'])))
+(<Genre: Action RPG>, True, [])
+(<Genre: Tactical RPG>, False, [1])
+
+>>> for i,s in tree_item_iterator(trpg.get_descendants()):
+...     print((i, s['new_level'], list(s['closed_levels'])))
+
 >>> for i,s in tree_item_iterator(Genre.objects.all(), ancestors=True):
 ...     print((i, s['new_level'], s['ancestors'], list(s['closed_levels'])))
 (<Genre: Action>, True, [], [])

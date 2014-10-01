@@ -25,12 +25,13 @@ def previous_current_next(items):
     """
     extend = itertools.chain([None], items, [None])
     prev, cur, nex = itertools.tee(extend, 3)
-    try:
-        next(cur)
-        next(nex)
-        next(nex)
-    except StopIteration:
-        pass
+    # Advancing an iterator twice when we know there are two items (the
+    # two Nones at the start and at the end) will never fail except if
+    # `items` is some funny StopIteration-raising generator. There's no point
+    # in swallowing this exception.
+    next(cur)
+    next(nex)
+    next(nex)
     return zip(prev, cur, nex)
 
 
