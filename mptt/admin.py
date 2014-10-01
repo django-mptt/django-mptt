@@ -1,8 +1,13 @@
 from __future__ import unicode_literals
-import django
+
 from django.conf import settings
-from django.contrib.admin.views.main import ChangeList
+from django.contrib.admin.actions import delete_selected
 from django.contrib.admin.options import ModelAdmin
+try:
+    from django.utils.encoding import force_text
+except ImportError:  # pragma: no cover (Django 1.4 compatibility)
+    from django.utils.encoding import force_unicode as force_text
+from django.utils.translation import ugettext as _
 
 from mptt.forms import MPTTAdminForm, TreeNodeChoiceField
 from mptt.models import MPTTModel, TreeForeignKey
@@ -44,3 +49,37 @@ class MPTTModelAdmin(ModelAdmin):
         """
         mptt_opts = self.model._mptt_meta
         return self.ordering or (mptt_opts.tree_id_attr, mptt_opts.left_attr)
+
+    def delete_selected_tree(self, modeladmin, request, queryset):
+        """
+        Deletes multiple instances and makes sure the MPTT fields get
+        recalculated properly. (Because merely doing a bulk delete doesn't
+        trigger the post_delete hooks.)
+        """
+        # If this is True, the confirmation page has been displayed
+        if request.POST.get('post'):
+            n = 0
+            with queryset.model.objects.delay_mptt_updates():
+                for obj in queryset:
+                    if self.has_delete_permission(request, obj):
+                        obj.delete()
+                        n += 1
+                        obj_display = force_text(obj)
+                        self.log_deletion(request, obj, obj_display)
+            self.message_user(
+                request,
+                _('Successfully deleted %(count)d items.') % {'count': n})
+            # Return None to display the change list page again
+            return None
+        else:
+            # (ab)using the built-in action to display the confirmation page
+            return delete_selected(self, request, queryset)
+
+    def get_actions(self, request):
+        actions = super(MPTTModelAdmin, self).get_actions(request)
+        if 'delete_selected' in actions:
+            actions['delete_selected'] = (
+                self.delete_selected_tree,
+                'delete_selected',
+                _('Delete selected %(verbose_name_plural)s'))
+        return actions

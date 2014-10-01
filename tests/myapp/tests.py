@@ -7,7 +7,7 @@ import sys
 import tempfile
 
 import django
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, User
 from django.db.models import get_models
 from django.forms.models import modelform_factory
 from django.template import Template, TemplateSyntaxError, Context
@@ -1436,3 +1436,42 @@ class TestDebugInfo(TreeTestCase):
             output = out.getvalue()
 
         self.assertIn('1,0,,1,1,20', output)
+
+
+class AdminBatch(TreeTestCase):
+    fixtures = ['categories.json']
+
+    def test_changelist(self):
+        user = User.objects.create_superuser('admin', 'test@example.com', 'p')
+
+        self.client.login(username=user.username, password='p')
+
+        self.assertContains(
+            self.client.get('/admin/myapp/category/'),
+            'name="_selected_action"',
+            10)
+
+        data = {
+            'action': 'delete_selected',
+            '_selected_action': ['5', '8', '9'],
+        }
+        response = self.client.post('/admin/myapp/category/', data)
+        self.assertContains(response, 'value="Yes, I\'m sure"', 1)
+
+        data['post'] = 'yes'
+        response = self.client.post('/admin/myapp/category/', data)
+
+        self.assertRedirects(
+            response,
+            '/admin/myapp/category/')
+
+        self.assertEqual(Category.objects.count(), 4)
+
+        # Batch deletion has not clobbered MPTT values, because our method
+        # delete_selected_tree has been used.
+        self.assertTreeEqual(Category.objects.all(), '''
+            1 - 1 0 1 8
+            2 1 1 1 2 7
+            3 2 1 2 3 4
+            4 2 1 2 5 6
+        ''')
