@@ -9,7 +9,7 @@ import django
 from django.contrib.auth.models import Group
 from django.db.models import get_models
 from django.forms.models import modelform_factory
-from django.template import Template, Context
+from django.template import Template, TemplateSyntaxError, Context
 from django.test import TestCase
 from django.utils.six import string_types, PY3, b
 
@@ -1156,6 +1156,12 @@ class RecurseTreeTestCase(TreeTestCase):
             '<ul><li>PlayStation 3<ul class="children">'
             '<li>Games</li><li>Hardware &amp; Accessories</li></ul></li></ul>'
         ))
+
+    def test_parsing_fail(self):
+        self.assertRaises(
+            TemplateSyntaxError,
+            Template,
+            '{% load mptt_tags %}{% recursetree %}{% endrecursetree %}')
 
 
 class TestAutoNowDateFieldModel(TreeTestCase):
