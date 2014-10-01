@@ -10,10 +10,10 @@ Setting up a Django model for MPTT
 ==================================
 
 Start with a basic subclass of MPTTModel, something like this::
-   
+
     from django.db import models
     from mptt.models import MPTTModel, TreeForeignKey
-    
+
     class Genre(MPTTModel):
         name = models.CharField(max_length=50, unique=True)
         parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
@@ -43,7 +43,7 @@ To change the names, create an ``MPTTMeta`` class inside your class::
     class Genre(MPTTModel):
         name = models.CharField(max_length=50, unique=True)
         parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
-        
+
         class MPTTMeta:
             level_attr = 'mptt_level'
             order_insertion_by=['name']
@@ -114,10 +114,10 @@ You can't subclass MPTTModel without modifying the Group source. Instead, you ca
     import mptt
     from mptt.fields import TreeForeignKey
     from django.contrib.auth.models import Group
-    
+
     # add a parent foreign key
     TreeForeignKey(Group, blank=True, null=True, db_index=True).contribute_to_class(Group, 'parent')
-    
+
     mptt.register(Group, order_insertion_by=['name'])
 
 
@@ -129,7 +129,7 @@ Subclasses of MPTTModel have the following instance methods:
 ``get_ancestors(ascending=False, include_self=False)``
 ------------------------------------------------------
 
-creates a ``QuerySet`` containing the ancestors of the model instance.
+Creates a ``QuerySet`` containing the ancestors of the model instance.
 
 These default to being in descending order (root ancestor first,
 immediate parent last); passing ``True`` for the ``ascending`` argument
@@ -137,6 +137,9 @@ will reverse the ordering (immediate parent first, root ancestor last).
 
 If ``include_self`` is ``True``, the ``QuerySet`` will also include the
 model instance itself.
+
+Raises a ``ValueError`` if the instance isn't saved already.
+
 
 ``get_children()``
 ------------------
@@ -149,6 +152,9 @@ the ORM to the instance's children is that a database query can be
 avoided in the case where the instance is a leaf node (it has no
 children).
 
+Raises a ``ValueError`` if the instance isn't saved already.
+
+
 ``get_descendants(include_self=False)``
 ---------------------------------------
 
@@ -157,6 +163,9 @@ tree order.
 
 If ``include_self`` is ``True``, the ``QuerySet`` will also include the
 model instance itself.
+
+Raises a ``ValueError`` if the instance isn't saved already.
+
 
 ``get_descendant_count()``
 --------------------------
@@ -171,11 +180,17 @@ any database access.
 Returns a ``QuerySet`` containing the ancestors, the model itself
 and the descendants, in tree order.
 
+Raises a ``ValueError`` if the instance isn't saved already.
+
+
 ``get_next_sibling()``
 ----------------------
 
 Returns the model instance's next sibling in the tree, or ``None`` if it
 doesn't have a next sibling.
+
+Raises a ``ValueError`` if the instance isn't saved already.
+
 
 ``get_previous_sibling()``
 --------------------------
@@ -183,10 +198,16 @@ doesn't have a next sibling.
 Returns the model instance's previous sibling in the tree, or ``None``
 if it doesn't have a previous sibling.
 
+Raises a ``ValueError`` if the instance isn't saved already.
+
+
 ``get_root()``
 --------------
 
 Returns the root node of the model instance's tree.
+
+Raises a ``ValueError`` if the instance isn't saved already.
+
 
 ``get_siblings(include_self=False)``
 ------------------------------------
@@ -196,6 +217,9 @@ nodes are considered to be siblings of other root nodes.
 
 If ``include_self`` is ``True``, the ``QuerySet`` will also include the
 model instance itself.
+
+Raises a ``ValueError`` if the instance isn't saved already.
+
 
 ``insert_at(target, position='first-child', save=False)``
 -----------------------------------------------------------

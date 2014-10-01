@@ -12,7 +12,7 @@ from django.db.models import get_models
 from django.forms.models import modelform_factory
 from django.template import Template, TemplateSyntaxError, Context
 from django.test import TestCase
-from django.utils.six import string_types, PY3, b
+from django.utils.six import string_types, PY3, b, assertRaisesRegex
 
 from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.forms import (
@@ -1481,3 +1481,23 @@ class AdminBatch(TreeTestCase):
             3 2 1 2 3 4
             4 2 1 2 5 6
         ''')
+
+
+class TestUnsaved(TreeTestCase):
+    def test_unsaved(self):
+        for method in [
+            'get_ancestors',
+            'get_family',
+            'get_children',
+            'get_descendants',
+            'get_leafnodes',
+            'get_next_sibling',
+            'get_previous_sibling',
+            'get_root',
+            'get_siblings',
+        ]:
+            assertRaisesRegex(
+                self,
+                ValueError,
+                'Cannot call %s on unsaved Genre instances' % method,
+                getattr(Genre(), method))

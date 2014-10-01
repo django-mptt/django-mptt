@@ -1,5 +1,5 @@
 from __future__ import unicode_literals
-from functools import reduce
+from functools import reduce, wraps
 import operator
 import threading
 
@@ -351,6 +351,18 @@ class MPTTModelBase(ModelBase):
         return cls
 
 
+def raise_if_unsaved(func):
+    @wraps(func)
+    def _fn(self, *args, **kwargs):
+        if not self.pk:
+            raise ValueError(
+                'Cannot call %(function)s on unsaved %(class)s instances'
+                % {'function': func.__name__, 'class': self.__class__.__name__}
+            )
+        return func(self, *args, **kwargs)
+    return _fn
+
+
 class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
     """
     Base class for tree models.
@@ -428,6 +440,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
             (t + num_inserted if t >= tree_id else t) for t in changes)
         cls._threadlocal.mptt_delayed_tree_changes = new_changes
 
+    @raise_if_unsaved
     def get_ancestors(self, ascending=False, include_self=False):
         """
         Creates a ``QuerySet`` containing the ancestors of this model
@@ -469,6 +482,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
 
         return qs.order_by(order_by)
 
+    @raise_if_unsaved
     def get_family(self):
         """
         Returns a ``QuerySet`` containing the ancestors, the model itself
@@ -493,6 +507,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
 
         return self._tree_manager.filter(ancestors | descendants)
 
+    @raise_if_unsaved
     def get_children(self):
         """
         Returns a ``QuerySet`` containing the immediate children of this
@@ -516,6 +531,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
 
             return self._tree_manager._mptt_filter(parent=self)
 
+    @raise_if_unsaved
     def get_descendants(self, include_self=False):
         """
         Creates a ``QuerySet`` containing descendants of this model
@@ -554,6 +570,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         else:
             return (self._mpttfield('right') - self._mpttfield('left') - 1) // 2
 
+    @raise_if_unsaved
     def get_leafnodes(self, include_self=False):
         """
         Creates a ``QuerySet`` containing leafnodes of this model
@@ -569,6 +586,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
             left=(models.F(self._mptt_meta.right_attr) - 1)
         )
 
+    @raise_if_unsaved
     def get_next_sibling(self, *filter_args, **filter_kwargs):
         """
         Returns this model instance's next sibling in the tree, or
@@ -591,6 +609,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         siblings = qs[:1]
         return siblings and siblings[0] or None
 
+    @raise_if_unsaved
     def get_previous_sibling(self, *filter_args, **filter_kwargs):
         """
         Returns this model instance's previous sibling in the tree, or
@@ -616,6 +635,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         siblings = qs[:1]
         return siblings and siblings[0] or None
 
+    @raise_if_unsaved
     def get_root(self):
         """
         Returns the root node of this model instance's tree.
@@ -628,6 +648,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
             parent=None,
         ).get()
 
+    @raise_if_unsaved
     def get_siblings(self, include_self=False):
         """
         Creates a ``QuerySet`` containing siblings of this model
@@ -681,6 +702,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         """
         return getattr(self, self._mptt_meta.parent_attr + '_id') is None
 
+    @raise_if_unsaved
     def is_descendant_of(self, other, include_self=False):
         """
         Returns ``True`` if this model is a descendant of the given node,
@@ -702,6 +724,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                 left > getattr(other, opts.left_attr)
                 and right < getattr(other, opts.right_attr))
 
+    @raise_if_unsaved
     def is_ancestor_of(self, other, include_self=False):
         """
         Returns ``True`` if this model is an ancestor of the given node,
