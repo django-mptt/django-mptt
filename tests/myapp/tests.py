@@ -1312,13 +1312,9 @@ class TestDebugInfo(TreeTestCase):
     fixtures = ['categories.json']
 
     def test_debug_info(self):
-        orig_stdout = sys.stdout
-        sys.stdout = io.BytesIO()
-
-        print_debug_info(Category.objects.all())
-
-        output = sys.stdout.getvalue()
-        sys.stdout = orig_stdout
+        with io.BytesIO() as out:
+            print_debug_info(Category.objects.all(), file=out)
+            output = out.getvalue()
 
         self.assertEqual(
             output.replace('\r', ''),

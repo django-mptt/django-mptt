@@ -150,14 +150,14 @@ def drilldown_tree_for_node(node, rel_cls=None, rel_field=None, count_attr=None,
     return itertools.chain(node.get_ancestors(), [node], children)
 
 
-def print_debug_info(qs):
+def print_debug_info(qs, file=None):
     """
     Given an mptt queryset, prints some debug information to stdout.
     Use this when things go wrong.
     Please include the output from this method when filing bug issues.
     """
     opts = qs.model._mptt_meta
-    writer = csv.writer(sys.stdout)
+    writer = csv.writer(sys.stdout if file is None else file)
     header = (
         'pk',
         opts.level_attr,
