@@ -16,7 +16,8 @@ from django.utils.six import string_types, PY3, b
 
 from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.forms import (
-    MPTTAdminForm, TreeNodeChoiceField, TreeNodeMultipleChoiceField)
+    MPTTAdminForm, TreeNodeChoiceField, TreeNodeMultipleChoiceField,
+    MoveNodeForm)
 from mptt.models import MPTTModel
 from mptt.templatetags.mptt_tags import cache_tree_children
 from mptt.utils import print_debug_info
@@ -1360,6 +1361,28 @@ class TestForms(TreeTestCase):
         self.assertTrue(isinstance(
             form.fields['m2m'],
             TreeNodeMultipleChoiceField))
+
+    def test_movenodeform(self):
+        c = Category.objects.get(pk=2)
+        form = MoveNodeForm(c, {
+            'target': '5',
+            'position': 'first-child',
+        })
+        self.assertTrue(form.is_valid())
+        form.save()
+
+        self.assertTreeEqual(Category.objects.all(), '''
+            1 - 1 0 1 20
+            5 1 1 1 2 13
+            2 5 1 2 3 8
+            3 2 1 3 4 5
+            4 2 1 3 6 7
+            6 5 1 2 9 10
+            7 5 1 2 11 12
+            8 1 1 1 14 19
+            9 8 1 2 15 16
+            10 8 1 2 17 18
+        ''')
 
 
 class TestAltersData(TreeTestCase):
