@@ -1119,6 +1119,22 @@ class CacheTreeChildrenTestCase(TreeTestCase):
             self.assertEqual(wii, wii_games.parent)
             self.assertEqual(games, wii_games.parent.parent)
 
+    def test_cache_tree_children_with_invalid_ordering(self):
+        """
+        Ensures that ``cache_tree_children`` fails with a ``ValueError`` when
+        passed a list which is not in tree order.
+        """
+
+        with self.assertNumQueries(1):
+            self.assertRaises(
+                ValueError,
+                cache_tree_children,
+                list(Category.objects.order_by('-id')))
+
+        # Passing a list with correct ordering should work, though.
+        with self.assertNumQueries(1):
+            cache_tree_children(list(Category.objects.all()))
+
 
 class RecurseTreeTestCase(TreeTestCase):
     """
