@@ -3,7 +3,8 @@ from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 
 import mptt
-from mptt.models import MPTTModel, TreeForeignKey
+from mptt.fields import TreeForeignKey, TreeOneToOneField, TreeManyToManyField
+from mptt.models import MPTTModel
 from mptt.managers import TreeManager
 from django.db.models.query import QuerySet
 
@@ -120,6 +121,12 @@ class CustomPKName(MPTTModel):
 
     def __str__(self):
         return self.name
+
+
+class ReferencingModel(models.Model):
+    fk = TreeForeignKey(Category, related_name='+')
+    one = TreeOneToOneField(Category, related_name='+')
+    m2m = TreeManyToManyField(Category, related_name='+')
 
 
 # for testing various types of inheritance:

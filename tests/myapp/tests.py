@@ -14,13 +14,14 @@ from django.test import TestCase
 from django.utils.six import string_types, PY3, b
 
 from mptt.exceptions import CantDisableUpdates, InvalidMove
-from mptt.forms import MPTTAdminForm
+from mptt.forms import (
+    MPTTAdminForm, TreeNodeChoiceField, TreeNodeMultipleChoiceField)
 from mptt.models import MPTTModel
 from mptt.templatetags.mptt_tags import cache_tree_children
 from myapp.models import (
     Category, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel,
     ConcreteModel, OrderedInsertion, AutoNowDateFieldModel, Person,
-    CustomTreeQueryset, Node)
+    CustomTreeQueryset, Node, ReferencingModel)
 
 extra_queries_per_update = 0
 if django.VERSION < (1, 6):
@@ -1240,6 +1241,24 @@ class TestForms(TreeTestCase):
             fields=('name', 'parent'),
         )
         CategoryForm(instance=c)
+
+    def test_field_types(self):
+        ReferencingModelForm = modelform_factory(
+            ReferencingModel,
+            exclude=('id',))
+
+        form = ReferencingModelForm()
+
+        # Also check whether we have the correct form field type
+        self.assertTrue(isinstance(
+            form.fields['fk'],
+            TreeNodeChoiceField))
+        self.assertTrue(isinstance(
+            form.fields['one'],
+            TreeNodeChoiceField))
+        self.assertTrue(isinstance(
+            form.fields['m2m'],
+            TreeNodeMultipleChoiceField))
 
 
 class TestAltersData(TreeTestCase):
