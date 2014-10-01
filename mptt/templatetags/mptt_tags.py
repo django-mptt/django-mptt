@@ -196,9 +196,9 @@ def tree_info(items, features=None):
     Example::
 
        {% for genre,structure in genres|tree_info %}
-       {% if tree.new_level %}<ul><li>{% else %}</li><li>{% endif %}
+       {% if structure.new_level %}<ul><li>{% else %}</li><li>{% endif %}
        {{ genre.name }}
-       {% for level in tree.closed_levels %}</li></ul>{% endfor %}
+       {% for level in structure.closed_levels %}</li></ul>{% endfor %}
        {% endfor %}
 
     """
