@@ -1,25 +1,19 @@
 from __future__ import unicode_literals
-import django
+
 from django.conf import settings
+from django.contrib.admin.templatetags.admin_list import (
+    result_hidden_fields, _boolean_icon, result_headers)
 from django.contrib.admin.util import lookup_field, display_for_field
 from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
+from django.template import Library
 from django.utils.html import escape, conditional_escape
 from django.utils.safestring import mark_safe
 try:
     from django.utils.encoding import smart_text, force_text
 except ImportError:  # pragma: no cover (Django 1.4 compatibility)
     from django.utils.encoding import smart_unicode as smart_text, force_unicode as force_text
-from django.template import Library
-
-from django.contrib.admin.templatetags.admin_list import _boolean_icon, result_headers
-
-
-if django.VERSION >= (1, 2, 3):
-    from django.contrib.admin.templatetags.admin_list import result_hidden_fields
-else:
-    result_hidden_fields = lambda cl: []
 
 
 register = Library()
