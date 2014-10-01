@@ -871,6 +871,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
 
         self._mptt_saved = True
         opts.update_mptt_cached_fields(self)
+    save.alters_data = True
 
     def delete(self, *args, **kwargs):
         """Calling ``delete`` on a node will delete it as well as its full subtree, as
@@ -891,3 +892,4 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
             self._tree_manager._post_insert_update_cached_parent_right(parent, right_shift)
 
         super(MPTTModel, self).delete(*args, **kwargs)
+    delete.alters_data = True

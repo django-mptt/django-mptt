@@ -20,7 +20,7 @@ from mptt.templatetags.mptt_tags import cache_tree_children
 from myapp.models import (
     Category, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel,
     ConcreteModel, OrderedInsertion, AutoNowDateFieldModel, Person,
-    CustomTreeQueryset)
+    CustomTreeQueryset, Node)
 
 extra_queries_per_update = 0
 if django.VERSION < (1, 6):
@@ -1176,3 +1176,22 @@ class TestForms(TreeTestCase):
             fields=('name', 'parent'),
         )
         CategoryForm(instance=c)
+
+
+class TestAltersData(TreeTestCase):
+    def test_alters_data(self):
+        node = Node()
+        output = Template('{{ node.save }}').render(Context({
+            'node': node,
+        }))
+        self.assertEqual(output, '')
+        self.assertEqual(node.pk, None)
+
+        node.save()
+        self.assertNotEqual(node.pk, None)
+
+        output = Template('{{ node.delete }}').render(Context({
+            'node': node,
+        }))
+
+        self.assertEqual(node, Node.objects.get(pk=node.pk))

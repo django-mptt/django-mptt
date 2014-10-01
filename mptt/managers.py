@@ -521,6 +521,7 @@ class TreeManager(models.Manager):
         for pk in pks:
             idx += 1
             rebuild_helper(pk, 1, idx)
+    rebuild.alters_data = True
 
     def partial_rebuild(self, tree_id):
         """

@@ -31,6 +31,7 @@ class Category(MPTTModel):
 
     def delete(self):
         super(Category, self).delete()
+    delete.alters_data = True
 
 
 @python_2_unicode_compatible
