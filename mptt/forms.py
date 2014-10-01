@@ -4,7 +4,6 @@ Form components for working with trees.
 from __future__ import unicode_literals
 from django import forms
 from django.forms.forms import NON_FIELD_ERRORS
-from django.forms.util import ErrorList
 try:
     from django.utils.encoding import smart_text
 except ImportError:  # pragma: no cover (Django 1.4 compatibility)
@@ -147,7 +146,7 @@ class MoveNodeForm(forms.Form):
                               self.cleaned_data['position'])
             return self.node
         except InvalidMove as e:
-            self.errors[NON_FIELD_ERRORS] = ErrorList(e)
+            self.errors[NON_FIELD_ERRORS] = self.error_class(e)
             raise
 
 
@@ -179,7 +178,7 @@ class MPTTAdminForm(forms.ModelForm):
         if self.instance and parent:
             if parent.is_descendant_of(self.instance, include_self=True):
                 if opts.parent_attr not in self._errors:
-                    self._errors[opts.parent_attr] = forms.util.ErrorList()
+                    self._errors[opts.parent_attr] = self.error_class()
                 self._errors[opts.parent_attr].append(_('Invalid parent'))
                 del self.cleaned_data[opts.parent_attr]
         return cleaned_data
