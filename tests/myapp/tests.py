@@ -1270,10 +1270,13 @@ class DrilldownTreeTestCase(TreeTestCase):
         {% endfor %}
         ''')
 
-    def render_for_node(self, pk, cumulative=False):
+    def render_for_node(self, pk, cumulative=False, m2m=False):
         template = self.template
         if cumulative:
             template = template.replace(' count ', ' cumulative count ')
+        if m2m:
+            template = template.replace('Game.genre', 'Game.genres_m2m')
+
         return Template(template).render(Context({
             'node': Genre.objects.get(pk=pk),
         })).replace('\n', '')
@@ -1281,7 +1284,8 @@ class DrilldownTreeTestCase(TreeTestCase):
     def test_drilldown_html(self):
         for idx, genre in enumerate(Genre.objects.all()):
             for i in range(idx):
-                genre.game_set.create(name='Game %s' % i)
+                game = genre.game_set.create(name='Game %s' % i)
+                genre.games_m2m.add(game)
 
         self.assertEqual(
             self.render_for_node(1),
@@ -1295,6 +1299,20 @@ class DrilldownTreeTestCase(TreeTestCase):
             '[1:],2:10,6:18')
         self.assertEqual(
             self.render_for_node(2, cumulative=True),
+            '1:,[2:],3:2,4:3,5:4')
+
+        self.assertEqual(
+            self.render_for_node(1, m2m=True),
+            '[1:],2:1,6:5')
+        self.assertEqual(
+            self.render_for_node(2, m2m=True),
+            '1:,[2:],3:2,4:3,5:4')
+
+        self.assertEqual(
+            self.render_for_node(1, cumulative=True, m2m=True),
+            '[1:],2:10,6:18')
+        self.assertEqual(
+            self.render_for_node(2, cumulative=True, m2m=True),
             '1:,[2:],3:2,4:3,5:4')
 
 

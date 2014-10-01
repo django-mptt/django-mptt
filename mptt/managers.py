@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 import contextlib
 
 from django.db import models, connections, router
-from django.db.models import F, Max, Q
+from django.db.models import F, ManyToManyField, Max, Q
 from django.utils.translation import ugettext as _
 
 from mptt.exceptions import CantDisableUpdates, InvalidMove
@@ -23,6 +23,27 @@ CUMULATIVE_COUNT_SUBQUERY = """(
     SELECT COUNT(*)
     FROM %(rel_table)s
     WHERE %(mptt_fk)s IN
+    (
+        SELECT m2.%(mptt_pk)s
+        FROM %(mptt_table)s m2
+        WHERE m2.%(tree_id)s = %(mptt_table)s.%(tree_id)s
+          AND m2.%(left)s BETWEEN %(mptt_table)s.%(left)s
+                              AND %(mptt_table)s.%(right)s
+    )
+)"""
+
+COUNT_SUBQUERY_M2M = """(
+    SELECT COUNT(*)
+    FROM %(rel_table)s j
+    INNER JOIN %(rel_m2m_table)s k ON j.%(rel_pk)s = k.%(rel_m2m_column)s
+    WHERE k.%(mptt_fk)s = %(mptt_table)s.%(mptt_pk)s
+)"""
+
+CUMULATIVE_COUNT_SUBQUERY_M2M = """(
+    SELECT COUNT(*)
+    FROM %(rel_table)s j
+    INNER JOIN %(rel_m2m_table)s k ON j.%(rel_pk)s = k.%(rel_m2m_column)s
+    WHERE k.%(mptt_fk)s IN
     (
         SELECT m2.%(mptt_pk)s
         FROM %(mptt_table)s m2
@@ -373,23 +394,50 @@ class TreeManager(models.Manager):
         qn = connection.ops.quote_name
 
         meta = self.model._meta
-        if cumulative:
-            subquery = CUMULATIVE_COUNT_SUBQUERY % {
-                'rel_table': qn(rel_model._meta.db_table),
-                'mptt_fk': qn(rel_model._meta.get_field(rel_field).column),
-                'mptt_table': qn(self.tree_model._meta.db_table),
-                'mptt_pk': qn(meta.pk.column),
-                'tree_id': qn(meta.get_field(self.tree_id_attr).column),
-                'left': qn(meta.get_field(self.left_attr).column),
-                'right': qn(meta.get_field(self.right_attr).column),
-            }
+        mptt_field = rel_model._meta.get_field(rel_field)
+
+        if isinstance(mptt_field, ManyToManyField):
+            if cumulative:
+                subquery = CUMULATIVE_COUNT_SUBQUERY_M2M % {
+                    'rel_table': qn(rel_model._meta.db_table),
+                    'rel_pk': qn(rel_model._meta.pk.column),
+                    'rel_m2m_table': qn(mptt_field.m2m_db_table()),
+                    'rel_m2m_column': qn(mptt_field.m2m_column_name()),
+                    'mptt_fk': qn(mptt_field.m2m_reverse_name()),
+                    'mptt_table': qn(self.tree_model._meta.db_table),
+                    'mptt_pk': qn(meta.pk.column),
+                    'tree_id': qn(meta.get_field(self.tree_id_attr).column),
+                    'left': qn(meta.get_field(self.left_attr).column),
+                    'right': qn(meta.get_field(self.right_attr).column),
+                }
+            else:
+                subquery = COUNT_SUBQUERY_M2M % {
+                    'rel_table': qn(rel_model._meta.db_table),
+                    'rel_pk': qn(rel_model._meta.pk.column),
+                    'rel_m2m_table': qn(mptt_field.m2m_db_table()),
+                    'rel_m2m_column': qn(mptt_field.m2m_column_name()),
+                    'mptt_fk': qn(mptt_field.m2m_reverse_name()),
+                    'mptt_table': qn(self.tree_model._meta.db_table),
+                    'mptt_pk': qn(meta.pk.column),
+                }
         else:
-            subquery = COUNT_SUBQUERY % {
-                'rel_table': qn(rel_model._meta.db_table),
-                'mptt_fk': qn(rel_model._meta.get_field(rel_field).column),
-                'mptt_table': qn(self.tree_model._meta.db_table),
-                'mptt_pk': qn(meta.pk.column),
-            }
+            if cumulative:
+                subquery = CUMULATIVE_COUNT_SUBQUERY % {
+                    'rel_table': qn(rel_model._meta.db_table),
+                    'mptt_fk': qn(rel_model._meta.get_field(rel_field).column),
+                    'mptt_table': qn(self.tree_model._meta.db_table),
+                    'mptt_pk': qn(meta.pk.column),
+                    'tree_id': qn(meta.get_field(self.tree_id_attr).column),
+                    'left': qn(meta.get_field(self.left_attr).column),
+                    'right': qn(meta.get_field(self.right_attr).column),
+                }
+            else:
+                subquery = COUNT_SUBQUERY % {
+                    'rel_table': qn(rel_model._meta.db_table),
+                    'mptt_fk': qn(rel_model._meta.get_field(rel_field).column),
+                    'mptt_table': qn(self.tree_model._meta.db_table),
+                    'mptt_pk': qn(meta.pk.column),
+                }
         return queryset.extra(select={count_attr: subquery})
 
     def insert_node(self, node, target, position='last-child', save=False,

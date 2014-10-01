@@ -46,6 +46,7 @@ class Genre(MPTTModel):
 
 class Game(models.Model):
     genre = models.ForeignKey(Genre)
+    genres_m2m = models.ManyToManyField(Genre, related_name='games_m2m')
     name = models.CharField(max_length=50)
 
     def __str__(self):
