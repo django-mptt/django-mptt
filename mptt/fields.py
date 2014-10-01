@@ -38,7 +38,7 @@ class TreeManyToManyField(models.ManyToManyField):
         return super(TreeManyToManyField, self).formfield(**kwargs)
 
 # South integration
-try:
+try:  # pragma: no cover
     from south.modelsinspector import add_introspection_rules
     add_introspection_rules([], ["^mptt\.fields\.TreeForeignKey"])
     add_introspection_rules([], ["^mptt\.fields\.TreeOneToOneField"])
