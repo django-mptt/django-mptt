@@ -1342,7 +1342,29 @@ class TestForms(TreeTestCase):
             form=MPTTAdminForm,
             fields=('name', 'parent'),
         )
-        CategoryForm(instance=c)
+        self.assertTrue(CategoryForm(instance=c))
+
+        # Test that the parent field is properly limited. (queryset)
+        form = CategoryForm({
+            'name': c.name,
+            'parent': c.children.all()[0].pk,
+        }, instance=c)
+        self.assertFalse(form.is_valid())
+        self.assertIn(
+            'Select a valid choice',
+            '%s' % form.errors)
+
+        # Test that even though we remove the field queryset limit,
+        # validation still fails.
+        form = CategoryForm({
+            'name': c.name,
+            'parent': c.children.all()[0].pk,
+        }, instance=c)
+        form.fields['parent'].queryset = Category.objects.all()
+        self.assertFalse(form.is_valid())
+        self.assertIn(
+            'Invalid parent',
+            '%s' % form.errors)
 
     def test_field_types(self):
         ReferencingModelForm = modelform_factory(
