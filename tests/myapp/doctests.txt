@@ -192,6 +192,12 @@
 <option value="8">+-- Tactical RPG</option>
 </select>
 
+>>> form = MoveNodeForm(Genre.objects.get(pk=7), position_choices=(('left', 'left'),))
+>>> print(form['position'])
+<select id="id_position" name="position">
+<option value="left">left</option>
+</select>
+
 # TreeManager Methods #########################################################
 # check that tree manager is the explicitly defined tree manager for Person
 >>> Person._tree_manager == Person.my_tree_manager

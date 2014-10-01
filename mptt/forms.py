@@ -130,7 +130,7 @@ class MoveNodeForm(forms.Form):
         if level_indicator:
             self.fields['target'].level_indicator = level_indicator
         if position_choices:
-            self.fields['position_choices'].choices = position_choices
+            self.fields['position'].choices = position_choices
 
     def save(self):
         """
