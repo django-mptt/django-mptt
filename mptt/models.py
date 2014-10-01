@@ -424,8 +424,8 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         if num_inserted < 0:
             deleted = range(tree_id + num_inserted, -num_inserted)
             changes.difference_update(deleted)
-        new_changes = set([
-            (t + num_inserted if t >= tree_id else t) for t in changes])
+        new_changes = set(
+            (t + num_inserted if t >= tree_id else t) for t in changes)
         cls._threadlocal.mptt_delayed_tree_changes = new_changes
 
     def get_ancestors(self, ascending=False, include_self=False):

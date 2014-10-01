@@ -225,7 +225,7 @@ def tree_path(items, separator=' :: '):
        {{ some_node.get_ancestors|tree_path:" > " }}
 
     """
-    return separator.join([force_text(i) for i in items])
+    return separator.join(force_text(i) for i in items)
 
 
 # ## RECURSIVE TAGS

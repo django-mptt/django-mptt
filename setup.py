@@ -13,7 +13,7 @@ except ImportError:
 
 # Dynamically calculate the version based on mptt.VERSION
 version_tuple = VERSION
-version = ".".join([str(v) for v in version_tuple])
+version = ".".join(str(v) for v in version_tuple)
 
 # on py3, all these are text strings
 # on py2, they're all byte strings.
