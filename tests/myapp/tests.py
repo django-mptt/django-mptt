@@ -467,7 +467,9 @@ class DisabledUpdatesTestCase(TreeTestCase):
         self.assertTrue(ConcreteModel._mptt_updates_enabled)
         self.assertTrue(SingleProxyModel._mptt_updates_enabled)
 
-        self.assertRaises(CantDisableUpdates, SingleProxyModel.objects.disable_mptt_updates().__enter__)
+        self.assertRaises(
+            CantDisableUpdates,
+            SingleProxyModel.objects.disable_mptt_updates().__enter__)
 
         self.assertTrue(ConcreteModel._mptt_updates_enabled)
         self.assertTrue(SingleProxyModel._mptt_updates_enabled)
@@ -483,7 +485,9 @@ class DisabledUpdatesTestCase(TreeTestCase):
         self.assertTrue(ConcreteModel._mptt_updates_enabled)
         self.assertTrue(DoubleProxyModel._mptt_updates_enabled)
 
-        self.assertRaises(CantDisableUpdates, DoubleProxyModel.objects.disable_mptt_updates().__enter__)
+        self.assertRaises(
+            CantDisableUpdates,
+            DoubleProxyModel.objects.disable_mptt_updates().__enter__)
 
         self.assertTrue(ConcreteModel._mptt_updates_enabled)
         self.assertTrue(DoubleProxyModel._mptt_updates_enabled)
@@ -655,7 +659,9 @@ class DelayedUpdatesTestCase(TreeTestCase):
         self.assertFalse(ConcreteModel._mptt_is_tracking)
         self.assertFalse(SingleProxyModel._mptt_is_tracking)
 
-        self.assertRaises(CantDisableUpdates, SingleProxyModel.objects.delay_mptt_updates().__enter__)
+        self.assertRaises(
+            CantDisableUpdates,
+            SingleProxyModel.objects.delay_mptt_updates().__enter__)
 
         self.assertFalse(ConcreteModel._mptt_is_tracking)
         self.assertFalse(SingleProxyModel._mptt_is_tracking)
@@ -1025,7 +1031,9 @@ class ManagerTests(TreeTestCase):
                 continue
             tm = model._tree_manager
             if tm in seen:
-                self.fail("Tree managers for %s and %s are the same manager" % (model.__name__, seen[tm].__name__))
+                self.fail(
+                    "Tree managers for %s and %s are the same manager"
+                    % (model.__name__, seen[tm].__name__))
             seen[tm] = model
 
     def test_all_managers_have_correct_model(self):

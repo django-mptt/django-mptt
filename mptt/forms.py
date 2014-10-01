@@ -13,7 +13,10 @@ from django.utils.translation import ugettext_lazy as _
 
 from mptt.exceptions import InvalidMove
 
-__all__ = ('TreeNodeChoiceField', 'TreeNodeMultipleChoiceField', 'TreeNodePositionField', 'MoveNodeForm')
+__all__ = (
+    'TreeNodeChoiceField', 'TreeNodeMultipleChoiceField',
+    'TreeNodePositionField', 'MoveNodeForm',
+)
 
 # Fields ######################################################################
 

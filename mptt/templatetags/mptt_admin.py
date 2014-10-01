@@ -9,7 +9,7 @@ from django.utils.html import escape, conditional_escape
 from django.utils.safestring import mark_safe
 try:
     from django.utils.encoding import smart_text, force_text
-except ImportError:
+except ImportError:  # pragma: no cover (Django 1.4 compatibility)
     from django.utils.encoding import smart_unicode as smart_text, force_unicode as force_text
 from django.template import Library
 
@@ -120,8 +120,14 @@ def mptt_items_for_result(cl, result, form):
             value = result.serializable_value(attr)
             result_id = repr(force_text(value))[1:]
             # #### MPTT SUBSTITUTION START
-            yield mark_safe('<%s%s%s><a href="%s"%s>%s</a></%s>' %
-                (table_tag, row_class, padding_attr, url, (cl.is_popup and ' onclick="opener.dismissRelatedLookupPopup(window, %s); return false;"' % result_id or ''), conditional_escape(result_repr), table_tag))
+            yield mark_safe('<%s%s%s><a href="%s"%s>%s</a></%s>' % (
+                table_tag,
+                row_class,
+                padding_attr,
+                url,
+                (cl.is_popup and ' onclick="opener.dismissRelatedLookupPopup(window, %s); return false;"' % result_id or ''),  # noqa
+                conditional_escape(result_repr),
+                table_tag))
             # #### MPTT SUBSTITUTION END
         else:
             # By default the fields come from ModelAdmin.list_editable, but if we pull
@@ -162,6 +168,8 @@ def mptt_result_list(cl):
 # custom template is merely so we can strip out sortable-ness from the column headers
 # Based on admin/change_list_results.html (1.3.1)
 if IS_GRAPPELLI_INSTALLED:
-    mptt_result_list = register.inclusion_tag("admin/grappelli_mptt_change_list_results.html")(mptt_result_list)
+    mptt_result_list = register.inclusion_tag(
+        "admin/grappelli_mptt_change_list_results.html")(mptt_result_list)
 else:
-    mptt_result_list = register.inclusion_tag("admin/mptt_change_list_results.html")(mptt_result_list)
+    mptt_result_list = register.inclusion_tag(
+        "admin/mptt_change_list_results.html")(mptt_result_list)

@@ -8,7 +8,7 @@ from django.db.models import get_model
 from django.db.models.fields import FieldDoesNotExist
 try:
     from django.utils.encoding import force_text
-except ImportError:
+except ImportError:  # pragma: no cover (Django 1.4 compatibility)
     from django.utils.encoding import force_unicode as force_text
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
@@ -136,7 +136,7 @@ def do_drilldown_tree_for_node(parser, token):
        {% drilldown_tree_for_node genre as drilldown count tests.Game.genre in game_count %}
        {% drilldown_tree_for_node genre as drilldown cumulative count tests.Game.genre in game_count %}
 
-    """
+    """  # noqa
     bits = token.contents.split()
     len_bits = len(bits)
     if len_bits not in (4, 8, 9):
@@ -148,21 +148,26 @@ def do_drilldown_tree_for_node(parser, token):
     if len_bits == 8:
         if bits[4] != 'count':
             raise template.TemplateSyntaxError(
-                _("if seven arguments are given, fourth argument to %s tag must be 'with'") % bits[0])
+                _("if seven arguments are given, fourth argument to %s tag must be 'with'")
+                % bits[0])
         if bits[6] != 'in':
             raise template.TemplateSyntaxError(
-                _("if seven arguments are given, sixth argument to %s tag must be 'in'") % bits[0])
+                _("if seven arguments are given, sixth argument to %s tag must be 'in'")
+                % bits[0])
         return DrilldownTreeForNodeNode(bits[1], bits[3], bits[5], bits[7])
     elif len_bits == 9:
         if bits[4] != 'cumulative':
             raise template.TemplateSyntaxError(
-                _("if eight arguments are given, fourth argument to %s tag must be 'cumulative'") % bits[0])
+                _("if eight arguments are given, fourth argument to %s tag must be 'cumulative'")
+                % bits[0])
         if bits[5] != 'count':
             raise template.TemplateSyntaxError(
-                _("if eight arguments are given, fifth argument to %s tag must be 'count'") % bits[0])
+                _("if eight arguments are given, fifth argument to %s tag must be 'count'")
+                % bits[0])
         if bits[7] != 'in':
             raise template.TemplateSyntaxError(
-                _("if eight arguments are given, seventh argument to %s tag must be 'in'") % bits[0])
+                _("if eight arguments are given, seventh argument to %s tag must be 'in'")
+                % bits[0])
         return DrilldownTreeForNodeNode(bits[1], bits[3], bits[6], bits[8], cumulative=True)
     else:
         return DrilldownTreeForNodeNode(bits[1], bits[3])

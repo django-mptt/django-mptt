@@ -72,7 +72,9 @@ class MPTTOptions(object):
         opts.extend(list(kwargs.items()))
 
         if 'tree_manager_attr' in [opt[0] for opt in opts]:
-            raise ValueError("`tree_manager_attr` has been removed; you should instantiate a TreeManager as a normal manager on your model instead.")
+            raise ValueError(
+                "`tree_manager_attr` has been removed; you should instantiate"
+                " a TreeManager as a normal manager on your model instead.")
 
         for key, value in opts:
             if key[:2] == '__':
@@ -128,7 +130,8 @@ class MPTTOptions(object):
                     f = f[1:]
                 field_names__add(f)
         for field_name in field_names:
-            instance._mptt_cached_fields[field_name] = self.get_raw_field_value(instance, field_name)
+            instance._mptt_cached_fields[field_name] = self.get_raw_field_value(
+                instance, field_name)
 
     def insertion_target_filters(self, instance, order_insertion_by):
         """
@@ -255,7 +258,8 @@ class MPTTModelBase(ModelBase):
         else:
             bases = [base for base in cls.mro() if issubclass(base, MPTTModel)]
         for base in bases:
-            if not (base._meta.abstract or base._meta.proxy) and base._tree_manager.tree_model is base:
+            if (not (base._meta.abstract or base._meta.proxy)
+                    and base._tree_manager.tree_model is base):
                 cls._mptt_tracking_base = base
                 break
         if cls is cls._mptt_tracking_base:
@@ -374,7 +378,8 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
     # that settable classproperties are very, very hard to do! suggestions please :)
     @classmethod
     def _set_mptt_updates_enabled(cls, value):
-        assert cls is cls._mptt_tracking_base, "Can't enable or disable mptt updates on a non-tracking class."
+        assert cls is cls._mptt_tracking_base,\
+            "Can't enable or disable mptt updates on a non-tracking class."
         cls._threadlocal.mptt_updates_enabled = value
 
     @_classproperty
@@ -388,13 +393,15 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
 
     @classmethod
     def _mptt_start_tracking(cls):
-        assert cls is cls._mptt_tracking_base, "Can't start or stop mptt tracking on a non-tracking class."
+        assert cls is cls._mptt_tracking_base,\
+            "Can't start or stop mptt tracking on a non-tracking class."
         assert not cls._mptt_is_tracking, "mptt tracking is already started."
         cls._threadlocal.mptt_delayed_tree_changes = set()
 
     @classmethod
     def _mptt_stop_tracking(cls):
-        assert cls is cls._mptt_tracking_base, "Can't start or stop mptt tracking on a non-tracking class."
+        assert cls is cls._mptt_tracking_base,\
+            "Can't start or stop mptt tracking on a non-tracking class."
         assert cls._mptt_is_tracking, "mptt tracking isn't started."
         results = cls._threadlocal.mptt_delayed_tree_changes
         cls._threadlocal.mptt_delayed_tree_changes = None
@@ -417,7 +424,8 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         if num_inserted < 0:
             deleted = range(tree_id + num_inserted, -num_inserted)
             changes.difference_update(deleted)
-        new_changes = set([(t + num_inserted if t >= tree_id else t) for t in changes])
+        new_changes = set([
+            (t + num_inserted if t >= tree_id else t) for t in changes])
         cls._threadlocal.mptt_delayed_tree_changes = new_changes
 
     def get_ancestors(self, ascending=False, include_self=False):
@@ -556,7 +564,8 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         """
         descendants = self.get_descendants(include_self=include_self)
 
-        return self._tree_manager._mptt_filter(descendants,
+        return self._tree_manager._mptt_filter(
+            descendants,
             left=(models.F(self._mptt_meta.right_attr) - 1)
         )
 
@@ -567,12 +576,14 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         """
         qs = self._tree_manager.filter(*filter_args, **filter_kwargs)
         if self.is_root_node():
-            qs = self._tree_manager._mptt_filter(qs,
+            qs = self._tree_manager._mptt_filter(
+                qs,
                 parent=None,
                 tree_id__gt=self._mpttfield('tree_id'),
             )
         else:
-            qs = self._tree_manager._mptt_filter(qs,
+            qs = self._tree_manager._mptt_filter(
+                qs,
                 parent__pk=getattr(self, self._mptt_meta.parent_attr + '_id'),
                 left__gt=self._mpttfield('right'),
             )
@@ -588,13 +599,15 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         opts = self._mptt_meta
         qs = self._tree_manager.filter(*filter_args, **filter_kwargs)
         if self.is_root_node():
-            qs = self._tree_manager._mptt_filter(qs,
+            qs = self._tree_manager._mptt_filter(
+                qs,
                 parent=None,
                 tree_id__lt=self._mpttfield('tree_id'),
             )
             qs = qs.order_by('-' + opts.tree_id_attr)
         else:
-            qs = self._tree_manager._mptt_filter(qs,
+            qs = self._tree_manager._mptt_filter(
+                qs,
                 parent__pk=getattr(self, opts.parent_attr + '_id'),
                 right__lt=self._mpttfield('left'),
             )
@@ -644,7 +657,8 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         Convenience method for calling ``TreeManager.insert_node`` with this
         model instance.
         """
-        self._tree_manager.insert_node(self, target, position, save, allow_existing_pk=allow_existing_pk)
+        self._tree_manager.insert_node(
+            self, target, position, save, allow_existing_pk=allow_existing_pk)
 
     def is_child_node(self):
         """
@@ -684,7 +698,9 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
             left = getattr(self, opts.left_attr)
             right = getattr(self, opts.right_attr)
 
-            return left > getattr(other, opts.left_attr) and right < getattr(other, opts.right_attr)
+            return (
+                left > getattr(other, opts.left_attr)
+                and right < getattr(other, opts.right_attr))
 
     def is_ancestor_of(self, other, include_self=False):
         """
@@ -748,8 +764,8 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
             if self._mpttfield('left') is None:
                 # we need to set *some* values, though don't care too much what.
                 parent = getattr(self, '_%s_cache' % opts.parent_attr, None)
-                # if we have a cached parent, have a stab at getting possibly-correct values.
-                # otherwise, meh.
+                # if we have a cached parent, have a stab at getting
+                # possibly-correct values.  otherwise, meh.
                 if parent:
                     left = parent._mpttfield('left') + 1
                     setattr(self, opts.left_attr, left)
@@ -801,16 +817,18 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                 try:
                     right_sibling = None
                     if opts.order_insertion_by:
-                        right_sibling = opts.get_ordered_insertion_target(self, getattr(self, opts.parent_attr))
+                        right_sibling = opts.get_ordered_insertion_target(
+                            self, getattr(self, opts.parent_attr))
 
                     if parent_id is not None:
                         parent = getattr(self, opts.parent_attr)
-                        # If we aren't already a descendant of the new parent, we need to update the parent.rght so
-                        # things like get_children and get_descendant_count work correctly.
+                        # If we aren't already a descendant of the new parent,
+                        # we need to update the parent.rght so things like
+                        # get_children and get_descendant_count work correctly.
                         update_cached_parent = (
-                            getattr(self, opts.tree_id_attr) != getattr(parent, opts.tree_id_attr) or
-                            getattr(self, opts.left_attr) < getattr(parent, opts.left_attr) or
-                            getattr(self, opts.right_attr) > getattr(parent, opts.right_attr))
+                            getattr(self, opts.tree_id_attr) != getattr(parent, opts.tree_id_attr)
+                            or getattr(self, opts.left_attr) < getattr(parent, opts.left_attr)
+                            or getattr(self, opts.right_attr) > getattr(parent, opts.right_attr))
 
                     if right_sibling:
                         self._tree_manager._move_node(self, right_sibling, 'left', save=False)
@@ -819,17 +837,21 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                         if parent_id is None:
                             root_nodes = self._tree_manager.root_nodes()
                             try:
-                                rightmost_sibling = root_nodes.exclude(pk=self.pk).order_by('-' + opts.tree_id_attr)[0]
-                                self._tree_manager._move_node(self, rightmost_sibling, 'right', save=False)
+                                rightmost_sibling = root_nodes.exclude(
+                                    pk=self.pk).order_by('-' + opts.tree_id_attr)[0]
+                                self._tree_manager._move_node(
+                                    self, rightmost_sibling, 'right', save=False)
                             except IndexError:
                                 pass
                         else:
-                            self._tree_manager._move_node(self, parent, 'last-child', save=False)
+                            self._tree_manager._move_node(
+                                self, parent, 'last-child', save=False)
 
                     if parent_id is not None and update_cached_parent:
                         # Update rght of cached parent
                         right_shift = 2 * (self.get_descendant_count() + 1)
-                        self._tree_manager._post_insert_update_cached_parent_right(parent, right_shift)
+                        self._tree_manager._post_insert_update_cached_parent_right(
+                            parent, right_shift)
                 finally:
                     # Make sure the new parent is always
                     # restored on the way out in case of errors.
@@ -845,9 +867,11 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                 parent = getattr(self, opts.parent_attr)
 
                 right_sibling = None
-                # if we're inside delay_mptt_updates, don't do queries to find sibling position.
-                # instead, do default insertion. correct positions will be found during partial rebuild later.
-                # *unless* this is a root node. (as update tracking doesn't handle re-ordering of trees.)
+                # if we're inside delay_mptt_updates, don't do queries to find
+                # sibling position.  instead, do default insertion. correct
+                # positions will be found during partial rebuild later.
+                # *unless* this is a root node. (as update tracking doesn't
+                # handle re-ordering of trees.)
                 if do_updates or parent is None:
                     if opts.order_insertion_by:
                         right_sibling = opts.get_ordered_insertion_target(self, parent)
@@ -859,7 +883,8 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                         # since we didn't insert into parent, we have to update parent.rght
                         # here instead of in TreeManager.insert_node()
                         right_shift = 2 * (self.get_descendant_count() + 1)
-                        self._tree_manager._post_insert_update_cached_parent_right(parent, right_shift)
+                        self._tree_manager._post_insert_update_cached_parent_right(
+                            parent, right_shift)
                 else:
                     # Default insertion
                     self.insert_at(parent, position='last-child', allow_existing_pk=True)
@@ -874,11 +899,11 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
     save.alters_data = True
 
     def delete(self, *args, **kwargs):
-        """Calling ``delete`` on a node will delete it as well as its full subtree, as
-        opposed to reattaching all the subnodes to its parent node.
+        """Calling ``delete`` on a node will delete it as well as its full
+        subtree, as opposed to reattaching all the subnodes to its parent node.
 
-        There are no argument specific to a MPTT model, all the arguments will be passed
-        directly to the django's ``Model.delete``.
+        There are no argument specific to a MPTT model, all the arguments will
+        be passed directly to the django's ``Model.delete``.
 
         ``delete`` will not return anything. """
         tree_width = (self._mpttfield('right') -
