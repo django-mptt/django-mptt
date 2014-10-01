@@ -1191,6 +1191,18 @@ class TreeInfoTestCase(TreeTestCase):
         {% for level in structure.closed_levels %}</li></ul>{% endfor %}
         {% endfor %}''')
 
+    template_with_ancestors = re.sub(r'(?m)^[\s]+', '', '''
+        {% load mptt_tags %}
+        {% for node, structure in nodes|tree_info:"ancestors" %}
+        {% if structure.new_level %}<ul><li>{% else %}</li><li>{% endif %}
+        {{ node.pk }}
+        {% for ancestor in structure.ancestors %}
+            {% if forloop.first %}A:{% endif %}
+            {{ ancestor }}{% if not forloop.last %},{% endif %}
+        {% endfor %}
+        {% for level in structure.closed_levels %}</li></ul>{% endfor %}
+        {% endfor %}''')
+
     def test_tree_info_html(self):
         html = Template(self.template).render(Context({
             'nodes': Genre.objects.all(),
@@ -1213,6 +1225,19 @@ class TreeInfoTestCase(TreeTestCase):
             html,
             '<ul><li>2<ul><li>3</li><li>4</li><li>5</li></ul></li><li>6<ul>'
             '<li>7</li><li>8</li></ul></li><li>10</li><li>11</li></ul>')
+
+        html = Template(self.template_with_ancestors).render(Context({
+            'nodes': Genre.objects.filter(**{
+                '%s__gte' % Genre._mptt_meta.level_attr: 1,
+                '%s__lte' % Genre._mptt_meta.level_attr: 2,
+            }),
+        })).replace('\n', '')
+
+        self.assertEqual(
+            html,
+            '<ul><li>2<ul><li>3A:Platformer</li><li>4A:Platformer</li>'
+            '<li>5A:Platformer</li></ul></li><li>6<ul><li>7A:Shootemup</li>'
+            '<li>8A:Shootemup</li></ul></li><li>10</li><li>11</li></ul>')
 
 
 class TestAutoNowDateFieldModel(TreeTestCase):
