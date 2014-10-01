@@ -1243,6 +1243,61 @@ class TreeInfoTestCase(TreeTestCase):
             '<li>8A:Shootemup</li></ul></li><li>10</li><li>11</li></ul>')
 
 
+class FullTreeTestCase(TreeTestCase):
+    fixtures = ['genres.json']
+    template = re.sub(r'(?m)^[\s]+', '', '''
+        {% load mptt_tags %}
+        {% full_tree_for_model myapp.Genre as tree %}
+        {% for node in tree %}{{ node.pk }},{% endfor %}
+        ''')
+
+    def test_full_tree_html(self):
+        html = Template(self.template).render(Context({})).replace('\n', '')
+        self.assertEqual(
+            html,
+            '1,2,3,4,5,6,7,8,9,10,11,')
+
+
+class DrilldownTreeTestCase(TreeTestCase):
+    fixtures = ['genres.json']
+    template = re.sub(r'(?m)^[\s]+', '', '''
+        {% load mptt_tags %}
+        {% drilldown_tree_for_node node as tree count myapp.Game.genre in game_count %}
+        {% for n in tree %}
+            {% ifequal n node %}[{% endifequal %}
+            {{ n.pk }}:{{ n.game_count }}
+            {% ifequal n node %}]{% endifequal %}{% if not forloop.last %},{% endif %}
+        {% endfor %}
+        ''')
+
+    def render_for_node(self, pk, cumulative=False):
+        template = self.template
+        if cumulative:
+            template = template.replace(' count ', ' cumulative count ')
+        return Template(template).render(Context({
+            'node': Genre.objects.get(pk=pk),
+        })).replace('\n', '')
+
+    def test_drilldown_html(self):
+        for idx, genre in enumerate(Genre.objects.all()):
+            for i in range(idx):
+                genre.game_set.create(name='Game %s' % i)
+
+        self.assertEqual(
+            self.render_for_node(1),
+            '[1:],2:1,6:5')
+        self.assertEqual(
+            self.render_for_node(2),
+            '1:,[2:],3:2,4:3,5:4')
+
+        self.assertEqual(
+            self.render_for_node(1, cumulative=True),
+            '[1:],2:10,6:18')
+        self.assertEqual(
+            self.render_for_node(2, cumulative=True),
+            '1:,[2:],3:2,4:3,5:4')
+
+
 class TestAutoNowDateFieldModel(TreeTestCase):
     # https://github.com/django-mptt/django-mptt/issues/175
 

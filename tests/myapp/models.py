@@ -44,6 +44,14 @@ class Genre(MPTTModel):
         return self.name
 
 
+class Game(models.Model):
+    genre = models.ForeignKey(Genre)
+    name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
+
+
 class Insert(MPTTModel):
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
 
