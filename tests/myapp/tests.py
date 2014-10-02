@@ -1446,10 +1446,16 @@ class AdminBatch(TreeTestCase):
 
         self.client.login(username=user.username, password='p')
 
+        response = self.client.get('/admin/myapp/category/')
         self.assertContains(
-            self.client.get('/admin/myapp/category/'),
+            response,
             'name="_selected_action"',
             10)
+
+        mptt_opts = Category._mptt_meta
+        self.assertEqual(
+            response.context['cl'].result_list.query.order_by[:2],
+            [mptt_opts.tree_id_attr, mptt_opts.left_attr])
 
         data = {
             'action': 'delete_selected',
