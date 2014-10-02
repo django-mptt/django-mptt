@@ -13,6 +13,7 @@ from django.db import models
 from django.template import Library
 from django.utils.html import escape, conditional_escape
 from django.utils.safestring import mark_safe
+from django.utils.translation import get_language_bidi
 try:
     from django.utils.encoding import smart_text, force_text
 except ImportError:  # pragma: no cover (Django 1.4 compatibility)
@@ -98,7 +99,9 @@ def mptt_items_for_result(cl, result, form):
         # #### MPTT ADDITION START
         if field_name == mptt_indent_field:
             level = getattr(result, result._mptt_meta.level_attr)
-            padding_attr = ' style="padding-left:%spx"' % (5 + mptt_level_indent * level)
+            padding_attr = ' style="padding-%s:%spx"' % (
+                'right' if get_language_bidi() else 'left',
+                5 + mptt_level_indent * level)
         else:
             padding_attr = ''
         # #### MPTT ADDITION END
