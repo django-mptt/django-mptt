@@ -4,7 +4,11 @@ trees.
 """
 from __future__ import unicode_literals
 from django import template
-from django.db.models import get_model
+try:
+    from django.apps import apps
+    get_model = apps.get_model
+except ImportError:  # pragma: no cover (Django 1.6 compatibility)
+    from django.db.models import get_model
 from django.db.models.fields import FieldDoesNotExist
 try:
     from django.utils.encoding import force_text

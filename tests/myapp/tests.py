@@ -8,7 +8,11 @@ import tempfile
 
 import django
 from django.contrib.auth.models import Group, User
-from django.db.models import get_models
+try:
+    from django.apps import apps
+    get_models = apps.get_models
+except ImportError:  # pragma: no cover (Django 1.6 compatibility)
+    from django.db.models import get_models
 from django.forms.models import modelform_factory
 from django.template import Template, TemplateSyntaxError, Context
 from django.test import TestCase
