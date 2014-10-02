@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 from django.db import models
+from django_extensions.db.fields import UUIDField
 from django.utils.encoding import python_2_unicode_compatible
 
 import mptt
@@ -79,6 +80,12 @@ class Node(MPTTModel):
         right_attr = 'zis'
         level_attr = 'madness'
         tree_id_attr = 'work'
+
+
+class UUIDNode(MPTTModel):
+    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+    uuid = UUIDField(primary_key=True)
+    name = models.CharField(max_length=50)
 
 
 @python_2_unicode_compatible

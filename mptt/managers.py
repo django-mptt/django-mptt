@@ -54,6 +54,16 @@ CUMULATIVE_COUNT_SUBQUERY_M2M = """(
 )"""
 
 
+def get_pk_db_prep_value(instance, connection):
+    try:
+        fields = instance._meta.concrete_fields
+    except AttributeError:
+        # Django < 1.6
+        fields = instance._meta.fields
+    pk_field = fields[instance._meta.pk_index()]
+    return pk_field.get_db_prep_value(instance.pk, connection)
+
+
 class TreeManager(models.Manager):
     """
     A manager for working with trees of objects.
@@ -783,6 +793,7 @@ class TreeManager(models.Manager):
         right = getattr(node, self.right_attr)
         gap_size = right - left + 1
         gap_target_left = left - 1
+        node_pk = get_pk_db_prep_value(node, connection)
         params = [
             left, right, level_change,
             left, right, new_tree_id,
@@ -790,7 +801,7 @@ class TreeManager(models.Manager):
             gap_target_left, gap_size,
             left, right, left_right_change,
             gap_target_left, gap_size,
-            node.pk,
+            node_pk,
             getattr(node, self.tree_id_attr)
         ]
         if parent_pk is not None:
@@ -1106,13 +1117,15 @@ class TreeManager(models.Manager):
         }
 
         cursor = connection.cursor()
+        node_pk = get_pk_db_prep_value(node, connection)
+        parent_pk = get_pk_db_prep_value(parent, connection)
         cursor.execute(move_subtree_query, [
             left, right, level_change,
             left, right, left_right_change,
             left_boundary, right_boundary, gap_size,
             left, right, left_right_change,
             left_boundary, right_boundary, gap_size,
-            node.pk, parent.pk,
+            node_pk, parent_pk,
             tree_id])
 
         # Update the node to be consistent with the updated
@@ -1177,9 +1190,11 @@ class TreeManager(models.Manager):
         }
 
         cursor = connection.cursor()
+        node_pk_value = get_pk_db_prep_value(node, connection)
+        parent_pk_value = get_pk_db_prep_value(parent, connection)
         cursor.execute(move_tree_query, [
             level_change, left_right_change, left_right_change,
-            new_tree_id, node.pk, parent.pk, left, right, tree_id])
+            new_tree_id, node_pk_value, parent_pk_value, left, right, tree_id])
 
         # Update the former root node to be consistent with the updated
         # tree in the database.
