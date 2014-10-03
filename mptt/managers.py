@@ -426,7 +426,7 @@ class TreeManager(models.Manager):
                     'rel_table': qn(rel_model._meta.db_table),
                     'mptt_fk': qn(rel_model._meta.get_field(rel_field).column),
                     'mptt_table': qn(self.tree_model._meta.db_table),
-                    'mptt_pk': qn(meta.pk.column),
+                    'mptt_rel_to': qn(mptt_field.rel.field_name),
                     'tree_id': qn(meta.get_field(self.tree_id_attr).column),
                     'left': qn(meta.get_field(self.left_attr).column),
                     'right': qn(meta.get_field(self.right_attr).column),
@@ -436,7 +436,7 @@ class TreeManager(models.Manager):
                     'rel_table': qn(rel_model._meta.db_table),
                     'mptt_fk': qn(rel_model._meta.get_field(rel_field).column),
                     'mptt_table': qn(self.tree_model._meta.db_table),
-                    'mptt_pk': qn(meta.pk.column),
+                    'mptt_rel_to': qn(mptt_field.rel.field_name),
                 }
         return queryset.extra(select={count_attr: subquery})
 
