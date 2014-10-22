@@ -25,7 +25,7 @@ class CustomTreeManager(TreeManager):
 @python_2_unicode_compatible
 class Category(MPTTModel):
     name = models.CharField(max_length=50)
-    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
 
     def __str__(self):
         return self.name
@@ -38,14 +38,14 @@ class Category(MPTTModel):
 @python_2_unicode_compatible
 class Genre(MPTTModel):
     name = models.CharField(max_length=50, unique=True)
-    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
 
     def __str__(self):
         return self.name
 
 
 class Game(models.Model):
-    genre = models.ForeignKey(Genre)
+    genre = TreeForeignKey(Genre)
     genres_m2m = models.ManyToManyField(Genre, related_name='games_m2m')
     name = models.CharField(max_length=50)
 
@@ -62,7 +62,7 @@ class MultiOrder(MPTTModel):
     name = models.CharField(max_length=50)
     size = models.PositiveIntegerField()
     date = models.DateField()
-    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
 
     class MPTTMeta:
         order_insertion_by = ['name', 'size', '-date']
@@ -72,7 +72,7 @@ class MultiOrder(MPTTModel):
 
 
 class Node(MPTTModel):
-    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
 
     class MPTTMeta:
         left_attr = 'does'
@@ -84,7 +84,7 @@ class Node(MPTTModel):
 @python_2_unicode_compatible
 class OrderedInsertion(MPTTModel):
     name = models.CharField(max_length=50)
-    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
 
     class MPTTMeta:
         order_insertion_by = ['name']
@@ -94,11 +94,11 @@ class OrderedInsertion(MPTTModel):
 
 
 class Tree(MPTTModel):
-    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
 
 
 class NewStyleMPTTMeta(MPTTModel):
-    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
 
     class MPTTMeta(object):
         left_attr = 'testing'
@@ -107,7 +107,7 @@ class NewStyleMPTTMeta(MPTTModel):
 @python_2_unicode_compatible
 class Person(MPTTModel):
     name = models.CharField(max_length=50)
-    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
 
     # just testing it's actually possible to override the tree manager
     my_tree_manager = CustomTreeManager()
@@ -124,7 +124,7 @@ class Student(Person):
 class CustomPKName(MPTTModel):
     my_id = models.AutoField(db_column='my_custom_name', primary_key=True)
     name = models.CharField(max_length=50)
-    parent = models.ForeignKey(
+    parent = TreeForeignKey(
         'self', null=True, blank=True,
         related_name='children', db_column="my_cusom_parent")
 
@@ -143,7 +143,7 @@ class ReferencingModel(models.Model):
 # 1. multi-table inheritance, with mptt fields on base class.
 
 class MultiTableInheritanceA1(MPTTModel):
-    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
 
 
 class MultiTableInheritanceA2(MultiTableInheritanceA1):
@@ -157,13 +157,13 @@ class MultiTableInheritanceB1(MPTTModel):
 
 
 class MultiTableInheritanceB2(MultiTableInheritanceB1):
-    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
 
 
 # 3. abstract models
 
 class AbstractModel(MPTTModel):
-    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
     ghosts = models.CharField(max_length=50)
 
     class Meta:
@@ -203,7 +203,7 @@ class DoubleProxyModel(SingleProxyModel):
 
 
 class AutoNowDateFieldModel(MPTTModel):
-    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
     now = models.DateTimeField(auto_now_add=True)
 
     class MPTTMeta:
