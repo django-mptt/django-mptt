@@ -83,72 +83,79 @@ class TreeManager(models.Manager):
             return self.none()
         filters = None
         trees = {}
-        for node in queryset:
+        for node in queryset.order_by(opts.tree_id_attr, opts.parent_attr, opts.left_attr):
             tree, lft, rght = (getattr(node, opts.tree_id_attr),
                                getattr(node, opts.left_attr),
                                getattr(node, opts.right_attr))
 
-            if aggregate:
-                parent_id = node.parent_id
-                if not trees.get(tree):
-                    trees[tree] = {}
-                if not trees.get(tree).get(parent_id):
-                    trees[tree][parent_id] = {'lft': lft, 'rght': rght}
-                if direction == 'asc':
-                    if include_self:
-                        lft += 1
-                        rght -= 1
-                    if lft > trees[tree][parent_id]['lft']:
-                        trees[tree][parent_id]['lft'] = lft
-                    if rght < trees[tree][parent_id]['rght']:
-                        trees[tree][parent_id]['rght'] = rght
-                    trees[tree][parent_id]['lft_op'] = 'lt'
-                    trees[tree][parent_id]['rght_op'] = 'gt'
-                elif direction == 'desc':
-                    if include_self:
-                        lft -= 1
-                        rght += 1
-                    if lft < trees[tree][parent_id]['lft']:
-                        trees[tree][parent_id]['lft'] = lft
-                    if rght > trees[tree][parent_id]['rght']:
-                        trees[tree][parent_id]['rght'] = rght
-                    trees[tree][parent_id]['lft_op'] = 'gt'
-                    trees[tree][parent_id]['rght_op'] = 'lt'
-            else:
-                if direction == 'asc':
-                    if include_self:
-                        lft += 1
-                        rght -= 1
-                    lft_op = 'lt'
-                    rght_op = 'gt'
-                elif direction == 'desc':
-                    if include_self:
-                        lft -= 1
-                        rght += 1
-                    lft_op = 'gt'
-                    rght_op = 'lt'
-                q = Q(**{
-                    opts.tree_id_attr: tree,
-                    '%s__%s' % (opts.left_attr, lft_op): lft,
-                    '%s__%s' % (opts.right_attr, rght_op): rght,
-                })
-                if filters is None:
-                    filters = q
-                else:
-                    filters |= q
+            parent_id = node.parent_id
 
-        if aggregate:
-            for tree in trees:
-                for parent_id in trees[tree]:
-                    q = Q(**{
-                        opts.tree_id_attr: tree,
-                        '%s__%s' % (opts.left_attr, trees[tree][parent_id]['lft_op']): trees[tree][parent_id]['lft'],
-                        '%s__%s' % (opts.right_attr, trees[tree][parent_id]['rght_op']): trees[tree][parent_id]['rght']
-                    })
-                    if filters is None:
-                        filters = q
+            if not trees.get(tree):
+                trees[tree] = {}
+            if not trees.get(tree).get(parent_id):
+                trees[tree][parent_id] = [node]
+            else:
+                trees[tree][parent_id] += [node]
+
+
+            ### Original method
+            if direction == 'asc':
+                if include_self:
+                    lft += 1
+                    rght -= 1
+                lft_op = 'lt'
+                rght_op = 'gt'
+            elif direction == 'desc':
+                if include_self:
+                    lft -= 1
+                    rght += 1
+                lft_op = 'gt'
+                rght_op = 'lt'
+            q = Q(**{
+                opts.tree_id_attr: tree,
+                '%s__%s' % (opts.left_attr, lft_op): lft,
+                '%s__%s' % (opts.right_attr, rght_op): rght,
+            })
+            if filters is None:
+                filters = q
+            else:
+                filters |= q
+            ### /Original method
+
+        groups = []
+        for tree in trees:
+            for parent_id in trees[tree]:
+                next_lft = None
+                contig = []
+                for node in trees[tree][parent_id]:
+                    #if not next_lft:
+                    #    contig += [node.lft, node.rght]
+                    #    next_lft = node.rght + 1
+                    #elif node.lft == next_lft:
+                    if not next_lft or node.lft == next_lft:
+                        contig += [node.lft, node.rght]
+                        next_lft = node.rght + 1
                     else:
-                        filters |= q
+                        groups += [(min(contig),max(contig))]
+                        contig = [node.lft, node.rght]
+                        next_lft = node.rght + 1
+                groups += [(min(contig),max(contig))]
+#                create filters here
+                
+
+
+        print "\n\n\n\n\n"
+        for i in groups:
+#            print (min(i), max(i))
+            print i
+#        print groups
+                        
+                        
+                
+                    
+
+                    
+
         return self.filter(filters)
 
 
