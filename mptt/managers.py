@@ -91,9 +91,12 @@ class TreeManager(models.Manager):
         if direction == 'asc':
             lft_op = 'lt' + e
             rght_op = 'gt' + e
+            lf, rf = (max, min) if include_self else (min, max)
         elif direction == 'desc':
             lft_op = 'gt' + e
             rght_op = 'lt' + e
+            lf, rf = (min, max) if include_self else (max, min)
+            
 
         for node in queryset.order_by(opts.tree_id_attr, opts.parent_attr, opts.left_attr):
             tree, lft, rght = (getattr(node, opts.tree_id_attr),
@@ -118,21 +121,23 @@ class TreeManager(models.Manager):
                 for node in trees[tree][parent_id]:
                     if not next_lft or node.lft == next_lft:
                         contig += [node.lft, node.rght]
+                        print contig
                         next_lft = node.rght + 1
                     else:
                         filters |= Q(**{
                                         opts.tree_id_attr: tree,
-                                        '%s__%s' % (opts.left_attr, lft_op): min(contig),
-                                        '%s__%s' % (opts.right_attr, rght_op): max(contig)})
+                                        '%s__%s' % (opts.left_attr, lft_op): lf(contig),
+                                        '%s__%s' % (opts.right_attr, rght_op): rf(contig)})
                         contig = [node.lft, node.rght]
+                        print contig
                         next_lft = node.rght + 1
                 #Add the very last "contig"
                 filters |= Q(**{
                                 opts.tree_id_attr: tree, 
-                                '%s__%s' % (opts.left_attr, lft_op): min(contig),
-                                '%s__%s' % (opts.right_attr, rght_op): max(contig)})
+                                '%s__%s' % (opts.left_attr, lft_op): lf(contig),
+                                '%s__%s' % (opts.right_attr, rght_op): rf(contig)})
 
-
+        print filters
         return self.filter(filters)
 
 
