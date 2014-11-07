@@ -63,7 +63,7 @@ class TreeManager(models.Manager):
             self._base_manager = self.tree_model._tree_manager
 
     def _get_queryset_relatives(
-        self, queryset, direction, include_self, aggregate):
+        self, queryset, direction, include_self):
         """
         Returns a queryset containing either the descendants ``direction == desc``
         or the ancestors ``direction == asc`` of a given queryset.
@@ -78,89 +78,66 @@ class TreeManager(models.Manager):
         that exists between the two aforementioned functions.
         """
         assert self.model is queryset.model
+
         opts = queryset.model._mptt_meta
+
         if not queryset:
             return self.none()
-        filters = None
+
+        filters = Q()
         trees = {}
+
+        e = 'e' if include_self else ''
+        if direction == 'asc':
+            lft_op = 'lt' + e
+            rght_op = 'gt' + e
+        elif direction == 'desc':
+            lft_op = 'gt' + e
+            rght_op = 'lt' + e
+
         for node in queryset.order_by(opts.tree_id_attr, opts.parent_attr, opts.left_attr):
             tree, lft, rght = (getattr(node, opts.tree_id_attr),
                                getattr(node, opts.left_attr),
                                getattr(node, opts.right_attr))
 
+            #Group by tree, then by parent
             parent_id = node.parent_id
-
             if not trees.get(tree):
                 trees[tree] = {}
-            if not trees.get(tree).get(parent_id):
+
+            if not trees[tree].get(parent_id):
                 trees[tree][parent_id] = [node]
             else:
                 trees[tree][parent_id] += [node]
 
-
-            ### Original method
-            if direction == 'asc':
-                if include_self:
-                    lft += 1
-                    rght -= 1
-                lft_op = 'lt'
-                rght_op = 'gt'
-            elif direction == 'desc':
-                if include_self:
-                    lft -= 1
-                    rght += 1
-                lft_op = 'gt'
-                rght_op = 'lt'
-            q = Q(**{
-                opts.tree_id_attr: tree,
-                '%s__%s' % (opts.left_attr, lft_op): lft,
-                '%s__%s' % (opts.right_attr, rght_op): rght,
-            })
-            if filters is None:
-                filters = q
-            else:
-                filters |= q
-            ### /Original method
-
-        groups = []
+        #Find contiguous siblings per tree, parent groups
         for tree in trees:
             for parent_id in trees[tree]:
                 next_lft = None
                 contig = []
                 for node in trees[tree][parent_id]:
-                    #if not next_lft:
-                    #    contig += [node.lft, node.rght]
-                    #    next_lft = node.rght + 1
-                    #elif node.lft == next_lft:
                     if not next_lft or node.lft == next_lft:
                         contig += [node.lft, node.rght]
                         next_lft = node.rght + 1
                     else:
-                        groups += [(min(contig),max(contig))]
+                        filters |= Q(**{
+                                        opts.tree_id_attr: tree,
+                                        '%s__%s' % (opts.left_attr, lft_op): min(contig),
+                                        '%s__%s' % (opts.right_attr, rght_op): max(contig)})
                         contig = [node.lft, node.rght]
                         next_lft = node.rght + 1
-                groups += [(min(contig),max(contig))]
-#                create filters here
-                
+                #Add the very last "contig"
+                filters |= Q(**{
+                                opts.tree_id_attr: tree, 
+                                '%s__%s' % (opts.left_attr, lft_op): min(contig),
+                                '%s__%s' % (opts.right_attr, rght_op): max(contig)})
 
-
-        print "\n\n\n\n\n"
-        for i in groups:
-#            print (min(i), max(i))
-            print i
-#        print groups
-                        
-                        
-                
-                    
-
-                    
 
         return self.filter(filters)
 
 
     def get_queryset_descendants(
-        self, queryset, include_self=False, aggregate=False):
+        self, queryset, include_self=False):
         """
         Returns a queryset containing the descendants of all nodes in the
         given queryset.
@@ -169,11 +146,11 @@ class TreeManager(models.Manager):
         be included in the result.
         """
         return self._get_queryset_relatives(
-            queryset, 'desc', include_self, aggregate)
+            queryset, 'desc', include_self)
 
 
     def get_queryset_ancestors(
-        self, queryset, include_self = False, aggregate=False):
+        self, queryset, include_self = False):
         """
         Returns a queryset containing the ancestors
         of all nodes in the given queryset.
@@ -182,7 +159,7 @@ class TreeManager(models.Manager):
         be included in the result.
         """
         return self._get_queryset_relatives(
-            queryset, 'asc', include_self, aggregate)
+            queryset, 'asc', include_self)
 
 
         
