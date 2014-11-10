@@ -87,16 +87,14 @@ class TreeManager(models.Manager):
         filters = Q()
         trees = {}
 
-        e = 'e' if include_self else ''
         if direction == 'asc':
-            lft_op = 'lt' + e
-            rght_op = 'gt' + e
-            lf, rf = (max, min) if include_self else (min, max)
+            lft_op = 'lt'
+            rght_op = 'gt'
+            l_adj, r_adj = (1, -1) if include_self else (0, 0)
         elif direction == 'desc':
-            lft_op = 'gt' + e
-            rght_op = 'lt' + e
-            lf, rf = (min, max) if include_self else (max, min)
-            
+            lft_op = 'gt'
+            rght_op = 'lt'
+            l_adj, r_adj = (-1, 1) if include_self else (0, 0)
 
         for node in queryset.order_by(opts.tree_id_attr, opts.parent_attr, opts.left_attr):
             tree, lft, rght = (getattr(node, opts.tree_id_attr),
@@ -117,27 +115,24 @@ class TreeManager(models.Manager):
         for tree in trees:
             for parent_id in trees[tree]:
                 next_lft = None
-                contig = []
+                contiguous = []
                 for node in trees[tree][parent_id]:
                     if not next_lft or node.lft == next_lft:
-                        contig += [node.lft, node.rght]
-                        print contig
+                        contiguous += [node.lft + l_adj, node.rght + r_adj]
                         next_lft = node.rght + 1
                     else:
                         filters |= Q(**{
                                         opts.tree_id_attr: tree,
-                                        '%s__%s' % (opts.left_attr, lft_op): lf(contig),
-                                        '%s__%s' % (opts.right_attr, rght_op): rf(contig)})
-                        contig = [node.lft, node.rght]
-                        print contig
+                                        '%s__%s' % (opts.left_attr, lft_op): min(contiguous),
+                                        '%s__%s' % (opts.right_attr, rght_op): max(contiguous)})
+                        contiguous = [node.lft + l_adj, node.rght + r_adj]
                         next_lft = node.rght + 1
-                #Add the very last "contig"
+                #Add the very last contiguous group
                 filters |= Q(**{
                                 opts.tree_id_attr: tree, 
-                                '%s__%s' % (opts.left_attr, lft_op): lf(contig),
-                                '%s__%s' % (opts.right_attr, rght_op): rf(contig)})
+                                '%s__%s' % (opts.left_attr, lft_op): min(contiguous),
+                                '%s__%s' % (opts.right_attr, rght_op): max(contiguous)})
 
-        print filters
         return self.filter(filters)
 
 
