@@ -88,6 +88,7 @@ class TreeManager(models.Manager):
         trees = {}
 
         if direction == 'asc':
+<<<<<<< HEAD
             lft_op = 'lt'
             rght_op = 'gt'
             l_adj, r_adj = (1, -1) if include_self else (0, 0)
@@ -95,6 +96,13 @@ class TreeManager(models.Manager):
             lft_op = 'gt'
             rght_op = 'lt'
             l_adj, r_adj = (-1, 1) if include_self else (0, 0)
+=======
+            lft_op = 'lt' + e
+            rght_op = 'gt' + e
+        elif direction == 'desc':
+            lft_op = 'gt' + e
+            rght_op = 'lt' + e
+>>>>>>> parent of 404524e... I've written down a set of "mptt axioms" that I believe to be useful
 
         for node in queryset.order_by(opts.tree_id_attr, opts.parent_attr, opts.left_attr):
             tree, lft, rght = (getattr(node, opts.tree_id_attr),
@@ -118,20 +126,36 @@ class TreeManager(models.Manager):
                 contiguous = []
                 for node in trees[tree][parent_id]:
                     if not next_lft or node.lft == next_lft:
+<<<<<<< HEAD
                         contiguous += [node.lft + l_adj, node.rght + r_adj]
+=======
+                        contig += [node.lft, node.rght]
+>>>>>>> parent of 404524e... I've written down a set of "mptt axioms" that I believe to be useful
                         next_lft = node.rght + 1
                     else:
                         filters |= Q(**{
                                         opts.tree_id_attr: tree,
+<<<<<<< HEAD
                                         '%s__%s' % (opts.left_attr, lft_op): min(contiguous),
                                         '%s__%s' % (opts.right_attr, rght_op): max(contiguous)})
                         contiguous = [node.lft + l_adj, node.rght + r_adj]
+=======
+                                        '%s__%s' % (opts.left_attr, lft_op): min(contig),
+                                        '%s__%s' % (opts.right_attr, rght_op): max(contig)})
+                        contig = [node.lft, node.rght]
+>>>>>>> parent of 404524e... I've written down a set of "mptt axioms" that I believe to be useful
                         next_lft = node.rght + 1
                 #Add the very last contiguous group
                 filters |= Q(**{
                                 opts.tree_id_attr: tree, 
+<<<<<<< HEAD
                                 '%s__%s' % (opts.left_attr, lft_op): min(contiguous),
                                 '%s__%s' % (opts.right_attr, rght_op): max(contiguous)})
+=======
+                                '%s__%s' % (opts.left_attr, lft_op): min(contig),
+                                '%s__%s' % (opts.right_attr, rght_op): max(contig)})
+
+>>>>>>> parent of 404524e... I've written down a set of "mptt axioms" that I believe to be useful
 
         return self.filter(filters)
 
