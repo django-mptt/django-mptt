@@ -323,6 +323,13 @@ created on your model.
 form field display choices in tree form.
 
 There are also ``TreeOneToOneField`` and ``TreeManyToManyField`` if you need them.
+These may come in useful on other models that relate to your tree model in some way.
+
+
+.. note::
+   You can't use a many-to-many as your 'parent' field. That's because 
+   the mptt algorithm only handles trees, not arbitrary graphs. A tree where nodes
+   can have multiple parents isn't really a tree at all.
 
 
 The ``TreeManager`` custom manager
