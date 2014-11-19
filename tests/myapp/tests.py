@@ -1077,9 +1077,9 @@ class ManagerTests(TreeTestCase):
 
 
     def test_get_queryset_descendants(self):
-        def get_desc_names(qs, include_self=False, aggregate=False):
+        def get_desc_names(qs, include_self=False):
             desc = Category.objects.get_queryset_descendants(
-                qs, include_self=include_self, aggregate=aggregate)
+                qs, include_self=include_self)
             return list(desc.values_list('name', flat=True).order_by('name'))
 
         qs = Category.objects.filter(name='Nintendo Wii')
@@ -1090,25 +1090,15 @@ class ManagerTests(TreeTestCase):
         )
 
         self.assertEqual(
-            get_desc_names(qs, aggregate=True),
-            ['Games', 'Hardware & Accessories'],
-        )
-
-        self.assertEqual(
             get_desc_names(qs, include_self=True),
             ['Games', 'Hardware & Accessories', 'Nintendo Wii'],
         )
 
-        self.assertEqual(
-            get_desc_names(qs, include_self=True, aggregate=True),
-            ['Games', 'Hardware & Accessories', 'Nintendo Wii'],
-        )        
-
 
     def test_get_queryset_ancestors(self):
-        def get_anc_names(qs, include_self=False, aggregate=False):
+        def get_anc_names(qs, include_self=False):
             anc = Category.objects.get_queryset_ancestors(
-                qs, include_self=include_self, aggregate=aggregate)
+                qs, include_self=include_self)
             return list(anc.values_list('name', flat=True).order_by('name'))
 
         qs = Category.objects.filter(name='Nintendo Wii')
@@ -1116,20 +1106,10 @@ class ManagerTests(TreeTestCase):
         self.assertEqual(
             get_anc_names(qs),
             ['PC & Video Games'],
-        )        
-
-        self.assertEqual(
-            get_anc_names(qs, aggregate=True),
-            ['PC & Video Games'],
         )
 
         self.assertEqual(
             get_anc_names(qs, include_self=True),
-            ['Nintendo Wii', 'PC & Video Games'],
-        )        
-
-        self.assertEqual(
-            get_anc_names(qs, include_self=True, aggregate=True),
             ['Nintendo Wii', 'PC & Video Games'],
         )
 

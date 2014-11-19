@@ -91,11 +91,9 @@ class TreeManager(models.Manager):
         if direction == 'asc':
             lft_op = 'lt' + e
             rght_op = 'gt' + e
-            lf, rf = (max, min) if include_self else (min, max)
         elif direction == 'desc':
             lft_op = 'gt' + e
             rght_op = 'lt' + e
-            lf, rf = (min, max) if include_self else (max, min)
 
         for node in queryset.order_by(opts.tree_id_attr, opts.parent_attr, opts.left_attr):
             tree, lft, rght = (getattr(node, opts.tree_id_attr),
@@ -103,7 +101,7 @@ class TreeManager(models.Manager):
                                getattr(node, opts.right_attr))
 
             #Group by tree, then by parent
-            parent_id = node.parent_id
+            parent_id = opts.parent_attr
             if not trees.get(tree):
                 trees[tree] = {}
 
@@ -124,16 +122,16 @@ class TreeManager(models.Manager):
                     else:
                         filters |= Q(**{
                                         opts.tree_id_attr: tree,
-                                        '%s__%s' % (opts.left_attr, lft_op): lf(contiguous),
-                                        '%s__%s' % (opts.right_attr, rght_op): rf(contiguous)})
+                                        '%s__%s' % (opts.left_attr, lft_op): min(contiguous),
+                                        '%s__%s' % (opts.right_attr, rght_op): max(contiguous)})
                         contiguous = [node.lft, node.rght]
                         next_lft = node.rght + 1
                 #Add the very last contiguous group
                 filters |= Q(**{
                                 opts.tree_id_attr: tree, 
-                                '%s__%s' % (opts.left_attr, lft_op): lf(contiguous),
-                                '%s__%s' % (opts.right_attr, rght_op): rf(contiguous)})
-
+                                '%s__%s' % (opts.left_attr, lft_op): min(contiguous),
+                                '%s__%s' % (opts.right_attr, rght_op): max(contiguous)})
+        print filters
         return self.filter(filters)
 
 
