@@ -9,7 +9,7 @@ import django
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth.models import Group
-from django.db.models import get_models
+from django.db.models import get_models, Q
 from django.forms.models import modelform_factory
 from django.template import Template, Context
 from django.test import TestCase
@@ -1082,16 +1082,18 @@ class ManagerTests(TreeTestCase):
                 qs, include_self=include_self)
             return list(desc.values_list('name', flat=True).order_by('name'))
 
-        qs = Category.objects.filter(name='Nintendo Wii')
+        qs = Category.objects.filter(Q(name='Nintendo Wii')|Q(name='PlayStation 3'))
 
         self.assertEqual(
             get_desc_names(qs),
-            ['Games', 'Hardware & Accessories'],
+            ['Games', 'Games',
+             'Hardware & Accessories', 'Hardware & Accessories'],
         )
 
         self.assertEqual(
             get_desc_names(qs, include_self=True),
-            ['Games', 'Hardware & Accessories', 'Nintendo Wii'],
+            ['Games', 'Games', 'Hardware & Accessories',
+             'Hardware & Accessories', 'Nintendo Wii', 'PlayStation 3']
         )
 
 
@@ -1101,20 +1103,17 @@ class ManagerTests(TreeTestCase):
                 qs, include_self=include_self)
             return list(anc.values_list('name', flat=True).order_by('name'))
 
-        qs = Category.objects.filter(name='Nintendo Wii')
-
+        qs = Category.objects.filter(Q(name='Nintendo Wii')|Q(name='PlayStation 3'))
+        
         self.assertEqual(
             get_anc_names(qs),
-            ['PC & Video Games'],
+             ['PC & Video Games']
         )
 
         self.assertEqual(
             get_anc_names(qs, include_self=True),
-            ['Nintendo Wii', 'PC & Video Games'],
+            ['Nintendo Wii', 'PC & Video Games', 'PlayStation 3']
         )
-
-
-
 
 
 class CacheTreeChildrenTestCase(TreeTestCase):

@@ -62,8 +62,8 @@ class TreeManager(models.Manager):
             # _base_manager is the treemanager on tree_model
             self._base_manager = self.tree_model._tree_manager
 
-    def _get_queryset_relatives(
-        self, queryset, direction, include_self):
+
+    def _get_queryset_relatives(self, queryset, direction, include_self):
         """
         Returns a queryset containing either the descendants ``direction == desc``
         or the ancestors ``direction == asc`` of a given queryset.
@@ -85,7 +85,7 @@ class TreeManager(models.Manager):
             return self.none()
 
         filters = Q()
-        trees = {}
+        last_parent = None
 
         e = 'e' if include_self else ''
         if direction == 'asc':
@@ -96,47 +96,51 @@ class TreeManager(models.Manager):
             rght_op = 'lt' + e
 
         for node in queryset.order_by(opts.tree_id_attr, opts.parent_attr, opts.left_attr):
-            tree, lft, rght = (getattr(node, opts.tree_id_attr),
-                               getattr(node, opts.left_attr),
-                               getattr(node, opts.right_attr))
+            tree, parent_id, lft, rght = (getattr(node, opts.tree_id_attr),
+                                          getattr(node, opts.parent_attr).id,
+                                          getattr(node, opts.left_attr),
+                                          getattr(node, opts.right_attr))
 
-            #Group by tree, then by parent
-            parent_id = opts.parent_attr
-            if not trees.get(tree):
-                trees[tree] = {}
-
-            if not trees[tree].get(parent_id):
-                trees[tree][parent_id] = [node]
-            else:
-                trees[tree][parent_id] += [node]
-
-        #Find contiguous siblings per tree, parent groups
-        for tree in trees:
-            for parent_id in trees[tree]:
-                next_lft = None
-                contiguous = []
-                for node in trees[tree][parent_id]:
-                    if not next_lft or node.lft == next_lft:
-                        contiguous += [node.lft, node.rght]
-                        next_lft = node.rght + 1
-                    else:
-                        filters |= Q(**{
-                                        opts.tree_id_attr: tree,
-                                        '%s__%s' % (opts.left_attr, lft_op): min(contiguous),
-                                        '%s__%s' % (opts.right_attr, rght_op): max(contiguous)})
-                        contiguous = [node.lft, node.rght]
-                        next_lft = node.rght + 1
-                #Add the very last contiguous group
+            if last_parent is None:
+                contiguous_siblings = {'lft': lft, 'rght': rght}
+                next_left = rght + 1
+                last_parent = parent_id
+            elif parent_id is last_parent:
+                if lft is next_left:
+                    if lft < contiguous_siblings['lft']:
+                        contiguous_siblings['lft'] = lft
+                    if rght > contiguous_siblings['rght']:
+                        contiguous_siblings['rght'] = rght
+                    next_left = rght + 1
+                    last_parent = parent_id
+                elif lft is not next_left:
+                    filters |= Q(**{
+                        opts.tree_id_attr: tree,
+                        '%s__%s' % (opts.left_attr, lft_op): contiguous_siblings['lft'],
+                        '%s__%s' % (opts.right_attr, rght_op): contiguous_siblings['rght']})
+                    contiguous_siblings = {'lft': lft, 'rght': rght}
+                    next_left = rght + 1
+                    last_parent = parent_id
+            elif parent_id is not last_parent:
                 filters |= Q(**{
-                                opts.tree_id_attr: tree, 
-                                '%s__%s' % (opts.left_attr, lft_op): min(contiguous),
-                                '%s__%s' % (opts.right_attr, rght_op): max(contiguous)})
-        print filters
+                                opts.tree_id_attr: tree,
+                                '%s__%s' % (opts.left_attr, lft_op): contiguous_siblings['lft'],
+                                '%s__%s' % (opts.right_attr, rght_op): contiguous_siblings['rght']})
+                contiguous_siblings = {'lft': lft, 'rght': rght}
+                next_left = rght + 1
+                last_parent = parent_id
+ 
+        # Add the last group of contiguous_siblings
+        filters |= Q(**{
+            opts.tree_id_attr: tree,
+            '%s__%s' % (opts.left_attr, lft_op): contiguous_siblings['lft'],
+            '%s__%s' % (opts.right_attr, rght_op): contiguous_siblings['rght']})
+
+
         return self.filter(filters)
 
 
-    def get_queryset_descendants(
-        self, queryset, include_self=False):
+    def get_queryset_descendants(self, queryset, include_self=False):
         """
         Returns a queryset containing the descendants of all nodes in the
         given queryset.
@@ -144,12 +148,10 @@ class TreeManager(models.Manager):
         If ``include_self=True``, nodes in ``queryset`` will also
         be included in the result.
         """
-        return self._get_queryset_relatives(
-            queryset, 'desc', include_self)
+        return self._get_queryset_relatives(queryset, 'desc', include_self)
 
 
-    def get_queryset_ancestors(
-        self, queryset, include_self = False):
+    def get_queryset_ancestors(self, queryset, include_self = False):
         """
         Returns a queryset containing the ancestors
         of all nodes in the given queryset.
@@ -157,8 +159,7 @@ class TreeManager(models.Manager):
         If ``include_self=True``, nodes in ``queryset`` will also
         be included in the result.
         """
-        return self._get_queryset_relatives(
-            queryset, 'asc', include_self)
+        return self._get_queryset_relatives(queryset, 'asc', include_self)
 
 
         
