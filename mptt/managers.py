@@ -74,8 +74,10 @@ class TreeManager(models.Manager):
         Instead, it should be used via ``get_queryset_descendants()`` and/or
         ``get_queryset_ancestors()``.
 
-        This function exists mainly to consolidate the nearly duplicate code
-        that exists between the two aforementioned functions.
+        This function works by grouping contiguous siblings, finding the smallest
+        left and greatest right attributes in the group, and using those to create
+        a query that requests ranges of models rather than querying for each
+        individual model. The net result is a simpler query and fewer SQL variables.
         """
         assert self.model is queryset.model
 
@@ -95,6 +97,10 @@ class TreeManager(models.Manager):
             lft_op = 'gt' + e
             rght_op = 'lt' + e
 
+        l_key = '%s__%s' % (opts.left_attr, lft_op)
+        r_key = '%s__%s' % (opts.right_attr, rght_op)
+        t_key = opts.tree_id_attr
+
         for node in queryset.order_by(opts.tree_id_attr, opts.parent_attr, opts.left_attr):
             tree, parent_id, lft, rght = (getattr(node, opts.tree_id_attr),
                                           getattr(node, opts.parent_attr).id,
@@ -102,40 +108,29 @@ class TreeManager(models.Manager):
                                           getattr(node, opts.right_attr))
 
             if last_parent is None:
-                contiguous_siblings = {'lft': lft, 'rght': rght}
+                minl_maxr = {'lft': lft, 'rght': rght}
                 next_left = rght + 1
                 last_parent = parent_id
             elif parent_id is last_parent:
                 if lft is next_left:
-                    if lft < contiguous_siblings['lft']:
-                        contiguous_siblings['lft'] = lft
-                    if rght > contiguous_siblings['rght']:
-                        contiguous_siblings['rght'] = rght
+                    if lft < minl_maxr['lft']:
+                        minl_maxr['lft'] = lft
+                    if rght > minl_maxr['rght']:
+                        minl_maxr['rght'] = rght
                     next_left = rght + 1
                     last_parent = parent_id
                 elif lft is not next_left:
-                    filters |= Q(**{
-                        opts.tree_id_attr: tree,
-                        '%s__%s' % (opts.left_attr, lft_op): contiguous_siblings['lft'],
-                        '%s__%s' % (opts.right_attr, rght_op): contiguous_siblings['rght']})
-                    contiguous_siblings = {'lft': lft, 'rght': rght}
+                    filters |= Q(**{t_key: tree, l_key: minl_maxr['lft'], r_key: minl_maxr['rght']})
+                    minl_maxr = {'lft': lft, 'rght': rght}
                     next_left = rght + 1
                     last_parent = parent_id
             elif parent_id is not last_parent:
-                filters |= Q(**{
-                                opts.tree_id_attr: tree,
-                                '%s__%s' % (opts.left_attr, lft_op): contiguous_siblings['lft'],
-                                '%s__%s' % (opts.right_attr, rght_op): contiguous_siblings['rght']})
-                contiguous_siblings = {'lft': lft, 'rght': rght}
+                filters |= Q(**{t_key: tree, l_key: minl_maxr['lft'], r_key: minl_maxr['rght']})
+                minl_maxr = {'lft': lft, 'rght': rght}
                 next_left = rght + 1
                 last_parent = parent_id
  
-        # Add the last group of contiguous_siblings
-        filters |= Q(**{
-            opts.tree_id_attr: tree,
-            '%s__%s' % (opts.left_attr, lft_op): contiguous_siblings['lft'],
-            '%s__%s' % (opts.right_attr, rght_op): contiguous_siblings['rght']})
-
+        filters |= Q(**{t_key: tree, l_key: minl_maxr['lft'], r_key: minl_maxr['rght']})
 
         return self.filter(filters)
 
