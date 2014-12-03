@@ -103,7 +103,7 @@ class TreeManager(models.Manager):
 
         q = queryset.order_by(opts.tree_id_attr, opts.parent_attr, opts.left_attr)
         
-        for group in groupby(q, key = lambda node: (node.tree_id, node.parent_id)):
+        for group in groupby(q, key = lambda node: (getattr(node, opts.tree_id_attr), getattr(node, opts.parent_attr))):
             next_lft = None
             for node in list(group[1]):
                 tree, lft, rght = (getattr(node, opts.tree_id_attr),
