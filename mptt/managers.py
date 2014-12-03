@@ -3,6 +3,7 @@ A custom manager for working with trees of objects.
 """
 from __future__ import unicode_literals
 import contextlib
+from itertools import groupby
 
 import django
 from django.db import models, transaction, connections, router
@@ -87,7 +88,6 @@ class TreeManager(models.Manager):
             return self.none()
 
         filters = Q()
-        last_parent = None
 
         e = 'e' if include_self else ''
         if direction == 'asc':
@@ -101,36 +101,28 @@ class TreeManager(models.Manager):
         r_key = '%s__%s' % (opts.right_attr, rght_op)
         t_key = opts.tree_id_attr
 
-        for node in queryset.order_by(opts.tree_id_attr, opts.parent_attr, opts.left_attr):
-            tree, parent_id, lft, rght = (getattr(node, opts.tree_id_attr),
-                                          getattr(node, opts.parent_attr).id,
-                                          getattr(node, opts.left_attr),
-                                          getattr(node, opts.right_attr))
-
-            if last_parent is None:
-                minl_maxr = {'lft': lft, 'rght': rght}
-                next_left = rght + 1
-                last_parent = parent_id
-            elif parent_id is last_parent:
-                if lft is next_left:
+        q = queryset.order_by(opts.tree_id_attr, opts.parent_attr, opts.left_attr)
+        
+        for group in groupby(q, key = lambda node: (node.tree_id, node.parent_id)):
+            next_lft = None
+            for node in list(group[1]):
+                tree, lft, rght = (getattr(node, opts.tree_id_attr),
+                                   getattr(node, opts.left_attr),
+                                   getattr(node, opts.right_attr))
+                if next_lft is None:
+                    next_lft = rght + 1
+                    minl_maxr = {'lft': lft, 'rght': rght}
+                elif lft is next_lft:
                     if lft < minl_maxr['lft']:
                         minl_maxr['lft'] = lft
                     if rght > minl_maxr['rght']:
                         minl_maxr['rght'] = rght
-                    next_left = rght + 1
-                    last_parent = parent_id
-                elif lft is not next_left:
+                    next_lft = rght + 1
+                elif lft is not next_lft:
                     filters |= Q(**{t_key: tree, l_key: minl_maxr['lft'], r_key: minl_maxr['rght']})
                     minl_maxr = {'lft': lft, 'rght': rght}
-                    next_left = rght + 1
-                    last_parent = parent_id
-            elif parent_id is not last_parent:
-                filters |= Q(**{t_key: tree, l_key: minl_maxr['lft'], r_key: minl_maxr['rght']})
-                minl_maxr = {'lft': lft, 'rght': rght}
-                next_left = rght + 1
-                last_parent = parent_id
- 
-        filters |= Q(**{t_key: tree, l_key: minl_maxr['lft'], r_key: minl_maxr['rght']})
+                    next_lft = rght + 1
+            filters |= Q(**{t_key: tree, l_key: minl_maxr['lft'], r_key: minl_maxr['rght']})
 
         return self.filter(filters)
 
