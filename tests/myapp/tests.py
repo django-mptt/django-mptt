@@ -1078,12 +1078,12 @@ class ManagerTests(TreeTestCase):
 
     def test_get_queryset_descendants(self):
         def get_desc_names(qs, include_self=False):
-            desc = Category.objects.get_queryset_descendants(
+            desc = qs.model.objects.get_queryset_descendants(
                 qs, include_self=include_self)
             return list(desc.values_list('name', flat=True).order_by('name'))
 
         qs = Category.objects.filter(Q(name='Nintendo Wii')|Q(name='PlayStation 3'))
-
+    
         self.assertEqual(
             get_desc_names(qs),
             ['Games', 'Games',
@@ -1096,10 +1096,27 @@ class ManagerTests(TreeTestCase):
              'Hardware & Accessories', 'Nintendo Wii', 'PlayStation 3']
         )
 
+        qs = Genre.objects.filter(parent=None)
+
+        self.assertEqual(
+            get_desc_names(qs),
+            ['2D Platformer', '3D Platformer', '4D Platformer',
+             'Action RPG', u'Horizontal Scrolling Shootemup', u'Platformer', 
+             'Shootemup', 'Tactical RPG', 'Vertical Scrolling Shootemup']
+        )
+
+        self.assertEqual(
+            get_desc_names(qs, include_self=True),
+            ['2D Platformer', '3D Platformer', '4D Platformer',
+             'Action', 'Action RPG', 'Horizontal Scrolling Shootemup',
+             'Platformer', 'Role-playing Game', 'Shootemup', 'Tactical RPG',
+             'Vertical Scrolling Shootemup']
+        )
+
 
     def test_get_queryset_ancestors(self):
         def get_anc_names(qs, include_self=False):
-            anc = Category.objects.get_queryset_ancestors(
+            anc = qs.model.objects.get_queryset_ancestors(
                 qs, include_self=include_self)
             return list(anc.values_list('name', flat=True).order_by('name'))
 
@@ -1114,6 +1131,12 @@ class ManagerTests(TreeTestCase):
             get_anc_names(qs, include_self=True),
             ['Nintendo Wii', 'PC & Video Games', 'PlayStation 3']
         )
+
+        qs = Genre.objects.filter(parent=None)
+
+        self.assertEqual(get_anc_names(qs),[])
+
+        self.assertEqual(get_anc_names(qs, include_self=True), ['Action', 'Role-playing Game'])
 
 
 class CacheTreeChildrenTestCase(TreeTestCase):
