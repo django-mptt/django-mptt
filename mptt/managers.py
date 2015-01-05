@@ -112,13 +112,13 @@ class TreeManager(models.Manager):
                 if next_lft is None:
                     next_lft = rght + 1
                     minl_maxr = {'lft': lft, 'rght': rght}
-                elif lft is next_lft:
+                elif lft == next_lft:
                     if lft < minl_maxr['lft']:
                         minl_maxr['lft'] = lft
                     if rght > minl_maxr['rght']:
                         minl_maxr['rght'] = rght
                     next_lft = rght + 1
-                elif lft is not next_lft:
+                elif lft != next_lft:
                     filters |= Q(**{t_key: tree, l_key: minl_maxr['lft'], r_key: minl_maxr['rght']})
                     minl_maxr = {'lft': lft, 'rght': rght}
                     next_lft = rght + 1
