@@ -331,8 +331,13 @@ class MPTTModelBase(ModelBase):
                 tree_manager = None
                 for attr in sorted(dir(cls)):
                     try:
-                        obj = getattr(cls, attr)
-                    except AttributeError:
+                        # HACK: avoid using getattr(cls, attr)
+                        # because it calls __get__ on descriptors, which can cause nasty side effects
+                        # with more inconsiderate apps.
+                        # (e.g. django-tagging's TagField is a descriptor which can do db queries on getattr)
+                        # ( ref: http://stackoverflow.com/questions/27790344 )
+                        obj = cls.__dict__[attr]
+                    except KeyError:
                         continue
                     if isinstance(obj, TreeManager):
                         tree_manager = obj
