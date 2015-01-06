@@ -1096,7 +1096,7 @@ class ManagerTests(TreeTestCase):
         self.assertEqual(
             get_desc_names(qs),
             ['2D Platformer', '3D Platformer', '4D Platformer',
-             'Action RPG', u'Horizontal Scrolling Shootemup', u'Platformer',
+             'Action RPG', 'Horizontal Scrolling Shootemup', 'Platformer',
              'Shootemup', 'Tactical RPG', 'Vertical Scrolling Shootemup']
         )
 
