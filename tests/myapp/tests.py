@@ -1,4 +1,6 @@
 import re
+import unittest
+import django
 
 from django.test import TestCase
 
@@ -421,6 +423,88 @@ class ReparentingTestCase(TestCase):
 # 8 1 1 1 14 19   +-- ps3
 # 9 8 1 2 15 16       |-- ps3_games
 # 10 8 1 2 17 18      +-- ps3_hardware
+
+@unittest.skipIf(django.get_version() < '1.5', 'Django 1.4 and earlier does not support update_fields for model saving')
+class ConcurrencyTestCase(TestCase):
+    """
+    Test that tree structure remains intact when saving nodes after
+    tree structure has been changed.
+    """
+    fixtures = ['genres.json']
+    
+    def test_node_save_after_tree_restructuring(self):
+        trpg = Genre.objects.get(id=11)
+        
+        # change tree
+        rpg = Genre.objects.get(id=9)
+        platformer_4d = Genre.objects.get(id=5)
+        rpg.move_to(platformer_4d)
+        # Expected tree structure after this move:
+        # 1 - 1 0 1 22    action
+        # 2 1 1 1 2 15     +-- platformer
+        # 3 2 1 2 3 4      |   |-- platformer_2d
+        # 4 2 1 2 5 6      |   |-- platformer_3d
+        # 5 2 1 2 7 14     |   +-- platformer_4d
+        # 9 5 1 3 8 13     |       |-- rpg
+        # 10 9 1 4 9 10    |           |-- arpg
+        # 11 9 1 4 11 12   |           +-- trpg
+        # 6 1 1 1 16 21    +-- shmup
+        # 7 6 1 2 17 18        |-- shmup_vertical
+        # 8 6 1 2 19 20        +-- shmup_horizontal
+        
+        #print get_tree_details(Genre.objects.all())
+        #return
+        
+        # save trpg on top of modified tree
+        trpg.name = "Tactical RPG v 2.0"
+        trpg.save()
+        
+        # refresh trpg
+        trpg = Genre.objects.get(id=11)
+        
+        self.assertEqual(get_tree_details([trpg]), '11 9 1 4 11 12')
+        self.assertEqual(get_tree_details(Genre.objects.all()),
+                         tree_details("""1 - 1 0 1 22
+                                         2 1 1 1 2 15
+                                         3 2 1 2 3 4
+                                         4 2 1 2 5 6
+                                         5 2 1 2 7 14
+                                         9 5 1 3 8 13
+                                         10 9 1 4 9 10
+                                         11 9 1 4 11 12
+                                         6 1 1 1 16 21
+                                         7 6 1 2 17 18
+                                         8 6 1 2 19 20"""))
+    
+    def test_passing_custom_update_fields_as_kwarg(self):
+        """
+        Test that model is saved properly when passing update_fields as keyword argument.
+        """
+        trpg = Genre.objects.get(id=11)
+        trpg.name = "Won't be updated"
+        trpg.description = "Will get updated"
+        
+        trpg.save(update_fields=["description"])
+        
+        trpg_updated = Genre.objects.get(id=trpg.id)
+        
+        self.assertEqual(trpg_updated.description, trpg.description)
+        self.assertNotEqual(trpg_updated.name, trpg.name)
+    
+    def test_passing_custom_update_fields_as_arg(self):
+        """
+        Test that model is saved properly when passing update_fields as positional argument.
+        """
+        trpg = Genre.objects.get(id=11)
+        trpg.name = "Won't be updated"
+        trpg.description = "Will get updated"
+        
+        trpg.save(False, False, None, ["description"])
+        trpg_updated = Genre.objects.get(id=trpg.id)
+        
+        self.assertEqual(trpg_updated.description, trpg.description)
+        self.assertNotEqual(trpg_updated.name, trpg.name)
+
 
 
 class DeletionTestCase(TestCase):

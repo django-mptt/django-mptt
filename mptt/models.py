@@ -1,6 +1,7 @@
 import operator
 import warnings
 
+import django
 from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.query import Q
@@ -625,6 +626,19 @@ class MPTTModel(models.Model):
                 self._mptt_saved = _exists(manager.filter(pk=self.pk))
             return self._mptt_saved
 
+    def _get_user_field_names(self):
+        """ Returns the list of user defined (i.e. non-mptt internal) field names. """
+        from django.db.models.fields import AutoField
+        
+        field_names = []
+        internal_fields = (self._mptt_meta.left_attr, self._mptt_meta.right_attr, self._mptt_meta.tree_id_attr,
+                           self._mptt_meta.level_attr, self._mptt_meta.parent_attr)
+        for field in self._meta.fields:
+            if (field.name not in internal_fields) and (not isinstance(field, AutoField)):
+                field_names.append(field.name)
+        return field_names
+
+
     def save(self, *args, **kwargs):
         """
         If this is a new node, sets tree fields up before it is inserted
@@ -659,7 +673,17 @@ class MPTTModel(models.Model):
                         same_order = False
                         break
 
-            if not same_order:
+            if same_order:
+                if django.get_version() >= '1.5':
+                    # populate update_fields with user defined model fields
+                    # this helps preserve tree integrity when saving model on top of a modified tree
+                    if len(args) > 3:
+                        if not args[3]:
+                            args[3] = self._get_user_field_names()
+                    else:
+                        if not kwargs.get("update_fields", None):
+                            kwargs["update_fields"] = self._get_user_field_names()
+            else:
                 opts.set_raw_field_value(self, opts.parent_attr, old_parent_id)
                 try:
                     right_sibling = None

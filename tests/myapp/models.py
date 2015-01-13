@@ -22,6 +22,7 @@ class Category(MPTTModel):
 class Genre(MPTTModel):
     name = models.CharField(max_length=50, unique=True)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+    description = models.CharField(max_length=255, blank=True)
 
     def __unicode__(self):
         return self.name
