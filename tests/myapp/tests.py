@@ -2,6 +2,7 @@ import re
 
 from django.test import TestCase
 
+from mptt.forms import TreeNodeChoiceField, MoveNodeForm
 from mptt.exceptions import InvalidMove
 from myapp.models import Category, Genre
 
@@ -66,6 +67,180 @@ class DocTestTestCase(TestCase):
 # 9 - 2 0 1 6    rpg
 # 10 9 2 1 2 3   |-- arpg
 # 11 9 2 1 4 5   +-- trpg
+
+class FormTestCase(TestCase):
+    fixtures = ['genres.json']
+    maxDiff = None
+    
+    def test_tree_node_choice_field_without_label(self):
+        expected_html = '''
+        <select name="test">
+            <option value="1"> Action</option>
+            <option value="2">--- Platformer</option>
+            <option value="3">------ 2D Platformer</option>
+            <option value="4">------ 3D Platformer</option>
+            <option value="5">------ 4D Platformer</option>
+            <option value="6">--- Shootemup</option>
+            <option value="7">------ Vertical Scrolling Shootemup</option>
+            <option value="8">------ Horizontal Scrolling Shootemup</option>
+            <option value="9"> Role-playing Game</option>
+            <option value="10">--- Action RPG</option>
+            <option value="11">--- Tactical RPG</option>
+        </select>
+        '''
+        f = TreeNodeChoiceField(queryset=Genre.objects.all())
+        self.assertHTMLEqual(f.widget.render("test", None), expected_html)
+    
+    
+    def test_optional_tree_node_choice_field_without_label(self):
+        expected_html = '''
+        <select name="test">
+            <option value="" selected="selected">---------</option>
+            <option value="1"> Action</option>
+            <option value="2">--- Platformer</option>
+            <option value="3">------ 2D Platformer</option>
+            <option value="4">------ 3D Platformer</option>
+            <option value="5">------ 4D Platformer</option>
+            <option value="6">--- Shootemup</option>
+            <option value="7">------ Vertical Scrolling Shootemup</option>
+            <option value="8">------ Horizontal Scrolling Shootemup</option>
+            <option value="9"> Role-playing Game</option>
+            <option value="10">--- Action RPG</option>
+            <option value="11">--- Tactical RPG</option>
+        </select>'''
+        f = TreeNodeChoiceField(queryset=Genre.objects.all(), required=False)
+        self.assertHTMLEqual(f.widget.render("test", None), expected_html)
+    
+    def test_tree_node_choice_field_with_label(self):
+        expected_html = '''
+        <select name="test">
+            <option value="" selected="selected">None of the below</option>
+            <option value="1"> Action</option>
+            <option value="2">--- Platformer</option>
+            <option value="3">------ 2D Platformer</option>
+            <option value="4">------ 3D Platformer</option>
+            <option value="5">------ 4D Platformer</option>
+            <option value="6">--- Shootemup</option>
+            <option value="7">------ Vertical Scrolling Shootemup</option>
+            <option value="8">------ Horizontal Scrolling Shootemup</option>
+            <option value="9"> Role-playing Game</option>
+            <option value="10">--- Action RPG</option>
+            <option value="11">--- Tactical RPG</option>
+        </select>
+        '''
+        f = TreeNodeChoiceField(queryset=Genre.objects.all(), empty_label=u'None of the below')
+        self.assertHTMLEqual(f.widget.render("test", None), expected_html)
+    
+    def test_optional_tree_node_choice_field_with_label(self):
+        expected_html = '''
+        <select name="test">
+            <option value="" selected="selected">None of the below</option>
+            <option value="1"> Action</option>
+            <option value="2">--- Platformer</option>
+            <option value="3">------ 2D Platformer</option>
+            <option value="4">------ 3D Platformer</option>
+            <option value="5">------ 4D Platformer</option>
+            <option value="6">--- Shootemup</option>
+            <option value="7">------ Vertical Scrolling Shootemup</option>
+            <option value="8">------ Horizontal Scrolling Shootemup</option>
+            <option value="9"> Role-playing Game</option>
+            <option value="10">--- Action RPG</option>
+            <option value="11">--- Tactical RPG</option>
+        </select>'''
+        f = TreeNodeChoiceField(queryset=Genre.objects.all(), required=False, empty_label=u'None of the below')
+        self.assertHTMLEqual(f.widget.render("test", None), expected_html)
+
+    def test_tree_node_choice_field_with_level_indicator(self):
+        expected_html = '''
+        <select name="test">
+            <option value="1"> Action</option>
+            <option value="2">+-- Platformer</option>
+            <option value="3">+--+-- 2D Platformer</option>
+            <option value="4">+--+-- 3D Platformer</option>
+            <option value="5">+--+-- 4D Platformer</option>
+            <option value="6">+-- Shootemup</option>
+            <option value="7">+--+-- Vertical Scrolling Shootemup</option>
+            <option value="8">+--+-- Horizontal Scrolling Shootemup</option>
+            <option value="9"> Role-playing Game</option>
+            <option value="10">+-- Action RPG</option>
+            <option value="11">+-- Tactical RPG</option>
+        </select>'''
+        f = TreeNodeChoiceField(queryset=Genre.objects.all(), level_indicator=u'+--')
+        self.assertHTMLEqual(f.widget.render("test", None), expected_html)
+
+    def test_move_node_form(self):
+        expected_html = '''
+        <tr>
+            <th>
+                <label for="id_target">Target:</label>
+            </th>
+            <td>
+                <select id="id_target" name="target" size="10">
+                    <option value="1"> Action</option>
+                    <option value="2">--- Platformer</option>
+                    <option value="3">------ 2D Platformer</option>
+                    <option value="4">------ 3D Platformer</option>
+                    <option value="5">------ 4D Platformer</option>
+                    <option value="6">--- Shootemup</option>
+                    <option value="8">------ Horizontal Scrolling Shootemup</option>
+                    <option value="9"> Role-playing Game</option>
+                    <option value="10">--- Action RPG</option>
+                    <option value="11">--- Tactical RPG</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <th>
+                <label for="id_position">Position:</label>
+            </th>
+            <td>
+                <select name="position" id="id_position">
+                    <option value="first-child">First child</option>
+                    <option value="last-child">Last child</option>
+                    <option value="left">Left sibling</option>
+                    <option value="right">Right sibling</option>
+                </select>
+            </td>
+        </tr>'''
+        form = MoveNodeForm(Genre.objects.get(pk=7))
+        self.assertHTMLEqual(form.as_table(), expected_html)
+    
+    def test_move_node_form_with_level_indicator_and_select_size(self):
+        expected_html = '''
+        <tr>
+            <th>
+                <label for="id_target">Target:</label>
+            </th>
+            <td>
+                <select id="id_target" name="target" size="5">
+                    <option value="1"> Action</option>
+                    <option value="2">+-- Platformer</option>
+                    <option value="3">+--+-- 2D Platformer</option>
+                    <option value="4">+--+-- 3D Platformer</option>
+                    <option value="5">+--+-- 4D Platformer</option>
+                    <option value="6">+-- Shootemup</option>
+                    <option value="8">+--+-- Horizontal Scrolling Shootemup</option>
+                    <option value="9"> Role-playing Game</option>
+                    <option value="10">+-- Action RPG</option>
+                    <option value="11">+-- Tactical RPG</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <th>
+                <label for="id_position">Position:</label>
+            </th>
+            <td>
+                <select name="position" id="id_position">
+                    <option value="first-child">First child</option>
+                    <option value="last-child">Last child</option>
+                    <option value="left">Left sibling</option>
+                    <option value="right">Right sibling</option>
+                </select>
+            </td>
+        </tr>'''
+        form = MoveNodeForm(Genre.objects.get(pk=7), level_indicator=u'+--', target_select_size=5)
+        self.assertHTMLEqual(form.as_table(), expected_html)
 
 
 class ReparentingTestCase(TestCase):
