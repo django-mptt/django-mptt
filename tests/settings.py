@@ -17,3 +17,5 @@ INSTALLED_APPS = (
     'mptt',
     'myapp',
 )
+
+SECRET_KEY = "One needs SECRET_KEY to be able to run tests"
