@@ -5,11 +5,15 @@ import os
 import re
 import sys
 import tempfile
-import unittest
+
+if sys.version_info < (2, 7):
+    # we need unittest.skipIf, which isn't in unittest in python 2.6.
+    # note this causes a deprecation warning on django 1.7, but django 1.7 doesn't support python < 2.7
+    from django.utils import unittest
+else:
+    import unittest
 
 import django
-from django.conf import settings
-from django.contrib import admin
 from django.contrib.auth.models import Group, User
 from django.db.models import Q
 try:
