@@ -5,6 +5,7 @@ import os
 import re
 import sys
 import tempfile
+import unittest
 
 import django
 from django.conf import settings
@@ -317,6 +318,89 @@ class ReparentingTestCase(TreeTestCase):
         self.assertEqual(action.parent, platformer_4d)
         self.assertEqual(platformer.parent, platformer_4d)
 
+
+@unittest.skipIf(django.VERSION < (1, 5), 'Django 1.4 and earlier does not support update_fields in model save() method')
+class ConcurrencyTestCase(TreeTestCase):
+    """
+    Test that tree structure remains intact when saving nodes (without setting new parent) after
+    tree structure has been changed.
+    """
+    def setUp(self):
+        fruit = ConcreteModel.objects.create(name="Fruit")
+        vegie = ConcreteModel.objects.create(name="Vegie")
+        ConcreteModel.objects.create(name="Apple", parent=fruit)
+        ConcreteModel.objects.create(name="Pear", parent=fruit)
+        ConcreteModel.objects.create(name="Tomato", parent=vegie)
+        ConcreteModel.objects.create(name="Carrot", parent=vegie)
+        
+        # sanity check
+        self.assertTreeEqual(ConcreteModel.objects.all(), """
+            1 - 1 0 1 6
+            3 1 1 1 2 3
+            4 1 1 1 4 5
+            2 - 2 0 1 6
+            5 2 2 1 2 3
+            6 2 2 1 4 5
+        """)
+    
+    def _modify_tree(self):
+        fruit = ConcreteModel.objects.get(name="Fruit")
+        vegie = ConcreteModel.objects.get(name="Vegie")
+        vegie.move_to(fruit)
+    
+    def _assert_modified_tree_state(self):
+        carrot = ConcreteModel.objects.get(id=6)
+        self.assertTreeEqual([carrot], '6 2 1 2 5 6')
+        self.assertTreeEqual(ConcreteModel.objects.all(), """
+            1 - 1 0 1 12
+            2 1 1 1 2 7
+            5 2 1 2 3 4
+            6 2 1 2 5 6
+            3 1 1 1 8 9
+            4 1 1 1 10 11
+        """)
+        
+        
+    def test_node_save_after_tree_restructuring(self):
+        carrot = ConcreteModel.objects.get(id=6)
+        
+        self._modify_tree()
+        
+        carrot.name = "Purple carrot"
+        carrot.save()
+        
+        self._assert_modified_tree_state()
+    
+    def test_node_save_after_tree_restructuring_with_update_fields(self):
+        """
+        Test that model is saved properly when passing update_fields as keyword or positional argument.
+        """
+        carrot = ConcreteModel.objects.get(id=6)
+        
+        self._modify_tree()
+        
+        # update with kwargs
+        carrot.name = "Won't change"
+        carrot.ghosts = "Will get updated"
+        carrot.save(update_fields=["ghosts"])
+        
+        self._assert_modified_tree_state()
+        
+        updated_carrot = ConcreteModel.objects.get(id=6)
+        
+        self.assertEqual(updated_carrot.ghosts, carrot.ghosts)
+        self.assertNotEqual(updated_carrot.name, carrot.name)
+        
+        # update with positional arguments
+        carrot.name = "Will change"
+        carrot.ghosts = "Will not be updated"
+        carrot.save(False, False, None, ["name"])
+        
+        updated_carrot = ConcreteModel.objects.get(id=6)
+        self.assertNotEqual(updated_carrot.ghosts, carrot.ghosts)
+        self.assertEqual(updated_carrot.name, carrot.name)
+
+    
 # categories.json defines the following tree structure:
 #
 # 1 - 1 0 1 20    games

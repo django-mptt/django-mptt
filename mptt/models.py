@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 from functools import reduce, wraps
 import operator
 import threading
+import django
 
 from django.db import models
 from django.db.models.base import ModelBase
@@ -763,6 +764,18 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                 self._mptt_saved = manager.filter(pk=self.pk).exists()
             return self._mptt_saved
 
+    def _get_user_field_names(self):
+        """ Returns the list of user defined (i.e. non-mptt internal) field names. """
+        from django.db.models.fields import AutoField
+        
+        field_names = []
+        internal_fields = (self._mptt_meta.left_attr, self._mptt_meta.right_attr, self._mptt_meta.tree_id_attr,
+                           self._mptt_meta.level_attr, self._mptt_meta.parent_attr)
+        for field in self._meta.fields:
+            if (field.name not in internal_fields) and (not isinstance(field, AutoField)):
+                field_names.append(field.name)
+        return field_names
+
     def save(self, *args, **kwargs):
         """
         If this is a new node, sets tree fields up before it is inserted
@@ -886,6 +899,17 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                     opts.set_raw_field_value(self, opts.parent_attr, parent_id)
             else:
                 opts.set_raw_field_value(self, opts.parent_attr, parent_id)
+                if (not track_updates) and (django.get_version() >= '1.5'):
+                    # When not using delayed/disabled updates,
+                    # populate update_fields (Django 1.5 and later) with user defined model fields.
+                    # This helps preserve tree integrity when saving model on top of a modified tree.
+                    if len(args) > 3:
+                        if not args[3]:
+                            args[3] = self._get_user_field_names()
+                    else:
+                        if not kwargs.get("update_fields", None):
+                            kwargs["update_fields"] = self._get_user_field_names()
+
         else:
             # new node, do an insert
             if (getattr(self, opts.left_attr) and getattr(self, opts.right_attr)):
