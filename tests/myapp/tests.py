@@ -1636,22 +1636,22 @@ class QuerySetTests(TreeTestCase):
     fixtures = ['categories.json']
 
     def test_get_ancestors(self):
-        self.assertItemsEqual(
-            Category.objects.get(name="Nintendo Wii").get_ancestors(include_self=False),
-            Category.objects.filter(name="Nintendo Wii").get_ancestors(include_self=False),
+        self.assertEqual(
+            [c.pk for c in Category.objects.get(name="Nintendo Wii").get_ancestors(include_self=False)],
+            [c.pk for c in Category.objects.filter(name="Nintendo Wii").get_ancestors(include_self=False)],
         )
         self.assertItemsEqual(
-            Category.objects.get(name="Nintendo Wii").get_ancestors(include_self=True),
-            Category.objects.filter(name="Nintendo Wii").get_ancestors(include_self=True),
+            [c.pk for c in Category.objects.get(name="Nintendo Wii").get_ancestors(include_self=True)],
+            [c.pk for c in Category.objects.filter(name="Nintendo Wii").get_ancestors(include_self=True)],
         )
 
     def test_get_descendants(self):
-        self.assertItemsEqual(
-            Category.objects.get(name="Nintendo Wii").get_descendants(include_self=False),
-            Category.objects.filter(name="Nintendo Wii").get_descendants(include_self=False),
+        self.assertEqual(
+            [c.pk for c in Category.objects.get(name="Nintendo Wii").get_descendants(include_self=False)],
+            [c.pk for c in Category.objects.filter(name="Nintendo Wii").get_descendants(include_self=False)],
         )
-        self.assertItemsEqual(
-            Category.objects.get(name="Nintendo Wii").get_descendants(include_self=True),
-            Category.objects.filter(name="Nintendo Wii").get_descendants(include_self=True),
+        self.assertEqual(
+            [c.pk for c in Category.objects.get(name="Nintendo Wii").get_descendants(include_self=True)],
+            [c.pk for c in Category.objects.filter(name="Nintendo Wii").get_descendants(include_self=True)],
         )
 
