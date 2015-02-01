@@ -10,6 +10,7 @@ from django.db.models import F, ManyToManyField, Max, Q
 from django.utils.translation import ugettext as _
 
 from mptt.exceptions import CantDisableUpdates, InvalidMove
+from mptt.querysets import TreeQuerySet
 
 __all__ = ('TreeManager',)
 
@@ -94,15 +95,13 @@ class TreeManager(models.Manager):
 
         This method can be removed when support for Django < 1.6 is dropped.
         """
-        return super(TreeManager, self).get_query_set(*args, **kwargs).order_by(
-            self.tree_id_attr, self.left_attr)
+        return TreeQuerySet(self.model).order_by(self.tree_id_attr, self.left_attr)
 
     def get_queryset(self, *args, **kwargs):
         """
         Ensures that this manager always returns nodes in tree order.
         """
-        return super(TreeManager, self).get_queryset(*args, **kwargs).order_by(
-            self.tree_id_attr, self.left_attr)
+        return TreeQuerySet(self.model).order_by(self.tree_id_attr, self.left_attr)
 
     def _get_queryset_relatives(self, queryset, direction, include_self):
         """
