@@ -5,3 +5,4 @@ dist
 .tox
 MANIFEST
 tests/mydatabase
+*.egg
