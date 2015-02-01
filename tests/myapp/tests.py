@@ -1631,3 +1631,27 @@ class TestUnsaved(TreeTestCase):
                 ValueError,
                 'Cannot call %s on unsaved Genre instances' % method,
                 getattr(Genre(), method))
+
+class QuerySetTests(TreeTestCase):
+    fixtures = ['categories.json']
+
+    def test_get_ancestors(self):
+        self.assertItemsEqual(
+            Category.objects.get(name="Nintendo Wii").get_ancestors(include_self=False),
+            Category.objects.filter(name="Nintendo Wii").get_ancestors(include_self=False),
+        )
+        self.assertItemsEqual(
+            Category.objects.get(name="Nintendo Wii").get_ancestors(include_self=True),
+            Category.objects.filter(name="Nintendo Wii").get_ancestors(include_self=True),
+        )
+
+    def test_get_descendants(self):
+        self.assertItemsEqual(
+            Category.objects.get(name="Nintendo Wii").get_descendants(include_self=False),
+            Category.objects.filter(name="Nintendo Wii").get_descendants(include_self=False),
+        )
+        self.assertItemsEqual(
+            Category.objects.get(name="Nintendo Wii").get_descendants(include_self=True),
+            Category.objects.filter(name="Nintendo Wii").get_descendants(include_self=True),
+        )
+
