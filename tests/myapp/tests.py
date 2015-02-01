@@ -1640,7 +1640,7 @@ class QuerySetTests(TreeTestCase):
             [c.pk for c in Category.objects.get(name="Nintendo Wii").get_ancestors(include_self=False)],
             [c.pk for c in Category.objects.filter(name="Nintendo Wii").get_ancestors(include_self=False)],
         )
-        self.assertItemsEqual(
+        self.assertEqual(
             [c.pk for c in Category.objects.get(name="Nintendo Wii").get_ancestors(include_self=True)],
             [c.pk for c in Category.objects.filter(name="Nintendo Wii").get_ancestors(include_self=True)],
         )
