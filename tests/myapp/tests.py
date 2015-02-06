@@ -1314,6 +1314,20 @@ class RecurseTreeTestCase(TreeTestCase):
             Template,
             '{% load mptt_tags %}{% recursetree %}{% endrecursetree %}')
 
+    def test_cached_ancestors(self):
+        template = Template('''
+            {% load mptt_tags %}
+            {% recursetree nodes %}
+                {{ node.get_ancestors|join:" > " }} {{ node.name }}
+                {% if not node.is_leaf_node %}
+                    {{ children }}
+                {% endif %}
+            {% endrecursetree %}
+        ''')
+        with self.assertNumQueries(1):
+            qs = Category.objects.all()
+            template.render(Context({'nodes': qs}))
+
 
 class TreeInfoTestCase(TreeTestCase):
     fixtures = ['genres.json']

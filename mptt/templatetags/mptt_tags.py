@@ -295,6 +295,10 @@ def cache_tree_children(queryset):
                 setattr(obj, parent_attr, _parent)
                 _parent._cached_children.append(obj)
 
+                if root_level == 0:
+                    # get_ancestors() can use .parent.parent.parent...
+                    setattr(obj, '_mptt_use_cached_ancestors', True)
+
             # Add the current node to end of the current path - the last node
             # in the current path is the parent for the next iteration, unless
             # the next iteration is higher up the tree (a new branch), in which

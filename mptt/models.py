@@ -465,28 +465,46 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                 return self._tree_manager.none()
             else:
                 # Filter on pk for efficiency.
-                return self._tree_manager.filter(pk=self.pk)
+                qs = self._tree_manager.filter(pk=self.pk)
+        else:
+            opts = self._mptt_meta
 
-        opts = self._mptt_meta
+            order_by = opts.left_attr
+            if ascending:
+                order_by = '-' + order_by
 
-        order_by = opts.left_attr
-        if ascending:
-            order_by = '-' + order_by
+            left = getattr(self, opts.left_attr)
+            right = getattr(self, opts.right_attr)
 
-        left = getattr(self, opts.left_attr)
-        right = getattr(self, opts.right_attr)
+            if not include_self:
+                left -= 1
+                right += 1
 
-        if not include_self:
-            left -= 1
-            right += 1
+            qs = self._tree_manager._mptt_filter(
+                left__lte=left,
+                right__gte=right,
+                tree_id=self._mpttfield('tree_id'),
+            )
 
-        qs = self._tree_manager._mptt_filter(
-            left__lte=left,
-            right__gte=right,
-            tree_id=self._mpttfield('tree_id'),
-        )
+            qs = qs.order_by(order_by)
 
-        return qs.order_by(order_by)
+        if hasattr(self, '_mptt_use_cached_ancestors'):
+            # Called during or after a `recursetree` tag.
+            # There should be cached parents up to level 0.
+            # So we can use them to avoid doing a query at all.
+            ancestors = []
+            p = self
+            if not include_self:
+                p = getattr(p, opts.parent_attr)
+
+            while p is not None:
+                ancestors.append(p)
+                p = getattr(p, opts.parent_attr)
+
+            ancestors.reverse()
+            qs._result_cache = ancestors
+
+        return qs
 
     @raise_if_unsaved
     def get_family(self):
