@@ -1,5 +1,4 @@
 from __future__ import unicode_literals
-from django.contrib.auth.models import Group
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 
@@ -185,5 +184,8 @@ class AutoNowDateFieldModel(MPTTModel):
 
 
 # test registering of remote model
+class Group(models.Model):
+    name = models.CharField(max_length=100)
+
 TreeForeignKey(Group, blank=True, null=True).contribute_to_class(Group, 'parent')
 mptt.register(Group, order_insertion_by=('name',))
