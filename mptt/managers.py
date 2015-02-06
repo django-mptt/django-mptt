@@ -95,13 +95,13 @@ class TreeManager(models.Manager):
 
         This method can be removed when support for Django < 1.6 is dropped.
         """
-        return TreeQuerySet(self.model).order_by(self.tree_id_attr, self.left_attr)
+        return TreeQuerySet(self.model, using=self._db).order_by(self.tree_id_attr, self.left_attr)
 
     def get_queryset(self, *args, **kwargs):
         """
         Ensures that this manager always returns nodes in tree order.
         """
-        return TreeQuerySet(self.model).order_by(self.tree_id_attr, self.left_attr)
+        return TreeQuerySet(self.model, using=self._db).order_by(self.tree_id_attr, self.left_attr)
 
     def _get_queryset_relatives(self, queryset, direction, include_self):
         """
