@@ -1678,125 +1678,15 @@ class TreeManagerTestCase(TreeTestCase):
     fixtures = ['categories.json', 'items.json']
 
     def test_add_related_count_with_fk_to_natural_key(self):
-
-        # un-changed queries using pk field
-        COUNT_SUBQUERY = """(
-            SELECT COUNT(*)
-            FROM %(rel_table)s
-            WHERE %(mptt_fk)s = %(mptt_table)s.%(mptt_pk)s
-        )"""
-
-        CUMULATIVE_COUNT_SUBQUERY = """(
-            SELECT COUNT(*)
-            FROM %(rel_table)s
-            WHERE %(mptt_fk)s IN
-            (
-                SELECT m2.%(mptt_pk)s
-                FROM %(mptt_table)s m2
-                WHERE m2.%(tree_id)s = %(mptt_table)s.%(tree_id)s
-                  AND m2.%(left)s BETWEEN %(mptt_table)s.%(left)s
-                                      AND %(mptt_table)s.%(right)s
-            )
-        )"""
-
-        COUNT_SUBQUERY_M2M = """(
-            SELECT COUNT(*)
-            FROM %(rel_table)s j
-            INNER JOIN %(rel_m2m_table)s k ON j.%(rel_pk)s = k.%(rel_m2m_column)s
-            WHERE k.%(mptt_fk)s = %(mptt_table)s.%(mptt_pk)s
-        )"""
-
-        CUMULATIVE_COUNT_SUBQUERY_M2M = """(
-            SELECT COUNT(*)
-            FROM %(rel_table)s j
-            INNER JOIN %(rel_m2m_table)s k ON j.%(rel_pk)s = k.%(rel_m2m_column)s
-            WHERE k.%(mptt_fk)s IN
-            (
-                SELECT m2.%(mptt_pk)s
-                FROM %(mptt_table)s m2
-                WHERE m2.%(tree_id)s = %(mptt_table)s.%(tree_id)s
-                  AND m2.%(left)s BETWEEN %(mptt_table)s.%(left)s
-                                      AND %(mptt_table)s.%(right)s
-            )
-        )"""
-
-        class UnchangedTreeManager(TreeManager):
-
-            def add_related_count(self, queryset, rel_model, rel_field, count_attr, cumulative=False):
-                connection = self._get_connection()
-                qn = connection.ops.quote_name
-
-                meta = self.model._meta
-                mptt_field = rel_model._meta.get_field(rel_field)
-
-                if isinstance(mptt_field, ManyToManyField):
-                    if cumulative:
-                        subquery = CUMULATIVE_COUNT_SUBQUERY_M2M % {
-                            'rel_table': qn(rel_model._meta.db_table),
-                            'rel_pk': qn(rel_model._meta.pk.column),
-                            'rel_m2m_table': qn(mptt_field.m2m_db_table()),
-                            'rel_m2m_column': qn(mptt_field.m2m_column_name()),
-                            'mptt_fk': qn(mptt_field.m2m_reverse_name()),
-                            'mptt_table': qn(self.tree_model._meta.db_table),
-                            'mptt_pk': qn(meta.pk.column),
-                            'tree_id': qn(meta.get_field(self.tree_id_attr).column),
-                            'left': qn(meta.get_field(self.left_attr).column),
-                            'right': qn(meta.get_field(self.right_attr).column),
-                            }
-                    else:
-                        subquery = COUNT_SUBQUERY_M2M % {
-                            'rel_table': qn(rel_model._meta.db_table),
-                            'rel_pk': qn(rel_model._meta.pk.column),
-                            'rel_m2m_table': qn(mptt_field.m2m_db_table()),
-                            'rel_m2m_column': qn(mptt_field.m2m_column_name()),
-                            'mptt_fk': qn(mptt_field.m2m_reverse_name()),
-                            'mptt_table': qn(self.tree_model._meta.db_table),
-                            'mptt_pk': qn(meta.pk.column),
-                            }
-                else:
-                    if cumulative:
-                        subquery = CUMULATIVE_COUNT_SUBQUERY % {
-                            'rel_table': qn(rel_model._meta.db_table),
-                            'mptt_fk': qn(rel_model._meta.get_field(rel_field).column),
-                            'mptt_table': qn(self.tree_model._meta.db_table),
-                            'mptt_pk': qn(meta.pk.column),
-                            'tree_id': qn(meta.get_field(self.tree_id_attr).column),
-                            'left': qn(meta.get_field(self.left_attr).column),
-                            'right': qn(meta.get_field(self.right_attr).column),
-                            }
-                    else:
-                        subquery = COUNT_SUBQUERY % {
-                            'rel_table': qn(rel_model._meta.db_table),
-                            'mptt_fk': qn(rel_model._meta.get_field(rel_field).column),
-                            'mptt_table': qn(self.tree_model._meta.db_table),
-                            'mptt_pk': qn(meta.pk.column),
-                            }
-                return queryset.extra(select={count_attr: subquery})
-
-        # Register the un-changed manager as 'un_changed_manager'
-        manager = UnchangedTreeManager()
-        manager.contribute_to_class(Category, 'un_changed_manager')
-        manager.init_from_model(Category)
-
+        # Regression test for #284
         queryset = Category.objects.filter(name='Xbox 360').order_by('id')
 
-        # Un-changed manager, use the field related to Category's auto key.
-        for c in Category.un_changed_manager.add_related_count(queryset, Item, 'category_pk', 'item_count',
-                                                               cumulative=False):
-            self.assertEqual(c.item_count, c.items_by_pk.count())
-
-        # Un-changed manager, use the field related to Category's natural key.
-        for c in Category.un_changed_manager.add_related_count(queryset, Item, 'category_fk', 'item_count',
-                                                               cumulative=False):
-            # Here the item_count will be 0 since we can't get the items by the foreign key.
-            self.assertNotEqual(c.item_count, c.items_by_pk.count())
-
-        # Now we change to the modified manager and use the field related to Category's natural key.
+        # Test using FK that doesn't point to a primary key
         for c in Category.objects.add_related_count(
                 queryset, Item, 'category_fk', 'item_count', cumulative=False):
             self.assertEqual(c.item_count, c.items_by_pk.count())
 
-        # Also works when using the field related to Category's auto key.
+        # Also works when using the FK that *does* point to a primary key
         for c in Category.objects.add_related_count(
                 queryset, Item, 'category_pk', 'item_count', cumulative=False):
             self.assertEqual(c.item_count, c.items_by_pk.count())
