@@ -34,9 +34,10 @@ class MPTTModelAdmin(ModelAdmin):
         if issubclass(db_field.rel.to, MPTTModel) \
                 and not isinstance(db_field, TreeForeignKey) \
                 and db_field.name not in self.raw_id_fields:
+            db = kwargs.get('using')
             defaults = dict(
                 form_class=TreeNodeChoiceField,
-                queryset=db_field.rel.to.objects.all(),
+                queryset=db_field.rel.to._default_manager.using(db).complex_filter(db_field.rel.limit_choices_to),
                 required=False)
             defaults.update(kwargs)
             kwargs = defaults
