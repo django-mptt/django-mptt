@@ -12,6 +12,8 @@ from django.utils.html import conditional_escape, mark_safe
 from django.utils.translation import ugettext_lazy as _
 
 from mptt.exceptions import InvalidMove
+from mptt.settings import DEFAULT_LEVEL_INDICATOR
+
 
 __all__ = (
     'TreeNodeChoiceField', 'TreeNodeMultipleChoiceField',
@@ -23,7 +25,7 @@ __all__ = (
 
 class TreeNodeChoiceFieldMixin(object):
     def __init__(self, queryset, *args, **kwargs):
-        self.level_indicator = kwargs.pop('level_indicator', '---')
+        self.level_indicator = kwargs.pop('level_indicator', DEFAULT_LEVEL_INDICATOR)
 
         # if a queryset is supplied, enforce ordering
         if hasattr(queryset, 'model'):
