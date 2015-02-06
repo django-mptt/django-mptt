@@ -23,3 +23,6 @@ STATIC_URL = '/static/'
 
 # Required for Django 1.5+
 SECRET_KEY = 'abc123'
+
+# Required for Django 1.7+
+MIDDLEWARE_CLASSES = ()
