@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import django
 from django.conf import settings
 from django.contrib.admin.actions import delete_selected
 from django.contrib.admin.options import ModelAdmin
@@ -34,9 +35,18 @@ class MPTTModelAdmin(ModelAdmin):
         if issubclass(db_field.rel.to, MPTTModel) \
                 and not isinstance(db_field, TreeForeignKey) \
                 and db_field.name not in self.raw_id_fields:
+            db = kwargs.get('using')
+
+            if django.VERSION >= (1, 7):
+                # This resolves callable values for db_field.rel.limit_choices_to,
+                # but isn't available/required on django < 1.7
+                limit_choices_to = db_field.get_limit_choices_to()
+            else:
+                limit_choices_to = db_field.rel.limit_choices_to
+
             defaults = dict(
                 form_class=TreeNodeChoiceField,
-                queryset=db_field.rel.to.objects.all(),
+                queryset=db_field.rel.to._default_manager.using(db).complex_filter(limit_choices_to),
                 required=False)
             defaults.update(kwargs)
             kwargs = defaults
