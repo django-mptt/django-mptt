@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
+import uuid
 from django.db import models
+from django.db.models.signals import pre_save
 from django.utils.encoding import python_2_unicode_compatible
 
 import mptt
@@ -26,6 +28,7 @@ class CustomTreeManager(TreeManager):
 class Category(MPTTModel):
     name = models.CharField(max_length=50)
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
+    category_uuid = models.CharField(max_length=50, unique=True, null=True)
 
     def __str__(self):
         return self.name
@@ -33,6 +36,17 @@ class Category(MPTTModel):
     def delete(self):
         super(Category, self).delete()
     delete.alters_data = True
+
+
+@python_2_unicode_compatible
+class Item(models.Model):
+
+    name = models.CharField(max_length=100)
+    category_fk = models.ForeignKey('Category', to_field='category_uuid', null=True, related_name='items_by_fk')
+    category_pk = models.ForeignKey('Category', null=True, related_name='items_by_pk')
+
+    def __str__(self):
+        return self.name
 
 
 @python_2_unicode_compatible

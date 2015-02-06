@@ -18,7 +18,7 @@ __all__ = ('TreeManager',)
 COUNT_SUBQUERY = """(
     SELECT COUNT(*)
     FROM %(rel_table)s
-    WHERE %(mptt_fk)s = %(mptt_table)s.%(mptt_pk)s
+    WHERE %(mptt_fk)s = %(mptt_table)s.%(mptt_rel_to)s
 )"""
 
 CUMULATIVE_COUNT_SUBQUERY = """(
@@ -26,7 +26,7 @@ CUMULATIVE_COUNT_SUBQUERY = """(
     FROM %(rel_table)s
     WHERE %(mptt_fk)s IN
     (
-        SELECT m2.%(mptt_pk)s
+        SELECT m2.%(mptt_rel_to)s
         FROM %(mptt_table)s m2
         WHERE m2.%(tree_id)s = %(mptt_table)s.%(tree_id)s
           AND m2.%(left)s BETWEEN %(mptt_table)s.%(left)s
@@ -444,7 +444,7 @@ class TreeManager(models.Manager):
                     'rel_table': qn(rel_model._meta.db_table),
                     'mptt_fk': qn(rel_model._meta.get_field(rel_field).column),
                     'mptt_table': qn(self.tree_model._meta.db_table),
-                    'mptt_pk': qn(meta.pk.column),
+                    'mptt_rel_to': qn(mptt_field.rel.field_name),
                     'tree_id': qn(meta.get_field(self.tree_id_attr).column),
                     'left': qn(meta.get_field(self.left_attr).column),
                     'right': qn(meta.get_field(self.right_attr).column),
@@ -454,7 +454,7 @@ class TreeManager(models.Manager):
                     'rel_table': qn(rel_model._meta.db_table),
                     'mptt_fk': qn(rel_model._meta.get_field(rel_field).column),
                     'mptt_table': qn(self.tree_model._meta.db_table),
-                    'mptt_pk': qn(meta.pk.column),
+                    'mptt_rel_to': qn(mptt_field.rel.field_name),
                 }
         return queryset.extra(select={count_attr: subquery})
 

@@ -1,0 +1,20 @@
+[
+    {
+        "pk": 1,
+        "model": "myapp.item",
+        "fields": {
+            "name": "FIFA 15",
+            "category_fk": "b6299e26-d5e9-4dc2-9e2a-3f8033c8dfe5",
+            "category_pk": 5
+        }
+    },
+    {
+        "pk": 2,
+        "model": "myapp.item",
+        "fields": {
+            "name": "Halo: Reach",
+            "category_fk": "b6299e26-d5e9-4dc2-9e2a-3f8033c8dfe5",
+            "category_pk": 5
+        }
+    }
+]
