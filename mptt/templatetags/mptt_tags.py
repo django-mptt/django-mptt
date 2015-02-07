@@ -3,13 +3,16 @@ Template tags for working with lists of model instances which represent
 trees.
 """
 from __future__ import unicode_literals
+import warnings
 from django import template
+from django.db import models
 try:
     from django.apps import apps
     get_model = apps.get_model
 except ImportError:  # pragma: no cover (Django 1.6 compatibility)
-    from django.db.models import get_model
+    get_model = models.get_model
 from django.db.models.fields import FieldDoesNotExist
+from django.utils import six
 try:
     from django.utils.encoding import force_text
 except ImportError:  # pragma: no cover (Django 1.4 compatibility)
@@ -23,20 +26,6 @@ register = template.Library()
 
 
 # ## ITERATIVE TAGS
-
-class FullTreeForModelNode(template.Node):
-    def __init__(self, model, context_var):
-        self.model = model
-        self.context_var = context_var
-
-    def render(self, context):
-        cls = get_model(*self.model.split('.'))
-        if cls is None:
-            raise template.TemplateSyntaxError(
-                _('full_tree_for_model tag was given an invalid model: %s') % self.model
-            )
-        context[self.context_var] = cls._tree_manager.all()
-        return ''
 
 
 class DrilldownTreeForNodeNode(template.Node):
@@ -72,6 +61,23 @@ class DrilldownTreeForNodeNode(template.Node):
         return ''
 
 
+class FullTreeForModelNode(template.Node):
+    def __init__(self, model_var, context_var):
+        self.model_var = model_var
+        self.context_var = context_var
+
+    def render(self, context):
+        model = self.model_var.resolve(context)
+        if isinstance(model, six.string_types):
+            cls = get_model(*model.split('.'))
+        if cls is None:
+            raise template.TemplateSyntaxError(
+                _('full_tree_for_model tag was given an invalid model: %s') % self.model
+            )
+        context[self.context_var] = cls._tree_manager.all()
+        return ''
+
+
 @register.tag
 def full_tree_for_model(parser, token):
     """
@@ -80,21 +86,37 @@ def full_tree_for_model(parser, token):
 
     Usage::
 
-       {% full_tree_for_model [model] as [varname] %}
-
-    The model is specified in ``[appname].[modelname]`` format.
+       {% full_tree_for_model "myapp.model" as [varname] %}
 
     Example::
 
-       {% full_tree_for_model tests.Genre as genres %}
+       {% full_tree_for_model "tests.Genre" as genres %}
 
     """
     bits = token.contents.split()
+    if len(bits) >= 2:
+        # Deprecated unquoted model argument (e.g `{% full_tree_for_model myapp.modelname %}` )
+        # Because that's weird syntax and prevents us from just using @register.assignment_tag.
+        try:
+            parser.compile_filter(bits[1])
+        except template.TemplateSyntaxError:
+            if not hasattr(full_tree_for_model, '_unquoted_deprecation_warned'):
+                warnings.warn(
+                    "Passing unquoted model argument into `full_tree_for_model` is deprecated"
+                    "for removal in 0.8. See the upgrade notes.",
+                    UserWarning,
+                )
+                full_tree_for_model._unquoted_deprecation_warned = True
+
+            model_var = template.Variable('"%s"' % bits[1])
+        else:
+            model_var = template.Variable(bits[1])
+
     if len(bits) != 4:
         raise template.TemplateSyntaxError(_('%s tag requires three arguments') % bits[0])
     if bits[2] != 'as':
         raise template.TemplateSyntaxError(_("second argument to %s tag must be 'as'") % bits[0])
-    return FullTreeForModelNode(bits[1], bits[3])
+    return FullTreeForModelNode(model_var, bits[3])
 
 
 @register.tag('drilldown_tree_for_node')
