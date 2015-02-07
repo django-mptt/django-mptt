@@ -480,7 +480,7 @@ class TreeManager(models.Manager):
 
         if self._base_manager:
             return self._base_manager.insert_node(
-                node, target, position=position, save=save)
+                node, target, position=position, save=save, allow_existing_pk=allow_existing_pk)
 
         if node.pk and not allow_existing_pk and self.filter(pk=node.pk).exists():
             raise ValueError(_('Cannot insert a node which has already been saved.'))
@@ -513,7 +513,9 @@ class TreeManager(models.Manager):
 
             space_target, level, left, parent, right_shift = \
                 self._calculate_inter_tree_move_values(node, target, position)
-            tree_id = getattr(parent, self.tree_id_attr)
+
+            # Don't rely on parent.tree_id. It could easily be stale.
+            tree_id = self.filter(pk=parent.pk).values_list(self.tree_id_attr, flat=True)[0]
 
             self._create_space(2, space_target, tree_id)
 
