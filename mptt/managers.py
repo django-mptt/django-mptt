@@ -522,7 +522,7 @@ class TreeManager(models.Manager):
             space_target, level, left, parent, right_shift = \
                 self._calculate_inter_tree_move_values(node, target, position)
 
-            tree_id = target.tree_id
+            tree_id = getattr(target, self.tree_id_attr)
             self._create_space(2, space_target, tree_id)
 
             setattr(node, self.left_attr, -left)
