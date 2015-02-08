@@ -459,7 +459,7 @@ class TreeManager(models.Manager):
         return queryset.extra(select={count_attr: subquery})
 
     def insert_node(self, node, target, position='last-child', save=False,
-                    allow_existing_pk=False):
+                    allow_existing_pk=False, refresh_target=True):
         """
         Sets up the tree state for ``node`` (which has not yet been
         inserted into in the database) so it will be positioned relative
@@ -480,7 +480,7 @@ class TreeManager(models.Manager):
 
         if self._base_manager:
             return self._base_manager.insert_node(
-                node, target, position=position, save=save)
+                node, target, position=position, save=save, allow_existing_pk=allow_existing_pk)
 
         if node.pk and not allow_existing_pk and self.filter(pk=node.pk).exists():
             raise ValueError(_('Cannot insert a node which has already been saved.'))
@@ -493,6 +493,10 @@ class TreeManager(models.Manager):
             setattr(node, self.tree_id_attr, tree_id)
             setattr(node, self.parent_attr, None)
         elif target.is_root_node() and position in ['left', 'right']:
+            if refresh_target:
+                # Ensure mptt values on target are not stale.
+                target._mptt_refresh()
+
             target_tree_id = getattr(target, self.tree_id_attr)
             if position == 'left':
                 tree_id = target_tree_id
@@ -511,10 +515,14 @@ class TreeManager(models.Manager):
             setattr(node, self.left_attr, 0)
             setattr(node, self.level_attr, 0)
 
+            if refresh_target:
+                # Ensure mptt values on target are not stale.
+                target._mptt_refresh()
+
             space_target, level, left, parent, right_shift = \
                 self._calculate_inter_tree_move_values(node, target, position)
-            tree_id = getattr(parent, self.tree_id_attr)
 
+            tree_id = getattr(target, self.tree_id_attr)
             self._create_space(2, space_target, tree_id)
 
             setattr(node, self.left_attr, -left)
@@ -530,14 +538,14 @@ class TreeManager(models.Manager):
             node.save()
         return node
 
-    def _move_node(self, node, target, position='last-child', save=True):
+    def _move_node(self, node, target, position='last-child', save=True, refresh_target=True):
         if self._base_manager:
             return self._base_manager.move_node(node, target, position=position)
 
         if self.tree_model._mptt_is_tracking:
             # delegate to insert_node and clean up the gaps later.
             return self.insert_node(node, target, position=position, save=save,
-                                    allow_existing_pk=True)
+                                    allow_existing_pk=True, refresh_target=refresh_target)
         else:
             if target is None:
                 if node.is_child_node():
