@@ -788,9 +788,10 @@ class DelayedUpdatesTestCase(TreeTestCase):
         with self.assertNumQueries(8):
             with ConcreteModel.objects.delay_mptt_updates():
                 with self.assertNumQueries(2):
-                    # 1 query here:
+                    # 1 query for target stale check,
+                    # 1 query to save node.
                     ConcreteModel.objects.create(name="e", parent=self.d)
-                # 2nd query here:
+                # 3rd query here:
                 self.assertTreeEqual(ConcreteModel.objects.all(), """
                     1 - 1 0 1 6
                     2 1 1 1 2 3
@@ -799,7 +800,7 @@ class DelayedUpdatesTestCase(TreeTestCase):
                     6 4 2 1 2 3
                     5 - 3 0 1 2
                 """)
-                # remaining queries (3 through 7) are the partial rebuild process.
+                # remaining queries (4 through 8) are the partial rebuild process.
 
         self.assertTreeEqual(ConcreteModel.objects.all(), """
             1 - 1 0 1 6
@@ -841,10 +842,11 @@ class DelayedUpdatesTestCase(TreeTestCase):
         with self.assertNumQueries(10 + extra_queries_per_update):
             with ConcreteModel.objects.delay_mptt_updates():
                 with self.assertNumQueries(2 + extra_queries_per_update):
+                    # 1 query to ensure target fields aren't stale
                     # 1 update query
                     self.c.parent = self.b
                     self.c.save()
-                # query 2 here:
+                # query 3 here:
                 self.assertTreeEqual(ConcreteModel.objects.all(), """
                     1 - 1 0 1 6
                     2 1 1 1 2 3
@@ -1693,7 +1695,7 @@ class TreeManagerTestCase(TreeTestCase):
 
 
 class TestOrderedInsertionBFS(TreeTestCase):
-    def test_insert_ordered_dfs_root_nodes(self):
+    def test_insert_ordered_DFS_backwards_root_nodes(self):
         rock = OrderedInsertion.objects.create(name="Rock")
 
         OrderedInsertion.objects.create(name="Led Zeppelin", parent=rock)
@@ -1706,7 +1708,7 @@ class TestOrderedInsertionBFS(TreeTestCase):
             2 1 2 1 2 3
         """)
 
-    def test_insert_ordered_backwards_root_nodes(self):
+    def test_insert_ordered_BFS_backwards_root_nodes(self):
         rock = OrderedInsertion.objects.create(name="Rock")
 
         self.assertTreeEqual(OrderedInsertion.objects.all(), """
@@ -1728,4 +1730,40 @@ class TestOrderedInsertionBFS(TreeTestCase):
             2 - 1 0 1 2
             1 - 2 0 1 4
             3 1 2 1 2 3
+        """)
+
+    def test_insert_ordered_DFS_backwards_nonroot_nodes(self):
+        music = OrderedInsertion.objects.create(name='music')
+        rock = OrderedInsertion.objects.create(name="Rock", parent=music)
+
+        OrderedInsertion.objects.create(name="Led Zeppelin", parent=rock)
+
+        OrderedInsertion.objects.create(name="Classical", parent=music)
+
+        self.assertTreeEqual(OrderedInsertion.objects.all(), """
+            1 - 1 0 1 8
+            4 1 1 1 2 3
+            2 1 1 1 4 7
+            3 2 1 2 5 6
+        """)
+
+
+    def test_insert_ordered_BFS_backwards_nonroot_nodes(self):
+        music = OrderedInsertion.objects.create(name='music')
+        rock = OrderedInsertion.objects.create(name="Rock", parent=music)
+        OrderedInsertion.objects.create(name="Classical", parent=music)
+
+        self.assertTreeEqual(OrderedInsertion.objects.all(), """
+            1 - 1 0 1 6
+            3 1 1 1 2 3
+            2 1 1 1 4 5
+        """)
+
+        OrderedInsertion.objects.create(name="Led Zeppelin", parent=rock)
+
+        self.assertTreeEqual(OrderedInsertion.objects.all(), """
+            1 - 1 0 1 8
+            3 1 1 1 2 3
+            2 1 1 1 4 7
+            4 2 1 2 5 6
         """)
