@@ -4,6 +4,10 @@ import operator
 import threading
 import django
 
+try:
+    from django.core.exceptions import AppRegistryNotReady
+except ImportError:
+    AppRegistryNotReady = None
 from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.query import Q
@@ -311,7 +315,7 @@ class MPTTModelBase(ModelBase):
                 field_name = getattr(cls._mptt_meta, key)
                 try:
                     cls._meta.get_field(field_name)
-                except models.FieldDoesNotExist:
+                except (models.FieldDoesNotExist, AppRegistryNotReady):
                     field = models.PositiveIntegerField(db_index=True, editable=False)
                     field.contribute_to_class(cls, field_name)
 
