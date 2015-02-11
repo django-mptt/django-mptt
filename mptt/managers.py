@@ -11,6 +11,7 @@ from django.utils.translation import ugettext as _
 
 from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.querysets import TreeQuerySet
+from mptt.utils import _get_tree_model
 
 __all__ = ('TreeManager',)
 
@@ -65,23 +66,7 @@ class TreeManager(models.Manager):
         super(TreeManager, self).contribute_to_class(model, name)
 
         if not (model._meta.abstract or model._meta.proxy):
-            # Find the model that contains the tree fields.
-            # This is a weird way of going about it, but Django doesn't let us access
-            # the fields list to detect where the tree fields actually are,
-            # because the app cache hasn't been loaded yet.
-            # So, it *should* be the *last* concrete MPTTModel subclass in the mro().
-            bases = list(model.mro())
-            while bases:
-                b = bases.pop()
-                # NOTE can't use `issubclass(b, MPTTModel)` here because we can't import MPTTModel yet!
-                # So hasattr(b, '_mptt_meta') will have to do.
-                if hasattr(b, '_mptt_meta') and not (b._meta.abstract or b._meta.proxy):
-                    break
-            else:
-                # this shouldn't ever happen! (fingers crossed ;)
-                raise TypeError("Couldn't find a concrete MPTTModel subclass in %s.mro()" % model)
-
-            self.tree_model = b
+            self.tree_model = _get_tree_model(model)
 
             self._base_manager = None
             if self.tree_model is not model:

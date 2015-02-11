@@ -13,6 +13,7 @@ from django.utils.translation import ugettext as _
 
 from mptt.fields import TreeForeignKey, TreeOneToOneField, TreeManyToManyField
 from mptt.managers import TreeManager
+from mptt.utils import _get_tree_model
 
 
 __all__ = (
@@ -307,11 +308,9 @@ class MPTTModelBase(ModelBase):
                 bases.insert(0, MPTTModel)
                 cls.__bases__ = tuple(bases)
 
-            for key in ('left_attr', 'right_attr', 'tree_id_attr', 'level_attr'):
-                field_name = getattr(cls._mptt_meta, key)
-                try:
-                    cls._meta.get_field(field_name)
-                except models.FieldDoesNotExist:
+            if _get_tree_model(cls) is cls:
+                for key in ('left_attr', 'right_attr', 'tree_id_attr', 'level_attr'):
+                    field_name = getattr(cls._mptt_meta, key)
                     field = models.PositiveIntegerField(db_index=True, editable=False)
                     field.contribute_to_class(cls, field_name)
 
