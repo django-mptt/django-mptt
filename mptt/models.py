@@ -786,7 +786,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         internal_fields = (self._mptt_meta.left_attr, self._mptt_meta.right_attr, self._mptt_meta.tree_id_attr,
                            self._mptt_meta.level_attr, self._mptt_meta.parent_attr)
         for field in self._meta.fields:
-            if (field.name not in internal_fields) and (not isinstance(field, AutoField)):
+            if (field.name not in internal_fields) and (not isinstance(field, AutoField)) and (not field.primary_key):
                 field_names.append(field.name)
         return field_names
 
