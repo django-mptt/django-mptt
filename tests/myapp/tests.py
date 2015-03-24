@@ -21,7 +21,6 @@ try:
     get_models = apps.get_models
 except ImportError:  # pragma: no cover (Django 1.6 compatibility)
     from django.db.models import get_models
-from django.db.models import ManyToManyField
 from django.forms.models import modelform_factory
 from django.template import Template, TemplateSyntaxError, Context
 from django.test import TestCase
@@ -32,7 +31,6 @@ from mptt.forms import (
     MPTTAdminForm, TreeNodeChoiceField, TreeNodeMultipleChoiceField,
     MoveNodeForm)
 from mptt.models import MPTTModel
-from mptt.managers import TreeManager
 from mptt.templatetags.mptt_tags import cache_tree_children
 from mptt.utils import print_debug_info
 
@@ -1396,7 +1394,7 @@ class FullTreeTestCase(TreeTestCase):
     fixtures = ['genres.json']
     template = re.sub(r'(?m)^[\s]+', '', '''
         {% load mptt_tags %}
-        {% full_tree_for_model myapp.Genre as tree %}
+        {% full_tree_for_model "myapp.Genre" as tree %}
         {% for node in tree %}{{ node.pk }},{% endfor %}
         ''')
 
