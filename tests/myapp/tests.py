@@ -1136,11 +1136,11 @@ class ManagerTests(TreeTestCase):
             if not issubclass(model, MPTTModel):
                 continue
             tm = model._tree_manager
-            if tm in seen:
+            if id(tm) in seen:
                 self.fail(
                     "Tree managers for %s and %s are the same manager"
-                    % (model.__name__, seen[tm].__name__))
-            seen[tm] = model
+                    % (model.__name__, seen[id(tm)].__name__))
+            seen[id(tm)] = model
 
     def test_all_managers_have_correct_model(self):
         # all tree managers should have the correct model.
