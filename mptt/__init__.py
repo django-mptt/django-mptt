@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-VERSION = (0, 7, 'a')
+VERSION = (0, 7, 0)
 
 
 def register(*args, **kwargs):

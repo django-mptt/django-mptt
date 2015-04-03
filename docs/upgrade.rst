@@ -2,8 +2,25 @@
 Upgrade notes
 =============
 
-0.7.a
+0.7.0
 =====
+
+Dropped support for Django 1.5, Added support for 1.8
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Django 1.5 support has been removed since django 1.5 is not supported upstream any longer.
+
+Django 1.8 support has been added.
+
+Deprecated: Calling ``recursetree``/``cache_tree_children`` with incorrectly-ordered querysets
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Previously, when given a queryset argument, ``cache_tree_children`` called ``.order_by`` to ensure that the queryset
+was in the correct order. In 0.7, calling ``cache_tree_children`` with an incorrectly-ordered queryset will cause a deprecation warning. In 0.8, it will raise an error.
+
+This also applies to ``recursetree``, since it calls ``cache_tree_children``.
+
+This probably doesn't affect many usages, since the default ordering for mptt models will work fine.
 
 Minor: ``TreeManager.get_queryset`` no longer provided on Django < 1.6
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
