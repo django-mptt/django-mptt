@@ -257,7 +257,7 @@ def cache_tree_children(queryset):
         mptt_opts = queryset.model._mptt_meta
         tree_id_attr = mptt_opts.tree_id_attr
         left_attr = mptt_opts.left_attr
-        if queryset.query.order_by != (tree_id_attr, left_attr):
+        if tuple(queryset.query.order_by) != (tree_id_attr, left_attr):
             warnings.warn(
                 (
                     "cache_tree_children() was passed a queryset with the wrong ordering: %r.\n"
