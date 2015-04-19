@@ -207,6 +207,8 @@ class ConcreteConcrete(ConcreteModel):
 # 4. proxy models
 
 class SingleProxyModel(ConcreteModel):
+    objects = CustomTreeManager()
+
     class Meta:
         proxy = True
 

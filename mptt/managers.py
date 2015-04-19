@@ -65,7 +65,7 @@ class TreeManager(models.Manager):
     def contribute_to_class(self, model, name):
         super(TreeManager, self).contribute_to_class(model, name)
 
-        if not (model._meta.abstract or model._meta.proxy):
+        if not model._meta.abstract:
             self.tree_model = _get_tree_model(model)
 
             self._base_manager = None

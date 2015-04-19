@@ -21,7 +21,6 @@ try:
     get_models = apps.get_models
 except ImportError:  # pragma: no cover (Django 1.6 compatibility)
     from django.db.models import get_models
-from django.db.models import ManyToManyField
 from django.forms.models import modelform_factory
 from django.template import Template, TemplateSyntaxError, Context
 from django.test import TestCase
@@ -39,7 +38,7 @@ from mptt.utils import print_debug_info
 from myapp.models import (
     Category, Item, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel,
     ConcreteModel, OrderedInsertion, AutoNowDateFieldModel, Person,
-    CustomTreeQueryset, Node, ReferencingModel)
+    CustomTreeQueryset, Node, ReferencingModel, CustomTreeManager)
 
 
 extra_queries_per_update = 0
@@ -1162,6 +1161,12 @@ class ManagerTests(TreeTestCase):
             else:
                 self.fail("Detected infinite recursion in %s._tree_manager._base_manager" % model)
 
+    def test_proxy_custom_manager(self):
+        self.assertIsInstance(SingleProxyModel._tree_manager, CustomTreeManager)
+        self.assertIsInstance(SingleProxyModel._tree_manager._base_manager, TreeManager)
+
+        self.assertIsInstance(SingleProxyModel.objects, CustomTreeManager)
+        self.assertIsInstance(SingleProxyModel.objects._base_manager, TreeManager)
 
     def test_get_queryset_descendants(self):
         def get_desc_names(qs, include_self=False):
