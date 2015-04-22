@@ -1240,8 +1240,10 @@ class ManagerTests(TreeTestCase):
         self.assertTrue(isinstance(Person.objects.all()[0].get_children(), CustomTreeQueryset))
         self.assertTrue(isinstance(Person.objects.none(), CustomTreeQueryset))
         
-        # This test is failing on Django 1.4, needs a decision
-        # self.assertTrue(isinstance(Person.objects.all()[0].get_children().none(), CustomTreeQueryset))
+        # In Django 1.4, we would have had a custom type MyEmptyQuerySet but
+        # this was abandoned in later versions. However, the best method is
+        # to just test if the custom method is available.
+        self.assertTrue(hasattr(Person.objects.all()[0].get_children().none(), 'custom_method'))
         
         self.assertEqual(
             type(Person.objects.all()),
