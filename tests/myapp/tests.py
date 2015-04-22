@@ -1126,7 +1126,8 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
 
 class ManagerTests(TreeTestCase):
     fixtures = ['categories.json',
-                'genres.json']
+                'genres.json',
+                'persons.json']
 
     def test_all_managers_are_different(self):
         # all tree managers should be different. otherwise, possible infinite recursion.
@@ -1234,8 +1235,11 @@ class ManagerTests(TreeTestCase):
         """
         Test that a custom manager also provides custom querysets.
         """
-
+        
         self.assertTrue(isinstance(Person.objects.all(), CustomTreeQueryset))
+        self.assertTrue(isinstance(Person.objects.all()[0].get_children(), CustomTreeQueryset))
+        self.assertTrue(isinstance(Person.objects.all()[0].get_children().none(), CustomTreeQueryset))
+        self.assertTrue(isinstance(Person.objects.none(), CustomTreeQueryset))
         self.assertEqual(
             type(Person.objects.all()),
             type(Person.objects.root_nodes())
