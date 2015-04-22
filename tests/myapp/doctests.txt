@@ -208,11 +208,11 @@
 
 # TreeManager Methods #########################################################
 # check that tree manager is the explicitly defined tree manager for Person
->>> Person._tree_manager == Person.my_tree_manager
+>>> Person._tree_manager == Person.objects
 True
 
 # managers of non-abstract bases don't get inherited, so:
->>> Student._tree_manager == Student.my_tree_manager
+>>> Student._tree_manager == Student.objects
 False
 
 >>> Student._tree_manager == Person._tree_manager
@@ -1554,7 +1554,7 @@ ValueError: Cannot insert a node which has already been saved.
 >>> jane = Student.objects.create(name='Jane', parent=jeff)
 >>> joe = Person.objects.create(name='Joe', parent=jane)
 >>> julie = Student.objects.create(name='Julie', parent=jess)
->>> print_tree_details(Person.my_tree_manager.all())
+>>> print_tree_details(Person.objects.all())
 1 - 1 0 1 6
 2 1 1 1 2 3
 3 1 1 1 4 5
