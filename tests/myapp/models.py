@@ -12,7 +12,9 @@ from django.db.models.query import QuerySet
 
 
 class CustomTreeQueryset(QuerySet):
-    pass
+
+    def custom_method(self):
+        pass
 
 
 class CustomTreeManager(TreeManager):
@@ -124,7 +126,10 @@ class Person(MPTTModel):
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
 
     # just testing it's actually possible to override the tree manager
-    my_tree_manager = CustomTreeManager()
+    objects = CustomTreeManager()
+    
+    # This line is set because of https://github.com/django-mptt/django-mptt/issues/369
+    _default_manager = objects
 
     def __str__(self):
         return self.name
