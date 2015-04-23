@@ -1126,7 +1126,8 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
 
 class ManagerTests(TreeTestCase):
     fixtures = ['categories.json',
-                'genres.json']
+                'genres.json',
+                'persons.json']
 
     def test_all_managers_are_different(self):
         # all tree managers should be different. otherwise, possible infinite recursion.
@@ -1234,8 +1235,16 @@ class ManagerTests(TreeTestCase):
         """
         Test that a custom manager also provides custom querysets.
         """
-
+        
         self.assertTrue(isinstance(Person.objects.all(), CustomTreeQueryset))
+        self.assertTrue(isinstance(Person.objects.all()[0].get_children(), CustomTreeQueryset))
+        self.assertTrue(hasattr(Person.objects.none(), 'custom_method'))
+        
+        # In Django 1.4, we would have had a custom type CustomEmptyTreeQueryset
+        # but this was abandoned in later versions. However, the best method is
+        # to just test if the custom method is available.
+        # self.assertTrue(hasattr(Person.objects.all()[0].get_children().none(), 'custom_method'))
+        
         self.assertEqual(
             type(Person.objects.all()),
             type(Person.objects.root_nodes())

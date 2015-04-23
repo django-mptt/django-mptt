@@ -1,0 +1,14 @@
+[
+  {
+    "pk": 1, 
+    "model": "myapp.person", 
+    "fields": {
+      "rght": 16, 
+      "name": "John Doe", 
+      "parent": null, 
+      "level": 0, 
+      "lft": 1, 
+      "tree_id": 1
+    }
+  }
+]

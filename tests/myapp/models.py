@@ -3,16 +3,27 @@ import uuid
 from django.db import models
 from django.db.models.signals import pre_save
 from django.utils.encoding import python_2_unicode_compatible
+from django import VERSION as DJANGO_VERSION
+
 
 import mptt
 from mptt.fields import TreeForeignKey, TreeOneToOneField, TreeManyToManyField
 from mptt.models import MPTTModel
 from mptt.managers import TreeManager
-from django.db.models.query import QuerySet
+from django.db.models.query import QuerySet, EmptyQuerySet
 
 
 class CustomTreeQueryset(QuerySet):
-    pass
+
+    def custom_method(self):
+        pass
+
+
+class CustomEmptyTreeQueryset(EmptyQuerySet):
+    """This is only used pre Django 1.6"""
+
+    def custom_method(self):
+        pass
 
 
 class CustomTreeManager(TreeManager):
@@ -22,6 +33,16 @@ class CustomTreeManager(TreeManager):
     def get_queryset(self):
         # Django 1.8 removed the fallbacks here.
         return CustomTreeQueryset(model=self.model, using=self._db)
+
+    def get_empty_query_set(self):
+        # Pre 1.6 django, we needed a custom inheritor of EmptyQuerySet
+        # to pass custom methods. However, 1.6 introduced that EmptyQuerySet
+        # cannot be instantiated but instead passes through the methods
+        # of the custom QuerySet.
+        # See: https://code.djangoproject.com/ticket/22817
+        if DJANGO_VERSION < (1, 6):
+            return CustomEmptyTreeQueryset(model=self.model)
+        return self.get_queryset().none()
 
 
 @python_2_unicode_compatible
@@ -124,7 +145,10 @@ class Person(MPTTModel):
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
 
     # just testing it's actually possible to override the tree manager
-    my_tree_manager = CustomTreeManager()
+    objects = CustomTreeManager()
+    
+    # This line is set because of https://github.com/django-mptt/django-mptt/issues/369
+    _default_manager = objects
 
     def __str__(self):
         return self.name
