@@ -309,10 +309,19 @@ class MPTTModelBase(ModelBase):
                 cls.__bases__ = tuple(bases)
 
             if _get_tree_model(cls) is cls:
+                # HACK: _meta.get_field() doesn't work before AppCache.ready in Django>=1.8
+                # ( see https://code.djangoproject.com/ticket/24231 )
+                # So the only way to get existing fields is using local_fields on all superclasses.
+                existing_field_names = set()
+                for base in cls.mro():
+                    if hasattr(base, '_meta'):
+                        existing_field_names.update([f.name for f in base._meta.local_fields])
+
                 for key in ('left_attr', 'right_attr', 'tree_id_attr', 'level_attr'):
                     field_name = getattr(cls._mptt_meta, key)
-                    field = models.PositiveIntegerField(db_index=True, editable=False)
-                    field.contribute_to_class(cls, field_name)
+                    if field_name not in existing_field_names:
+                        field = models.PositiveIntegerField(db_index=True, editable=False)
+                        field.contribute_to_class(cls, field_name)
 
             # Add a tree manager, if there isn't one already
             if not abstract:

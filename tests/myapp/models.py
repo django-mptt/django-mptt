@@ -108,11 +108,13 @@ class MultiOrder(MPTTModel):
 
 class Node(MPTTModel):
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
+    # To check that you can set level_attr etc to an existing field.
+    level = models.IntegerField()
 
     class MPTTMeta:
         left_attr = 'does'
         right_attr = 'zis'
-        level_attr = 'madness'
+        level_attr = 'level'
         tree_id_attr = 'work'
 
 
