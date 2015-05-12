@@ -15,7 +15,7 @@ else:
 
 import django
 from django.contrib.auth.models import Group, User
-from django.db.models import Q
+from django.db.models import Q, Manager
 try:
     from django.apps import apps
     get_models = apps.get_models
@@ -1235,20 +1235,30 @@ class ManagerTests(TreeTestCase):
         """
         Test that a custom manager also provides custom querysets.
         """
-        
+
         self.assertTrue(isinstance(Person.objects.all(), CustomTreeQueryset))
         self.assertTrue(isinstance(Person.objects.all()[0].get_children(), CustomTreeQueryset))
         self.assertTrue(hasattr(Person.objects.none(), 'custom_method'))
-        
+
         # In Django 1.4, we would have had a custom type CustomEmptyTreeQueryset
         # but this was abandoned in later versions. However, the best method is
         # to just test if the custom method is available.
         # self.assertTrue(hasattr(Person.objects.all()[0].get_children().none(), 'custom_method'))
-        
+
         self.assertEqual(
             type(Person.objects.all()),
             type(Person.objects.root_nodes())
         )
+
+    @unittest.skipIf(django.VERSION < (1, 7), 'Django 1.6 and earlier does not provide Manager.from_queryset')
+    def test_manager_from_custom_queryset(self):
+        """
+        Test that a manager created from a custom queryset works.
+        Regression test for #378.
+        """
+        TreeManager.from_queryset(CustomTreeQueryset)().contribute_to_class(Genre, 'my_manager')
+
+        self.assertIsInstance(Genre.my_manager.get_queryset(), CustomTreeQueryset)
 
 
 class CacheTreeChildrenTestCase(TreeTestCase):

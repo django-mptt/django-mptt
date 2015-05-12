@@ -148,7 +148,7 @@ class Person(MPTTModel):
 
     # just testing it's actually possible to override the tree manager
     objects = CustomTreeManager()
-    
+
     # This line is set because of https://github.com/django-mptt/django-mptt/issues/369
     _default_manager = objects
 

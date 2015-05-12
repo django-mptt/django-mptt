@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 import contextlib
 from itertools import groupby
 
+import django
 from django.db import models, connections, router
 from django.db.models import F, ManyToManyField, Max, Q
 from django.utils.translation import ugettext as _
@@ -12,6 +13,12 @@ from django.utils.translation import ugettext as _
 from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.querysets import TreeQuerySet
 from mptt.utils import _get_tree_model
+
+if django.VERSION < (1, 7):
+    _tree_manager_superclass = models.Manager
+else:
+    # Django 1.7+ added this crazy new pattern for manager inheritance.
+    _tree_manager_superclass = models.Manager.from_queryset(TreeQuerySet)
 
 __all__ = ('TreeManager',)
 
@@ -57,7 +64,7 @@ CUMULATIVE_COUNT_SUBQUERY_M2M = """(
 )"""
 
 
-class TreeManager(models.Manager):
+class TreeManager(_tree_manager_superclass):
     """
     A manager for working with trees of objects.
     """
@@ -85,7 +92,11 @@ class TreeManager(models.Manager):
         """
         Ensures that this manager always returns nodes in tree order.
         """
-        return TreeQuerySet(self.model, using=self._db).order_by(self.tree_id_attr, self.left_attr)
+        if django.VERSION < (1, 7):
+            qs = TreeQuerySet(self.model, using=self._db)
+        else:
+            qs = super(TreeManager, self).get_queryset(*args, **kwargs)
+        return qs.order_by(self.tree_id_attr, self.left_attr)
 
     def _get_queryset_relatives(self, queryset, direction, include_self):
         """
