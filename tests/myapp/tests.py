@@ -1206,30 +1206,33 @@ class ManagerTests(TreeTestCase):
              'Vertical Scrolling Shootemup']
         )
 
+    def _get_anc_names(self, qs, include_self=False):
+        anc = qs.model.objects.get_queryset_ancestors(
+            qs, include_self=include_self)
+        return list(anc.values_list('name', flat=True).order_by('name'))
 
     def test_get_queryset_ancestors(self):
-        def get_anc_names(qs, include_self=False):
-            anc = qs.model.objects.get_queryset_ancestors(
-                qs, include_self=include_self)
-            return list(anc.values_list('name', flat=True).order_by('name'))
-
         qs = Category.objects.filter(Q(name='Nintendo Wii')|Q(name='PlayStation 3'))
 
         self.assertEqual(
-            get_anc_names(qs),
+            self._get_anc_names(qs),
              ['PC & Video Games']
         )
 
         self.assertEqual(
-            get_anc_names(qs, include_self=True),
+            self._get_anc_names(qs, include_self=True),
             ['Nintendo Wii', 'PC & Video Games', 'PlayStation 3']
         )
 
         qs = Genre.objects.filter(parent=None)
+        self.assertEqual(self._get_anc_names(qs),[])
+        self.assertEqual(self._get_anc_names(qs, include_self=True), ['Action', 'Role-playing Game'])
 
-        self.assertEqual(get_anc_names(qs),[])
-
-        self.assertEqual(get_anc_names(qs, include_self=True), ['Action', 'Role-playing Game'])
+    def test_get_queryset_ancestors_regression_379(self):
+        # https://github.com/django-mptt/django-mptt/issues/379
+        qs = Genre.objects.all()
+        self.assertEqual(self._get_anc_names(qs, include_self=True), ["Action", "Platformer", "Role-playing Game", "Shootemup"])
+        self.assertEqual(self._get_anc_names(qs, include_self=True), Genre.objects.values_list('name', flat=True).order_by('name'))
 
     def test_custom_querysets(self):
         """
