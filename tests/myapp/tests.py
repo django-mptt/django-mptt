@@ -415,7 +415,6 @@ class ConcurrencyTestCase(TreeTestCase):
         carrot = ConcreteModel.objects.get(id=6)
 
         # Why would you do it this way? Meh.
-        import pdb; pdb.set_trace()
         carrot.save(False, False, None, None)
 
 
