@@ -378,7 +378,7 @@ class ConcurrencyTestCase(TreeTestCase):
 
     def test_node_save_after_tree_restructuring_with_update_fields(self):
         """
-        Test that model is saved properly when passing update_fields as keyword or positional argument.
+        Test that model is saved properly when passing update_fields
         """
         carrot = ConcreteModel.objects.get(id=6)
 
@@ -404,6 +404,19 @@ class ConcurrencyTestCase(TreeTestCase):
         updated_carrot = ConcreteModel.objects.get(id=6)
         self.assertNotEqual(updated_carrot.ghosts, carrot.ghosts)
         self.assertEqual(updated_carrot.name, carrot.name)
+
+    def test_update_fields_positional(self):
+        """
+        Test that update_fields works as a positional argument
+
+        Test for https://github.com/django-mptt/django-mptt/issues/384
+        """
+
+        carrot = ConcreteModel.objects.get(id=6)
+
+        # Why would you do it this way? Meh.
+        import pdb; pdb.set_trace()
+        carrot.save(False, False, None, None)
 
 
 # categories.json defines the following tree structure:

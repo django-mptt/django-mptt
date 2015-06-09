@@ -339,7 +339,7 @@ class MPTTModelBase(ModelBase):
                 attrs = dir(cls)
                 if "objects" in attrs and isinstance(cls.objects, TreeManager):
                     tree_manager = cls.objects
-                
+
                 # Go look for it somewhere else
                 else:
                     for attr in sorted(attrs):
@@ -934,7 +934,9 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                     # This helps preserve tree integrity when saving model on top of a modified tree.
                     if len(args) > 3:
                         if not args[3]:
+                            args = list(args)
                             args[3] = self._get_user_field_names()
+                            args = tuple(args)
                     else:
                         if not kwargs.get("update_fields", None):
                             kwargs["update_fields"] = self._get_user_field_names()
