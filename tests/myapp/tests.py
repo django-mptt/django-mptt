@@ -114,6 +114,8 @@ class DocTestTestCase(TreeTestCase):
                     # workarounds :(
                     text = re.sub(r"""\bu(["\'])""", r"\1", text)
                     temp.write(b(text))
+                else:
+                    temp.write(text)
 
                 temp.flush()
 
