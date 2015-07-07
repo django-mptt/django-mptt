@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from mptt import VERSION
 
-requires = (str('Django>=1.4.2'),)
+requires = (str('Django>=1.6'),)
 try:
     from setuptools import setup
     kwargs = {str('install_requires'): requires}
@@ -37,7 +37,6 @@ setup(
         str('Operating System :: OS Independent'),
         str('Programming Language :: Python'),
         str("Programming Language :: Python :: 2"),
-        str("Programming Language :: Python :: 2.6"),
         str("Programming Language :: Python :: 2.7"),
         str("Programming Language :: Python :: 3"),
         str("Programming Language :: Python :: 3.2"),

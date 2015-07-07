@@ -2,6 +2,17 @@
 Upgrade notes
 =============
 
+Development version
+===================
+
+Dropped support for Django 1.4 and Python 2.6
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Django 1.4 runs out of upstream support on October 1 2015. mptt master and the 0.8 branch will not support django 1.4.
+
+Python 2.6 no longer receives security patches; you should be upgrading to 2.7. For this reason we've dropped 2.6
+from the test runs and removed some compatibility code.
+
 0.7.0
 =====
 

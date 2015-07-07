@@ -1,9 +1,6 @@
 from __future__ import unicode_literals
-import uuid
 from django.db import models
-from django.db.models.signals import pre_save
 from django.utils.encoding import python_2_unicode_compatible
-from django import VERSION as DJANGO_VERSION
 
 
 import mptt
@@ -35,13 +32,6 @@ class CustomTreeManager(TreeManager):
         return CustomTreeQueryset(model=self.model, using=self._db)
 
     def get_empty_query_set(self):
-        # Pre 1.6 django, we needed a custom inheritor of EmptyQuerySet
-        # to pass custom methods. However, 1.6 introduced that EmptyQuerySet
-        # cannot be instantiated but instead passes through the methods
-        # of the custom QuerySet.
-        # See: https://code.djangoproject.com/ticket/22817
-        if DJANGO_VERSION < (1, 6):
-            return CustomEmptyTreeQueryset(model=self.model)
         return self.get_queryset().none()
 
 

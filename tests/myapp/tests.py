@@ -6,16 +6,11 @@ import re
 import sys
 import tempfile
 
-if sys.version_info < (2, 7):
-    # we need unittest.skipIf, which isn't in unittest in python 2.6.
-    # note this causes a deprecation warning on django 1.7, but django 1.7 doesn't support python < 2.7
-    from django.utils import unittest
-else:
-    import unittest
+import unittest
 
 import django
 from django.contrib.auth.models import Group, User
-from django.db.models import Q, Manager
+from django.db.models import Q
 try:
     from django.apps import apps
     get_models = apps.get_models
@@ -326,7 +321,6 @@ class ReparentingTestCase(TreeTestCase):
         self.assertEqual(platformer.parent, platformer_4d)
 
 
-@unittest.skipIf(django.VERSION < (1, 5), 'Django 1.4 and earlier does not support update_fields in model save() method')
 class ConcurrencyTestCase(TreeTestCase):
     """
     Test that tree structure remains intact when saving nodes (without setting new parent) after
