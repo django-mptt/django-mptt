@@ -36,13 +36,6 @@ from myapp.models import (
     CustomTreeQueryset, Node, ReferencingModel, CustomTreeManager)
 
 
-extra_queries_per_update = 0
-if django.VERSION < (1, 6):
-    # before django 1.6, Model.save() did a select then an update/insert.
-    # now, Model.save() does an update followed an insert if the update changed 0 rows.
-    extra_queries_per_update = 1
-
-
 def get_tree_details(nodes):
     """
     Creates pertinent tree details for the given list of nodes.
@@ -656,9 +649,9 @@ class DisabledUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_node_same_tree(self):
-        with self.assertNumQueries(2 + extra_queries_per_update):
+        with self.assertNumQueries(2):
             with ConcreteModel.objects.disable_mptt_updates():
-                with self.assertNumQueries(1 + extra_queries_per_update):
+                with self.assertNumQueries(1):
                     # 2 queries here:
                     #  (django does a query to determine if the row is in the db yet)
                     self.c.parent = self.b
@@ -680,9 +673,9 @@ class DisabledUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_node_different_tree(self):
-        with self.assertNumQueries(2 + extra_queries_per_update):
+        with self.assertNumQueries(2):
             with ConcreteModel.objects.disable_mptt_updates():
-                with self.assertNumQueries(1 + extra_queries_per_update):
+                with self.assertNumQueries(1):
                     # 1 update query
                     self.c.parent = self.d
                     self.c.save()
@@ -703,9 +696,9 @@ class DisabledUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_node_to_root(self):
-        with self.assertNumQueries(2 + extra_queries_per_update):
+        with self.assertNumQueries(2):
             with ConcreteModel.objects.disable_mptt_updates():
-                with self.assertNumQueries(1 + extra_queries_per_update):
+                with self.assertNumQueries(1):
                     # 1 update query
                     self.c.parent = None
                     self.c.save()
@@ -726,9 +719,9 @@ class DisabledUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_root_to_child(self):
-        with self.assertNumQueries(2 + extra_queries_per_update):
+        with self.assertNumQueries(2):
             with ConcreteModel.objects.disable_mptt_updates():
-                with self.assertNumQueries(1 + extra_queries_per_update):
+                with self.assertNumQueries(1):
                     # 1 update query
                     self.d.parent = self.c
                     self.d.save()
@@ -846,9 +839,9 @@ class DelayedUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_node_same_tree(self):
-        with self.assertNumQueries(10 + extra_queries_per_update):
+        with self.assertNumQueries(10):
             with ConcreteModel.objects.delay_mptt_updates():
-                with self.assertNumQueries(2 + extra_queries_per_update):
+                with self.assertNumQueries(2):
                     # 1 query to ensure target fields aren't stale
                     # 1 update query
                     self.c.parent = self.b
@@ -872,9 +865,9 @@ class DelayedUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_node_different_tree(self):
-        with self.assertNumQueries(12 + extra_queries_per_update):
+        with self.assertNumQueries(12):
             with ConcreteModel.objects.delay_mptt_updates():
-                with self.assertNumQueries(2 + extra_queries_per_update):
+                with self.assertNumQueries(2):
                     # 2 queries here:
                     #  1. update the node
                     #  2. collapse old tree since it is now empty.
@@ -899,9 +892,9 @@ class DelayedUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_node_to_root(self):
-        with self.assertNumQueries(4 + extra_queries_per_update):
+        with self.assertNumQueries(4):
             with ConcreteModel.objects.delay_mptt_updates():
-                with self.assertNumQueries(3 + extra_queries_per_update):
+                with self.assertNumQueries(3):
                     # 3 queries here!
                     #   1. find the next tree_id to move to
                     #   2. update the tree_id on all nodes to the right of that
@@ -926,9 +919,9 @@ class DelayedUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_root_to_child(self):
-        with self.assertNumQueries(12 + extra_queries_per_update):
+        with self.assertNumQueries(12):
             with ConcreteModel.objects.delay_mptt_updates():
-                with self.assertNumQueries(2 + extra_queries_per_update):
+                with self.assertNumQueries(2):
                     # 2 queries here:
                     #  1. update the node
                     #  2. collapse old tree since it is now empty.
@@ -1025,9 +1018,9 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_node_same_tree(self):
-        with self.assertNumQueries(9 + extra_queries_per_update):
+        with self.assertNumQueries(9):
             with OrderedInsertion.objects.delay_mptt_updates():
-                with self.assertNumQueries(1 + extra_queries_per_update):
+                with self.assertNumQueries(1):
                     # 1 update query
                     self.e.name = 'before d'
                     self.e.save()
@@ -1050,9 +1043,9 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_node_different_tree(self):
-        with self.assertNumQueries(12 + extra_queries_per_update):
+        with self.assertNumQueries(12):
             with OrderedInsertion.objects.delay_mptt_updates():
-                with self.assertNumQueries(2 + extra_queries_per_update):
+                with self.assertNumQueries(2):
                     # 2 queries here:
                     #  1. update the node
                     #  2. collapse old tree since it is now empty.
@@ -1078,9 +1071,9 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_node_to_root(self):
-        with self.assertNumQueries(4 + extra_queries_per_update):
+        with self.assertNumQueries(4):
             with OrderedInsertion.objects.delay_mptt_updates():
-                with self.assertNumQueries(3 + extra_queries_per_update):
+                with self.assertNumQueries(3):
                     # 3 queries here!
                     #   1. find the next tree_id to move to
                     #   2. update the tree_id on all nodes to the right of that
@@ -1105,9 +1098,9 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_root_to_child(self):
-        with self.assertNumQueries(12 + extra_queries_per_update):
+        with self.assertNumQueries(12):
             with OrderedInsertion.objects.delay_mptt_updates():
-                with self.assertNumQueries(2 + extra_queries_per_update):
+                with self.assertNumQueries(2):
                     # 2 queries here:
                     #  1. update the node
                     #  2. collapse old tree since it is now empty.

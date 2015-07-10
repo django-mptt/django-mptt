@@ -90,9 +90,6 @@ class TreeManager(_tree_manager_superclass):
             qs = super(TreeManager, self).get_queryset(*args, **kwargs)
         return qs.order_by(self.tree_id_attr, self.left_attr)
 
-    if django.VERSION < (1, 6):
-        get_query_set = get_queryset
-
     def _get_queryset_relatives(self, queryset, direction, include_self):
         """
         Returns a queryset containing either the descendants
@@ -165,7 +162,7 @@ class TreeManager(_tree_manager_superclass):
                                                      getattr(node, max_attr))
                 if next_lft is None:
                     next_lft = rght + 1
-                    min_max = {'min': min_val, 'max': max_val} 
+                    min_max = {'min': min_val, 'max': max_val}
                 elif lft == next_lft:
                     if min_val < min_max['min']:
                         min_max['min'] = min_val

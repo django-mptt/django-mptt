@@ -928,9 +928,9 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                     opts.set_raw_field_value(self, opts.parent_attr, parent_id)
             else:
                 opts.set_raw_field_value(self, opts.parent_attr, parent_id)
-                if (not track_updates) and (django.get_version() >= '1.5'):
+                if not track_updates:
                     # When not using delayed/disabled updates,
-                    # populate update_fields (Django 1.5 and later) with user defined model fields.
+                    # populate update_fields with user defined model fields.
                     # This helps preserve tree integrity when saving model on top of a modified tree.
                     if len(args) > 3:
                         if not args[3]:
