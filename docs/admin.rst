@@ -29,8 +29,8 @@ attribute in your MPTTModelAdmin::
     from mptt.admin import MPTTModelAdmin
     from myproject.myapp.models import Node
 
-    class CustomMPTTModelAdmin(MPTTModelAdmin)
-        # speficfy pixel amount for this ModelAdmin only:
+    class CustomMPTTModelAdmin(MPTTModelAdmin):
+        # specify pixel amount for this ModelAdmin only:
         mptt_level_indent = 20
 
     admin.site.register(Node, CustomMPTTModelAdmin)
@@ -39,6 +39,6 @@ If you'd like to specify which field should be indented, add an ``mptt_indent_fi
 to your MPTTModelAdmin::
 
     # …
-    class CustomMPTTModelAdmin(MPTTModelAdmin)
+    class CustomMPTTModelAdmin(MPTTModelAdmin):
         mptt_indent_field = "some_node_field"
     # …
