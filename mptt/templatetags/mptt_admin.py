@@ -7,7 +7,6 @@ try:
     from django.contrib.admin.utils import lookup_field, display_for_field
 except ImportError:  # pragma: no cover (Django 1.6 compatibility)
     from django.contrib.admin.util import lookup_field, display_for_field
-from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.template import Library
@@ -25,6 +24,15 @@ register = Library()
 
 MPTT_ADMIN_LEVEL_INDENT = getattr(settings, 'MPTT_ADMIN_LEVEL_INDENT', 10)
 IS_GRAPPELLI_INSTALLED = True if 'grappelli' in settings.INSTALLED_APPS else False
+
+
+def get_empty_value_display(cl):
+    if hasattr(cl.model_admin, 'get_empty_value_display'):
+        return cl.model_admin.get_empty_value_display()
+    else:
+        # Django < 1.9
+        from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
+        return EMPTY_CHANGELIST_VALUE
 
 
 ###
@@ -62,7 +70,7 @@ def mptt_items_for_result(cl, result, form):
         try:
             f, attr, value = lookup_field(field_name, result, cl.model_admin)
         except (AttributeError, ObjectDoesNotExist):
-            result_repr = EMPTY_CHANGELIST_VALUE
+            result_repr = get_empty_value_display(cl)
         else:
             if f is None:
                 if field_name == 'action_checkbox':
@@ -84,7 +92,7 @@ def mptt_items_for_result(cl, result, form):
                 if isinstance(f.rel, models.ManyToOneRel):
                     field_val = getattr(result, f.name)
                     if field_val is None:
-                        result_repr = EMPTY_CHANGELIST_VALUE
+                        result_repr = get_empty_value_display(cl)
                     else:
                         result_repr = escape(field_val)
                 else:
