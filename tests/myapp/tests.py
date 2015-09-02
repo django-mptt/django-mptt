@@ -1263,6 +1263,18 @@ class ManagerTests(TreeTestCase):
 
         self.assertIsInstance(Genre.my_manager.get_queryset(), CustomTreeQueryset)
 
+    def test_num_queries_on_get_queryset_descendants(self):
+        """
+        Test the number of queries to access descendants
+        is not O(n).
+        At the moment it is O(1)+1.
+        Ideally we should aim for O(1).
+        """
+        with self.assertNumQueries(2):
+            qs = Category.objects.get_queryset_descendants(
+                Category.objects.all(), include_self=True)
+            self.assertEqual(len(qs), 10)
+
 
 class CacheTreeChildrenTestCase(TreeTestCase):
     """
