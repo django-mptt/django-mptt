@@ -147,13 +147,18 @@ class TreeManager(_tree_manager_superclass):
         min_key = '%s__%s' % (min_attr, min_op)
         max_key = '%s__%s' % (max_attr, max_op)
 
-        q = queryset.order_by(opts.tree_id_attr, opts.parent_attr, opts.left_attr)\
-            .only(*{opts.tree_id_attr,opts.left_attr,opts.right_attr,min_attr,max_attr,opts.parent_attr})
+        q = queryset.order_by(opts.tree_id_attr, opts.parent_attr, opts.left_attr).only(
+            opts.tree_id_attr,
+            opts.left_attr,
+            opts.right_attr,
+            min_attr,
+            max_attr,
+            opts.parent_attr)
 
         if not q:
             return self.none()
 
-        for group in groupby(q, key = lambda n: (getattr(n, opts.tree_id_attr), getattr(n, opts.parent_attr+"_id"))):
+        for group in groupby(q, key = lambda n: (getattr(n, opts.tree_id_attr), getattr(n, opts.parent_attr + '_id'))):
             next_lft = None
             for node in list(group[1]):
                 tree, lft, rght, min_val, max_val = (getattr(node, opts.tree_id_attr),
