@@ -234,6 +234,20 @@ class DoubleProxyModel(SingleProxyModel):
         proxy = True
 
 
+# 5. swappable models
+
+class SwappableModel(MPTTModel):
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
+
+    class Meta:
+        swappable = 'MPTT_SWAPPABLE_MODEL'
+
+
+class SwappedInModel(MPTTModel):
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
+    name = models.CharField(max_length=50)
+
+
 class AutoNowDateFieldModel(MPTTModel):
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
     now = models.DateTimeField(auto_now_add=True)
