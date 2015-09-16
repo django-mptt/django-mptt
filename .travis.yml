@@ -14,3 +14,6 @@ env:
 install: pip install $DJANGO
 # command to run tests, e.g. python setup.py test
 script: cd tests/ && ./runtests.sh
+
+# Run on travis' container infrastructure
+sudo: false
