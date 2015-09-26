@@ -336,27 +336,14 @@ class MPTTModelBase(ModelBase):
 
                 # make sure we have a tree manager somewhere
                 tree_manager = None
-                attrs = dir(cls)
-                if "objects" in attrs and isinstance(cls.objects, TreeManager):
-                    tree_manager = cls.objects
+                cls_managers = cls._meta.concrete_managers + cls._meta.abstract_managers
+                for __, __, cls_manager in cls_managers:
+                    if isinstance(cls_manager, TreeManager):
+                        # prefer any locally defined manager (i.e. keep going if not local)
+                        if cls_manager.model is cls:
+                            tree_manager = cls_manager
+                            break
 
-                # Go look for it somewhere else
-                else:
-                    for attr in sorted(attrs):
-                        try:
-                            # HACK: avoid using getattr(cls, attr)
-                            # because it calls __get__ on descriptors, which can cause nasty side effects
-                            # with more inconsiderate apps.
-                            # (e.g. django-tagging's TagField is a descriptor which can do db queries on getattr)
-                            # ( ref: http://stackoverflow.com/questions/27790344 )
-                            obj = cls.__dict__[attr]
-                        except KeyError:
-                            continue
-                        if isinstance(obj, TreeManager):
-                            tree_manager = obj
-                            # prefer any locally defined manager (i.e. keep going if not local)
-                            if obj.model is cls:
-                                break
                 if tree_manager and tree_manager.model is not cls:
                     tree_manager = tree_manager._copy_to_model(cls)
                 elif tree_manager is None:

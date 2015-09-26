@@ -47,3 +47,6 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 )
 
 ROOT_URLCONF = 'myapp.urls'
+
+# Swappable model testing
+MPTT_SWAPPABLE_MODEL = 'myapp.SwappedInModel'
