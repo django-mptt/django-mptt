@@ -8,9 +8,12 @@
 <table cellspacing="0" id="result_list">
 <thead>
 <tr>
-{% for header in result_headers %}<th scope="col"{{ header.class_attrib }}>
-{{ header.text|capfirst }}
-</th>{% endfor %}
+    {% for header in result_headers %}
+        <th scope="col"{{ header.class_attrib }}>
+            <div class="text"><span>{{ header.text|capfirst }}</span></div>
+            <div class="clear"></div>
+        </th>
+    {% endfor %}
 </tr>
 </thead>
 <tbody>
