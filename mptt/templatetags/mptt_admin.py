@@ -96,7 +96,13 @@ def mptt_items_for_result(cl, result, form):
                     else:
                         result_repr = escape(field_val)
                 else:
-                    result_repr = display_for_field(value, f)
+                    try:
+                        result_repr = display_for_field(value, f)
+                    except TypeError:
+                        # Changed in Django 1.9, now takes 3 arguments
+                        result_repr = display_for_field(
+                            value, f, get_empty_value_display(cl))
+
                 if isinstance(f, models.DateField)\
                         or isinstance(f, models.TimeField)\
                         or isinstance(f, models.ForeignKey):
