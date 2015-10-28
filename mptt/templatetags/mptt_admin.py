@@ -85,7 +85,7 @@ def mptt_items_for_result(cl, result, form):
                 # Strip HTML tags in the resulting text, except if the
                 # function has an "allow_tags" attribute set to True.
                 if not allow_tags:
-                    result_repr = escape(result_repr)
+                    result_repr = conditional_escape(result_repr)
                 else:
                     result_repr = mark_safe(result_repr)
             else:
