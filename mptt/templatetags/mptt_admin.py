@@ -3,24 +3,16 @@ from __future__ import unicode_literals
 from django.conf import settings
 from django.contrib.admin.templatetags.admin_list import (
     result_hidden_fields, _boolean_icon, result_headers)
-try:
-    from django.contrib.admin.utils import lookup_field, display_for_field
-except ImportError:  # pragma: no cover (Django 1.6 compatibility)
-    from django.contrib.admin.util import lookup_field, display_for_field
+from django.contrib.admin.utils import lookup_field, display_for_field
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.template import Library
 from django.utils.html import escape, conditional_escape
 from django.utils.safestring import mark_safe
 from django.utils.translation import get_language_bidi
-try:
-    from django.utils.encoding import smart_text, force_text
-except ImportError:  # pragma: no cover (Django 1.4 compatibility)
-    from django.utils.encoding import smart_unicode as smart_text, force_unicode as force_text
-
+from django.utils.encoding import smart_text, force_text
 
 register = Library()
-
 
 MPTT_ADMIN_LEVEL_INDENT = getattr(settings, 'MPTT_ADMIN_LEVEL_INDENT', 10)
 IS_GRAPPELLI_INSTALLED = True if 'grappelli' in settings.INSTALLED_APPS else False
@@ -66,11 +58,12 @@ def mptt_items_for_result(cl, result, form):
     mptt_level_indent = getattr(cl.model_admin, 'mptt_level_indent', MPTT_ADMIN_LEVEL_INDENT)
 
     for field_name in cl.list_display:
+        empty_value_display = cl.model_admin.get_empty_value_display()
         row_class = ''
         try:
             f, attr, value = lookup_field(field_name, result, cl.model_admin)
         except (AttributeError, ObjectDoesNotExist):
-            result_repr = get_empty_value_display(cl)
+            result_repr = empty_value_display
         else:
             if f is None:
                 if field_name == 'action_checkbox':
@@ -92,11 +85,11 @@ def mptt_items_for_result(cl, result, form):
                 if isinstance(f.rel, models.ManyToOneRel):
                     field_val = getattr(result, f.name)
                     if field_val is None:
-                        result_repr = get_empty_value_display(cl)
+                        result_repr = empty_value_display
                     else:
                         result_repr = escape(field_val)
                 else:
-                    result_repr = display_for_field(value, f)
+                    result_repr = display_for_field(value, f, empty_value_display)
                 if isinstance(f, models.DateField)\
                         or isinstance(f, models.TimeField)\
                         or isinstance(f, models.ForeignKey):
