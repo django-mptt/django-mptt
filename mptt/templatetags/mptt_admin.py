@@ -85,7 +85,7 @@ def mptt_items_for_result(cl, result, form):
                 # Strip HTML tags in the resulting text, except if the
                 # function has an "allow_tags" attribute set to True.
                 if not allow_tags:
-                    result_repr = escape(result_repr)
+                    result_repr = conditional_escape(result_repr)
                 else:
                     result_repr = mark_safe(result_repr)
             else:
@@ -96,7 +96,13 @@ def mptt_items_for_result(cl, result, form):
                     else:
                         result_repr = escape(field_val)
                 else:
-                    result_repr = display_for_field(value, f)
+                    try:
+                        result_repr = display_for_field(value, f)
+                    except TypeError:
+                        # Changed in Django 1.9, now takes 3 arguments
+                        result_repr = display_for_field(
+                            value, f, get_empty_value_display(cl))
+
                 if isinstance(f, models.DateField)\
                         or isinstance(f, models.TimeField)\
                         or isinstance(f, models.ForeignKey):
