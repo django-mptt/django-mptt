@@ -14,11 +14,15 @@ env:
   - DJANGO="Django>=1.9,<1.10"
 matrix:
   exclude:
-    - env: DJANGO="Django<1.9"
+    - env: DJANGO="Django>=1.6,<1.7"
       python: "3.5"
-    - env: DJANGO="Django>=1.9"
+    - env: DJANGO="Django>=1.7,<1.8"
+      python: "3.5"
+    - env: DJANGO="Django>=1.8,<1.9"
+      python: "3.5"
+    - env: DJANGO="Django>=1.9,<1.10"
       python: "3.2"
-    - env: DJANGO="Django>=1.9"
+    - env: DJANGO="Django>=1.9,<1.10"
       python: "3.3"
 
 # command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
