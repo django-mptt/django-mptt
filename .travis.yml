@@ -1,3 +1,4 @@
+sudo: false
 language: python
 python:
   - "3.5"
@@ -13,11 +14,11 @@ env:
   - DJANGO="Django>=1.9,<1.10"
 matrix:
   exclude:
-    - DJANGO="Django<1.9"
+    - env: DJANGO="Django<1.9"
         python: "3.5"
-    - DJANGO="Django>=1.9"
+    - env: DJANGO="Django>=1.9"
         python: "3.2"
-    - DJANGO="Django>=1.9"
+    - env: DJANGO="Django>=1.9"
         python: "3.3"
 
 # command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
