@@ -249,6 +249,9 @@ def cache_tree_children(queryset):
     entirety, the list will of course consist of just the tree's root node.
     """
 
+    warnings.warn("`cache_tree_children` is deprecated. " +
+                  "Use `TreeQuerySet.get_cached_trees()`.", DeprecationWarning)
+
     current_path = []
     top_nodes = []
 
