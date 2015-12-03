@@ -1262,7 +1262,7 @@ ValueError: Cannot insert a node which has already been saved.
 
 # reordering after save, original insertion in order ##########################
 # sibling root nodes, inserted B,C, moved C-->A
->>> OrderedInsertion.objects.all().delete()
+>>> _ = OrderedInsertion.objects.all().delete()
 >>> reset_sequence(OrderedInsertion)
 >>> b = OrderedInsertion.objects.create(name='b')
 >>> c = OrderedInsertion.objects.create(name='c')
@@ -1273,7 +1273,7 @@ ValueError: Cannot insert a node which has already been saved.
 1 - 2 0 1 2
 
 # sibling non-root nodes, inserted B,C, moved C-->A
->>> OrderedInsertion.objects.all().delete()
+>>> _ = OrderedInsertion.objects.all().delete()
 >>> reset_sequence(OrderedInsertion)
 >>> root = OrderedInsertion.objects.create(name='root')
 >>> b = OrderedInsertion.objects.create(name='b', parent=root)
@@ -1286,7 +1286,7 @@ ValueError: Cannot insert a node which has already been saved.
 2 1 1 1 4 5
 
 # sibling root nodes, inserted A,B, moved A-->C
->>> OrderedInsertion.objects.all().delete()
+>>> _ = OrderedInsertion.objects.all().delete()
 >>> reset_sequence(OrderedInsertion)
 >>> a = OrderedInsertion.objects.create(name='a')
 >>> b = OrderedInsertion.objects.create(name='b')
@@ -1298,7 +1298,7 @@ ValueError: Cannot insert a node which has already been saved.
 1 - 2 0 1 2
 
 # sibling non-root nodes, inserted A,B, moved A-->C
->>> OrderedInsertion.objects.all().delete()
+>>> _ = OrderedInsertion.objects.all().delete()
 >>> reset_sequence(OrderedInsertion)
 >>> root = OrderedInsertion.objects.create(name='root')
 >>> a = OrderedInsertion.objects.create(name='a', parent=root)
@@ -1314,7 +1314,7 @@ ValueError: Cannot insert a node which has already been saved.
 
 # reordering after save, original insertion in reverse ########################
 # sibling root nodes, inserted C,B, moved C-->A
->>> OrderedInsertion.objects.all().delete()
+>>> _ = OrderedInsertion.objects.all().delete()
 >>> reset_sequence(OrderedInsertion)
 >>> c = OrderedInsertion.objects.create(name='c')
 >>> b = OrderedInsertion.objects.create(name='b')
@@ -1326,7 +1326,7 @@ ValueError: Cannot insert a node which has already been saved.
 2 - 2 0 1 2
 
 # sibling non-root nodes, inserted C,B, moved C-->A
->>> OrderedInsertion.objects.all().delete()
+>>> _ = OrderedInsertion.objects.all().delete()
 >>> reset_sequence(OrderedInsertion)
 >>> root = OrderedInsertion.objects.create(name='root')
 >>> c = OrderedInsertion.objects.create(name='c', parent=root)
@@ -1340,7 +1340,7 @@ ValueError: Cannot insert a node which has already been saved.
 3 1 1 1 4 5
 
 # sibling root nodes, inserted B,A, moved A-->C
->>> OrderedInsertion.objects.all().delete()
+>>> _ = OrderedInsertion.objects.all().delete()
 >>> reset_sequence(OrderedInsertion)
 >>> b = OrderedInsertion.objects.create(name='b')
 >>> a = OrderedInsertion.objects.create(name='a')
@@ -1351,7 +1351,7 @@ ValueError: Cannot insert a node which has already been saved.
 2 - 2 0 1 2
 
 # sibling non-root nodes, inserted B,A, moved A-->C
->>> OrderedInsertion.objects.all().delete()
+>>> _ = OrderedInsertion.objects.all().delete()
 >>> reset_sequence(OrderedInsertion)
 >>> root = OrderedInsertion.objects.create(name='root')
 >>> b = OrderedInsertion.objects.create(name='b', parent=root)
@@ -1366,7 +1366,7 @@ ValueError: Cannot insert a node which has already been saved.
 
 # reordering after save, when only a single instance at level exists ##########
 # root node with no siblings no children, inserted B, moved B-->A (forward)
->>> OrderedInsertion.objects.all().delete()
+>>> _ = OrderedInsertion.objects.all().delete()
 >>> reset_sequence(OrderedInsertion)
 >>> b = OrderedInsertion.objects.create(name='b')
 >>> b = OrderedInsertion.objects.get(name='b')
@@ -1376,7 +1376,7 @@ ValueError: Cannot insert a node which has already been saved.
 1 - 1 0 1 2
 
 # root node with no siblings with children, inserted B,child, moved B-->A (forward)
->>> OrderedInsertion.objects.all().delete()
+>>> _ = OrderedInsertion.objects.all().delete()
 >>> reset_sequence(OrderedInsertion)
 >>> b = OrderedInsertion.objects.create(name='b')
 >>> child = OrderedInsertion.objects.create(name='child', parent=b)
@@ -1388,7 +1388,7 @@ ValueError: Cannot insert a node which has already been saved.
 2 1 1 1 2 3
 
 # parented node with no siblings no children, inserted root,B, moved B-->A (forward)
->>> OrderedInsertion.objects.all().delete()
+>>> _ = OrderedInsertion.objects.all().delete()
 >>> reset_sequence(OrderedInsertion)
 >>> root = OrderedInsertion.objects.create(name='root')
 >>> b = OrderedInsertion.objects.create(name='b', parent=root)
@@ -1400,7 +1400,7 @@ ValueError: Cannot insert a node which has already been saved.
 2 1 1 1 2 3
 
 # parented node with no siblings with children, inserted root,B,C, moved B-->A (forward)
->>> OrderedInsertion.objects.all().delete()
+>>> _ = OrderedInsertion.objects.all().delete()
 >>> reset_sequence(OrderedInsertion)
 >>> root = OrderedInsertion.objects.create(name='root')
 >>> b = OrderedInsertion.objects.create(name='b', parent=root)
@@ -1414,7 +1414,7 @@ ValueError: Cannot insert a node which has already been saved.
 3 2 1 2 3 4
 
 # root node with no siblings no children, inserted B, moved B-->C (backward)
->>> OrderedInsertion.objects.all().delete()
+>>> _ = OrderedInsertion.objects.all().delete()
 >>> reset_sequence(OrderedInsertion)
 >>> b = OrderedInsertion.objects.create(name='b')
 >>> b = OrderedInsertion.objects.get(name='b')
@@ -1424,7 +1424,7 @@ ValueError: Cannot insert a node which has already been saved.
 1 - 1 0 1 2
 
 # root node with no siblings with children, inserted B,child, moved B-->C (backward)
->>> OrderedInsertion.objects.all().delete()
+>>> _ = OrderedInsertion.objects.all().delete()
 >>> reset_sequence(OrderedInsertion)
 >>> b = OrderedInsertion.objects.create(name='b')
 >>> child = OrderedInsertion.objects.create(name='child', parent=b)
@@ -1436,7 +1436,7 @@ ValueError: Cannot insert a node which has already been saved.
 2 1 1 1 2 3
 
 # parented node with no siblings no children, inserted root,B, moved B-->C (backward)
->>> OrderedInsertion.objects.all().delete()
+>>> _ = OrderedInsertion.objects.all().delete()
 >>> reset_sequence(OrderedInsertion)
 >>> root = OrderedInsertion.objects.create(name='root')
 >>> b = OrderedInsertion.objects.create(name='b', parent=root)
@@ -1448,7 +1448,7 @@ ValueError: Cannot insert a node which has already been saved.
 2 1 1 1 2 3
 
 # parented node with no siblings with children, inserted root,B,D, moved B-->C (backward)
->>> OrderedInsertion.objects.all().delete()
+>>> _ = OrderedInsertion.objects.all().delete()
 >>> reset_sequence(OrderedInsertion)
 >>> root = OrderedInsertion.objects.create(name='root')
 >>> b = OrderedInsertion.objects.create(name='b', parent=root)
@@ -1461,7 +1461,7 @@ ValueError: Cannot insert a node which has already been saved.
 2 1 1 1 2 5
 3 2 1 2 3 4
 
->>> OrderedInsertion.objects.all().delete()
+>>> _ = OrderedInsertion.objects.all().delete()
 >>> reset_sequence(OrderedInsertion)
 >>> root = OrderedInsertion.objects.create(name='root')
 >>> r1 = OrderedInsertion.objects.create(name='r1', parent=root)
