@@ -1825,7 +1825,7 @@ class CacheChildrenTestCase(TreeTestCase):
         # `get_cached_trees` should only return the root nodes
         self.assertEqual(len(root_nodes), 2)
 
-        # Getting the ancestors of each node should not result in db hits.
+        # Getting the children of each node should not result in db hits.
         with self.assertNumQueries(0):
             for genre in root_nodes:
                 self.assertIsInstance(genre, Genre)
