@@ -1813,28 +1813,7 @@ class CacheChildrenTestCase(TreeTestCase):
     Tests that the queryset function `get_cached_trees` results in a minimum
     number of database queries.
     """
-    fixtures = ['categories.json', 'genres.json']
-
-    def test_category_iter(self):
-        """
-        Test a query with one root node.
-        """
-        with self.assertNumQueries(1):
-            root_nodes = Category.objects.all().get_cached_trees()
-
-        # `get_cached_trees` should only return the root nodes
-        self.assertEqual(len(root_nodes), 1)
-
-        # Getting the ancestors of each node should not result in db hits.
-        with self.assertNumQueries(0):
-            self.assertEqual(len(root_nodes), 1)
-            category = root_nodes[0]
-            self.assertIsInstance(category, Category)
-            self.assertEqual(len(category.get_children()), 3)
-            for child in category.get_children():
-                self.assertIsInstance(child, Category)
-                for child in category.get_children():
-                    self.assertIsInstance(child, Category)
+    fixtures = ['genres.json']
 
     def test_genre_iter(self):
         """
@@ -1852,5 +1831,5 @@ class CacheChildrenTestCase(TreeTestCase):
                 self.assertIsInstance(genre, Genre)
                 for child in genre.get_children():
                     self.assertIsInstance(child, Genre)
-                    for child in genre.get_children():
-                        self.assertIsInstance(child, Genre)
+                    for child2 in child.get_children():
+                        self.assertIsInstance(child2, Genre)
