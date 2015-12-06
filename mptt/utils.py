@@ -196,13 +196,23 @@ def _get_tree_model(model_class):
 
 def get_cached_trees(queryset):
     """
-    Takes a list/queryset of model objects in MPTT left (depth-first) order,
-    caches the children on each node, as well as the parent of each child node,
-    allowing up and down traversal through the tree without the need for
-    further queries. This makes it possible to have a recursively included
-    template without worrying about database queries.
+    Takes a list/queryset of model objects in MPTT left (depth-first) order and
+    caches the children and parent on each node. This allows up and down
+    traversal through the tree without the need for further queries. Use cases
+    include using a recursively included template or arbitrarily traversing
+    trees.
+
     Returns a list of top-level nodes. If a single tree was provided in its
     entirety, the list will of course consist of just the tree's root node.
+
+    Aliases to this function are also available:
+
+    ``mptt.templatetags.mptt_tag.cache_tree_children``
+       Use for recursive rendering in templates.
+
+    ``mptt.querysets.TreeQuerySet.get_cached_trees``
+       Useful for chaining with queries; e.g.,
+       `Node.objects.filter(**kwargs).get_cached_trees()`
     """
 
     current_path = []

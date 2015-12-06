@@ -240,14 +240,7 @@ def tree_path(items, separator=' :: '):
 @register.filter
 def cache_tree_children(queryset):
     """
-    Takes a list/queryset of model objects in MPTT left (depth-first) order,
-    caches the children on each node, as well as the parent of each child node,
-    allowing up and down traversal through the tree without the need for
-    further queries. This makes it possible to have a recursively included
-    template without worrying about database queries.
-
-    Returns a list of top-level nodes. If a single tree was provided in its
-    entirety, the list will of course consist of just the tree's root node.
+    Alias to `mptt.utils.get_cached_trees`.
     """
 
     return get_cached_trees(queryset)

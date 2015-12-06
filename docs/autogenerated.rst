@@ -8,7 +8,7 @@ They're not necessarily very helpful. You might be just as well off reading the 
 
 .. toctree::
    :maxdepth: 3
-   
+
    mptt
 
 .. _`source code`: http://github.com/django-mptt/django-mptt/
