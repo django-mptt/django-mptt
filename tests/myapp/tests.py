@@ -1806,3 +1806,30 @@ class TestOrderedInsertionBFS(TreeTestCase):
             2 1 1 1 4 7
             4 2 1 2 5 6
         """)
+
+
+class CacheChildrenTestCase(TreeTestCase):
+    """
+    Tests that the queryset function `get_cached_trees` results in a minimum
+    number of database queries.
+    """
+    fixtures = ['genres.json']
+
+    def test_genre_iter(self):
+        """
+        Test a query with two root nodes.
+        """
+        with self.assertNumQueries(1):
+            root_nodes = Genre.objects.all().get_cached_trees()
+
+        # `get_cached_trees` should only return the root nodes
+        self.assertEqual(len(root_nodes), 2)
+
+        # Getting the children of each node should not result in db hits.
+        with self.assertNumQueries(0):
+            for genre in root_nodes:
+                self.assertIsInstance(genre, Genre)
+                for child in genre.get_children():
+                    self.assertIsInstance(child, Genre)
+                    for child2 in child.get_children():
+                        self.assertIsInstance(child2, Genre)
