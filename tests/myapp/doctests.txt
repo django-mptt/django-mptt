@@ -232,13 +232,10 @@ False
 >>> Genre.objects.root_node(rpg.tree_id)
 <Genre: Role-playing Game>
 
-# django 1.4 and 1.5 have different msgs on this exception, so we can't use the normal doctest approach
->>> try:
-...     Genre.objects.root_node(3)
-... except Genre.DoesNotExist:
-...     pass
-... else:
-...     raise
+>>> Genre.objects.root_node(3)
+Traceback (most recent call last):
+...
+DoesNotExist: Genre matching query does not exist.
 
 >>> [g.name for g in Genre.objects.root_nodes()]
 [u'Action', u'Role-playing Game']

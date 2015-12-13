@@ -11,11 +11,7 @@ import unittest
 import django
 from django.contrib.auth.models import Group, User
 from django.db.models import Q
-try:
-    from django.apps import apps
-    get_models = apps.get_models
-except ImportError:  # pragma: no cover (Django 1.6 compatibility)
-    from django.db.models import get_models
+from django.apps import apps
 from django.forms.models import modelform_factory
 from django.template import Template, TemplateSyntaxError, Context
 from django.test import TestCase
@@ -1133,7 +1129,7 @@ class ManagerTests(TreeTestCase):
     def test_all_managers_are_different(self):
         # all tree managers should be different. otherwise, possible infinite recursion.
         seen = {}
-        for model in get_models():
+        for model in apps.get_models():
             if not issubclass(model, MPTTModel):
                 continue
             tm = model._tree_manager
@@ -1145,14 +1141,14 @@ class ManagerTests(TreeTestCase):
 
     def test_all_managers_have_correct_model(self):
         # all tree managers should have the correct model.
-        for model in get_models():
+        for model in apps.get_models():
             if not issubclass(model, MPTTModel):
                 continue
             self.assertEqual(model._tree_manager.model, model)
 
     def test_base_manager_infinite_recursion(self):
         # repeatedly calling _base_manager should eventually return None
-        for model in get_models():
+        for model in apps.get_models():
             if not issubclass(model, MPTTModel):
                 continue
             manager = model._tree_manager
@@ -1243,17 +1239,14 @@ class ManagerTests(TreeTestCase):
         self.assertTrue(isinstance(Person.objects.all()[0].get_children(), CustomTreeQueryset))
         self.assertTrue(hasattr(Person.objects.none(), 'custom_method'))
 
-        # In Django 1.4, we would have had a custom type CustomEmptyTreeQueryset
-        # but this was abandoned in later versions. However, the best method is
-        # to just test if the custom method is available.
-        # self.assertTrue(hasattr(Person.objects.all()[0].get_children().none(), 'custom_method'))
+        # Check that empty querysets get custom methods
+        self.assertTrue(hasattr(Person.objects.all()[0].get_children().none(), 'custom_method'))
 
         self.assertEqual(
             type(Person.objects.all()),
             type(Person.objects.root_nodes())
         )
 
-    @unittest.skipIf(django.VERSION < (1, 7), 'Django 1.6 and earlier does not provide Manager.from_queryset')
     def test_manager_from_custom_queryset(self):
         """
         Test that a manager created from a custom queryset works.

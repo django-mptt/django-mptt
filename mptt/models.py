@@ -223,9 +223,7 @@ class MPTTModelBase(ModelBase):
          - adds a TreeManager to the model
         """
         if class_name == 'NewBase' and class_dict == {}:
-            # skip ModelBase, on django < 1.5 it doesn't handle NewBase.
-            super_new = super(ModelBase, meta).__new__
-            return super_new(meta, class_name, bases, class_dict)
+            return super(MPTTModelBase, meta).__new__(meta, class_name, bases, class_dict)
         is_MPTTModel = False
         try:
             MPTTModel

@@ -21,13 +21,8 @@ INSTALLED_APPS = (
     'myapp',
 )
 
-# Required for Django 1.4+
 STATIC_URL = '/static/'
-
-# Required for Django 1.5+
 SECRET_KEY = 'abc123'
-
-# Required for Django 1.7+
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',

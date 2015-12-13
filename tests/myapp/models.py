@@ -7,17 +7,10 @@ import mptt
 from mptt.fields import TreeForeignKey, TreeOneToOneField, TreeManyToManyField
 from mptt.models import MPTTModel
 from mptt.managers import TreeManager
-from django.db.models.query import QuerySet, EmptyQuerySet
+from django.db.models.query import QuerySet
 
 
 class CustomTreeQueryset(QuerySet):
-
-    def custom_method(self):
-        pass
-
-
-class CustomEmptyTreeQueryset(EmptyQuerySet):
-    """This is only used pre Django 1.6"""
 
     def custom_method(self):
         pass

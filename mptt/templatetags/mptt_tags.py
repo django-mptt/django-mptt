@@ -3,19 +3,11 @@ Template tags for working with lists of model instances which represent
 trees.
 """
 from __future__ import unicode_literals
-import warnings
 
 from django import template
-try:
-    from django.apps import apps
-    get_model = apps.get_model
-except ImportError:  # pragma: no cover (Django 1.6 compatibility)
-    from django.db.models import get_model
+from django.apps import apps
 from django.db.models.fields import FieldDoesNotExist
-try:
-    from django.utils.encoding import force_text
-except ImportError:  # pragma: no cover (Django 1.4 compatibility)
-    from django.utils.encoding import force_unicode as force_text
+from django.utils.encoding import force_text
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 
@@ -33,7 +25,7 @@ class FullTreeForModelNode(template.Node):
         self.context_var = context_var
 
     def render(self, context):
-        cls = get_model(*self.model.split('.'))
+        cls = apps.get_model(*self.model.split('.'))
         if cls is None:
             raise template.TemplateSyntaxError(
                 _('full_tree_for_model tag was given an invalid model: %s') % self.model
@@ -57,7 +49,7 @@ class DrilldownTreeForNodeNode(template.Node):
 
         if self.foreign_key is not None:
             app_label, model_name, fk_attr = self.foreign_key.split('.')
-            cls = get_model(app_label, model_name)
+            cls = apps.get_model(app_label, model_name)
             if cls is None:
                 raise template.TemplateSyntaxError(
                     _('drilldown_tree_for_node tag was given an invalid model: %s') %

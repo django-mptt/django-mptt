@@ -14,12 +14,6 @@ from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.querysets import TreeQuerySet
 from mptt.utils import _get_tree_model
 
-if django.VERSION < (1, 7):
-    _tree_manager_superclass = models.Manager
-else:
-    # Django 1.7+ added this crazy new pattern for manager inheritance.
-    _tree_manager_superclass = models.Manager.from_queryset(TreeQuerySet)
-
 __all__ = ('TreeManager',)
 
 
@@ -64,7 +58,7 @@ CUMULATIVE_COUNT_SUBQUERY_M2M = """(
 )"""
 
 
-class TreeManager(_tree_manager_superclass):
+class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
     """
     A manager for working with trees of objects.
     """

@@ -13,7 +13,7 @@ from django.utils.six.moves import zip
 from django.utils.translation import ugettext as _
 
 __all__ = ('previous_current_next', 'tree_item_iterator',
-           'drilldown_tree_for_node')
+           'drilldown_tree_for_node', 'get_cached_trees',)
 
 
 def previous_current_next(items):
