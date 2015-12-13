@@ -202,6 +202,9 @@ def get_cached_trees(queryset):
     include using a recursively included template or arbitrarily traversing
     trees.
 
+    NOTE: nodes _must_ be passed in the correct (depth-first) order. If they aren't,
+    a ValueError will be raised.
+
     Returns a list of top-level nodes. If a single tree was provided in its
     entirety, the list will of course consist of just the tree's root node.
 
@@ -217,16 +220,6 @@ def get_cached_trees(queryset):
 
     current_path = []
     top_nodes = []
-
-    # If ``queryset`` is QuerySet-like, set ordering to depth-first
-    if hasattr(queryset, 'order_by'):
-        mptt_opts = queryset.model._mptt_meta
-        tree_id_attr = mptt_opts.tree_id_attr
-        left_attr = mptt_opts.left_attr
-        if tuple(queryset.query.order_by) != (tree_id_attr, left_attr):
-            raise ValueError(
-                "get_cached_trees() called on a queryset with the wrong " +
-                "ordering: %r" % (queryset.query.order_by,))
 
     if queryset:
         # Get the model's parent-attribute name
