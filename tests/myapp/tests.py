@@ -1297,14 +1297,16 @@ class CacheTreeChildrenTestCase(TreeTestCase):
         """
 
         with self.assertNumQueries(1):
-            self.assertRaises(
-                ValueError,
-                cache_tree_children,
-                list(Category.objects.order_by('-id')))
+            with self.assertRaises(ValueError):
+                cache_tree_children(list(Category.objects.order_by('-id')))
 
         # Passing a list with correct ordering should work, though.
         with self.assertNumQueries(1):
             cache_tree_children(list(Category.objects.all()))
+
+        # The exact ordering tuple doesn't matter, long as the nodes end up in depth-first order.
+        cache_tree_children(Category.objects.order_by('tree_id', 'lft', 'name'))
+        cache_tree_children(Category.objects.filter(tree_id=1).order_by('lft'))
 
 
 class RecurseTreeTestCase(TreeTestCase):
