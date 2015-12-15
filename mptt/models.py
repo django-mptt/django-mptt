@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 from functools import reduce, wraps
 import operator
 import threading
-import django
 
 from django.db import models
 from django.db.models.base import ModelBase
@@ -693,13 +692,15 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         """
         return getattr(self, self._mptt_meta.level_attr)
 
-    def insert_at(self, target, position='first-child', save=False, allow_existing_pk=False, refresh_target=True):
+    def insert_at(self, target, position='first-child', save=False,
+                  allow_existing_pk=False, refresh_target=True):
         """
         Convenience method for calling ``TreeManager.insert_node`` with this
         model instance.
         """
         self._tree_manager.insert_node(
-            self, target, position, save, allow_existing_pk=allow_existing_pk, refresh_target=refresh_target)
+            self, target, position, save, allow_existing_pk=allow_existing_pk,
+            refresh_target=refresh_target)
 
     def is_child_node(self):
         """
@@ -783,10 +784,11 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         from django.db.models.fields import AutoField
 
         field_names = []
-        internal_fields = (self._mptt_meta.left_attr, self._mptt_meta.right_attr, self._mptt_meta.tree_id_attr,
-                           self._mptt_meta.level_attr, self._mptt_meta.parent_attr)
+        internal_fields = (
+            self._mptt_meta.left_attr, self._mptt_meta.right_attr, self._mptt_meta.tree_id_attr,
+            self._mptt_meta.level_attr, self._mptt_meta.parent_attr)
         for field in self._meta.fields:
-            if (field.name not in internal_fields) and (not isinstance(field, AutoField)) and (not field.primary_key):
+            if (field.name not in internal_fields) and (not isinstance(field, AutoField)) and (not field.primary_key):  # noqa
                 field_names.append(field.name)
         return field_names
 
@@ -886,7 +888,9 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                             or getattr(self, opts.right_attr) > getattr(parent, opts.right_attr))
 
                     if right_sibling:
-                        self._tree_manager._move_node(self, right_sibling, 'left', save=False, refresh_target=False)
+                        self._tree_manager._move_node(
+                            self, right_sibling, 'left', save=False,
+                            refresh_target=False)
                     else:
                         # Default movement
                         if parent_id is None:
@@ -895,7 +899,8 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                                 rightmost_sibling = root_nodes.exclude(
                                     pk=self.pk).order_by('-' + opts.tree_id_attr)[0]
                                 self._tree_manager._move_node(
-                                    self, rightmost_sibling, 'right', save=False, refresh_target=False)
+                                    self, rightmost_sibling, 'right', save=False,
+                                    refresh_target=False)
                             except IndexError:
                                 pass
                         else:
@@ -916,7 +921,8 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                 if not track_updates:
                     # When not using delayed/disabled updates,
                     # populate update_fields with user defined model fields.
-                    # This helps preserve tree integrity when saving model on top of a modified tree.
+                    # This helps preserve tree integrity when saving model on top
+                    # of a modified tree.
                     if len(args) > 3:
                         if not args[3]:
                             args = list(args)
@@ -945,7 +951,8 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                         right_sibling = opts.get_ordered_insertion_target(self, parent)
 
                 if right_sibling:
-                    self.insert_at(right_sibling, 'left', allow_existing_pk=True, refresh_target=False)
+                    self.insert_at(right_sibling, 'left', allow_existing_pk=True,
+                                   refresh_target=False)
 
                     if parent:
                         # since we didn't insert into parent, we have to update parent.rght
