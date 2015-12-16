@@ -2,11 +2,10 @@
 // JS later on.
 document.write('<style type="text/css">#result_list { display: none }</style>');
 
-// https://docs.djangoproject.com/en/1.4/ref/contrib/csrf/
+// https://docs.djangoproject.com/en/1.9/ref/csrf/
 django.jQuery.ajaxSetup({
-    crossDomain: false,  // obviates need for sameOrigin test
     beforeSend: function(xhr, settings) {
-        if (!(/^(GET|HEAD|OPTIONS|TRACE)$/.test(settings.type))) {
+        if (!(/^(GET|HEAD|OPTIONS|TRACE)$/.test(settings.type)) && !this.crossDomain) {
             xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
         }
     }
