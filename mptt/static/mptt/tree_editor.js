@@ -240,13 +240,13 @@ django.jQuery(function($){
        Note: We might use html5's session storage? */
     function storeCollapsedNodes(nodes) {
         Cookies.set(
-            'treeeditor_collapsed_nodes',
+            TreeEditor.cookieName,
             nodes,
             {expires: 7});
     }
 
     function retrieveCollapsedNodes() {
-        return Cookies.getJSON('treeeditor_collapsed_nodes');
+        return Cookies.getJSON(TreeEditor.cookieName);
     }
 
     function expandOrCollapseNode(item) {

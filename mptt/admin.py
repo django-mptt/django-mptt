@@ -215,6 +215,10 @@ class TreeEditor(MPTTModelAdmin):
                 'pk', self.model._mptt_meta.level_attr
             ))
         ))
+        extra_context['tree_editor_cookie_name'] = 'tree_%s_%s_collapsed' % (
+            self.model._meta.app_label,
+            self.model._meta.model_name,
+        )
 
         return super(TreeEditor, self).changelist_view(
             request, extra_context, *args, **kwargs)
