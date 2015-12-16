@@ -4,58 +4,33 @@
 {% block extrahead %}
 {{ block.super }}
 <style>
-.tree_marker {
-  display: inline-block;
-  cursor: pointer;
-  width: 14px;
-  height: 14px;
-  position: relative;
-  top: 3px;
-}
-
 .field-tree_actions {
-  width: 40px;
+  width: 50px;
+  padding: 2px;
 }
 
-.field-indented_title a>div {
-  display: inline-block;
-  height; 1px;
-}
-
-
-#result_list tbody tr:focus {
-  background-color: #79aec8 !important;
-  outline: 0px;
-  color: #ffffff;
-}
-
-#result_list tbody tr:focus .field-indented_title a {
-  color: white;
-}
-
-.drag_handle {
-  width: 16px;
-  height: 16px;
-  background: url(/static/feincms/img/arrow-move.png);
+.field-tree_actions > div {
   display: inline-block;
   vertical-align: middle;
+  background-repeat: no-repeat;
+  width: 18px;
+  height: 18px;
+  margin: 7px 2px 0 0;
 }
 
-.drag_handle:hover {
-  cursor: move;
-}
+.tree_marker { cursor: pointer; }
+.tree_marker.children { background-image: url({% static 'mptt/disclosure-down.png' %}); }
+.tree_marker.closed { background-image: url({% static 'mptt/disclosure-right.png' %}); }
 
-table tr.dragging {
-  opacity: .3;
-}
+.drag_handle { background-image: url({% static 'mptt/arrow-move.png' %}); cursor: move; }
 
-table tr.dragging td {
-  color: #333;
-}
+/* the div visualizes the tree structure by pushing the title a bit */
+.field-indented_title a > div { display: inline-block; height: 1px; }
 
-table tr.folded {
-  background: red;
-}
+/* focus */
+#result_list tbody tr:focus {
+  background-color: #79aec8 !important; outline: 0px; color: #fff; }
+#result_list tbody tr:focus .field-indented_title a { color: #fff; }
 
 #drag_line {
   position: absolute;
@@ -73,18 +48,6 @@ table tr.folded {
   background: #417690;
   margin: -3px 0 0 -9px;
   border-radius: 9px;
-}
-
-.tree_marker.children {
-    background: url(/static/feincms/img/disclosure-down.png) no-repeat left top;
-}
-
-.tree_marker.closed {
-    background: url(/static/feincms/img/disclosure-right.png) no-repeat left top;
-}
-
-tr.non-editable a:link, tr.non-editable a:visited, tr.non-editable td {
-    color: #AAA;
 }
 </style>
 <script type="text/javascript">

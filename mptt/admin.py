@@ -186,7 +186,7 @@ class TreeEditor(MPTTModelAdmin):
         the object's depth in the hierarchy.
         """
         return mark_safe('<div style="width:%spx"></div> %s' % (
-            item._mpttfield('level') * 18,
+            item._mpttfield('level') * 20,
             escape('%s' % item),
         ))
     indented_title.short_description = _('title')
