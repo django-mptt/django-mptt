@@ -1,11 +1,17 @@
 from __future__ import unicode_literals
 
+import json
+
+from django import http
 from django.conf import settings
 from django.contrib.admin.actions import delete_selected
 from django.contrib.admin.options import ModelAdmin
 from django.utils.encoding import force_text
+from django.utils.html import escape
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 
+from mptt.exceptions import InvalidMove
 from mptt.forms import MPTTAdminForm, TreeNodeChoiceField
 from mptt.models import MPTTModel, TreeForeignKey
 
@@ -84,3 +90,167 @@ class MPTTModelAdmin(ModelAdmin):
                 'delete_selected',
                 _('Delete selected %(verbose_name_plural)s'))
         return actions
+
+
+def _build_tree_structure(queryset):
+    """
+    Build an in-memory representation of the item tree, trying to keep
+    database accesses down to a minimum. The returned dictionary looks like
+    this (as json dump):
+
+        {"6": [7, 8, 10]
+         "7": [12],
+         "8": [],
+         ...
+         }
+    """
+    all_nodes = {}
+
+    mptt_opts = queryset.model._mptt_meta
+    items = queryset.order_by(
+        mptt_opts.tree_id_attr,
+        mptt_opts.left_attr,
+    ).values_list(
+        "pk",
+        "%s_id" % mptt_opts.parent_attr,
+    )
+    for p_id, parent_id in items:
+        all_nodes.setdefault(
+            str(parent_id) if parent_id else 0,
+            [],
+        ).append(p_id)
+    return all_nodes
+
+
+class TreeEditor(MPTTModelAdmin):
+    """
+    The ``TreeEditor`` modifies the standard Django administration change list
+    to a drag-drop enabled interface for django-mptt_-managed Django models.
+
+    .. _django-mptt: https://github.com/django-mptt/django-mptt/
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(TreeEditor, self).__init__(*args, **kwargs)
+
+        opts = self.model._meta
+        self.change_list_template = [
+            'admin/%s/%s/tree_editor.html' % (
+                opts.app_label, opts.object_name.lower()),
+            'admin/%s/tree_editor.html' % opts.app_label,
+            'admin/tree_editor.html',
+        ]
+
+    def get_list_display(self, request):
+        list_display = list(super(TreeEditor, self).get_list_display(request))
+        list_display = [
+            l for l in list_display
+            if l not in ('__str__', '__unicode__')
+        ]
+
+        if 'indented_title' in list_display:
+            return list_display
+
+        place = 1 if 'action_checkbox' in list_display else 0
+        list_display[place:place] = [
+            'tree_actions',
+            'indented_title',
+        ]
+        return list_display
+
+    def get_list_display_links(self, request, list_display):
+        return ('indented_title',)
+
+    def tree_actions(self, item):
+        try:
+            url = item.get_absolute_url()
+        except Exception:  # Yes.
+            url = ''
+
+        return mark_safe(' '.join((
+            '<div class="drag_handle"></div>',
+            (
+                '<div id="tree_marker-%d" class="tree_marker"'
+                ' data-url="%s"></div>'
+            ) % (
+                item.pk,
+                escape(url),
+            ),
+        )))
+    tree_actions.short_description = ''
+    tree_actions.allow_tags = True
+
+    def indented_title(self, item):
+        """
+        Generate a short title for an object, indent it depending on
+        the object's depth in the hierarchy.
+        """
+        return mark_safe('<div style="width:%spx"></div> %s' % (
+            item._mpttfield('level') * 18,
+            escape('%s' % item),
+        ))
+    indented_title.short_description = _('title')
+    indented_title.allow_tags = True
+
+    def changelist_view(self, request, extra_context=None, *args, **kwargs):
+        """
+        Handle the changelist view, the django view for the model instances
+        change list/actions page.
+        """
+
+        # handle common AJAX requests
+        if request.is_ajax():
+            cmd = request.POST.get('__cmd')
+            if cmd == 'move_node':
+                return self._move_node(request)
+
+            return http.HttpResponseBadRequest(
+                'Oops. AJAX request not understood.')
+
+        extra_context = extra_context or {}
+        extra_context['tree_structure'] = mark_safe(
+            json.dumps(_build_tree_structure(self.get_queryset(request))))
+        extra_context['node_levels'] = mark_safe(json.dumps(
+            dict(self.get_queryset(request).order_by().values_list(
+                'pk', self.model._mptt_meta.level_attr
+            ))
+        ))
+
+        return super(TreeEditor, self).changelist_view(
+            request, extra_context, *args, **kwargs)
+
+    def _move_node(self, request):
+        if hasattr(self.model.objects, 'move_node'):
+            tree_manager = self.model.objects
+        else:
+            tree_manager = self.model._tree_manager
+
+        queryset = self.get_queryset(request)
+        cut_item = queryset.get(pk=request.POST.get('cut_item'))
+        pasted_on = queryset.get(pk=request.POST.get('pasted_on'))
+        position = request.POST.get('position')
+
+        if not self.has_change_permission(request, cut_item):
+            self.message_user(request, _('No permission'))
+            return http.HttpResponse('FAIL')
+
+        if position in ('last-child', 'left', 'right'):
+            try:
+                tree_manager.move_node(cut_item, pasted_on, position)
+            except InvalidMove as e:
+                self.message_user(request, '%s' % e)
+                return http.HttpResponse('FAIL')
+
+            # Ensure that model save methods have been run (required to
+            # update Page._cached_url values, might also be helpful for other
+            # models inheriting MPTTModel)
+            for item in queryset.filter(id__in=(cut_item.pk, pasted_on.pk)):
+                item.save()
+
+            self.message_user(
+                request,
+                _('%s has been moved to a new position.') % cut_item)
+            return http.HttpResponse('OK')
+
+        self.message_user(request, _('Did not understand moving instruction.'))
+        return http.HttpResponse('FAIL')
