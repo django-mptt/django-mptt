@@ -38,24 +38,24 @@ django.jQuery(function($){
     }
 
     function isExpandedNode(id) {
-        return TreeEditor.collapsed_nodes.indexOf(id) == -1;
+        return TreeEditor.collapsedNodes.indexOf(id) == -1;
     }
 
     function markNodeAsExpanded(id) {
         // remove itemId from array of collapsed nodes
-        var idx = TreeEditor.collapsed_nodes.indexOf(id);
+        var idx = TreeEditor.collapsedNodes.indexOf(id);
         if(idx >= 0)
-            TreeEditor.collapsed_nodes.splice(idx, 1);
+            TreeEditor.collapsedNodes.splice(idx, 1);
     }
 
     function markNodeAsCollapsed(id) {
         if(isExpandedNode(id))
-            TreeEditor.collapsed_nodes.push(id);
+            TreeEditor.collapsedNodes.push(id);
     }
 
     // toggle children
     function doToggle(id, show) {
-        var children = TreeEditor.tree_structure[id] || [];
+        var children = TreeEditor.treeStructure[id] || [];
         for (var i=0; i<children.length; ++i) {
             var childId = children[i];
             if(show) {
@@ -74,7 +74,7 @@ django.jQuery(function($){
 
     function rowLevel($row) {
         try {
-            var level = TreeEditor.node_levels[extractItemId($row.find('.tree_marker').attr('id'))];
+            var level = TreeEditor.nodeLevels[extractItemId($row.find('.tree_marker').attr('id'))];
             return (level || 0) + 1;
         } catch (e) {
             return 1;
@@ -90,7 +90,7 @@ django.jQuery(function($){
      *
      */
     $.extend($.fn.feinTree = function() {
-        $.each(TreeEditor.tree_structure, function(key, value) {
+        $.each(TreeEditor.treeStructure, function(key, value) {
           $('#tree_marker-' + key).addClass('children');
         });
 
@@ -266,7 +266,7 @@ django.jQuery(function($){
             markNodeAsCollapsed(itemId);
         }
 
-        storeCollapsedNodes(TreeEditor.collapsed_nodes);
+        storeCollapsedNodes(TreeEditor.collapsedNodes);
 
         doToggle(itemId, show);
     }
@@ -285,7 +285,7 @@ django.jQuery(function($){
                     markNodeAsCollapsed(itemId);
                 }
             });
-            storeCollapsedNodes(TreeEditor.collapsed_nodes);
+            storeCollapsedNodes(TreeEditor.collapsedNodes);
             rlist.show();
         });
         return this;
@@ -373,7 +373,7 @@ django.jQuery(function($){
         $('tbody tr:first', rlist).attr('tabindex', 0).focus();
         $('tr', rlist).keydown(keyboardNavigationHandler);
 
-        TreeEditor.collapsed_nodes = [];
+        TreeEditor.collapsedNodes = [];
         var storedNodes = retrieveCollapsedNodes();
         if(storedNodes == null) {
             $('#collapse_entire_tree').click();
