@@ -3,10 +3,7 @@ from __future__ import unicode_literals
 from django.conf import settings
 from django.contrib.admin.actions import delete_selected
 from django.contrib.admin.options import ModelAdmin
-try:
-    from django.utils.encoding import force_text
-except ImportError:  # pragma: no cover (Django 1.4 compatibility)
-    from django.utils.encoding import force_unicode as force_text
+from django.utils.encoding import force_text
 from django.utils.translation import ugettext as _
 
 from mptt.forms import MPTTAdminForm, TreeNodeChoiceField

@@ -7,13 +7,10 @@ from django.contrib.admin.utils import lookup_field, display_for_field
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.template import Library
+from django.utils.encoding import smart_text, force_text
 from django.utils.html import escape, conditional_escape
 from django.utils.safestring import mark_safe
 from django.utils.translation import get_language_bidi
-try:
-    from django.utils.encoding import smart_text, force_text
-except ImportError:  # pragma: no cover (Django 1.4 compatibility)
-    from django.utils.encoding import smart_unicode as smart_text, force_unicode as force_text
 
 
 register = Library()

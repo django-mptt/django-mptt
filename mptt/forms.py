@@ -4,10 +4,7 @@ Form components for working with trees.
 from __future__ import unicode_literals
 from django import forms
 from django.forms.forms import NON_FIELD_ERRORS
-try:
-    from django.utils.encoding import smart_text
-except ImportError:  # pragma: no cover (Django 1.4 compatibility)
-    from django.utils.encoding import smart_unicode as smart_text
+from django.utils.encoding import smart_text
 from django.utils.html import conditional_escape, mark_safe
 from django.utils.translation import ugettext_lazy as _
 
