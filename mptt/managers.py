@@ -152,7 +152,12 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         if not q:
             return self.none()
 
-        for group in groupby(q, key = lambda n: (getattr(n, opts.tree_id_attr), getattr(n, opts.parent_attr + '_id'))):
+        for group in groupby(
+                q,
+                key=lambda n: (
+                    getattr(n, opts.tree_id_attr),
+                    getattr(n, opts.parent_attr + '_id'),
+                )):
             next_lft = None
             for node in list(group[1]):
                 tree, lft, rght, min_val, max_val = (getattr(node, opts.tree_id_attr),
@@ -170,10 +175,18 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                         min_max['max'] = max_val
                     next_lft = rght + 1
                 elif lft != next_lft:
-                    filters |= Q(**{tree_key: tree, min_key: min_max['min'], max_key: min_max['max']})
+                    filters |= Q(**{
+                        tree_key: tree,
+                        min_key: min_max['min'],
+                        max_key: min_max['max'],
+                    })
                     min_max = {'min': min_val, 'max': max_val}
                     next_lft = rght + 1
-            filters |= Q(**{tree_key: tree, min_key: min_max['min'], max_key: min_max['max']})
+            filters |= Q(**{
+                tree_key: tree,
+                min_key: min_max['min'],
+                max_key: min_max['max'],
+            })
 
         return self.filter(filters)
 

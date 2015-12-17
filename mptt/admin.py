@@ -3,10 +3,7 @@ from __future__ import unicode_literals
 from django.conf import settings
 from django.contrib.admin.actions import delete_selected
 from django.contrib.admin.options import ModelAdmin
-try:
-    from django.utils.encoding import force_text
-except ImportError:  # pragma: no cover (Django 1.4 compatibility)
-    from django.utils.encoding import force_unicode as force_text
+from django.utils.encoding import force_text
 from django.utils.translation import ugettext as _
 
 from mptt.forms import MPTTAdminForm, TreeNodeChoiceField
@@ -39,7 +36,8 @@ class MPTTModelAdmin(ModelAdmin):
             limit_choices_to = db_field.get_limit_choices_to()
             defaults = dict(
                 form_class=TreeNodeChoiceField,
-                queryset=db_field.rel.to._default_manager.using(db).complex_filter(limit_choices_to),
+                queryset=db_field.rel.to._default_manager.using(
+                    db).complex_filter(limit_choices_to),
                 required=False)
             defaults.update(kwargs)
             kwargs = defaults

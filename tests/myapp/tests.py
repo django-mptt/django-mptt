@@ -6,9 +6,6 @@ import re
 import sys
 import tempfile
 
-import unittest
-
-import django
 from django.contrib.auth.models import Group, User
 from django.db.models import Q
 from django.apps import apps
@@ -349,7 +346,6 @@ class ConcurrencyTestCase(TreeTestCase):
             3 1 1 1 8 9
             4 1 1 1 10 11
         """)
-
 
     def test_node_save_after_tree_restructuring(self):
         carrot = ConcreteModel.objects.get(id=6)
@@ -1172,7 +1168,7 @@ class ManagerTests(TreeTestCase):
                 qs, include_self=include_self)
             return list(desc.values_list('name', flat=True).order_by('name'))
 
-        qs = Category.objects.filter(Q(name='Nintendo Wii')|Q(name='PlayStation 3'))
+        qs = Category.objects.filter(Q(name='Nintendo Wii') | Q(name='PlayStation 3'))
 
         self.assertEqual(
             get_desc_names(qs),
@@ -1209,11 +1205,11 @@ class ManagerTests(TreeTestCase):
         return list(anc.values_list('name', flat=True).order_by('name'))
 
     def test_get_queryset_ancestors(self):
-        qs = Category.objects.filter(Q(name='Nintendo Wii')|Q(name='PlayStation 3'))
+        qs = Category.objects.filter(Q(name='Nintendo Wii') | Q(name='PlayStation 3'))
 
         self.assertEqual(
             self._get_anc_names(qs),
-             ['PC & Video Games']
+            ['PC & Video Games']
         )
 
         self.assertEqual(
@@ -1222,13 +1218,17 @@ class ManagerTests(TreeTestCase):
         )
 
         qs = Genre.objects.filter(parent=None)
-        self.assertEqual(self._get_anc_names(qs),[])
-        self.assertEqual(self._get_anc_names(qs, include_self=True), ['Action', 'Role-playing Game'])
+        self.assertEqual(self._get_anc_names(qs), [])
+        self.assertEqual(
+            self._get_anc_names(qs, include_self=True),
+            ['Action', 'Role-playing Game'])
 
     def test_get_queryset_ancestors_regression_379(self):
         # https://github.com/django-mptt/django-mptt/issues/379
         qs = Genre.objects.all()
-        self.assertEqual(self._get_anc_names(qs, include_self=True), list(Genre.objects.values_list('name', flat=True).order_by('name')))
+        self.assertEqual(
+            self._get_anc_names(qs, include_self=True),
+            list(Genre.objects.values_list('name', flat=True).order_by('name')))
 
     def test_custom_querysets(self):
         """
@@ -1690,22 +1690,38 @@ class QuerySetTests(TreeTestCase):
 
     def test_get_ancestors(self):
         self.assertEqual(
-            [c.pk for c in Category.objects.get(name="Nintendo Wii").get_ancestors(include_self=False)],
-            [c.pk for c in Category.objects.filter(name="Nintendo Wii").get_ancestors(include_self=False)],
+            [
+                c.pk for c in
+                Category.objects.get(name="Nintendo Wii").get_ancestors(include_self=False)],
+            [
+                c.pk for c in
+                Category.objects.filter(name="Nintendo Wii").get_ancestors(include_self=False)],
         )
         self.assertEqual(
-            [c.pk for c in Category.objects.get(name="Nintendo Wii").get_ancestors(include_self=True)],
-            [c.pk for c in Category.objects.filter(name="Nintendo Wii").get_ancestors(include_self=True)],
+            [
+                c.pk for c in
+                Category.objects.get(name="Nintendo Wii").get_ancestors(include_self=True)],
+            [
+                c.pk for c in
+                Category.objects.filter(name="Nintendo Wii").get_ancestors(include_self=True)],
         )
 
     def test_get_descendants(self):
         self.assertEqual(
-            [c.pk for c in Category.objects.get(name="Nintendo Wii").get_descendants(include_self=False)],
-            [c.pk for c in Category.objects.filter(name="Nintendo Wii").get_descendants(include_self=False)],
+            [
+                c.pk for c in
+                Category.objects.get(name="Nintendo Wii").get_descendants(include_self=False)],
+            [
+                c.pk for c in
+                Category.objects.filter(name="Nintendo Wii").get_descendants(include_self=False)],
         )
         self.assertEqual(
-            [c.pk for c in Category.objects.get(name="Nintendo Wii").get_descendants(include_self=True)],
-            [c.pk for c in Category.objects.filter(name="Nintendo Wii").get_descendants(include_self=True)],
+            [
+                c.pk for c in
+                Category.objects.get(name="Nintendo Wii").get_descendants(include_self=True)],
+            [
+                c.pk for c in
+                Category.objects.filter(name="Nintendo Wii").get_descendants(include_self=True)],
         )
 
 
@@ -1780,7 +1796,6 @@ class TestOrderedInsertionBFS(TreeTestCase):
             2 1 1 1 4 7
             3 2 1 2 5 6
         """)
-
 
     def test_insert_ordered_BFS_backwards_nonroot_nodes(self):
         music = OrderedInsertion.objects.create(name='music')
