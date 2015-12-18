@@ -1945,3 +1945,68 @@ class DeferredAttributeTests(TreeTestCase):
             obj.save()
 
         self.assertEqual(obj._mptt_cached_fields['name'], 'b')
+
+
+class TreeEditorTestCase(TreeTestCase):
+    def setUp(self):
+        self.user = User.objects.create_superuser(
+            'admin', 'test@example.com', 'p')
+        self.client.login(username=self.user.username, password='p')
+
+    def test_changelist(self):
+        p1 = Person.objects.create(name='Franz')
+        p2 = Person.objects.create(name='Fritz')
+        p3 = Person.objects.create(name='Hans')
+
+        self.assertNotEqual(p1._mpttfield('tree_id'), p2._mpttfield('tree_id'))
+
+        response = self.client.get('/admin/myapp/person/')
+        self.assertContains(response, 'collapse_entire_tree', 1)
+        self.assertContains(response, 'open_entire_tree', 1)
+        self.assertContains(response, 'class="drag_handle"', 3)
+        self.assertContains(response, 'style="width:0px"', 3)
+
+        response = self.client.post(
+            '/admin/myapp/person/',
+            {
+                '__cmd': 'move_node',
+                'cut_item': p1.pk,
+                'pasted_on': p2.pk,
+                'position': 'last-child',
+            },
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        self.assertEqual(response.status_code, 200)
+
+        p1.refresh_from_db()
+        p2.refresh_from_db()
+
+        self.assertEqual(p1.parent, p2)
+
+        self.assertTreeEqual(Person.objects.all(), """
+            2 - 2 0 1 4
+            1 2 2 1 2 3
+            3 - 3 0 1 2
+            """)
+
+        response = self.client.get('/admin/myapp/person/')
+        self.assertContains(response, 'style="width:0px"', 2)
+        self.assertContains(response, 'style="width:20px"', 1)
+
+        response = self.client.post(
+            '/admin/myapp/person/',
+            {
+                '__cmd': 'move_node',
+                'cut_item': p3.pk,
+                'pasted_on': p1.pk,
+                'position': 'left',
+            },
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        self.assertEqual(response.status_code, 200)
+
+        self.assertTreeEqual(Person.objects.all(), """
+            2 - 2 0 1 6
+            3 2 2 1 2 3
+            1 2 2 1 4 5
+            """)

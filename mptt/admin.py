@@ -112,7 +112,7 @@ class TreeEditor(MPTTModelAdmin):
         ]
 
         # Set a better column header than "title"
-        self.__class__.indented_title.short_description = opts.verbose_name
+        # self.__class__.indented_title.short_description = opts.verbose_name
 
     def get_list_display(self, request):
         list_display = list(super(TreeEditor, self).get_list_display(request))
@@ -197,14 +197,14 @@ class TreeEditor(MPTTModelAdmin):
 
         if not self.has_change_permission(request, cut_item):
             self.message_user(request, _('No permission'))
-            return http.HttpResponse('FAIL')
+            return http.HttpResponse('FAIL, no permission.')
 
         if position in ('last-child', 'left', 'right'):
             try:
                 tree_manager.move_node(cut_item, pasted_on, position)
             except InvalidMove as e:
                 self.message_user(request, '%s' % e)
-                return http.HttpResponse('FAIL')
+                return http.HttpResponse('FAIL, invalid move.')
 
             # Ensure that model save methods have been run - give everyone
             # a chance to clear caches etc.
@@ -214,10 +214,10 @@ class TreeEditor(MPTTModelAdmin):
             self.message_user(
                 request,
                 _('%s has been moved to a new position.') % cut_item)
-            return http.HttpResponse('OK')
+            return http.HttpResponse('OK, moved.')
 
         self.message_user(request, _('Did not understand moving instruction.'))
-        return http.HttpResponse('FAIL')
+        return http.HttpResponse('FAIL, unknown instruction.')
 
 
 class TreeEditorContext(object):
