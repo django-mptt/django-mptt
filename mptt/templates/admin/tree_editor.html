@@ -51,11 +51,7 @@
 }
 </style>
 <script type="text/javascript">
-  var TreeEditor = {
-    cookieName: '{{ tree_editor_cookie_name }}',
-    treeStructure: {{ tree_structure|default:"{}" }},
-    nodeLevels: {{ node_levels|default:"{}" }}
-  };
+  var TreeEditor = {{ tree_editor_context.context|safe }};
   /* jQuery UI requires window.jQuery */
   window.jQuery = django.jQuery;
 </script>

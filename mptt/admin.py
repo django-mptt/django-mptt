@@ -92,36 +92,6 @@ class MPTTModelAdmin(ModelAdmin):
         return actions
 
 
-def _build_tree_structure(queryset):
-    """
-    Build an in-memory representation of the item tree, trying to keep
-    database accesses down to a minimum. The returned dictionary looks like
-    this (as json dump):
-
-        {"6": [7, 8, 10]
-         "7": [12],
-         "8": [],
-         ...
-         }
-    """
-    all_nodes = {}
-
-    mptt_opts = queryset.model._mptt_meta
-    items = queryset.order_by(
-        mptt_opts.tree_id_attr,
-        mptt_opts.left_attr,
-    ).values_list(
-        "pk",
-        "%s_id" % mptt_opts.parent_attr,
-    )
-    for p_id, parent_id in items:
-        all_nodes.setdefault(
-            str(parent_id) if parent_id else 0,
-            [],
-        ).append(p_id)
-    return all_nodes
-
-
 class TreeEditor(MPTTModelAdmin):
     """
     The ``TreeEditor`` modifies the standard Django administration change list
@@ -200,28 +170,16 @@ class TreeEditor(MPTTModelAdmin):
         Handle the changelist view, the django view for the model instances
         change list/actions page.
         """
-
         # handle common AJAX requests
         if request.is_ajax():
             cmd = request.POST.get('__cmd')
             if cmd == 'move_node':
                 return self._move_node(request)
-
             return http.HttpResponseBadRequest(
                 'Oops. AJAX request not understood.')
 
         extra_context = extra_context or {}
-        extra_context['tree_structure'] = mark_safe(
-            json.dumps(_build_tree_structure(self.get_queryset(request))))
-        extra_context['node_levels'] = mark_safe(json.dumps(
-            dict(self.get_queryset(request).order_by().values_list(
-                'pk', self.model._mptt_meta.level_attr
-            ))
-        ))
-        extra_context['tree_editor_cookie_name'] = 'tree_%s_%s_collapsed' % (
-            self.model._meta.app_label,
-            self.model._meta.model_name,
-        )
+        extra_context['tree_editor_context'] = TreeEditorContext(self.get_queryset(request))
 
         return super(TreeEditor, self).changelist_view(
             request, extra_context, *args, **kwargs)
@@ -261,3 +219,49 @@ class TreeEditor(MPTTModelAdmin):
 
         self.message_user(request, _('Did not understand moving instruction.'))
         return http.HttpResponse('FAIL')
+
+
+class TreeEditorContext(object):
+    def __init__(self, queryset):
+        self.queryset = queryset
+        self.model = queryset.model
+
+    def context(self):
+        opts = self.model._meta
+
+        return json.dumps({
+            'cookieName': 'tree_%s_%s_collapsed' % (opts.app_label, opts.model_name),
+            'treeStructure': self.build_tree_structure(),
+            'nodeLevels': dict(
+                self.queryset.values_list(
+                    'pk',
+                    self.model._mptt_meta.level_attr,
+                )
+            ),
+        })
+
+    def build_tree_structure(self):
+        """
+        Build an in-memory representation of the item tree, trying to keep
+        database accesses down to a minimum. The returned dictionary looks like
+        this (as json dump):
+
+            {"6": [7, 8, 10]
+             "7": [12],
+             "8": [],
+             ...
+             }
+        """
+        all_nodes = {}
+
+        mptt_opts = self.model._mptt_meta
+        items = self.queryset.values_list(
+            'pk',
+            '%s_id' % mptt_opts.parent_attr,
+        )
+        for p_id, parent_id in items:
+            all_nodes.setdefault(
+                str(parent_id) if parent_id else 0,
+                [],
+            ).append(p_id)
+        return all_nodes
