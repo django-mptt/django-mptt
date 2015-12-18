@@ -206,9 +206,8 @@ class TreeEditor(MPTTModelAdmin):
                 self.message_user(request, '%s' % e)
                 return http.HttpResponse('FAIL')
 
-            # Ensure that model save methods have been run (required to
-            # update Page._cached_url values, might also be helpful for other
-            # models inheriting MPTTModel)
+            # Ensure that model save methods have been run - give everyone
+            # a chance to clear caches etc.
             for item in queryset.filter(id__in=(cut_item.pk, pasted_on.pk)):
                 item.save()
 
