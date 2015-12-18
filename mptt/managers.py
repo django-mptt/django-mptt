@@ -13,6 +13,8 @@ from django.utils.translation import ugettext as _
 from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.querysets import TreeQuerySet
 from mptt.utils import _get_tree_model
+from mptt.signals import node_moved
+
 
 __all__ = ('TreeManager',)
 
@@ -606,6 +608,8 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         move the node yourself by setting node.parent.
         """
         self._move_node(node, target, position=position)
+        node_moved.send(sender=node.__class__, instance=node,
+                        target=target, position=position)
 
     def root_node(self, tree_id):
         """

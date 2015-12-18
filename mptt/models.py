@@ -12,6 +12,7 @@ from django.utils.translation import ugettext as _
 
 from mptt.fields import TreeForeignKey, TreeOneToOneField, TreeManyToManyField
 from mptt.managers import TreeManager
+from mptt.signals import node_moved
 from mptt.utils import _get_tree_model
 
 
@@ -916,6 +917,10 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                     # Make sure the new parent is always
                     # restored on the way out in case of errors.
                     opts.set_raw_field_value(self, opts.parent_attr, parent_id)
+
+                # If there were no exceptions raised then send a moved signal
+                node_moved.send(sender=self.__class__, instance=self,
+                                target=getattr(self, opts.parent_attr))
             else:
                 opts.set_raw_field_value(self, opts.parent_attr, parent_id)
                 if not track_updates:
