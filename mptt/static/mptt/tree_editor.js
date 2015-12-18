@@ -23,6 +23,11 @@ if (!Array.prototype.indexOf) {
 
 
 django.jQuery(function($){
+
+    /* .dataset.context instead of getAttribute would be nicer */
+    var TreeEditor = JSON.parse(
+        document.getElementById('mptt-tree-editor-script').getAttribute('data-context'));
+
     /* Extract an object id (numeric) from a DOM id. Assumes that a "-" is used
        as delimiter. Returns either the id found or 0 if something went wrong.
 

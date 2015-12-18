@@ -50,14 +50,12 @@
   border-radius: 9px;
 }
 </style>
-<script type="text/javascript">
-  var TreeEditor = {{ tree_editor_context.context|safe }};
-  /* jQuery UI requires window.jQuery */
-  window.jQuery = django.jQuery;
-</script>
 <script src="{% static 'mptt/jquery-ui-1.10.3.custom.min.js' %}"></script>
 <script type="text/javascript" src="{% static 'mptt/js.cookie.js' %}"></script>
-<script type="text/javascript" src="{% static 'mptt/tree_editor.js' %}"></script>
+<script id="mptt-tree-editor-script"
+        type="text/javascript"
+        src="{% static 'mptt/tree_editor.js' %}"
+        data-context="{{ tree_editor_context.context }}"></script>
 {% endblock %}
 
 
