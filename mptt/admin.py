@@ -185,11 +185,6 @@ class TreeEditor(MPTTModelAdmin):
             request, extra_context, *args, **kwargs)
 
     def _move_node(self, request):
-        if hasattr(self.model.objects, 'move_node'):
-            tree_manager = self.model.objects
-        else:
-            tree_manager = self.model._tree_manager
-
         queryset = self.get_queryset(request)
         cut_item = queryset.get(pk=request.POST.get('cut_item'))
         pasted_on = queryset.get(pk=request.POST.get('pasted_on'))
@@ -201,7 +196,7 @@ class TreeEditor(MPTTModelAdmin):
 
         if position in ('last-child', 'left', 'right'):
             try:
-                tree_manager.move_node(cut_item, pasted_on, position)
+                self.model._tree_manager.move_node(cut_item, pasted_on, position)
             except InvalidMove as e:
                 self.message_user(request, '%s' % e)
                 return http.HttpResponse('FAIL, invalid move.')
