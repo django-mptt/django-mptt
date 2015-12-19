@@ -1568,7 +1568,7 @@ ValueError: Cannot insert a node which has already been saved.
 8 4 2 1 8 9
 
 >>> jack = Person.objects.get(pk=1)
->>> jack.get_descendants()
+>>> list(jack.get_descendants())
 [<Person: Jill>, <Person: Jim>]
 >>> jack.get_root()
 <Person: Jack>
@@ -1576,18 +1576,18 @@ ValueError: Cannot insert a node which has already been saved.
 >>> jill.get_root()
 <Person: Jack>
 >>> jess = Student.objects.get(pk=4)
->>> jess.get_descendants()
+>>> list(jess.get_descendants())
 [<Person: Jeff>, <Person: Jane>, <Person: Joe>, <Person: Julie>]
 >>> jess.get_root()
 <Person: Jess>
 >>> jeff = Person.objects.get(pk=5)
->>> jeff.get_descendants()
+>>> list(jeff.get_descendants())
 [<Person: Jane>, <Person: Joe>]
 >>> jeff.get_root()
 <Person: Jess>
 >>> jane = Student.objects.get(pk=6)
 >>> jane.get_root()
 <Person: Jess>
->>> jane.get_ancestors()
+>>> list(jane.get_ancestors())
 [<Person: Jess>, <Person: Jeff>]
 
