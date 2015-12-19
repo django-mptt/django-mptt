@@ -1,0 +1,3 @@
+mock-django
+Django
+coverage
