@@ -206,11 +206,6 @@ class TreeEditor(MPTTModelAdmin):
                 self.message_user(request, '%s' % e)
                 return http.HttpResponse('FAIL, invalid move.')
 
-            # Ensure that model save methods have been run - give everyone
-            # a chance to clear caches etc.
-            for item in queryset.filter(id__in=(cut_item.pk, pasted_on.pk)):
-                item.save()
-
             self.message_user(
                 request,
                 _('%s has been moved to a new position.') % cut_item)
