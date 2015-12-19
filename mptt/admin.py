@@ -60,7 +60,7 @@ class MPTTModelAdmin(ModelAdmin):
         # If this is True, the confirmation page has been displayed
         if request.POST.get('post'):
             n = 0
-            with queryset.model.objects.delay_mptt_updates():
+            with queryset.model._tree_manager.delay_mptt_updates():
                 for obj in queryset:
                     if self.has_delete_permission(request, obj):
                         obj.delete()
