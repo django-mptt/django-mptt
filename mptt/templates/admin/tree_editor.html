@@ -3,53 +3,7 @@
 
 {% block extrahead %}
 {{ block.super }}
-<style>
-.field-tree_actions {
-  width: 50px;
-  padding: 2px;
-}
-
-.field-tree_actions > div {
-  display: inline-block;
-  vertical-align: middle;
-  background-repeat: no-repeat;
-  width: 18px;
-  height: 18px;
-  margin: 7px 2px 0 0;
-}
-
-.tree_marker { cursor: pointer; }
-.tree_marker.children { background-image: url({% static 'mptt/disclosure-down.png' %}); }
-.tree_marker.closed { background-image: url({% static 'mptt/disclosure-right.png' %}); }
-
-.drag_handle { background-image: url({% static 'mptt/arrow-move.png' %}); cursor: move; }
-
-/* the div visualizes the tree structure by pushing the title a bit */
-.field-indented_title a > div { display: inline-block; height: 1px; }
-
-/* focus */
-#result_list tbody tr:focus {
-  background-color: #79aec8 !important; outline: 0px; color: #fff; }
-#result_list tbody tr:focus .field-indented_title a { color: #fff; }
-
-#drag_line {
-  position: absolute;
-  height: 3px;
-  font-size: 0px;
-  background-color: #417690;
-}
-
-#drag_line:before {
-  content: ' ';
-  display: block;
-  position: absolute;
-  height: 9px;
-  width: 9px;
-  background: #417690;
-  margin: -3px 0 0 -9px;
-  border-radius: 9px;
-}
-</style>
+<link rel="stylesheet" type="text/css" href="{% static 'mptt/tree_editor.css' %}">
 <script src="{% static 'mptt/jquery-ui-1.11.4.custom.min.js' %}"></script>
 <script type="text/javascript" src="{% static 'mptt/js.cookie.js' %}"></script>
 <script id="mptt-tree-editor-script"
