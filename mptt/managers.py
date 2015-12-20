@@ -149,7 +149,10 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             opts.right_attr,
             min_attr,
             max_attr,
-            opts.parent_attr)
+            opts.parent_attr,
+            # These fields are used by MPTTModel.update_mptt_cached_fields()
+            *opts.order_insertion_by
+        )
 
         if not q:
             return self.none()

@@ -6,6 +6,7 @@ import threading
 from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.query import Q
+from django.db.models.query_utils import DeferredAttribute
 
 from django.utils import six
 from django.utils.translation import ugettext as _
@@ -120,18 +121,28 @@ class MPTTOptions(object):
          - parent pk
          - fields specified in order_insertion_by
 
-        These are used in pre_save to determine if the relevant fields have changed,
+        These are used in save() to determine if the relevant fields have changed,
         so that the MPTT fields need to be updated.
         """
         instance._mptt_cached_fields = {}
         field_names = set((self.parent_attr,))
-        field_names__add = field_names.add
         if self.order_insertion_by:
             for f in self.order_insertion_by:
                 if f[0] == '-':
                     f = f[1:]
-                field_names__add(f)
+                field_names.add(f)
         for field_name in field_names:
+            if instance._deferred:
+                field = instance._meta.get_field(field_name)
+                if field.attname in instance.get_deferred_fields() \
+                        and field.attname not in instance.__dict__:
+                    # deferred attribute (i.e. via .only() or .defer())
+                    # It'd be silly to cache this (that'd do a database query)
+                    # Instead, we mark it as a deferred attribute here, then
+                    # assume it hasn't changed during save(), unless it's no
+                    # longer deferred.
+                    instance._mptt_cached_fields[field_name] = DeferredAttribute
+                    continue
             instance._mptt_cached_fields[field_name] = self.get_raw_field_value(
                 instance, field_name)
 
@@ -844,14 +855,21 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         force_update = kwargs.get('force_update', False)
         force_insert = kwargs.get('force_insert', False)
         collapse_old_tree = None
+        deferred_fields = self.get_deferred_fields()
         if force_update or (not force_insert and self._is_saved(using=kwargs.get('using'))):
             # it already exists, so do a move
             old_parent_id = self._mptt_cached_fields[opts.parent_attr]
-            same_order = old_parent_id == parent_id
+            if old_parent_id is DeferredAttribute:
+                same_order = True
+            else:
+                same_order = old_parent_id == parent_id
+
             if same_order and len(self._mptt_cached_fields) > 1:
-                get_raw_field_value = opts.get_raw_field_value
                 for field_name, old_value in self._mptt_cached_fields.items():
-                    if old_value != get_raw_field_value(self, field_name):
+                    if old_value is DeferredAttribute and field_name not in deferred_fields:
+                        same_order = False
+                        break
+                    if old_value != opts.get_raw_field_value(self, field_name):
                         same_order = False
                         break
                 if not do_updates and not same_order:

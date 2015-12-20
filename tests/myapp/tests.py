@@ -9,6 +9,7 @@ import unittest
 
 from django.contrib.auth.models import Group, User
 from django.db.models import Q
+from django.db.models.query_utils import DeferredAttribute
 from django.apps import apps
 from django.forms.models import modelform_factory
 from django.template import Template, TemplateSyntaxError, Context
@@ -1902,3 +1903,45 @@ class Signals(TestCase):
                 target=self.ps3,
                 sender=Category
             )
+
+
+class DeferredAttributeTests(TreeTestCase):
+    """
+    Regression tests for #176 and #424
+    """
+    def setUp(self):
+        OrderedInsertion.objects.create(name="a")
+
+    def test_deferred_order_insertion_by(self):
+        qs = OrderedInsertion.objects.defer('name')
+        with self.assertNumQueries(1):
+            nodes = list(qs)
+        with self.assertNumQueries(0):
+            self.assertTreeEqual(nodes, '''
+                1 - 1 0 1 2
+            ''')
+
+    def test_deferred_cached_field_undeferred(self):
+        obj = OrderedInsertion.objects.defer('name').get()
+        self.assertEqual(obj._mptt_cached_fields['name'], DeferredAttribute)
+
+        with self.assertNumQueries(1):
+            obj.name
+        with self.assertNumQueries(3):
+            # does a node move, since the order_insertion_by field changed
+            obj.save()
+
+        self.assertEqual(obj._mptt_cached_fields['name'], 'a')
+
+    def test_deferred_cached_field_change(self):
+        obj = OrderedInsertion.objects.defer('name').get()
+        self.assertEqual(obj._mptt_cached_fields['name'], DeferredAttribute)
+
+        with self.assertNumQueries(0):
+            obj.name = 'b'
+
+        with self.assertNumQueries(3):
+            # does a node move, since the order_insertion_by field changed
+            obj.save()
+
+        self.assertEqual(obj._mptt_cached_fields['name'], 'b')
