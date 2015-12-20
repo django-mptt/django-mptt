@@ -566,7 +566,8 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
 
     def _move_node(self, node, target, position='last-child', save=True, refresh_target=True):
         if self._base_manager:
-            return self._base_manager.move_node(node, target, position=position)
+            return self._base_manager._move_node(node, target, position=position,
+                                                 save=save, refresh_target=refresh_target)
 
         if self.tree_model._mptt_is_tracking:
             # delegate to insert_node and clean up the gaps later.
