@@ -111,8 +111,12 @@ class TreeEditor(MPTTModelAdmin):
             'admin/tree_editor.html',
         ]
 
-        # Set a better column header than "title"
-        # self.__class__.indented_title.short_description = opts.verbose_name
+        # Set a better header than "title"
+        try:
+            fn = self.__class__.indented_title.im_func
+        except AttributeError:
+            fn = self.__class__.indented_title
+        fn.short_description = opts.verbose_name
 
     def get_list_display(self, request):
         list_display = list(super(TreeEditor, self).get_list_display(request))
