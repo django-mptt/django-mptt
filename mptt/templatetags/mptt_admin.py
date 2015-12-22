@@ -126,7 +126,7 @@ def mptt_items_for_result(cl, result, form):
             else:
                 attr = pk
             value = result.serializable_value(attr)
-            result_id = repr(force_text(value))[1:]
+            result_id = repr(force_text(value))[1:-1]
             # #### MPTT SUBSTITUTION START
             yield mark_safe('<%s%s%s><a href="%s"%s>%s</a></%s>' % (
                 table_tag,
