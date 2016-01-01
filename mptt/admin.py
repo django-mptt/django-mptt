@@ -92,23 +92,23 @@ class MPTTModelAdmin(ModelAdmin):
         return actions
 
 
-class TreeEditor(MPTTModelAdmin):
+class DraggableMPTTAdmin(MPTTModelAdmin):
     """
-    The ``TreeEditor`` modifies the standard Django administration change list
+    The ``DraggableMPTTAdmin`` modifies the standard Django administration change list
     to a drag-drop enabled interface for django-mptt_-managed Django models.
 
     .. _django-mptt: https://github.com/django-mptt/django-mptt/
     """
 
     def __init__(self, *args, **kwargs):
-        super(TreeEditor, self).__init__(*args, **kwargs)
+        super(DraggableMPTTAdmin, self).__init__(*args, **kwargs)
 
         opts = self.model._meta
         self.change_list_template = [
-            'admin/%s/%s/tree_editor.html' % (
+            'admin/%s/%s/draggable_mptt_change_list.html' % (
                 opts.app_label, opts.object_name.lower()),
-            'admin/%s/tree_editor.html' % opts.app_label,
-            'admin/tree_editor.html',
+            'admin/%s/draggable_mptt_change_list.html' % opts.app_label,
+            'admin/draggable_mptt_change_list.html',
         ]
 
         # Set a better header than "title"
@@ -119,7 +119,7 @@ class TreeEditor(MPTTModelAdmin):
         fn.short_description = opts.verbose_name
 
     def get_list_display(self, request):
-        list_display = list(super(TreeEditor, self).get_list_display(request))
+        list_display = list(super(DraggableMPTTAdmin, self).get_list_display(request))
         list_display = [
             l for l in list_display
             if l not in ('__str__', '__unicode__')
@@ -183,9 +183,10 @@ class TreeEditor(MPTTModelAdmin):
                 'Oops. AJAX request not understood.')
 
         extra_context = extra_context or {}
-        extra_context['tree_editor_context'] = TreeEditorContext(self.get_queryset(request))
+        extra_context['draggable_mptt_admin_context'] = DraggableMPTTAdminContext(
+            self.get_queryset(request))
 
-        return super(TreeEditor, self).changelist_view(
+        return super(DraggableMPTTAdmin, self).changelist_view(
             request, extra_context, *args, **kwargs)
 
     def _move_node(self, request):
@@ -214,7 +215,7 @@ class TreeEditor(MPTTModelAdmin):
         return http.HttpResponse('FAIL, unknown instruction.')
 
 
-class TreeEditorContext(object):
+class DraggableMPTTAdminContext(object):
     def __init__(self, queryset):
         self.queryset = queryset
         self.model = queryset.model

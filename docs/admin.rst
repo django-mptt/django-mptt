@@ -42,3 +42,29 @@ to your MPTTModelAdmin::
     class CustomMPTTModelAdmin(MPTTModelAdmin):
         mptt_indent_field = "some_node_field"
     # …
+
+
+``mptt.admin.DraggableMPTTAdmin``
+---------------------------------
+
+This is a tree admin inheriting all behavior of the `MPTTModelAdmin`` above,
+but additionally offers drag-drop functionality for moving nodes.
+
+.. note::
+
+   Does not work well with big trees (more than a few hundred nodes, or trees
+   deeper than 10 levels). Patches implementing lazy-loading of deeper nodes
+   very much appreciated. Also, paginated trees do not look nice at all.
+
+Usage::
+
+    from django.contrib import admin
+    from mptt.admin import DraggableMPTTAdmin
+    from myproject.myapp.models import Node
+
+    class NodeAdmin(DraggableMPTTAdmin):
+        list_per_page = 99999  # See the note above.
+
+    admin.site.register(Node, NodeAdmin)
+
+    # TODO Figure out how to reuse mptt_level_indent / mptt_indent_field

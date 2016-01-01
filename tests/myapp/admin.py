@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from mptt.admin import MPTTModelAdmin, TreeEditor
+from mptt.admin import MPTTModelAdmin, DraggableMPTTAdmin
 
 from myapp.models import Category, Person
 
@@ -10,4 +10,4 @@ class CategoryAdmin(MPTTModelAdmin):
 
 
 admin.site.register(Category, CategoryAdmin)
-admin.site.register(Person, TreeEditor)
+admin.site.register(Person, DraggableMPTTAdmin)

@@ -1947,7 +1947,7 @@ class DeferredAttributeTests(TreeTestCase):
         self.assertEqual(obj._mptt_cached_fields['name'], 'b')
 
 
-class TreeEditorTestCase(TreeTestCase):
+class DraggableMPTTAdminTestCase(TreeTestCase):
     def setUp(self):
         self.user = User.objects.create_superuser(
             'admin', 'test@example.com', 'p')

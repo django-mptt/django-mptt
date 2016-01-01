@@ -25,8 +25,8 @@ if (!Array.prototype.indexOf) {
 django.jQuery(function($){
 
     /* .dataset.context instead of getAttribute would be nicer */
-    var TreeEditor = JSON.parse(
-        document.getElementById('mptt-tree-editor-script').getAttribute('data-context'));
+    var DraggableMPTTAdmin = JSON.parse(
+        document.getElementById('draggable-mptt-admin-script').getAttribute('data-context'));
 
     /* Extract an object id (numeric) from a DOM id. Assumes that a "-" is used
        as delimiter. Returns either the id found or 0 if something went wrong.
@@ -42,24 +42,24 @@ django.jQuery(function($){
     }
 
     function isExpandedNode(id) {
-        return TreeEditor.collapsedNodes.indexOf(id) == -1;
+        return DraggableMPTTAdmin.collapsedNodes.indexOf(id) == -1;
     }
 
     function markNodeAsExpanded(id) {
         // remove itemId from array of collapsed nodes
-        var idx = TreeEditor.collapsedNodes.indexOf(id);
+        var idx = DraggableMPTTAdmin.collapsedNodes.indexOf(id);
         if(idx >= 0)
-            TreeEditor.collapsedNodes.splice(idx, 1);
+            DraggableMPTTAdmin.collapsedNodes.splice(idx, 1);
     }
 
     function markNodeAsCollapsed(id) {
         if(isExpandedNode(id))
-            TreeEditor.collapsedNodes.push(id);
+            DraggableMPTTAdmin.collapsedNodes.push(id);
     }
 
     // toggle children
     function doToggle(id, show) {
-        var children = TreeEditor.treeStructure[id] || [];
+        var children = DraggableMPTTAdmin.treeStructure[id] || [];
         for (var i=0; i<children.length; ++i) {
             var childId = children[i];
             if(show) {
@@ -78,7 +78,7 @@ django.jQuery(function($){
 
     function rowLevel($row) {
         try {
-            var level = TreeEditor.nodeLevels[extractItemId($row.find('.tree_marker').attr('id'))];
+            var level = DraggableMPTTAdmin.nodeLevels[extractItemId($row.find('.tree_marker').attr('id'))];
             return (level || 0) + 1;
         } catch (e) {
             return 1;
@@ -94,7 +94,7 @@ django.jQuery(function($){
      *
      */
     $.extend($.fn.feinTree = function() {
-        $.each(TreeEditor.treeStructure, function(key, value) {
+        $.each(DraggableMPTTAdmin.treeStructure, function(key, value) {
           $('#tree_marker-' + key).addClass('children');
         });
 
@@ -244,13 +244,13 @@ django.jQuery(function($){
        Note: We might use html5's session storage? */
     function storeCollapsedNodes(nodes) {
         Cookies.set(
-            TreeEditor.cookieName,
+            DraggableMPTTAdmin.cookieName,
             nodes,
             {expires: 7});
     }
 
     function retrieveCollapsedNodes() {
-        return Cookies.getJSON(TreeEditor.cookieName);
+        return Cookies.getJSON(DraggableMPTTAdmin.cookieName);
     }
 
     function expandOrCollapseNode(item) {
@@ -270,7 +270,7 @@ django.jQuery(function($){
             markNodeAsCollapsed(itemId);
         }
 
-        storeCollapsedNodes(TreeEditor.collapsedNodes);
+        storeCollapsedNodes(DraggableMPTTAdmin.collapsedNodes);
 
         doToggle(itemId, show);
     }
@@ -289,7 +289,7 @@ django.jQuery(function($){
                     markNodeAsCollapsed(itemId);
                 }
             });
-            storeCollapsedNodes(TreeEditor.collapsedNodes);
+            storeCollapsedNodes(DraggableMPTTAdmin.collapsedNodes);
             rlist.show();
         });
         return this;
@@ -377,7 +377,7 @@ django.jQuery(function($){
         $('tbody tr:first', rlist).attr('tabindex', 0).focus();
         $('tr', rlist).keydown(keyboardNavigationHandler);
 
-        TreeEditor.collapsedNodes = [];
+        DraggableMPTTAdmin.collapsedNodes = [];
         var storedNodes = retrieveCollapsedNodes();
         if(storedNodes == null) {
             $('#collapse_entire_tree').click();
