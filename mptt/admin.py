@@ -122,11 +122,8 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         list_display = list(super(DraggableMPTTAdmin, self).get_list_display(request))
         list_display = [
             l for l in list_display
-            if l not in ('__str__', '__unicode__')
+            if l not in ('__str__', '__unicode__', 'indented_title', 'tree_actions')
         ]
-
-        if 'indented_title' in list_display:
-            return list_display
 
         place = 1 if 'action_checkbox' in list_display else 0
         list_display[place:place] = [
