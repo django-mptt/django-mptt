@@ -187,6 +187,11 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
             request, extra_context, *args, **kwargs)
 
     def _move_node(self, request):
+        position = request.POST.get('position')
+        if position not in ('last-child', 'left', 'right'):
+            self.message_user(request, _('Did not understand moving instruction.'))
+            return http.HttpResponse('FAIL, unknown instruction.')
+
         queryset = self.get_queryset(request)
         try:
             cut_item = queryset.get(pk=request.POST.get('cut_item'))
@@ -195,26 +200,20 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
             self.message_user(request, _('Objects have disappeared, try again.'))
             return http.HttpResponse('FAIL, invalid objects.')
 
-        position = request.POST.get('position')
-
         if not self.has_change_permission(request, cut_item):
             self.message_user(request, _('No permission'))
             return http.HttpResponse('FAIL, no permission.')
 
-        if position in ('last-child', 'left', 'right'):
-            try:
-                self.model._tree_manager.move_node(cut_item, pasted_on, position)
-            except InvalidMove as e:
-                self.message_user(request, '%s' % e)
-                return http.HttpResponse('FAIL, invalid move.')
+        try:
+            self.model._tree_manager.move_node(cut_item, pasted_on, position)
+        except InvalidMove as e:
+            self.message_user(request, '%s' % e)
+            return http.HttpResponse('FAIL, invalid move.')
 
-            self.message_user(
-                request,
-                _('%s has been successfully moved.') % cut_item)
-            return http.HttpResponse('OK, moved.')
-
-        self.message_user(request, _('Did not understand moving instruction.'))
-        return http.HttpResponse('FAIL, unknown instruction.')
+        self.message_user(
+            request,
+            _('%s has been successfully moved.') % cut_item)
+        return http.HttpResponse('OK, moved.')
 
 
 class DraggableMPTTAdminContext(object):
