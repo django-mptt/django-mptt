@@ -54,7 +54,7 @@ but additionally offers drag-drop functionality for moving nodes.
 
    Does not work well with big trees (more than a few hundred nodes, or trees
    deeper than 10 levels). Patches implementing lazy-loading of deeper nodes
-   very much appreciated. Also, paginated trees do not look nice at all.
+   very much appreciated.
 
 Usage::
 
