@@ -199,7 +199,6 @@ django.jQuery(function($){
                     var cutItem = extractItemId(originalRow.find('.tree_marker').attr('id'));
                     var pastedOn = extractItemId(moveTo.relativeTo.find('.tree_marker').attr('id'));
 
-                    console.log(cutItem, pastedOn);
                     // get out early if items are the same
                     if(cutItem != pastedOn) {
                         var isParent = (
@@ -219,12 +218,12 @@ django.jQuery(function($){
 
                         // save
                         $.post('.', {
-                            '__cmd': 'move_node',
+                            'cmd': 'move_node',
                             'position': position,
                             'cut_item': cutItem,
                             'pasted_on': pastedOn
                         }, function(data) {
-                                window.location.reload();
+                            window.location.reload();
                         });
                     } else {
                         $("#drag_line").remove();

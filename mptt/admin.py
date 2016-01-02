@@ -173,7 +173,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         """
         # handle common AJAX requests
         if request.is_ajax():
-            cmd = request.POST.get('__cmd')
+            cmd = request.POST.get('cmd')
             if cmd == 'move_node':
                 return self._move_node(request)
             return http.HttpResponseBadRequest(
@@ -188,8 +188,13 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
 
     def _move_node(self, request):
         queryset = self.get_queryset(request)
-        cut_item = queryset.get(pk=request.POST.get('cut_item'))
-        pasted_on = queryset.get(pk=request.POST.get('pasted_on'))
+        try:
+            cut_item = queryset.get(pk=request.POST.get('cut_item'))
+            pasted_on = queryset.get(pk=request.POST.get('pasted_on'))
+        except (self.model.DoesNotExist, TypeError, ValueError):
+            self.message_user(request, _('Objects have disappeared, try again.'))
+            return http.HttpResponse('FAIL, invalid objects.')
+
         position = request.POST.get('position')
 
         if not self.has_change_permission(request, cut_item):
@@ -205,7 +210,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
 
             self.message_user(
                 request,
-                _('%s has been moved to a new position.') % cut_item)
+                _('%s has been successfully moved.') % cut_item)
             return http.HttpResponse('OK, moved.')
 
         self.message_user(request, _('Did not understand moving instruction.'))

@@ -1981,7 +1981,7 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
         response = self.client.post(
             '/admin/myapp/person/',
             {
-                '__cmd': 'move_node',
+                'cmd': 'move_node',
                 'cut_item': p1.pk,
                 'pasted_on': p2.pk,
                 'position': 'last-child',
@@ -2008,7 +2008,7 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
         response = self.client.post(
             '/admin/myapp/person/',
             {
-                '__cmd': 'move_node',
+                'cmd': 'move_node',
                 'cut_item': p3.pk,
                 'pasted_on': p1.pk,
                 'position': 'left',
