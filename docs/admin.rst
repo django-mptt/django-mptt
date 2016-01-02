@@ -47,10 +47,10 @@ to your MPTTModelAdmin::
 ``mptt.admin.DraggableMPTTAdmin``
 ---------------------------------
 
-This is a tree admin inheriting all behavior of the `MPTTModelAdmin`` above,
-but additionally offers drag-drop functionality for moving nodes.
+This is a tree admin based on `FeinCMS <http://feincms.org/>`_ offering
+drag-drop functionality for moving nodes.
 
-.. note::
+.. warning::
 
    Does not work well with big trees (more than a few hundred nodes, or trees
    deeper than 10 levels). Patches implementing lazy-loading of deeper nodes
@@ -66,5 +66,3 @@ Usage::
         list_per_page = 99999  # See the note above.
 
     admin.site.register(Node, NodeAdmin)
-
-    # TODO Figure out how to reuse mptt_level_indent / mptt_indent_field
