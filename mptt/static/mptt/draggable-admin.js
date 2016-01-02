@@ -351,7 +351,6 @@ django.jQuery(function($){
         rlist_tbody = rlist.find('tbody');
 
     if($('tbody tr', rlist).length > 1) {
-        rlist.hide();
         rlist_tbody.feinTree();
 
         rlist.find('.tree_marker').on('click', function(event) {
