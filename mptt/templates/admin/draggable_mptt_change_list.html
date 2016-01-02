@@ -1,5 +1,5 @@
 {% extends "admin/change_list.html" %}
-{% load admin_list i18n mptt_admin staticfiles %}
+{% load admin_list i18n staticfiles %}
 
 {% block extrahead %}
 {{ block.super }}
@@ -9,7 +9,7 @@
 <script id="draggable-mptt-admin-script"
         type="text/javascript"
         src="{% static 'mptt/draggable-admin.js' %}"
-        data-context="{{ draggable_mptt_admin_context }}"></script>
+        data-context="{{ draggable_mptt_admin_context.context }}"></script>
 {% endblock %}
 
 {% block filters %}
@@ -25,10 +25,4 @@
       {% for spec in cl.filter_specs %}{% admin_list_filter cl spec %}{% endfor %}
     {% endif %}
   </div>
-{% endblock %}
-
-{% block result_list %}
-    {% if action_form and actions_on_top and cl.full_result_count %}{% admin_actions %}{% endif %}
-    {% mptt_result_list cl %}
-    {% if action_form and actions_on_bottom and cl.full_result_count %}{% admin_actions %}{% endif %}
 {% endblock %}
