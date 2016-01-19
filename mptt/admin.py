@@ -7,8 +7,7 @@ from django.conf import settings
 from django.contrib.admin.actions import delete_selected
 from django.contrib.admin.options import ModelAdmin
 from django.utils.encoding import force_text
-from django.utils.html import escape
-from django.utils.safestring import mark_safe
+from django.utils.html import format_html
 from django.utils.translation import ugettext as _
 
 from mptt.exceptions import InvalidMove
@@ -140,19 +139,16 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
     def tree_actions(self, item):
         try:
             url = item.get_absolute_url()
-        except Exception:  # Yes.
+        except Exception:  # Nevermind.
             url = ''
 
-        return mark_safe(' '.join((
-            '<div class="drag_handle"></div>',
-            (
-                '<div id="tree_marker-%d" class="tree_marker"'
-                ' data-url="%s"></div>'
-            ) % (
-                item.pk,
-                escape(url),
-            ),
-        )))
+        return format_html(
+            '<div class="drag_handle"></div>'
+            '<div id="tree_marker-{}" class="tree_marker"'
+            ' data-url="{}"></div>',
+            item.pk,
+            url,
+        )
     tree_actions.short_description = ''
 
     def indented_title(self, item):
@@ -160,10 +156,11 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         Generate a short title for an object, indent it depending on
         the object's depth in the hierarchy.
         """
-        return mark_safe('<div style="width:%spx"></div> %s' % (
+        return format_html(
+            '<div style="width:{}px"></div> {}',
             item._mpttfield('level') * 20,
-            escape('%s' % item),
-        ))
+            item,
+        )
     indented_title.short_description = _('title')
 
     def changelist_view(self, request, extra_context=None, *args, **kwargs):
