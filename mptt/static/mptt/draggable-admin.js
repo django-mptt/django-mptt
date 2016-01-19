@@ -2,15 +2,6 @@
 // JS later on.
 document.write('<style type="text/css">#result_list { display: none }</style>');
 
-// https://docs.djangoproject.com/en/1.9/ref/csrf/
-django.jQuery.ajaxSetup({
-    beforeSend: function(xhr, settings) {
-        if (!(/^(GET|HEAD|OPTIONS|TRACE)$/.test(settings.type)) && !this.crossDomain) {
-            xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
-        }
-    }
-});
-
 // IE<9 lacks Array.prototype.indexOf
 if (!Array.prototype.indexOf) {
     Array.prototype.indexOf = function(needle) {
@@ -216,14 +207,20 @@ django.jQuery(function($){
                             position = 'right';
                         }
 
-                        // save
-                        $.post('.', {
-                            'cmd': 'move_node',
-                            'position': position,
-                            'cut_item': cutItem,
-                            'pasted_on': pastedOn
-                        }, function(data) {
-                            window.location.reload();
+                        $.ajax({
+                            complete: function() {
+                                window.location.reload();
+                            },
+                            data: {
+                                cmd: 'move_node',
+                                position: position,
+                                cut_item: cutItem,
+                                pasted_on: pastedOn
+                            },
+                            headers: {
+                                'X-CSRFToken': Cookies.get('csrftoken')
+                            },
+                            method: 'POST'
                         });
                     } else {
                         $("#drag_line").remove();
