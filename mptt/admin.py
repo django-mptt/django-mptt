@@ -154,7 +154,6 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
             ),
         )))
     tree_actions.short_description = ''
-    tree_actions.allow_tags = True
 
     def indented_title(self, item):
         """
@@ -166,7 +165,6 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
             escape('%s' % item),
         ))
     indented_title.short_description = _('title')
-    indented_title.allow_tags = True
 
     def changelist_view(self, request, extra_context=None, *args, **kwargs):
         """
