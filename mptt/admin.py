@@ -100,6 +100,8 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
     .. _django-mptt: https://github.com/django-mptt/django-mptt/
     """
 
+    list_per_page = 2000  # This will take a really long time.
+
     def __init__(self, *args, **kwargs):
         super(DraggableMPTTAdmin, self).__init__(*args, **kwargs)
 

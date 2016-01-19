@@ -53,8 +53,11 @@ drag-drop functionality for moving nodes.
 .. warning::
 
    Does not work well with big trees (more than a few hundred nodes, or trees
-   deeper than 10 levels). Patches implementing lazy-loading of deeper nodes
-   very much appreciated.
+   deeper than 10 levels). Patches implementing lazy-loading of deep trees
+   are very much appreciated.
+
+`DraggableMPTTAdmin.list_per_page` is set to 2000 by default (which
+effectively disables pagination for most trees).
 
 Usage::
 
@@ -62,7 +65,4 @@ Usage::
     from mptt.admin import DraggableMPTTAdmin
     from myproject.myapp.models import Node
 
-    class NodeAdmin(DraggableMPTTAdmin):
-        list_per_page = 99999  # See the note above.
-
-    admin.site.register(Node, NodeAdmin)
+    admin.site.register(Node, DraggableMPTTAdmin)
