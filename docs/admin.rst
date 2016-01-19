@@ -47,6 +47,8 @@ to your MPTTModelAdmin::
 ``mptt.admin.DraggableMPTTAdmin``
 ---------------------------------
 
+.. versionadded:: 0.9
+
 This is a tree admin based on `FeinCMS <http://feincms.org/>`_ offering
 drag-drop functionality for moving nodes.
 
