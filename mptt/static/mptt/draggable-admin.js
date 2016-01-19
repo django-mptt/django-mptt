@@ -1,3 +1,5 @@
+/* global Cookies */
+/* global django */
 // Suppress initial rendering of result list, but only if we can show it with
 // JS later on.
 document.write('<style type="text/css">#result_list { display: none }</style>');
@@ -5,11 +7,11 @@ document.write('<style type="text/css">#result_list { display: none }</style>');
 // IE<9 lacks Array.prototype.indexOf
 if (!Array.prototype.indexOf) {
     Array.prototype.indexOf = function(needle) {
-        for (i=0, l=this.length; i<l; ++i) {
+        for (var i=0, l=this.length; i<l; ++i) {
             if (this[i] === needle) return i;
         }
         return -1;
-    }
+    };
 }
 
 
@@ -96,11 +98,9 @@ django.jQuery(function($){
             var CHILD_PAD = 20;
             var originalRow = $(event.target).closest('tr');
             var rowHeight = originalRow.height();
-            var childEdge = $(event.target).offset().left + $(event.target).width();
             var moveTo = new Object();
-            var expandObj = new Object();
 
-            $("body").addClass('dragging').disableSelection().bind('mousemove', function(event) {
+            $('body').addClass('dragging').disableSelection().bind('mousemove', function(event) {
                 // attach dragged item to mouse
                 var cloned = originalRow.html();
                 if($('#ghost').length == 0) {
@@ -110,7 +110,7 @@ django.jQuery(function($){
                     'opacity': .8,
                     'position': 'absolute',
                     'top': event.pageY,
-                    'left': event.pageX-30,
+                    'left': event.pageX - 30,
                     'width': 600
                 });
 
@@ -122,14 +122,15 @@ django.jQuery(function($){
                 }
 
                 // check if drag_line element already exists, else append
-                if($("#drag_line").length < 1) {
-                    $("body").append('<div id="drag_line"></div>');
+                if($('#drag_line').length < 1) {
+                    $('body').append('<div id="drag_line"></div>');
                 }
 
                 // loop trough all rows
-                $("tr", originalRow.parent()).each(function(index, element) {
-                    var element = $(element),
-                        top = element.offset().top;
+                $('tr', originalRow.parent()).each(function(index, el) {
+                    var element = $(el),
+                        top = element.offset().top,
+                        next;
 
                     // check if mouse is over a row
                     if (event.pageY >= top && event.pageY < top + rowHeight) {
@@ -141,7 +142,7 @@ django.jQuery(function($){
                             targetRow = element;
                             targetLoc = BEFORE;
                         } else if (event.pageY >= top + rowHeight / 3 && event.pageY < top + rowHeight * 2 / 3) {
-                            var next = element.next();
+                            next = element.next();
                             // there's no point in allowing adding children when there are some already
                             // better move the items to the correct place right away
                             if (!next.length || rowLevel(next) <= elementLevel) {
@@ -149,7 +150,7 @@ django.jQuery(function($){
                                 targetLoc = CHILD;
                             }
                         } else if (event.pageY >= top + rowHeight * 2 / 3 && event.pageY < top + rowHeight) {
-                            var next = element.next();
+                            next = element.next();
                             if (!next.length || rowLevel(next) <= elementLevel) {
                                 targetRow = element;
                                 targetLoc = AFTER;
@@ -159,10 +160,10 @@ django.jQuery(function($){
                         if(targetRow) {
                             var padding = 84 + rowLevel(element) * CHILD_PAD + (targetLoc == CHILD ? CHILD_PAD : 0 );
 
-                            $("#drag_line").css({
+                            $('#drag_line').css({
                                 'width': targetRow.width() - padding,
                                 'left': targetRow.offset().left + padding,
-                                'top': targetRow.offset().top + (targetLoc == AFTER || targetLoc == CHILD ? rowHeight: 0) -1
+                                'top': targetRow.offset().top + (targetLoc == AFTER || targetLoc == CHILD ? rowHeight: 0) - 1
                             });
 
                                     // Store the found row and options
@@ -178,14 +179,14 @@ django.jQuery(function($){
 
             $('body').keydown(function(event) {
                 if (event.which == '27') {
-                    $("#drag_line").remove();
-                    $("#ghost").remove();
-                    $("body").removeClass('dragging').enableSelection().unbind('mousemove').unbind('mouseup');
+                    $('#drag_line').remove();
+                    $('#ghost').remove();
+                    $('body').removeClass('dragging').enableSelection().unbind('mousemove').unbind('mouseup');
                     event.preventDefault();
                 }
             });
 
-            $("body").bind('mouseup', function(event) {
+            $('body').bind('mouseup', function() {
                 if(moveTo.relativeTo) {
                     var cutItem = extractItemId(originalRow.find('.tree_marker').attr('id'));
                     var pastedOn = extractItemId(moveTo.relativeTo.find('.tree_marker').attr('id'));
@@ -223,10 +224,10 @@ django.jQuery(function($){
                             method: 'POST'
                         });
                     } else {
-                        $("#drag_line").remove();
-                        $("#ghost").remove();
+                        $('#drag_line').remove();
+                        $('#ghost').remove();
                     }
-                    $("body").removeClass('dragging').enableSelection().unbind('mousemove').unbind('mouseup');
+                    $('body').removeClass('dragging').enableSelection().unbind('mousemove').unbind('mouseup');
                 }
             });
 
@@ -340,7 +341,7 @@ django.jQuery(function($){
                 break;
             default:
                 break;
-            };
+        }
     }
 
     // fire!
