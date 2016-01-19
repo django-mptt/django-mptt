@@ -3,7 +3,7 @@ Admin classes
 =============
 
 ``mptt.admin.MPTTModelAdmin``
------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This is a bare-bones tree admin. All it does is enforce ordering, and indent the nodes
 in the tree to make a pretty tree list view.
@@ -45,7 +45,7 @@ to your MPTTModelAdmin::
 
 
 ``mptt.admin.DraggableMPTTAdmin``
----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 0.9
 
@@ -58,7 +58,7 @@ drag-drop functionality for moving nodes.
    deeper than 10 levels). Patches implementing lazy-loading of deep trees
    are very much appreciated.
 
-`DraggableMPTTAdmin.list_per_page` is set to 2000 by default (which
+``DraggableMPTTAdmin.list_per_page`` is set to 2000 by default (which
 effectively disables pagination for most trees).
 
 Usage::
@@ -67,4 +67,27 @@ Usage::
     from mptt.admin import DraggableMPTTAdmin
     from myproject.myapp.models import Node
 
-    admin.site.register(Node, DraggableMPTTAdmin)
+    admin.site.register(
+        Node,
+        DraggableMPTTAdmin,
+        list_display=('__str__', ...more fields if you feel like it...),
+    )
+
+Two columns are inserted after the action checkbox column with tree actions
+(move node, toggle subtrees) and an indented title according to the level of the
+tree node. The indented title takes its value from the model instance's
+``__str__`` method. The ``__str__`` entry itself is automatically removed
+from ``list_display``, but it is still recommended to leave it in there for
+clarity.
+
+Overriding admin templates per app or model
+-------------------------------------------
+
+The ``DraggableMPTTAdmin`` comes with a customized template for the admin
+change list. The following template paths may be used to further customize
+the template used:
+
+- ``admin/<app_label>/<model_name>/draggable_mptt_change_list.html``
+- ``admin/<app_label>/draggable_mptt_change_list.html``
+- ``admin/draggable_mptt_change_list.html`` (this template is provided by
+  django-mptt)

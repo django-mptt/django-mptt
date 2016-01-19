@@ -93,10 +93,8 @@ class MPTTModelAdmin(ModelAdmin):
 
 class DraggableMPTTAdmin(MPTTModelAdmin):
     """
-    The ``DraggableMPTTAdmin`` modifies the standard Django administration change list
-    to a drag-drop enabled interface for django-mptt_-managed Django models.
-
-    .. _django-mptt: https://github.com/django-mptt/django-mptt/
+    The ``DraggableMPTTAdmin`` modifies the standard Django administration
+    change list to a drag-drop enabled interface.
     """
 
     list_per_page = 2000  # This will take a really long time to load.
@@ -214,6 +212,10 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
 
 
 class DraggableMPTTAdminContext(object):
+    """
+    Helper object for adding all required data for the draggable mptt admin
+    Javascript code
+    """
     def __init__(self, queryset):
         self.queryset = queryset
         self.model = queryset.model
@@ -240,9 +242,10 @@ class DraggableMPTTAdminContext(object):
 
             {"6": [7, 8, 10]
              "7": [12],
-             "8": [],
              ...
              }
+
+        Leaves are not included in the dictionary.
         """
         all_nodes = {}
 
