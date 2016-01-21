@@ -1964,7 +1964,7 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
         self.assertContains(response, 'collapse_entire_tree', 1)
         self.assertContains(response, 'open_entire_tree', 1)
         self.assertContains(response, 'class="drag_handle"', 3)
-        self.assertContains(response, 'style="width:0px"', 3)
+        self.assertContains(response, 'style="text-indent:0px"', 3)
 
         response = self.client.post(
             '/admin/myapp/person/',
@@ -1990,8 +1990,8 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
             """)
 
         response = self.client.get('/admin/myapp/person/')
-        self.assertContains(response, 'style="width:0px"', 2)
-        self.assertContains(response, 'style="width:20px"', 1)
+        self.assertContains(response, 'style="text-indent:0px"', 2)
+        self.assertContains(response, 'style="text-indent:20px"', 1)
 
         response = self.client.post(
             '/admin/myapp/person/',
