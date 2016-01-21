@@ -70,15 +70,42 @@ Usage::
     admin.site.register(
         Node,
         DraggableMPTTAdmin,
-        list_display=('__str__', ...more fields if you feel like it...),
+        list_display=(
+            'tree_actions',
+            'indented_title',
+            # ...more fields if you feel like it...
+        ),
+        list_display_links=(
+            'indented_title',
+        ),
     )
 
-Two columns are inserted after the action checkbox column with tree actions
-(move node, toggle subtrees) and an indented title according to the level of the
-tree node. The indented title takes its value from the model instance's
-``__str__`` method. The ``__str__`` entry itself is automatically removed
-from ``list_display``, but it is still recommended to leave it in there for
-clarity.
+You should ensure that ``'tree_actions'`` is always the first value
+passed  to ``list_display``. ``indented_title`` does nothing but return
+the indented self-description of nodes, ``20px`` per level. Also, always
+specify ``list_display_links``.
+
+
+Replacing ``indented_title``
+----------------------------
+
+If you want to replace the ``indented_title`` method with your own, we
+recommend using the following code::
+
+    from django.utils.html import format_html
+
+    class MyDraggableMPTTAdmin(DraggableMPTTAdmin):
+        list_display = ('tree_actions', 'something')
+        list_display_links = ('something',)
+
+        def something(self, instance):
+            return format_html(
+                '<div style="text-indent:{}px">{}</div>',
+                instance._mpttfield('level') * 20,
+                item.name,  # Or whatever you want to put here
+            )
+        something.short_description = _('something nice')
+
 
 Overriding admin templates per app or model
 -------------------------------------------

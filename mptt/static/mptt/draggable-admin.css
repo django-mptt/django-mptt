@@ -18,13 +18,9 @@
 
 .drag_handle { background-image: url(arrow-move.png); cursor: move; }
 
-/* the div visualizes the tree structure by pushing the title a bit */
-.field-indented_title a > div { display: inline-block; height: 1px; }
-
 /* focus */
 #result_list tbody tr:focus {
   background-color: #79aec8 !important; outline: 0px; color: #fff; }
-#result_list tbody tr:focus .field-indented_title a { color: #fff; }
 
 #drag_line {
   position: absolute;

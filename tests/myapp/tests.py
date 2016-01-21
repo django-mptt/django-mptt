@@ -1966,18 +1966,6 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
         self.assertContains(response, 'class="drag_handle"', 3)
         self.assertContains(response, 'style="width:0px"', 3)
 
-        # Test whether the short_description substitution was successful
-        self.assertContains(
-            response,
-            '<div class="text"><span>Person</span></div>',
-            html=True,
-        )
-        self.assertNotContains(
-            response,
-            '<div class="text"><span>Title</span></div>',
-            html=True,
-        )
-
         response = self.client.post(
             '/admin/myapp/person/',
             {

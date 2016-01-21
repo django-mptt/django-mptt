@@ -110,30 +110,6 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
             'admin/draggable_mptt_change_list.html',
         ]
 
-        # Set a better header than "title"
-        try:
-            fn = self.__class__.indented_title.im_func
-        except AttributeError:
-            fn = self.__class__.indented_title
-        fn.short_description = opts.verbose_name
-
-    def get_list_display(self, request):
-        list_display = list(super(DraggableMPTTAdmin, self).get_list_display(request))
-        list_display = [
-            l for l in list_display
-            if l not in ('__str__', '__unicode__', 'indented_title', 'tree_actions')
-        ]
-
-        place = 1 if 'action_checkbox' in list_display else 0
-        list_display[place:place] = [
-            'tree_actions',
-            'indented_title',
-        ]
-        return list_display
-
-    def get_list_display_links(self, request, list_display):
-        return ('indented_title',)
-
     def tree_actions(self, item):
         try:
             url = item.get_absolute_url()
@@ -155,7 +131,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         the object's depth in the hierarchy.
         """
         return format_html(
-            '<div style="width:{}px"></div> {}',
+            '<div style="text-indent:{}px">{}</div>',
             item._mpttfield('level') * 20,
             item,
         )
