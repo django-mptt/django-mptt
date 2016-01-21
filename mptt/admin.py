@@ -98,6 +98,8 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
     """
 
     list_per_page = 2000  # This will take a really long time to load.
+    list_display = ('tree_actions', 'indented_title')  # Sane defaults.
+    list_display_links = ('indented_title',)  # Sane defaults.
 
     def __init__(self, *args, **kwargs):
         super(DraggableMPTTAdmin, self).__init__(*args, **kwargs)
