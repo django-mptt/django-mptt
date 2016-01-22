@@ -101,10 +101,14 @@ recommend using the following code::
         def something(self, instance):
             return format_html(
                 '<div style="text-indent:{}px">{}</div>',
-                instance._mpttfield('level') * 20,
+                instance._mpttfield('level') * self.mptt_level_indent,
                 item.name,  # Or whatever you want to put here
             )
         something.short_description = _('something nice')
+
+For changing the indentation per node, look below. Simply replacing
+``indented_title`` is insufficient because the indentation also needs
+to be communicated to the JavaScript code.
 
 
 Overriding admin templates per app or model

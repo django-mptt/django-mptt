@@ -73,7 +73,6 @@ django.jQuery(function($){
      * FeinCMS by Bjorn Post.
      *
      * September 2010
-     *
      */
     $.extend($.fn.feinTree = function() {
         $.each(DraggableMPTTAdmin.treeStructure, function(key, value) {
