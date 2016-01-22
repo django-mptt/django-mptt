@@ -8,7 +8,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.template import Library
 from django.utils.encoding import smart_text, force_text
-from django.utils.html import escape, conditional_escape
+from django.utils.html import escape, escapejs, conditional_escape
 from django.utils.safestring import mark_safe
 from django.utils.translation import get_language_bidi
 
@@ -109,7 +109,7 @@ def mptt_items_for_result(cl, result, form):
             level = getattr(result, result._mptt_meta.level_attr)
             padding_attr = ' style="padding-%s:%spx"' % (
                 'right' if get_language_bidi() else 'left',
-                5 + mptt_level_indent * level)
+                8 + mptt_level_indent * level)
         else:
             padding_attr = ''
         # #### MPTT ADDITION END
@@ -126,14 +126,14 @@ def mptt_items_for_result(cl, result, form):
             else:
                 attr = pk
             value = result.serializable_value(attr)
-            result_id = repr(force_text(value))[1:]
+            result_id = escapejs(value)
             # #### MPTT SUBSTITUTION START
             yield mark_safe('<%s%s%s><a href="%s"%s>%s</a></%s>' % (
                 table_tag,
                 row_class,
                 padding_attr,
                 url,
-                (cl.is_popup and ' onclick="opener.dismissRelatedLookupPopup(window, %s); return false;"' % result_id or ''),  # noqa
+                (cl.is_popup and ' onclick="opener.dismissRelatedLookupPopup(window, &#39;%s&#39;); return false;"' % result_id or ''),  # noqa
                 conditional_escape(result_repr),
                 table_tag))
             # #### MPTT SUBSTITUTION END
