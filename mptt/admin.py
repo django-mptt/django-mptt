@@ -6,6 +6,7 @@ from django import http
 from django.conf import settings
 from django.contrib.admin.actions import delete_selected
 from django.contrib.admin.options import ModelAdmin
+from django.middleware.csrf import get_token
 from django.utils.encoding import force_text
 from django.utils.html import format_html
 from django.utils.translation import ugettext as _
@@ -155,7 +156,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
 
         extra_context = extra_context or {}
         extra_context['draggable_mptt_admin_context'] = DraggableMPTTAdminContext(
-            self.get_queryset(request))
+            request, self.get_queryset(request))
 
         return super(DraggableMPTTAdmin, self).changelist_view(
             request, extra_context, *args, **kwargs)
@@ -195,7 +196,8 @@ class DraggableMPTTAdminContext(object):
     Helper object for adding all required data for the draggable mptt admin
     Javascript code
     """
-    def __init__(self, queryset):
+    def __init__(self, request, queryset):
+        self.request = request
         self.queryset = queryset
         self.model = queryset.model
 
@@ -205,6 +207,7 @@ class DraggableMPTTAdminContext(object):
         return json.dumps({
             'cookieName': 'tree_%s_%s_collapsed' % (opts.app_label, opts.model_name),
             'treeStructure': self.build_tree_structure(),
+            'csrftoken': get_token(self.request),
         })
 
     def build_tree_structure(self):

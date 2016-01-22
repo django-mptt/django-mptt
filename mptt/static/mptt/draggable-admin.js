@@ -1,4 +1,3 @@
-/* global Cookies */
 /* global django */
 // Suppress initial rendering of result list, but only if we can show it with
 // JS later on.
@@ -209,7 +208,7 @@ django.jQuery(function($){
                                 pasted_on: pastedOn
                             },
                             headers: {
-                                'X-CSRFToken': Cookies.get('csrftoken')
+                                'X-CSRFToken': DraggableMPTTAdmin.csrftoken
                             },
                             method: 'POST'
                         });
