@@ -155,8 +155,8 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
                 'Oops. AJAX request not understood.')
 
         extra_context = extra_context or {}
-        extra_context['draggable_mptt_admin_context'] = DraggableMPTTAdminContext(
-            request, self.get_queryset(request))
+        extra_context['draggable_mptt_admin_context'] = self._tree_context(
+            request)
 
         return super(DraggableMPTTAdmin, self).changelist_view(
             request, extra_context, *args, **kwargs)
@@ -190,27 +190,17 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
             _('%s has been successfully moved.') % cut_item)
         return http.HttpResponse('OK, moved.')
 
-
-class DraggableMPTTAdminContext(object):
-    """
-    Helper object for adding all required data for the draggable mptt admin
-    Javascript code
-    """
-    def __init__(self, request, queryset):
-        self.request = request
-        self.queryset = queryset
-        self.model = queryset.model
-
-    def context(self):
+    def _tree_context(self, request):
         opts = self.model._meta
 
         return json.dumps({
-            'cookieName': 'tree_%s_%s_collapsed' % (opts.app_label, opts.model_name),
-            'treeStructure': self.build_tree_structure(),
-            'csrftoken': get_token(self.request),
+            'storageName': 'tree_%s_%s_collapsed' % (opts.app_label, opts.model_name),
+            'treeStructure': self._build_tree_structure(self.get_queryset(request)),
+            'csrftoken': get_token(request),
+            'levelIndent': 20,
         })
 
-    def build_tree_structure(self):
+    def _build_tree_structure(self, queryset):
         """
         Build an in-memory representation of the item tree, trying to keep
         database accesses down to a minimum. The returned dictionary looks like
@@ -226,7 +216,7 @@ class DraggableMPTTAdminContext(object):
         all_nodes = {}
 
         mptt_opts = self.model._mptt_meta
-        items = self.queryset.values_list(
+        items = queryset.values_list(
             'pk',
             '%s_id' % mptt_opts.parent_attr,
         )

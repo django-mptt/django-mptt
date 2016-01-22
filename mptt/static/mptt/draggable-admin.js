@@ -84,7 +84,7 @@ django.jQuery(function($){
             var BEFORE = 0;
             var AFTER = 1;
             var CHILD = 2;
-            var CHILD_PAD = 20;
+            var CHILD_PAD = DraggableMPTTAdmin.levelIndent;
             var originalRow = $(event.target).closest('tr');
             var rowHeight = originalRow.height();
             var moveTo = new Object();
@@ -230,7 +230,7 @@ django.jQuery(function($){
        the current state of the tree so we can restore it on a reload. */
     function storeCollapsedNodes(nodes) {
         window.sessionStorage.setItem(
-            DraggableMPTTAdmin.cookieName,
+            DraggableMPTTAdmin.storageName,
             JSON.stringify(nodes)
         );
     }
@@ -238,7 +238,7 @@ django.jQuery(function($){
     function retrieveCollapsedNodes() {
         try {
             return JSON.parse(window.sessionStorage.getItem(
-                DraggableMPTTAdmin.cookieName
+                DraggableMPTTAdmin.storageName
             ));
         } catch(e) {
             return null;
