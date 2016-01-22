@@ -147,12 +147,13 @@ django.jQuery(function($){
                         }
 
                         if(targetRow) {
-                            var padding = 84 + rowLevel(element) * CHILD_PAD + (targetLoc == CHILD ? CHILD_PAD : 0 );
+                            var left = 84 + (rowLevel(element) + (targetLoc == CHILD ? 1 : 0)) * CHILD_PAD;
+                            var top = (targetLoc == AFTER || targetLoc == CHILD ? rowHeight : 0) - 1;
 
                             $('#drag-line').css({
-                                'width': targetRow.width() - padding,
-                                'left': targetRow.offset().left + padding,
-                                'top': targetRow.offset().top + (targetLoc == AFTER || targetLoc == CHILD ? rowHeight: 0) - 1
+                                'width': targetRow.width() - left,
+                                'left': targetRow.offset().left + left,
+                                'top': targetRow.offset().top + top
                             });
 
                                     // Store the found row and options
