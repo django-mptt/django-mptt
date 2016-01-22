@@ -21,19 +21,6 @@ django.jQuery(function($){
     var DraggableMPTTAdmin = JSON.parse(
         document.getElementById('draggable-mptt-admin-script').getAttribute('data-context'));
 
-    /* Extract an object id (numeric) from a DOM id. Assumes that a "-" is used
-       as delimiter. Returns either the id found or 0 if something went wrong.
-
-           extractItemId('foo_bar_baz-327') -> 327
-     */
-    function extractItemId(elem_id) {
-        var i = elem_id.indexOf('-');
-        if(i >= 0)
-            return parseInt(elem_id.slice(i+1), 10);
-
-        return 0;
-    }
-
     function isExpandedNode(id) {
         return DraggableMPTTAdmin.collapsedNodes.indexOf(id) == -1;
     }
@@ -50,19 +37,23 @@ django.jQuery(function($){
             DraggableMPTTAdmin.collapsedNodes.push(id);
     }
 
+    function treeNode(pk) {
+        return $('.tree-node[data-pk="' + pk + '"]');
+    }
+
     // toggle children
     function doToggle(id, show) {
         var children = DraggableMPTTAdmin.treeStructure[id] || [];
         for (var i=0; i<children.length; ++i) {
             var childId = children[i];
             if(show) {
-                $('#tree_marker-' + childId).closest('tr').show();
+                treeNode(childId).closest('tr').show();
                 // only reveal children if current node is not collapsed
                 if(isExpandedNode(childId)) {
                     doToggle(childId, show);
                 }
             } else {
-                $('#tree_marker-' + childId).closest('tr').hide();
+                treeNode(childId).closest('tr').hide();
                 // always recursively hide children
                 doToggle(childId, show);
             }
@@ -71,8 +62,7 @@ django.jQuery(function($){
 
     function rowLevel($row) {
         try {
-            var level = DraggableMPTTAdmin.nodeLevels[extractItemId($row.find('.tree_marker').attr('id'))];
-            return (level || 0) + 1;
+            return ($row.find('.tree-node').data('level') || 0) + 1;
         } catch (e) {
             return 1;
         }
@@ -88,10 +78,10 @@ django.jQuery(function($){
      */
     $.extend($.fn.feinTree = function() {
         $.each(DraggableMPTTAdmin.treeStructure, function(key, value) {
-          $('#tree_marker-' + key).addClass('children');
+          treeNode(key).addClass('children');
         });
 
-        $('div.drag_handle').bind('mousedown', function(event) {
+        $('div.drag-handle').bind('mousedown', function(event) {
             var BEFORE = 0;
             var AFTER = 1;
             var CHILD = 2;
@@ -121,9 +111,9 @@ django.jQuery(function($){
                     $('html,body').stop().animate({scrollTop: $(window).scrollTop()-250 }, 500);
                 }
 
-                // check if drag_line element already exists, else append
-                if($('#drag_line').length < 1) {
-                    $('body').append('<div id="drag_line"></div>');
+                // check if drag-line element already exists, else append
+                if($('#drag-line').length < 1) {
+                    $('body').append('<div id="drag-line"></div>');
                 }
 
                 // loop trough all rows
@@ -160,7 +150,7 @@ django.jQuery(function($){
                         if(targetRow) {
                             var padding = 84 + rowLevel(element) * CHILD_PAD + (targetLoc == CHILD ? CHILD_PAD : 0 );
 
-                            $('#drag_line').css({
+                            $('#drag-line').css({
                                 'width': targetRow.width() - padding,
                                 'left': targetRow.offset().left + padding,
                                 'top': targetRow.offset().top + (targetLoc == AFTER || targetLoc == CHILD ? rowHeight: 0) - 1
@@ -179,7 +169,7 @@ django.jQuery(function($){
 
             $('body').keydown(function(event) {
                 if (event.which == '27') {
-                    $('#drag_line').remove();
+                    $('#drag-line').remove();
                     $('#ghost').remove();
                     $('body').removeClass('dragging').enableSelection().unbind('mousemove').unbind('mouseup');
                     event.preventDefault();
@@ -188,8 +178,8 @@ django.jQuery(function($){
 
             $('body').bind('mouseup', function() {
                 if(moveTo.relativeTo) {
-                    var cutItem = extractItemId(originalRow.find('.tree_marker').attr('id'));
-                    var pastedOn = extractItemId(moveTo.relativeTo.find('.tree_marker').attr('id'));
+                    var cutItem = originalRow.find('.tree-node').data('pk');
+                    var pastedOn = moveTo.relativeTo.find('.tree-node').data('pk');
 
                     // get out early if items are the same
                     if(cutItem != pastedOn) {
@@ -224,7 +214,7 @@ django.jQuery(function($){
                             method: 'POST'
                         });
                     } else {
-                        $('#drag_line').remove();
+                        $('#drag-line').remove();
                         $('#ghost').remove();
                     }
                     $('body').removeClass('dragging').enableSelection().unbind('mousemove').unbind('mouseup');
@@ -256,7 +246,7 @@ django.jQuery(function($){
         if(!item.hasClass('children'))
             return;
 
-        var itemId = extractItemId(item.attr('id'));
+        var itemId = item.data('pk');
 
         if(!isExpandedNode(itemId)) {
             item.removeClass('closed');
@@ -278,9 +268,9 @@ django.jQuery(function($){
             rlist = $("#result_list");
             rlist.hide();
             $('tbody tr', rlist).each(function(i, el) {
-                var marker = $('.tree_marker', el);
+                var marker = $('.tree-node', el);
                 if(marker.hasClass('children')) {
-                    var itemId = extractItemId(marker.attr('id'));
+                    var itemId = marker.data('pk');
                     doToggle(itemId, false);
                     marker.addClass('closed');
                     markNodeAsCollapsed(itemId);
@@ -298,9 +288,9 @@ django.jQuery(function($){
             rlist = $("#result_list");
             rlist.hide();
             $('tbody tr', rlist).each(function(i, el) {
-                var marker = $('.tree_marker', el);
+                var marker = $('.tree-node', el);
                 if(marker.hasClass('children')) {
-                    var itemId = extractItemId($('.tree_marker', el).attr('id'));
+                    var itemId = $('.tree-node', el).data('pk');
                     doToggle(itemId, true);
                     marker.removeClass('closed');
                     markNodeAsExpanded(itemId);
@@ -334,7 +324,7 @@ django.jQuery(function($){
                 break;
             case 37: // left
             case 39: // right
-                expandOrCollapseNode($(this).find('.tree_marker'));
+                expandOrCollapseNode($(this).find('.tree-node'));
                 break;
             case 13: // return
                 document.location = $('a', this).attr('href');
@@ -351,7 +341,7 @@ django.jQuery(function($){
     if($('tbody tr', rlist).length > 1) {
         rlist_tbody.feinTree();
 
-        rlist.find('.tree_marker').on('click', function(event) {
+        rlist.find('.tree-node').on('click', function(event) {
             event.preventDefault();
             event.stopPropagation();
 
@@ -372,7 +362,7 @@ django.jQuery(function($){
             $('#collapse_entire_tree').click();
         } else {
             for(var i=0; i<storedNodes.length; i++) {
-                expandOrCollapseNode($('#tree_marker-' + storedNodes[i]));
+                expandOrCollapseNode(treeNode(storedNodes[i]));
             }
         }
     }

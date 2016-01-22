@@ -119,10 +119,11 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
             url = ''
 
         return format_html(
-            '<div class="drag_handle"></div>'
-            '<div id="tree_marker-{}" class="tree_marker"'
+            '<div class="drag-handle"></div>'
+            '<div class="tree-node" data-pk="{}" data-level="{}"'
             ' data-url="{}"></div>',
             item.pk,
+            item._mpttfield('level'),
             url,
         )
     tree_actions.short_description = ''
@@ -204,12 +205,6 @@ class DraggableMPTTAdminContext(object):
         return json.dumps({
             'cookieName': 'tree_%s_%s_collapsed' % (opts.app_label, opts.model_name),
             'treeStructure': self.build_tree_structure(),
-            'nodeLevels': dict(
-                self.queryset.values_list(
-                    'pk',
-                    self.model._mptt_meta.level_attr,
-                )
-            ),
         })
 
     def build_tree_structure(self):
