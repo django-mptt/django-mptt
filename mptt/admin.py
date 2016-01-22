@@ -102,6 +102,8 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
     list_display = ('tree_actions', 'indented_title')  # Sane defaults.
     list_display_links = ('indented_title',)  # Sane defaults.
 
+    level_indent = 20
+
     def __init__(self, *args, **kwargs):
         super(DraggableMPTTAdmin, self).__init__(*args, **kwargs)
 
@@ -136,7 +138,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         """
         return format_html(
             '<div style="text-indent:{}px">{}</div>',
-            item._mpttfield('level') * 20,
+            item._mpttfield('level') * self.level_indent,
             item,
         )
     indented_title.short_description = _('title')
@@ -197,7 +199,12 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
             'storageName': 'tree_%s_%s_collapsed' % (opts.app_label, opts.model_name),
             'treeStructure': self._build_tree_structure(self.get_queryset(request)),
             'csrftoken': get_token(request),
-            'levelIndent': 20,
+            'levelIndent': self.level_indent,
+            'moveStrings': {
+                'before': _('move node before node'),
+                'child': _('move node to child position'),
+                'after': _('move node after node'),
+            },
         })
 
     def _build_tree_structure(self, queryset):

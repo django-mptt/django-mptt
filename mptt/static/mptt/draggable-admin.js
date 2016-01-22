@@ -61,9 +61,9 @@ django.jQuery(function($){
 
     function rowLevel($row) {
         try {
-            return ($row.find('.tree-node').data('level') || 0) + 1;
+            return $row.find('.tree-node').data('level') || 0;
         } catch (e) {
-            return 1;
+            return 0;
         }
     }
 
@@ -81,13 +81,14 @@ django.jQuery(function($){
         });
 
         $('div.drag-handle').bind('mousedown', function(event) {
-            var BEFORE = 0;
-            var AFTER = 1;
-            var CHILD = 2;
+            var BEFORE = 'before';
+            var AFTER = 'after';
+            var CHILD = 'child';
             var CHILD_PAD = DraggableMPTTAdmin.levelIndent;
             var originalRow = $(event.target).closest('tr');
             var rowHeight = originalRow.height();
             var moveTo = new Object();
+            var resultListWidth = $('#result_list').width();
 
             $('body').addClass('dragging').disableSelection().bind('mousemove', function(event) {
                 // attach dragged item to mouse
@@ -112,7 +113,7 @@ django.jQuery(function($){
 
                 // check if drag-line element already exists, else append
                 if($('#drag-line').length < 1) {
-                    $('body').append('<div id="drag-line"></div>');
+                    $('body').append('<div id="drag-line"><span></span></div>');
                 }
 
                 // loop trough all rows
@@ -147,16 +148,21 @@ django.jQuery(function($){
                         }
 
                         if(targetRow) {
-                            var left = 84 + (rowLevel(element) + (targetLoc == CHILD ? 1 : 0)) * CHILD_PAD;
-                            var top = (targetLoc == AFTER || targetLoc == CHILD ? rowHeight : 0) - 1;
+
+                            // Positioning relative to cell containing the link
+                            var offset = targetRow.find('th').offset();
+                            var left = offset.left
+                                + rowLevel(targetRow) * CHILD_PAD
+                                + (targetLoc == CHILD ? CHILD_PAD : 0)
+                                + 5; // Center of the circle aligns with start of link text (cell padding!)
 
                             $('#drag-line').css({
-                                'width': targetRow.width() - left,
-                                'left': targetRow.offset().left + left,
-                                'top': targetRow.offset().top + top
-                            });
+                                'width': resultListWidth - left,
+                                'left': left,
+                                'top': offset.top + (targetLoc == BEFORE ? 0 : rowHeight)
+                            }).find('span').text(DraggableMPTTAdmin.moveStrings[targetLoc] || '');
 
-                                    // Store the found row and options
+                            // Store the found row and options
                             moveTo.hovering = element;
                             moveTo.relativeTo = targetRow;
                             moveTo.side = targetLoc;

@@ -118,3 +118,9 @@ the template used:
 - ``admin/<app_label>/draggable_mptt_change_list.html``
 - ``admin/draggable_mptt_change_list.html`` (this template is provided by
   django-mptt)
+
+
+Changing the indentation of nodes
+---------------------------------
+
+Simply set ``level_indent`` to a different pixel value (defaults to ``20``).
