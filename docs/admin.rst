@@ -123,4 +123,10 @@ the template used:
 Changing the indentation of nodes
 ---------------------------------
 
-Simply set ``level_indent`` to a different pixel value (defaults to ``20``).
+Simply set ``mptt_level_indent`` to a different pixel value (defaults
+to ``20``)::
+
+    # ...
+    class MyDraggableMPTTAdmin(DraggableMPTTAdmin):
+        mptt_level_indent = 50
+    # ...
