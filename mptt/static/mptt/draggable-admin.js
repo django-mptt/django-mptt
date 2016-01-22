@@ -227,28 +227,33 @@ django.jQuery(function($){
     });
 
     /* Every time the user expands or collapses a part of the tree, we remember
-       the current state of the tree so we can restore it on a reload.
-       Note: We might use html5's session storage? */
+       the current state of the tree so we can restore it on a reload. */
     function storeCollapsedNodes(nodes) {
-        Cookies.set(
+        window.sessionStorage.setItem(
             DraggableMPTTAdmin.cookieName,
-            nodes,
-            {expires: 7});
+            JSON.stringify(nodes)
+        );
     }
 
     function retrieveCollapsedNodes() {
-        return Cookies.getJSON(DraggableMPTTAdmin.cookieName);
+        try {
+            return JSON.parse(window.sessionStorage.getItem(
+                DraggableMPTTAdmin.cookieName
+            ));
+        } catch(e) {
+            return null;
+        }
     }
 
     function expandOrCollapseNode(item) {
         var show = true;
 
-        if(!item.hasClass('children'))
+        if (!item.hasClass('children'))
             return;
 
         var itemId = item.data('pk');
 
-        if(!isExpandedNode(itemId)) {
+        if (!isExpandedNode(itemId)) {
             item.removeClass('closed');
             markNodeAsExpanded(itemId);
         } else {
@@ -269,7 +274,7 @@ django.jQuery(function($){
             rlist.hide();
             $('tbody tr', rlist).each(function(i, el) {
                 var marker = $('.tree-node', el);
-                if(marker.hasClass('children')) {
+                if (marker.hasClass('children')) {
                     var itemId = marker.data('pk');
                     doToggle(itemId, false);
                     marker.addClass('closed');
@@ -289,7 +294,7 @@ django.jQuery(function($){
             rlist.hide();
             $('tbody tr', rlist).each(function(i, el) {
                 var marker = $('.tree-node', el);
-                if(marker.hasClass('children')) {
+                if (marker.hasClass('children')) {
                     var itemId = $('.tree-node', el).data('pk');
                     doToggle(itemId, true);
                     marker.removeClass('closed');
@@ -315,7 +320,7 @@ django.jQuery(function($){
 
     function keyboardNavigationHandler(event) {
         // console.log('keydown', this, event.keyCode);
-        switch(event.keyCode) {
+        switch (event.keyCode) {
             case 40: // down
                 changelistTab(this, event, 1);
                 break;
@@ -338,7 +343,7 @@ django.jQuery(function($){
     var rlist = $("#result_list"),
         rlist_tbody = rlist.find('tbody');
 
-    if($('tbody tr', rlist).length > 1) {
+    if ($('tbody tr', rlist).length > 1) {
         rlist_tbody.feinTree();
 
         rlist.find('.tree-node').on('click', function(event) {
@@ -358,12 +363,13 @@ django.jQuery(function($){
 
         DraggableMPTTAdmin.collapsedNodes = [];
         var storedNodes = retrieveCollapsedNodes();
-        if(storedNodes == null) {
-            $('#collapse_entire_tree').click();
-        } else {
+
+        if (storedNodes) {
             for(var i=0; i<storedNodes.length; i++) {
                 expandOrCollapseNode(treeNode(storedNodes[i]));
             }
+        } else {
+            $('#collapse_entire_tree').click();
         }
     }
 
