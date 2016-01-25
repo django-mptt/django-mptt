@@ -80,10 +80,14 @@ Usage::
         ),
     )
 
-You should ensure that ``'tree_actions'`` is always the first value
-passed  to ``list_display``. ``indented_title`` does nothing but return
-the indented self-description of nodes, ``20px`` per level. Also, always
-specify ``list_display_links``.
+It is recommended that ``tree_actions`` is the first value passed to
+``list_display``; this also requires you to specify ``list_display_links``
+because ``tree_actions`` cannot be used as the object link field.
+
+
+``indented_title`` does nothing but return the indented self-description
+of nodes, ``20px`` per level (or the value of ``mptt_level_indent``,
+see below.)
 
 
 Replacing ``indented_title``
