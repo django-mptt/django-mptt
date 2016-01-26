@@ -6,7 +6,6 @@ from django import http
 from django.conf import settings
 from django.contrib.admin.actions import delete_selected
 from django.contrib.admin.options import ModelAdmin
-from django.middleware.csrf import get_token
 from django.utils.encoding import force_text
 from django.utils.html import format_html
 from django.utils.translation import ugettext as _
@@ -198,7 +197,6 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         return json.dumps({
             'storageName': 'tree_%s_%s_collapsed' % (opts.app_label, opts.model_name),
             'treeStructure': self._build_tree_structure(self.get_queryset(request)),
-            'csrftoken': get_token(request),
             'levelIndent': self.mptt_level_indent,
             'moveStrings': {
                 'before': _('move node before node'),
