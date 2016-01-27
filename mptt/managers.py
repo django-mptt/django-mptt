@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 import contextlib
 from itertools import groupby
 
-import django
 from django.db import models, connections, router
 from django.db.models import F, ManyToManyField, Max, Q
 from django.utils.translation import ugettext as _
@@ -80,11 +79,11 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         """
         Ensures that this manager always returns nodes in tree order.
         """
-        if django.VERSION < (1, 7):
-            qs = TreeQuerySet(self.model, using=self._db)
-        else:
-            qs = super(TreeManager, self).get_queryset(*args, **kwargs)
-        return qs.order_by(self.tree_id_attr, self.left_attr)
+        return super(TreeManager, self).get_queryset(
+            *args, **kwargs
+        ).order_by(
+            self.tree_id_attr, self.left_attr
+        )
 
     def _get_queryset_relatives(self, queryset, direction, include_self):
         """

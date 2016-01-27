@@ -49,7 +49,7 @@ Requirements
 ------------
 
 * Python 2.7 or 3.2+
-* A supported version of django (currently 1.8+)
+* A supported version of Django (currently 1.8+)
 
 Feature overview
 ----------------
@@ -72,7 +72,7 @@ Feature overview
 
 * A ``TreeManager`` manager is added to all registered models. This provides
   methods to:
-  
+
   * move nodes around a tree, or into a different tree
   * insert a node anywhere in a tree
   * rebuild the MPTT fields for the tree (useful when you do bulk updates
