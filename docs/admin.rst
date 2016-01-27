@@ -50,18 +50,7 @@ to your MPTTModelAdmin::
 .. versionadded:: 0.9
 
 This is a tree admin based on `FeinCMS <http://feincms.org/>`_ offering
-drag-drop functionality for moving nodes.
-
-.. warning::
-
-   Does not work well with big trees (more than a few hundred nodes, or trees
-   deeper than 10 levels). Patches implementing lazy-loading of deep trees
-   are very much appreciated.
-
-``DraggableMPTTAdmin.list_per_page`` is set to 2000 by default (which
-effectively disables pagination for most trees).
-
-Usage::
+drag-drop functionality for moving nodes::
 
     from django.contrib import admin
     from mptt.admin import DraggableMPTTAdmin
@@ -80,14 +69,29 @@ Usage::
         ),
     )
 
+
+.. note::
+
+   Supported browsers include all recent versions of Firefox, Chrome,
+   Safari and Internet Explorer (9 or better).
+
+.. warning::
+
+   Does not work well with big trees (more than a few hundred nodes, or trees
+   deeper than 10 levels). Patches implementing lazy-loading of deep trees
+   are very much appreciated.
+
+
 It is recommended that ``tree_actions`` is the first value passed to
 ``list_display``; this also requires you to specify ``list_display_links``
 because ``tree_actions`` cannot be used as the object link field.
 
-
 ``indented_title`` does nothing but return the indented self-description
 of nodes, ``20px`` per level (or the value of ``mptt_level_indent``,
 see below.)
+
+``list_per_page`` is set to 2000 by default (which effectively disables
+pagination for most trees).
 
 
 Replacing ``indented_title``
