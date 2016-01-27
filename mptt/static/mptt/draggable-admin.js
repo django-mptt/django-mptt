@@ -107,6 +107,9 @@ django.jQuery(function($){
             var resultListWidth = $('#result_list').width();
 
             $('body').addClass('dragging').disableSelection().bind('mousemove', function(event) {
+                // Remove focus
+                originalRow.blur();
+
                 // attach dragged item to mouse
                 var cloned = originalRow.html();
                 if($('#ghost').length == 0) {
