@@ -79,7 +79,11 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         """
         Ensures that this manager always returns nodes in tree order.
         """
-        return self.order_by(self.tree_id_attr, self.left_attr)
+        return super(TreeManager, self).get_queryset(
+            *args, **kwargs
+        ).order_by(
+            self.tree_id_attr, self.left_attr
+        )
 
     def _get_queryset_relatives(self, queryset, direction, include_self):
         """
