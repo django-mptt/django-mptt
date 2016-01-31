@@ -16,8 +16,11 @@ if (!Array.prototype.indexOf) {
 
 django.jQuery(function($){
 
+    // Some old browsers do not support JSON.parse (the only thing we require)
+    var jsonParse = JSON.parse || function jsonParse(sJSON) { return eval('(' + sJSON + ')'); };
+
     /* .dataset.context instead of getAttribute would be nicer */
-    var DraggableMPTTAdmin = JSON.parse(
+    var DraggableMPTTAdmin = jsonParse(
         document.getElementById('draggable-mptt-admin-script').getAttribute('data-context'));
 
     function isExpandedNode(id) {
@@ -254,7 +257,7 @@ django.jQuery(function($){
     /* Every time the user expands or collapses a part of the tree, we remember
        the current state of the tree so we can restore it on a reload. */
     function storeCollapsedNodes(nodes) {
-        window.sessionStorage.setItem(
+        window.sessionStorage && window.sessionStorage.setItem(
             DraggableMPTTAdmin.storageName,
             JSON.stringify(nodes)
         );
