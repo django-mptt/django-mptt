@@ -1,11 +1,16 @@
 from __future__ import unicode_literals
 
+import json
+
+from django import http
 from django.conf import settings
 from django.contrib.admin.actions import delete_selected
 from django.contrib.admin.options import ModelAdmin
 from django.utils.encoding import force_text
+from django.utils.html import format_html
 from django.utils.translation import ugettext as _
 
+from mptt.exceptions import InvalidMove
 from mptt.forms import MPTTAdminForm, TreeNodeChoiceField
 from mptt.models import MPTTModel, TreeForeignKey
 
@@ -84,3 +89,145 @@ class MPTTModelAdmin(ModelAdmin):
                 'delete_selected',
                 _('Delete selected %(verbose_name_plural)s'))
         return actions
+
+
+class DraggableMPTTAdmin(MPTTModelAdmin):
+    """
+    The ``DraggableMPTTAdmin`` modifies the standard Django administration
+    change list to a drag-drop enabled interface.
+    """
+
+    list_per_page = 2000  # This will take a really long time to load.
+    list_display = ('tree_actions', 'indented_title')  # Sane defaults.
+    list_display_links = ('indented_title',)  # Sane defaults.
+
+    mptt_level_indent = 20
+
+    def __init__(self, *args, **kwargs):
+        super(DraggableMPTTAdmin, self).__init__(*args, **kwargs)
+
+        opts = self.model._meta
+        self.change_list_template = [
+            'admin/%s/%s/draggable_mptt_change_list.html' % (
+                opts.app_label, opts.object_name.lower()),
+            'admin/%s/draggable_mptt_change_list.html' % opts.app_label,
+            'admin/draggable_mptt_change_list.html',
+        ]
+
+    def tree_actions(self, item):
+        try:
+            url = item.get_absolute_url()
+        except Exception:  # Nevermind.
+            url = ''
+
+        return format_html(
+            '<div class="drag-handle"></div>'
+            '<div class="tree-node" data-pk="{}" data-level="{}"'
+            ' data-url="{}"></div>',
+            item.pk,
+            item._mpttfield('level'),
+            url,
+        )
+    tree_actions.short_description = ''
+
+    def indented_title(self, item):
+        """
+        Generate a short title for an object, indent it depending on
+        the object's depth in the hierarchy.
+        """
+        return format_html(
+            '<div style="text-indent:{}px">{}</div>',
+            item._mpttfield('level') * self.mptt_level_indent,
+            item,
+        )
+    indented_title.short_description = _('title')
+
+    def changelist_view(self, request, extra_context=None, *args, **kwargs):
+        """
+        Handle the changelist view, the django view for the model instances
+        change list/actions page.
+        """
+        # handle common AJAX requests
+        if request.is_ajax():
+            cmd = request.POST.get('cmd')
+            if cmd == 'move_node':
+                return self._move_node(request)
+            return http.HttpResponseBadRequest(
+                'Oops. AJAX request not understood.')
+
+        extra_context = extra_context or {}
+        extra_context['draggable_mptt_admin_context'] = self._tree_context(
+            request)
+
+        return super(DraggableMPTTAdmin, self).changelist_view(
+            request, extra_context, *args, **kwargs)
+
+    def _move_node(self, request):
+        position = request.POST.get('position')
+        if position not in ('last-child', 'left', 'right'):
+            self.message_user(request, _('Did not understand moving instruction.'))
+            return http.HttpResponse('FAIL, unknown instruction.')
+
+        queryset = self.get_queryset(request)
+        try:
+            cut_item = queryset.get(pk=request.POST.get('cut_item'))
+            pasted_on = queryset.get(pk=request.POST.get('pasted_on'))
+        except (self.model.DoesNotExist, TypeError, ValueError):
+            self.message_user(request, _('Objects have disappeared, try again.'))
+            return http.HttpResponse('FAIL, invalid objects.')
+
+        if not self.has_change_permission(request, cut_item):
+            self.message_user(request, _('No permission'))
+            return http.HttpResponse('FAIL, no permission.')
+
+        try:
+            self.model._tree_manager.move_node(cut_item, pasted_on, position)
+        except InvalidMove as e:
+            self.message_user(request, '%s' % e)
+            return http.HttpResponse('FAIL, invalid move.')
+
+        self.message_user(
+            request,
+            _('%s has been successfully moved.') % cut_item)
+        return http.HttpResponse('OK, moved.')
+
+    def _tree_context(self, request):
+        opts = self.model._meta
+
+        return json.dumps({
+            'storageName': 'tree_%s_%s_collapsed' % (opts.app_label, opts.model_name),
+            'treeStructure': self._build_tree_structure(self.get_queryset(request)),
+            'levelIndent': self.mptt_level_indent,
+            'moveStrings': {
+                'before': _('move node before node'),
+                'child': _('move node to child position'),
+                'after': _('move node after node'),
+            },
+        })
+
+    def _build_tree_structure(self, queryset):
+        """
+        Build an in-memory representation of the item tree, trying to keep
+        database accesses down to a minimum. The returned dictionary looks like
+        this (as json dump):
+
+            {"6": [7, 8, 10]
+             "7": [12],
+             ...
+             }
+
+        Leaves are not included in the dictionary.
+        """
+        all_nodes = {}
+
+        mptt_opts = self.model._mptt_meta
+        items = queryset.values_list(
+            'pk',
+            '%s_id' % mptt_opts.parent_attr,
+        )
+        for p_id, parent_id in items:
+            all_nodes.setdefault(
+                str(parent_id) if parent_id else 0,
+                [],
+            ).append(p_id)
+        return all_nodes
