@@ -13,6 +13,23 @@ if (!Array.prototype.indexOf) {
     };
 }
 
+// https://github.com/jquery/jquery-ui/blob/master/ui/disable-selection.js
+django.jQuery.fn.extend({
+    disableSelection: (function() {
+        var eventType = 'onselectstart' in document.createElement('div') ? 'selectstart' : 'mousedown';
+
+        return function() {
+            return this.on(eventType + '.ui-disableSelection', function(event) {
+                event.preventDefault();
+            });
+        };
+    })(),
+
+    enableSelection: function() {
+        return this.off('.ui-disableSelection');
+    }
+});
+
 
 django.jQuery(function($){
 
