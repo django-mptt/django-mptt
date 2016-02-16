@@ -20,7 +20,7 @@
 
 /* focus */
 #result_list tbody tr:focus {
-  background-color: #ffffcc !important; outline: 0px; color: #000; }
+  background-color: #ffffcc !important; outline: 0px; }
 
 #drag-line {
   position: absolute;
