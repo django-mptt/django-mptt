@@ -1,7 +1,5 @@
 from __future__ import unicode_literals
 
-import json
-
 from django import http
 from django.conf import settings
 from django.contrib.admin.actions import delete_selected
@@ -96,6 +94,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
     The ``DraggableMPTTAdmin`` modifies the standard Django administration
     change list to a drag-drop enabled interface.
     """
+    change_list_template = None  # Back to default
 
     list_per_page = 2000  # This will take a really long time to load.
     list_display = ('tree_actions', 'indented_title')  # Sane defaults.
@@ -103,16 +102,27 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
 
     mptt_level_indent = 20
 
-    def __init__(self, *args, **kwargs):
-        super(DraggableMPTTAdmin, self).__init__(*args, **kwargs)
+    class Media:
+        css = {'all': (
+            'mptt/draggable-admin.css',
+        )}
+        js = (
+            'mptt/draggable-admin.js',
+        )
 
-        opts = self.model._meta
-        self.change_list_template = [
-            'admin/%s/%s/draggable_mptt_change_list.html' % (
-                opts.app_label, opts.object_name.lower()),
-            'admin/%s/draggable_mptt_change_list.html' % opts.app_label,
-            'admin/draggable_mptt_change_list.html',
-        ]
+    def get_urls(self):
+        from django.conf.urls import url
+
+        return [
+            url(
+                r'^draggable-admin/tree-context/$',
+                self.admin_site.admin_view(self.tree_context),
+            ),
+            url(
+                r'^draggable-admin/move-node/$',
+                self.admin_site.admin_view(self.move_node),
+            ),
+        ] + super(DraggableMPTTAdmin, self).get_urls()
 
     def tree_actions(self, item):
         try:
@@ -142,27 +152,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         )
     indented_title.short_description = _('title')
 
-    def changelist_view(self, request, extra_context=None, *args, **kwargs):
-        """
-        Handle the changelist view, the django view for the model instances
-        change list/actions page.
-        """
-        # handle common AJAX requests
-        if request.is_ajax():
-            cmd = request.POST.get('cmd')
-            if cmd == 'move_node':
-                return self._move_node(request)
-            return http.HttpResponseBadRequest(
-                'Oops. AJAX request not understood.')
-
-        extra_context = extra_context or {}
-        extra_context['draggable_mptt_admin_context'] = self._tree_context(
-            request)
-
-        return super(DraggableMPTTAdmin, self).changelist_view(
-            request, extra_context, *args, **kwargs)
-
-    def _move_node(self, request):
+    def move_node(self, request):
         position = request.POST.get('position')
         if position not in ('last-child', 'left', 'right'):
             self.message_user(request, _('Did not understand moving instruction.'))
@@ -191,10 +181,10 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
             _('%s has been successfully moved.') % cut_item)
         return http.HttpResponse('OK, moved.')
 
-    def _tree_context(self, request):
+    def tree_context(self, request):
         opts = self.model._meta
 
-        return json.dumps({
+        return http.JsonResponse({
             'storageName': 'tree_%s_%s_collapsed' % (opts.app_label, opts.model_name),
             'treeStructure': self._build_tree_structure(self.get_queryset(request)),
             'levelIndent': self.mptt_level_indent,
@@ -202,6 +192,8 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
                 'before': _('move node before node'),
                 'child': _('move node to child position'),
                 'after': _('move node after node'),
+                'collapseTree': _('Collapse tree'),
+                'expandTree': _('Expand tree'),
             },
         })
 
