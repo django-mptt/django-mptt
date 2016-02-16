@@ -49,8 +49,8 @@ to your MPTTModelAdmin::
 
 .. versionadded:: 0.9
 
-This is a tree admin based on `FeinCMS <http://feincms.org/>`_ offering
-drag-drop functionality for moving nodes::
+This is a tree admin based on FeinCMS_ offering drag-drop functionality for
+moving nodes::
 
     from django.contrib import admin
     from mptt.admin import DraggableMPTTAdmin
@@ -122,14 +122,9 @@ to be communicated to the JavaScript code.
 Overriding admin templates per app or model
 -------------------------------------------
 
-The ``DraggableMPTTAdmin`` comes with a customized template for the admin
-change list. The following template paths may be used to further customize
-the template used:
-
-- ``admin/<app_label>/<model_name>/draggable_mptt_change_list.html``
-- ``admin/<app_label>/draggable_mptt_change_list.html``
-- ``admin/draggable_mptt_change_list.html`` (this template is provided by
-  django-mptt)
+``DraggableMPTTAdmin`` uses the stock admin changelist template with some CSS
+and JavaScript on top, so simply follow the official guide for
+`overriding admin templates`_.
 
 
 Changing the indentation of nodes
@@ -142,3 +137,7 @@ to ``20``)::
     class MyDraggableMPTTAdmin(DraggableMPTTAdmin):
         mptt_level_indent = 50
     # ...
+
+
+.. _overriding admin templates: https://docs.djangoproject.com/en/1.9/ref/contrib/admin/#overriding-admin-templates
+.. _FeinCMS: https://github.com/feincms/feincms/
