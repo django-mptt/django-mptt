@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+import json
+
 from django import http
 from django.conf import settings
 from django.contrib.admin.actions import delete_selected
@@ -94,12 +96,11 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
     The ``DraggableMPTTAdmin`` modifies the standard Django administration
     change list to a drag-drop enabled interface.
     """
-    change_list_template = None  # Back to default
 
+    change_list_template = None  # Back to default
     list_per_page = 2000  # This will take a really long time to load.
     list_display = ('tree_actions', 'indented_title')  # Sane defaults.
     list_display_links = ('indented_title',)  # Sane defaults.
-
     mptt_level_indent = 20
 
     class Media:
@@ -109,20 +110,6 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         js = (
             'mptt/draggable-admin.js',
         )
-
-    def get_urls(self):
-        from django.conf.urls import url
-
-        return [
-            url(
-                r'^draggable-admin/tree-context/$',
-                self.admin_site.admin_view(self.tree_context),
-            ),
-            url(
-                r'^draggable-admin/move-node/$',
-                self.admin_site.admin_view(self.move_node),
-            ),
-        ] + super(DraggableMPTTAdmin, self).get_urls()
 
     def tree_actions(self, item):
         try:
@@ -152,7 +139,30 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         )
     indented_title.short_description = _('title')
 
-    def move_node(self, request):
+    def changelist_view(self, request, *args, **kwargs):
+        if request.is_ajax() and request.POST.get('cmd') == 'move_node':
+            return self._move_node(request)
+
+        response = super(DraggableMPTTAdmin, self).changelist_view(
+            request, *args, **kwargs)
+
+        # Some sort of inline JS support in forms.Media would be nice, but
+        # as long as we dont have that, inject the required data into the
+        # response using a post render callback.
+        def _callback(response):
+            response.content = response.content.replace(
+                b'</head>',
+                format_html(
+                    '<script id="draggable-mptt-admin-context"'
+                    ' type="application/json" data-context="{}"></script>\n'
+                    '</head>',
+                    json.dumps(self._tree_context(request)),
+                ).encode('utf-8'),
+            )
+        response.add_post_render_callback(_callback)
+        return response
+
+    def _move_node(self, request):
         position = request.POST.get('position')
         if position not in ('last-child', 'left', 'right'):
             self.message_user(request, _('Did not understand moving instruction.'))
@@ -181,10 +191,10 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
             _('%s has been successfully moved.') % cut_item)
         return http.HttpResponse('OK, moved.')
 
-    def tree_context(self, request):
+    def _tree_context(self, request):
         opts = self.model._meta
 
-        return http.JsonResponse({
+        return {
             'storageName': 'tree_%s_%s_collapsed' % (opts.app_label, opts.model_name),
             'treeStructure': self._build_tree_structure(self.get_queryset(request)),
             'levelIndent': self.mptt_level_indent,
@@ -195,7 +205,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
                 'collapseTree': _('Collapse tree'),
                 'expandTree': _('Expand tree'),
             },
-        })
+        }
 
     def _build_tree_structure(self, queryset):
         """

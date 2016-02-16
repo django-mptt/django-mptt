@@ -379,42 +379,44 @@ django.jQuery(function($){
         $a.prependTo('.object-tools').wrap('<li>');
     }
 
-    $.getJSON('draggable-admin/tree-context/', function(data) {
-        DraggableMPTTAdmin = data;
+    // Some old browsers do not support JSON.parse (the only thing we require)
+    var jsonParse = JSON.parse || function jsonParse(sJSON) { return eval('(' + sJSON + ')'); };
 
-        // fire!
-        var rlist = $("#result_list"),
-            rlist_tbody = rlist.find('tbody');
+    DraggableMPTTAdmin = jsonParse(
+        document.getElementById('draggable-mptt-admin-context').getAttribute('data-context'));
 
-        if ($('tbody tr', rlist).length > 1) {
-            rlist_tbody.feinTree();
+    // fire!
+    var rlist = $("#result_list"),
+        rlist_tbody = rlist.find('tbody');
 
-            rlist.find('.tree-node').on('click', function(event) {
-                event.preventDefault();
-                event.stopPropagation();
+    if ($('tbody tr', rlist).length > 1) {
+        rlist_tbody.feinTree();
 
-                expandOrCollapseNode($(this));
-            });
+        rlist.find('.tree-node').on('click', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
 
-            addObjectTool(DraggableMPTTAdmin.messages.collapseTree, collapseTree);
-            addObjectTool(DraggableMPTTAdmin.messages.expandTree, expandTree);
+            expandOrCollapseNode($(this));
+        });
 
-            /* Enable focussing, put focus on first result, add handler for keyboard navigation */
-            $('tr', rlist).attr('tabindex', -1);
-            $('tbody tr:first', rlist).attr('tabindex', 0).focus();
-            $('tr', rlist).keydown(keyboardNavigationHandler);
+        addObjectTool(DraggableMPTTAdmin.messages.collapseTree, collapseTree);
+        addObjectTool(DraggableMPTTAdmin.messages.expandTree, expandTree);
 
-            DraggableMPTTAdmin.collapsedNodes = [];
-            var storedNodes = retrieveCollapsedNodes();
+        /* Enable focussing, put focus on first result, add handler for keyboard navigation */
+        $('tr', rlist).attr('tabindex', -1);
+        $('tbody tr:first', rlist).attr('tabindex', 0).focus();
+        $('tr', rlist).keydown(keyboardNavigationHandler);
 
-            if (storedNodes) {
-                for(var i=0; i<storedNodes.length; i++) {
-                    expandOrCollapseNode(treeNode(storedNodes[i]));
-                }
-            } else {
-                collapseTree();
+        DraggableMPTTAdmin.collapsedNodes = [];
+        var storedNodes = retrieveCollapsedNodes();
+
+        if (storedNodes) {
+            for(var i=0; i<storedNodes.length; i++) {
+                expandOrCollapseNode(treeNode(storedNodes[i]));
             }
+        } else {
+            collapseTree();
         }
+    }
 
-    });
 });
