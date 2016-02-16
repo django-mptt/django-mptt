@@ -146,19 +146,20 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         response = super(DraggableMPTTAdmin, self).changelist_view(
             request, *args, **kwargs)
 
-        # Some sort of inline JS support in forms.Media would be nice, but
-        # as long as we dont have that, inject the required data into the
-        # response using a post render callback.
+        # Some sort of CSP-compatible inline JSON support in forms.Media would
+        # be nice, but as long as we dont have that, inject the required data
+        # into the response using a post render callback.
+        script = format_html(
+            '<script id="draggable-mptt-admin-context"'
+            ' type="application/json" data-context="{}"></script>\n'
+            '</head>',
+            json.dumps(self._tree_context(request)),
+        ).encode('utf-8')
+
         def _callback(response):
             response.content = response.content.replace(
-                b'</head>',
-                format_html(
-                    '<script id="draggable-mptt-admin-context"'
-                    ' type="application/json" data-context="{}"></script>\n'
-                    '</head>',
-                    json.dumps(self._tree_context(request)),
-                ).encode('utf-8'),
-            )
+                b'</head>', script, 1)
+
         response.add_post_render_callback(_callback)
         return response
 
