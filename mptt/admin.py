@@ -188,7 +188,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
             'storageName': 'tree_%s_%s_collapsed' % (opts.app_label, opts.model_name),
             'treeStructure': self._build_tree_structure(self.get_queryset(request)),
             'levelIndent': self.mptt_level_indent,
-            'moveStrings': {
+            'messages': {
                 'before': _('move node before node'),
                 'child': _('move node to child position'),
                 'after': _('move node after node'),

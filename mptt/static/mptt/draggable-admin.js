@@ -193,7 +193,7 @@ django.jQuery(function($){
                                 'width': resultListWidth - left,
                                 'left': left,
                                 'top': offset.top + (targetLoc == BEFORE ? 0 : rowHeight)
-                            }).find('span').text(DraggableMPTTAdmin.moveStrings[targetLoc] || '');
+                            }).find('span').text(DraggableMPTTAdmin.messages[targetLoc] || '');
 
                             // Store the found row and options
                             moveTo.hovering = element;
@@ -396,8 +396,8 @@ django.jQuery(function($){
                 expandOrCollapseNode($(this));
             });
 
-            addObjectTool(DraggableMPTTAdmin.moveStrings.collapseTree, collapseTree);
-            addObjectTool(DraggableMPTTAdmin.moveStrings.expandTree, expandTree);
+            addObjectTool(DraggableMPTTAdmin.messages.collapseTree, collapseTree);
+            addObjectTool(DraggableMPTTAdmin.messages.expandTree, expandTree);
 
             /* Enable focussing, put focus on first result, add handler for keyboard navigation */
             $('tr', rlist).attr('tabindex', -1);
