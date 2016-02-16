@@ -2011,7 +2011,7 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
         response = self.client.get(
             '/admin/myapp/person/draggable-admin/tree-context/',
         )
-        data = json.loads(response.content)
+        data = json.loads(response.content.decode('utf-8'))
         self.assertEqual(
             sorted(data.keys()),
             [
