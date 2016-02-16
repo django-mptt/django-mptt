@@ -383,7 +383,7 @@ django.jQuery(function($){
     var jsonParse = JSON.parse || function jsonParse(sJSON) { return eval('(' + sJSON + ')'); };
 
     DraggableMPTTAdmin = jsonParse(
-        document.getElementById('draggable-mptt-admin-context').getAttribute('data-context'));
+        document.getElementById('draggable-admin-context').getAttribute('data-context'));
 
     // fire!
     var rlist = $("#result_list"),

@@ -150,7 +150,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         # be nice, but as long as we dont have that, inject the required data
         # into the response using a post render callback.
         script = format_html(
-            '<script id="draggable-mptt-admin-context"'
+            '<script id="draggable-admin-context"'
             ' type="application/json" data-context="{}"></script>\n'
             '</head>',
             json.dumps(self._tree_context(request)),

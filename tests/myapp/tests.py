@@ -1963,7 +1963,7 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
         response = self.client.get('/admin/myapp/person/')
         self.assertContains(response, 'class="drag-handle"', 3)
         self.assertContains(response, 'style="text-indent:0px"', 3)
-        self.assertContains(response, 'id="draggable-mptt-admin-context"')
+        self.assertContains(response, 'id="draggable-admin-context"')
 
         response = self.client.post(
             '/admin/myapp/person/',
