@@ -14,7 +14,7 @@ from mptt.exceptions import InvalidMove
 from mptt.forms import MPTTAdminForm, TreeNodeChoiceField
 from mptt.models import MPTTModel, TreeForeignKey
 
-__all__ = ('MPTTModelAdmin', 'MPTTAdminForm')
+__all__ = ('MPTTModelAdmin', 'MPTTAdminForm', 'DraggableMPTTAdmin')
 IS_GRAPPELLI_INSTALLED = 'grappelli' in settings.INSTALLED_APPS
 
 
