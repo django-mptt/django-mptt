@@ -146,11 +146,6 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
     list_display_links = ('indented_title',)  # Sane defaults.
     mptt_level_indent = 20
 
-    class Media:
-        css = {'all': (
-            'mptt/draggable-admin.css',
-        )}
-
     def tree_actions(self, item):
         try:
             url = item.get_absolute_url()
@@ -187,6 +182,9 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
             request, *args, **kwargs)
 
         try:
+            response.context_data['media'].add_css({'all': (
+                'mptt/draggable-admin.css',
+            )})
             response.context_data['media'].add_js((
                 JS('mptt/draggable-admin.js', {
                     'id': 'draggable-admin-context',
