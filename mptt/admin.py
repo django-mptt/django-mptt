@@ -132,9 +132,6 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         css = {'all': (
             'mptt/draggable-admin.css',
         )}
-        js = (
-            'mptt/draggable-admin.js',
-        )
 
     def tree_actions(self, item):
         try:
