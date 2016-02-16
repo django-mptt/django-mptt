@@ -6,6 +6,7 @@ from django import http
 from django.conf import settings
 from django.contrib.admin.actions import delete_selected
 from django.contrib.admin.options import ModelAdmin
+from django.db import IntegrityError, transaction
 from django.utils.encoding import force_text
 from django.utils.html import format_html
 from django.utils.translation import ugettext as _
@@ -14,7 +15,7 @@ from mptt.exceptions import InvalidMove
 from mptt.forms import MPTTAdminForm, TreeNodeChoiceField
 from mptt.models import MPTTModel, TreeForeignKey
 
-__all__ = ('MPTTModelAdmin', 'MPTTAdminForm')
+__all__ = ('MPTTModelAdmin', 'MPTTAdminForm', 'DraggableMPTTAdmin')
 IS_GRAPPELLI_INSTALLED = 'grappelli' in settings.INSTALLED_APPS
 
 
@@ -97,22 +98,19 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
     change list to a drag-drop enabled interface.
     """
 
+    change_list_template = None  # Back to default
     list_per_page = 2000  # This will take a really long time to load.
     list_display = ('tree_actions', 'indented_title')  # Sane defaults.
     list_display_links = ('indented_title',)  # Sane defaults.
-
     mptt_level_indent = 20
 
-    def __init__(self, *args, **kwargs):
-        super(DraggableMPTTAdmin, self).__init__(*args, **kwargs)
-
-        opts = self.model._meta
-        self.change_list_template = [
-            'admin/%s/%s/draggable_mptt_change_list.html' % (
-                opts.app_label, opts.object_name.lower()),
-            'admin/%s/draggable_mptt_change_list.html' % opts.app_label,
-            'admin/draggable_mptt_change_list.html',
-        ]
+    class Media:
+        css = {'all': (
+            'mptt/draggable-admin.css',
+        )}
+        js = (
+            'mptt/draggable-admin.js',
+        )
 
     def tree_actions(self, item):
         try:
@@ -142,26 +140,31 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         )
     indented_title.short_description = _('title')
 
-    def changelist_view(self, request, extra_context=None, *args, **kwargs):
-        """
-        Handle the changelist view, the django view for the model instances
-        change list/actions page.
-        """
-        # handle common AJAX requests
-        if request.is_ajax():
-            cmd = request.POST.get('cmd')
-            if cmd == 'move_node':
-                return self._move_node(request)
-            return http.HttpResponseBadRequest(
-                'Oops. AJAX request not understood.')
+    def changelist_view(self, request, *args, **kwargs):
+        if request.is_ajax() and request.POST.get('cmd') == 'move_node':
+            return self._move_node(request)
 
-        extra_context = extra_context or {}
-        extra_context['draggable_mptt_admin_context'] = self._tree_context(
-            request)
+        response = super(DraggableMPTTAdmin, self).changelist_view(
+            request, *args, **kwargs)
 
-        return super(DraggableMPTTAdmin, self).changelist_view(
-            request, extra_context, *args, **kwargs)
+        # Some sort of CSP-compatible inline JSON support in forms.Media would
+        # be nice, but as long as we dont have that, inject the required data
+        # into the response using a post render callback.
+        script = format_html(
+            '<script id="draggable-admin-context"'
+            ' type="application/json" data-context="{}"></script>\n'
+            '</head>',
+            json.dumps(self._tree_context(request)),
+        ).encode('utf-8')
 
+        def _callback(response):
+            response.content = response.content.replace(
+                b'</head>', script, 1)
+
+        response.add_post_render_callback(_callback)
+        return response
+
+    @transaction.atomic
     def _move_node(self, request):
         position = request.POST.get('position')
         if position not in ('last-child', 'left', 'right'):
@@ -185,6 +188,9 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         except InvalidMove as e:
             self.message_user(request, '%s' % e)
             return http.HttpResponse('FAIL, invalid move.')
+        except IntegrityError as e:
+            self.message_user(request, _('Database error: %s') % e)
+            raise
 
         self.message_user(
             request,
@@ -194,16 +200,18 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
     def _tree_context(self, request):
         opts = self.model._meta
 
-        return json.dumps({
+        return {
             'storageName': 'tree_%s_%s_collapsed' % (opts.app_label, opts.model_name),
             'treeStructure': self._build_tree_structure(self.get_queryset(request)),
             'levelIndent': self.mptt_level_indent,
-            'moveStrings': {
+            'messages': {
                 'before': _('move node before node'),
                 'child': _('move node to child position'),
                 'after': _('move node after node'),
+                'collapseTree': _('Collapse tree'),
+                'expandTree': _('Expand tree'),
             },
-        })
+        }
 
     def _build_tree_structure(self, queryset):
         """

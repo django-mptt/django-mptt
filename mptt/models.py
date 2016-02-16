@@ -269,8 +269,8 @@ class MPTTModelBase(ModelBase):
         else:
             bases = [base for base in cls.mro() if issubclass(base, MPTTModel)]
         for base in bases:
-            if (not (base._meta.abstract or base._meta.proxy)
-                    and base._tree_manager.tree_model is base):
+            if (not (base._meta.abstract or base._meta.proxy) and
+                    base._tree_manager.tree_model is base):
                 cls._mptt_tracking_base = base
                 break
         if cls is cls._mptt_tracking_base:
@@ -754,8 +754,8 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
             right = getattr(self, opts.right_attr)
 
             return (
-                left > getattr(other, opts.left_attr)
-                and right < getattr(other, opts.right_attr))
+                left > getattr(other, opts.left_attr) and
+                right < getattr(other, opts.right_attr))
 
     @raise_if_unsaved
     def is_ancestor_of(self, other, include_self=False):
@@ -902,9 +902,9 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                         # we need to update the parent.rght so things like
                         # get_children and get_descendant_count work correctly.
                         update_cached_parent = (
-                            getattr(self, opts.tree_id_attr) != getattr(parent, opts.tree_id_attr)
-                            or getattr(self, opts.left_attr) < getattr(parent, opts.left_attr)
-                            or getattr(self, opts.right_attr) > getattr(parent, opts.right_attr))
+                            getattr(self, opts.tree_id_attr) != getattr(parent, opts.tree_id_attr) or  # noqa
+                            getattr(self, opts.left_attr) < getattr(parent, opts.left_attr) or
+                            getattr(self, opts.right_attr) > getattr(parent, opts.right_attr))
 
                     if right_sibling:
                         self._tree_manager._move_node(

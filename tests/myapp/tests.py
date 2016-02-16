@@ -1961,10 +1961,9 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
         self.assertNotEqual(p1._mpttfield('tree_id'), p2._mpttfield('tree_id'))
 
         response = self.client.get('/admin/myapp/person/')
-        self.assertContains(response, 'collapse_entire_tree', 1)
-        self.assertContains(response, 'open_entire_tree', 1)
         self.assertContains(response, 'class="drag-handle"', 3)
         self.assertContains(response, 'style="text-indent:0px"', 3)
+        self.assertContains(response, 'id="draggable-admin-context"')
 
         response = self.client.post(
             '/admin/myapp/person/',
