@@ -14,7 +14,7 @@ from django.apps import apps
 from django.forms.models import modelform_factory
 from django.template import Template, TemplateSyntaxError, Context
 from django.test import TestCase
-from django.utils.six import string_types, PY3, b, assertRaisesRegex
+from django.utils.six import string_types, PY3, b, assertRaisesRegex, assertRegex
 
 try:
     from mock_django import mock_signal_receiver
@@ -1963,7 +1963,13 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
         response = self.client.get('/admin/myapp/person/')
         self.assertContains(response, 'class="drag-handle"', 3)
         self.assertContains(response, 'style="text-indent:0px"', 3)
-        self.assertContains(response, 'id="draggable-admin-context"')
+        assertRegex(
+            self,
+            response.content.decode('utf-8'),
+            r'javascript" src=".+draggable-admin.js"\s+data-context="{&quot;')
+        self.assertContains(
+            response,
+            '}" id="draggable-admin-context"></script>')
 
         response = self.client.post(
             '/admin/myapp/person/',
