@@ -242,6 +242,7 @@ django.jQuery(function($){
                                 window.location.reload();
                             },
                             data: {
+                                cmd: 'move_node',
                                 position: position,
                                 cut_item: cutItem,
                                 pasted_on: pastedOn
@@ -249,8 +250,7 @@ django.jQuery(function($){
                             headers: {
                                 'X-CSRFToken': getCookie('csrftoken')
                             },
-                            method: 'POST',
-                            url: 'draggable-admin/move-node/'
+                            method: 'POST'
                         });
                     } else {
                         $('#drag-line').remove();
