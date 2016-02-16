@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 
+from django import forms
 from django.contrib.auth.models import Group, User
 from django.db.models import Q
 from django.db.models.query_utils import DeferredAttribute
@@ -14,14 +15,14 @@ from django.apps import apps
 from django.forms.models import modelform_factory
 from django.template import Template, TemplateSyntaxError, Context
 from django.test import TestCase
-from django.utils.six import string_types, PY3, b, assertRaisesRegex, assertRegex
+from django.utils.six import string_types, PY3, b, assertRaisesRegex
 
 try:
     from mock_django import mock_signal_receiver
 except ImportError:
     mock_signal_receiver = None
 
-
+from mptt.admin import JS
 from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.forms import (
     MPTTAdminForm, TreeNodeChoiceField, TreeNodeMultipleChoiceField,
@@ -1963,10 +1964,10 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
         response = self.client.get('/admin/myapp/person/')
         self.assertContains(response, 'class="drag-handle"', 3)
         self.assertContains(response, 'style="text-indent:0px"', 3)
-        assertRegex(
-            self,
-            response.content.decode('utf-8'),
-            r'javascript" src=".+draggable-admin.js"\s+data-context="{&quot;')
+        self.assertContains(
+            response,
+            'javascript" src="/static/mptt/draggable-admin.js"'
+            ' data-context="{&quot;')
         self.assertContains(
             response,
             '}" id="draggable-admin-context"></script>')
@@ -2033,3 +2034,20 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
             2 - 2 0 1 4
             3 2 2 1 2 3
             """)
+
+    def test_js(self):
+        media = forms.Media()
+        media.add_js([
+            JS('asset1.js', {}),
+            JS('asset2.js', {'id': 'something', 'answer': '"42"'}),
+        ])
+
+        # We can test the exact representation since forms.Media has been
+        # really stable for a long time, and JS() uses flatatt which
+        # alphabetically sorts its attributes.
+        self.assertEqual(
+            '%s' % media,
+            '<script type="text/javascript" src="/static/asset1.js"></script>\n'
+            '<script type="text/javascript" src="/static/asset2.js"'
+            ' answer="&quot;42&quot;" id="something"></script>'
+        )
