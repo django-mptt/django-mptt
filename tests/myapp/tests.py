@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import io
+import json
 import os
 import re
 import sys
@@ -1961,15 +1962,12 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
         self.assertNotEqual(p1._mpttfield('tree_id'), p2._mpttfield('tree_id'))
 
         response = self.client.get('/admin/myapp/person/')
-        self.assertContains(response, 'collapse_entire_tree', 1)
-        self.assertContains(response, 'open_entire_tree', 1)
         self.assertContains(response, 'class="drag-handle"', 3)
         self.assertContains(response, 'style="text-indent:0px"', 3)
 
         response = self.client.post(
-            '/admin/myapp/person/',
+            '/admin/myapp/person/draggable-admin/move-node/',
             {
-                'cmd': 'move_node',
                 'cut_item': p1.pk,
                 'pasted_on': p2.pk,
                 'position': 'last-child',
@@ -1994,9 +1992,8 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
         self.assertContains(response, 'style="text-indent:20px"', 1)
 
         response = self.client.post(
-            '/admin/myapp/person/',
+            '/admin/myapp/person/draggable-admin/move-node/',
             {
-                'cmd': 'move_node',
                 'cut_item': p3.pk,
                 'pasted_on': p1.pk,
                 'position': 'left',
@@ -2010,3 +2007,17 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
             3 2 2 1 2 3
             1 2 2 1 4 5
             """)
+
+        response = self.client.get(
+            '/admin/myapp/person/draggable-admin/tree-context/',
+        )
+        data = json.loads(response.content)
+        self.assertEqual(
+            sorted(data.keys()),
+            [
+                'levelIndent',
+                'messages',
+                'storageName',
+                'treeStructure',
+            ],
+        )
