@@ -6,6 +6,7 @@ from django import http
 from django.conf import settings
 from django.contrib.admin.actions import delete_selected
 from django.contrib.admin.options import ModelAdmin
+from django.db import IntegrityError, transaction
 from django.utils.encoding import force_text
 from django.utils.html import format_html
 from django.utils.translation import ugettext as _
@@ -162,6 +163,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         return super(DraggableMPTTAdmin, self).changelist_view(
             request, extra_context, *args, **kwargs)
 
+    @transaction.atomic
     def _move_node(self, request):
         position = request.POST.get('position')
         if position not in ('last-child', 'left', 'right'):
@@ -185,6 +187,9 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         except InvalidMove as e:
             self.message_user(request, '%s' % e)
             return http.HttpResponse('FAIL, invalid move.')
+        except IntegrityError as e:
+            self.message_user(request, _('Database error: %s') % e)
+            raise
 
         self.message_user(
             request,
