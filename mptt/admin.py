@@ -7,8 +7,10 @@ from django.conf import settings
 from django.contrib.admin.actions import delete_selected
 from django.contrib.admin.options import ModelAdmin
 from django.db import IntegrityError, transaction
+from django.forms.utils import flatatt
+from django.templatetags.static import static
 from django.utils.encoding import force_text
-from django.utils.html import format_html
+from django.utils.html import format_html, mark_safe
 from django.utils.translation import ugettext as _
 
 from mptt.exceptions import InvalidMove
@@ -92,28 +94,57 @@ class MPTTModelAdmin(ModelAdmin):
         return actions
 
 
+class JS(object):
+    """
+    Use this to insert a script tag via ``forms.Media`` containing additional
+    attributes (such as ``id`` and ``data-*`` for CSP-compatible data
+    injection.)::
+
+        media.add_js([
+            JS('asset.js', {
+                'id': 'asset-script',
+                'data-the-answer': '"42"',
+            }),
+        ])
+
+    The rendered media tag (via ``{{ media.js }}`` or ``{{ media }}`` will
+    now contain a script tag as follows, without line breaks::
+
+        <script type="text/javascript" src="/static/asset.js"
+            data-answer="&quot;42&quot;" id="asset-script"></script>
+
+    The attributes are automatically escaped. The data attributes may now be
+    accessed inside ``asset.js``::
+
+        var answer = document.querySelector('#asset-script').dataset.answer;
+    """
+    def __init__(self, js, attrs):
+        self.js = js
+        self.attrs = attrs
+
+    def startswith(self, _):
+        # Masquerade as absolute path so that we are returned as-is.
+        return True
+
+    def __html__(self):
+        return format_html(
+            '{}"{}',
+            static(self.js),
+            mark_safe(flatatt(self.attrs)),
+        ).rstrip('"')
+
+
 class DraggableMPTTAdmin(MPTTModelAdmin):
     """
     The ``DraggableMPTTAdmin`` modifies the standard Django administration
     change list to a drag-drop enabled interface.
     """
 
+    change_list_template = None  # Back to default
     list_per_page = 2000  # This will take a really long time to load.
     list_display = ('tree_actions', 'indented_title')  # Sane defaults.
     list_display_links = ('indented_title',)  # Sane defaults.
-
     mptt_level_indent = 20
-
-    def __init__(self, *args, **kwargs):
-        super(DraggableMPTTAdmin, self).__init__(*args, **kwargs)
-
-        opts = self.model._meta
-        self.change_list_template = [
-            'admin/%s/%s/draggable_mptt_change_list.html' % (
-                opts.app_label, opts.object_name.lower()),
-            'admin/%s/draggable_mptt_change_list.html' % opts.app_label,
-            'admin/draggable_mptt_change_list.html',
-        ]
 
     def tree_actions(self, item):
         try:
@@ -143,25 +174,29 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         )
     indented_title.short_description = _('title')
 
-    def changelist_view(self, request, extra_context=None, *args, **kwargs):
-        """
-        Handle the changelist view, the django view for the model instances
-        change list/actions page.
-        """
-        # handle common AJAX requests
-        if request.is_ajax():
-            cmd = request.POST.get('cmd')
-            if cmd == 'move_node':
-                return self._move_node(request)
-            return http.HttpResponseBadRequest(
-                'Oops. AJAX request not understood.')
+    def changelist_view(self, request, *args, **kwargs):
+        if request.is_ajax() and request.POST.get('cmd') == 'move_node':
+            return self._move_node(request)
 
-        extra_context = extra_context or {}
-        extra_context['draggable_mptt_admin_context'] = self._tree_context(
-            request)
+        response = super(DraggableMPTTAdmin, self).changelist_view(
+            request, *args, **kwargs)
 
-        return super(DraggableMPTTAdmin, self).changelist_view(
-            request, extra_context, *args, **kwargs)
+        try:
+            response.context_data['media'].add_css({'all': (
+                'mptt/draggable-admin.css',
+            )})
+            response.context_data['media'].add_js((
+                JS('mptt/draggable-admin.js', {
+                    'id': 'draggable-admin-context',
+                    'data-context': json.dumps(self._tree_context(request)),
+                }),
+            ),)
+        except (AttributeError, KeyError):
+            # Not meant for us if there is no context_data attribute (no
+            # TemplateResponse) or no media in the context.
+            pass
+
+        return response
 
     @transaction.atomic
     def _move_node(self, request):
@@ -199,16 +234,18 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
     def _tree_context(self, request):
         opts = self.model._meta
 
-        return json.dumps({
+        return {
             'storageName': 'tree_%s_%s_collapsed' % (opts.app_label, opts.model_name),
             'treeStructure': self._build_tree_structure(self.get_queryset(request)),
             'levelIndent': self.mptt_level_indent,
-            'moveStrings': {
+            'messages': {
                 'before': _('move node before node'),
                 'child': _('move node to child position'),
                 'after': _('move node after node'),
+                'collapseTree': _('Collapse tree'),
+                'expandTree': _('Expand tree'),
             },
-        })
+        }
 
     def _build_tree_structure(self, queryset):
         """

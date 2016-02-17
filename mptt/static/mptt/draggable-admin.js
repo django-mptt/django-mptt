@@ -1,7 +1,4 @@
 /* global django */
-// Suppress initial rendering of result list, but only if we can show it with
-// JS later on.
-document.write('<style type="text/css">#result_list { display: none }</style>');
 
 // IE<9 lacks Array.prototype.indexOf
 if (!Array.prototype.indexOf) {
@@ -32,13 +29,10 @@ django.jQuery.fn.extend({
 
 
 django.jQuery(function($){
+    // We are not on a changelist it seems.
+    if (!document.getElementById('result_list')) return;
 
-    // Some old browsers do not support JSON.parse (the only thing we require)
-    var jsonParse = JSON.parse || function jsonParse(sJSON) { return eval('(' + sJSON + ')'); };
-
-    /* .dataset.context instead of getAttribute would be nicer */
-    var DraggableMPTTAdmin = jsonParse(
-        document.getElementById('draggable-mptt-admin-script').getAttribute('data-context'));
+    var DraggableMPTTAdmin = null;
 
     function isExpandedNode(id) {
         return DraggableMPTTAdmin.collapsedNodes.indexOf(id) == -1;
@@ -199,7 +193,7 @@ django.jQuery(function($){
                                 'width': resultListWidth - left,
                                 'left': left,
                                 'top': offset.top + (targetLoc == BEFORE ? 0 : rowHeight)
-                            }).find('span').text(DraggableMPTTAdmin.moveStrings[targetLoc] || '');
+                            }).find('span').text(DraggableMPTTAdmin.messages[targetLoc] || '');
 
                             // Store the found row and options
                             moveTo.hovering = element;
@@ -312,45 +306,39 @@ django.jQuery(function($){
         doToggle(itemId, show);
     }
 
-    // bind the collapse all children event
-    $.extend($.fn.bindCollapseTreeEvent = function() {
-        $(this).click(function() {
-            rlist = $("#result_list");
-            rlist.hide();
-            $('tbody tr', rlist).each(function(i, el) {
-                var marker = $('.tree-node', el);
-                if (marker.hasClass('children')) {
-                    var itemId = marker.data('pk');
-                    doToggle(itemId, false);
-                    marker.addClass('closed');
-                    markNodeAsCollapsed(itemId);
-                }
-            });
-            storeCollapsedNodes(DraggableMPTTAdmin.collapsedNodes);
-            rlist.show();
+    function collapseTree() {
+        var rlist = $("#result_list");
+        rlist.hide();
+        $('tbody tr', rlist).each(function(i, el) {
+            var marker = $('.tree-node', el);
+            if (marker.hasClass('children')) {
+                var itemId = marker.data('pk');
+                doToggle(itemId, false);
+                marker.addClass('closed');
+                markNodeAsCollapsed(itemId);
+            }
         });
-        return this;
-    });
+        storeCollapsedNodes(DraggableMPTTAdmin.collapsedNodes);
+        rlist.show();
+        return false;
+    }
 
-    // bind the open all children event
-    $.extend($.fn.bindOpenTreeEvent = function() {
-        $(this).click(function() {
-            rlist = $("#result_list");
-            rlist.hide();
-            $('tbody tr', rlist).each(function(i, el) {
-                var marker = $('.tree-node', el);
-                if (marker.hasClass('children')) {
-                    var itemId = $('.tree-node', el).data('pk');
-                    doToggle(itemId, true);
-                    marker.removeClass('closed');
-                    markNodeAsExpanded(itemId);
-                }
-            });
-            storeCollapsedNodes([]);
-            rlist.show();
+    function expandTree() {
+        var rlist = $("#result_list");
+        rlist.hide();
+        $('tbody tr', rlist).each(function(i, el) {
+            var marker = $('.tree-node', el);
+            if (marker.hasClass('children')) {
+                var itemId = $('.tree-node', el).data('pk');
+                doToggle(itemId, true);
+                marker.removeClass('closed');
+                markNodeAsExpanded(itemId);
+            }
         });
-        return this;
-    });
+        storeCollapsedNodes([]);
+        rlist.show();
+        return false;
+    }
 
     var changelistTab = function(elem, event, direction) {
         event.preventDefault();
@@ -384,6 +372,22 @@ django.jQuery(function($){
         }
     }
 
+    function addObjectTool(title, handler) {
+        var $a = $('<a href/>');
+        $a.click(handler);
+        $a.text(title);
+        $a.prependTo('.object-tools').wrap('<li>');
+    }
+
+    // Some old browsers do not support JSON.parse (the only thing we require)
+    var jsonParse = JSON.parse || function jsonParse(sJSON) { return eval('(' + sJSON + ')'); };
+
+    DraggableMPTTAdmin = jsonParse(
+        document.getElementById('draggable-admin-context').getAttribute('data-context'));
+
+    addObjectTool(DraggableMPTTAdmin.messages.collapseTree, collapseTree);
+    addObjectTool(DraggableMPTTAdmin.messages.expandTree, expandTree);
+
     // fire!
     var rlist = $("#result_list"),
         rlist_tbody = rlist.find('tbody');
@@ -398,9 +402,6 @@ django.jQuery(function($){
             expandOrCollapseNode($(this));
         });
 
-        $('#collapse_entire_tree').bindCollapseTreeEvent();
-        $('#open_entire_tree').bindOpenTreeEvent();
-
         /* Enable focussing, put focus on first result, add handler for keyboard navigation */
         $('tr', rlist).attr('tabindex', -1);
         $('tbody tr:first', rlist).attr('tabindex', 0).focus();
@@ -414,9 +415,8 @@ django.jQuery(function($){
                 expandOrCollapseNode(treeNode(storedNodes[i]));
             }
         } else {
-            $('#collapse_entire_tree').click();
+            collapseTree();
         }
     }
 
-    rlist.show();
 });

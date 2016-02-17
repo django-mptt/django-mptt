@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 
+from django import forms
 from django.contrib.auth.models import Group, User
 from django.db.models import Q
 from django.db.models.query_utils import DeferredAttribute
@@ -21,7 +22,7 @@ try:
 except ImportError:
     mock_signal_receiver = None
 
-
+from mptt.admin import JS
 from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.forms import (
     MPTTAdminForm, TreeNodeChoiceField, TreeNodeMultipleChoiceField,
@@ -1961,10 +1962,15 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
         self.assertNotEqual(p1._mpttfield('tree_id'), p2._mpttfield('tree_id'))
 
         response = self.client.get('/admin/myapp/person/')
-        self.assertContains(response, 'collapse_entire_tree', 1)
-        self.assertContains(response, 'open_entire_tree', 1)
         self.assertContains(response, 'class="drag-handle"', 3)
         self.assertContains(response, 'style="text-indent:0px"', 3)
+        self.assertContains(
+            response,
+            'javascript" src="/static/mptt/draggable-admin.js"'
+            ' data-context="{&quot;')
+        self.assertContains(
+            response,
+            '}" id="draggable-admin-context"></script>')
 
         response = self.client.post(
             '/admin/myapp/person/',
@@ -2010,3 +2016,38 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
             3 2 2 1 2 3
             1 2 2 1 4 5
             """)
+
+        response = self.client.post('/admin/myapp/person/', {
+            'action': 'delete_selected',
+            '_selected_action': [1],
+        })
+        self.assertContains(response, 'Are you sure?')
+        response = self.client.post('/admin/myapp/person/', {
+            'action': 'delete_selected',
+            '_selected_action': [1],
+            'post': 'yes',
+        })
+
+        self.assertRedirects(response, '/admin/myapp/person/')
+
+        self.assertTreeEqual(Person.objects.all(), """
+            2 - 2 0 1 4
+            3 2 2 1 2 3
+            """)
+
+    def test_js(self):
+        media = forms.Media()
+        media.add_js([
+            JS('asset1.js', {}),
+            JS('asset2.js', {'id': 'something', 'answer': '"42"'}),
+        ])
+
+        # We can test the exact representation since forms.Media has been
+        # really stable for a long time, and JS() uses flatatt which
+        # alphabetically sorts its attributes.
+        self.assertEqual(
+            '%s' % media,
+            '<script type="text/javascript" src="/static/asset1.js"></script>\n'
+            '<script type="text/javascript" src="/static/asset2.js"'
+            ' answer="&quot;42&quot;" id="something"></script>'
+        )
