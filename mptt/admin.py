@@ -11,7 +11,7 @@ from django.forms.utils import flatatt
 from django.templatetags.static import static
 from django.utils.encoding import force_text
 from django.utils.html import format_html, mark_safe
-from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext as _, ugettext_lazy
 
 from mptt.exceptions import InvalidMove
 from mptt.forms import MPTTAdminForm, TreeNodeChoiceField
@@ -172,7 +172,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
             item._mpttfield('level') * self.mptt_level_indent,
             item,
         )
-    indented_title.short_description = _('title')
+    indented_title.short_description = ugettext_lazy('title')
 
     def changelist_view(self, request, *args, **kwargs):
         if request.is_ajax() and request.POST.get('cmd') == 'move_node':
