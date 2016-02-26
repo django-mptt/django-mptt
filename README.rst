@@ -39,7 +39,7 @@ details about how the technique itself works:
 What is ``django-mptt``?
 ========================
 
-``django-mptt`` is a reusable Django app which aims to make it easy for you 
+``django-mptt`` is a reusable Django app which aims to make it easy for you
 to use MPTT with your own Django models.
 
 It takes care of the details of managing a database table as a tree
@@ -83,3 +83,6 @@ Feature overview
 * Utility functions for tree models.
 
 * Template tags and filters for rendering trees.
+
+* Admin classes for visualizing and modifying trees in Django's administration
+  interface.
