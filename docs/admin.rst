@@ -8,6 +8,11 @@ Admin classes
 This is a bare-bones tree admin. All it does is enforce ordering, and indent the nodes
 in the tree to make a pretty tree list view.
 
+.. image:: mpttmodeladmin-genres.png
+    :align: center
+    :width: 26.21cm
+    :alt: MPTTModelAdmin screenshot
+
 Usage::
 
     from django.contrib import admin
@@ -47,7 +52,12 @@ to your MPTTModelAdmin::
 ``mptt.admin.DraggableMPTTAdmin``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 0.9
+.. versionadded:: 0.8.1
+
+.. image:: draggablempttadmin-genres.png
+    :align: center
+    :width: 26.39cm
+    :alt: DraggableMPTTAdmin screenshot
 
 This is a tree admin based on FeinCMS_ offering drag-drop functionality for
 moving nodes::
