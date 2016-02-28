@@ -8,3 +8,4 @@ recursive-include mptt *.json
 recursive-include tests *
 recursive-include mptt/templates *
 recursive-include mptt/locale *
+recursive-include mptt/static *
