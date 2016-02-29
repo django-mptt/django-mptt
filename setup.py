@@ -1,56 +1,42 @@
 #!/usr/bin/env python
-from __future__ import unicode_literals
 
-from mptt import VERSION
+from setuptools import find_packages, setup
 
-requires = (str('Django>=1.8'),)
-try:
-    from setuptools import setup
-    kwargs = {str('install_requires'): requires}
-except ImportError:
-    from distutils.core import setup
-    kwargs = {str('requires'): requires}
 
-# Dynamically calculate the version based on mptt.VERSION
-version_tuple = VERSION
-version = ".".join(str(v) for v in version_tuple)
-
-# on py3, all these are text strings
-# on py2, they're all byte strings.
-# ... and that's how setuptools likes it.
 setup(
-    name=str('django-mptt'),
-    description=str('''Utilities for implementing Modified Preorder Tree Traversal
-        with your Django Models and working with trees of Model instances.'''),
-    version=version,
-    author=str('Craig de Stigter'),
-    author_email=str('craig.ds@gmail.com'),
-    url=str('http://github.com/django-mptt/django-mptt'),
-    packages=[str('mptt'), str('mptt.templatetags')],
-    test_requires=('mock-django>=0.6.7',),
-    package_data={str('mptt'): [
-        str('templates/admin/*'),
-        str('locale/*/*/*.*'),
-        str('static/*/*.*'),
-    ]},
+    name='django-mptt',
+    description='''Utilities for implementing Modified Preorder Tree Traversal
+        with your Django Models and working with trees of Model instances.''',
+    version=__import__('mptt').__version__,
+    author='Craig de Stigter',
+    author_email='craig.ds@gmail.com',
+    url='http://github.com/django-mptt/django-mptt',
+    license='MIT License',
+    packages=find_packages(),
+    include_package_data=True,
+    install_requires=(
+        'Django>=1.8',
+    ),
+    test_requires=(
+        'mock-django>=0.6.7',
+    ),
     classifiers=[
-        str('Development Status :: 4 - Beta'),
-        str('Environment :: Web Environment'),
-        str('Framework :: Django'),
-        str('Intended Audience :: Developers'),
-        str('License :: OSI Approved :: MIT License'),
-        str('Operating System :: OS Independent'),
-        str('Programming Language :: Python'),
-        str("Programming Language :: Python :: 2"),
-        str("Programming Language :: Python :: 2.7"),
-        str("Programming Language :: Python :: 3"),
-        str("Programming Language :: Python :: 3.2"),
-        str("Programming Language :: Python :: 3.3"),
-        str("Programming Language :: Python :: 3.4"),
-        str("Programming Language :: Python :: 3.5"),
-        str("Programming Language :: Python :: Implementation :: CPython"),
-        str("Programming Language :: Python :: Implementation :: PyPy"),
-        str('Topic :: Utilities'),
+        'Development Status :: 4 - Beta',
+        'Environment :: Web Environment',
+        'Framework :: Django',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python',
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.2",
+        "Programming Language :: Python :: 3.3",
+        "Programming Language :: Python :: 3.4",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: Implementation :: CPython",
+        "Programming Language :: Python :: Implementation :: PyPy",
+        'Topic :: Utilities',
     ],
-    **kwargs
 )
