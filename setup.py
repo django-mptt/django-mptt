@@ -17,8 +17,9 @@ setup(
     install_requires=(
         'Django>=1.8',
     ),
-    test_requires=(
+    tests_require=(
         'mock-django>=0.6.7',
+        'mock>=1.3',
     ),
     classifiers=[
         'Development Status :: 4 - Beta',
