@@ -2,6 +2,7 @@
 A custom manager for working with trees of objects.
 """
 from __future__ import unicode_literals
+import functools
 import contextlib
 from itertools import groupby
 
@@ -57,6 +58,18 @@ CUMULATIVE_COUNT_SUBQUERY_M2M = """(
                               AND %(mptt_table)s.%(right)s
     )
 )"""
+
+
+def delegate_manager(method):
+    """
+    Delegate method calls to base manager, if exists.
+    """
+    @functools.wraps(method)
+    def wrapped(self, *args, **kwargs):
+        if self._base_manager:
+            return getattr(self._base_manager, method.__name__)(*args, **kwargs)
+        return method(self, *args, **kwargs)
+    return wrapped
 
 
 class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
@@ -384,25 +397,21 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             new_lookups[join_parts(new_parts)] = v
         return new_lookups
 
+    @delegate_manager
     def _mptt_filter(self, qs=None, **filters):
         """
         Like ``self.filter()``, but translates name-agnostic filters for MPTT
         fields.
         """
-        if self._base_manager:
-            return self._base_manager._mptt_filter(qs=qs, **filters)
-
         if qs is None:
             qs = self
         return qs.filter(**self._translate_lookups(**filters))
 
+    @delegate_manager
     def _mptt_update(self, qs=None, **items):
         """
         Like ``self.update()``, but translates name-agnostic MPTT fields.
         """
-        if self._base_manager:
-            return self._base_manager._mptt_update(qs=qs, **items)
-
         if qs is None:
             qs = self
         return qs.update(**self._translate_lookups(**items))
@@ -486,6 +495,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                 }
         return queryset.extra(select={count_attr: subquery})
 
+    @delegate_manager
     def insert_node(self, node, target, position='last-child', save=False,
                     allow_existing_pk=False, refresh_target=True):
         """
@@ -505,10 +515,6 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         ``MPTTMeta.order_insertion_by``.  In most cases you should just
         set the node's parent and let mptt call this during save.
         """
-
-        if self._base_manager:
-            return self._base_manager.insert_node(
-                node, target, position=position, save=save, allow_existing_pk=allow_existing_pk)
 
         if node.pk and not allow_existing_pk and self.filter(pk=node.pk).exists():
             raise ValueError(_('Cannot insert a node which has already been saved.'))
@@ -566,11 +572,8 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             node.save()
         return node
 
+    @delegate_manager
     def _move_node(self, node, target, position='last-child', save=True, refresh_target=True):
-        if self._base_manager:
-            return self._base_manager._move_node(node, target, position=position,
-                                                 save=save, refresh_target=refresh_target)
-
         if self.tree_model._mptt_is_tracking:
             # delegate to insert_node and clean up the gaps later.
             return self.insert_node(node, target, position=position, save=save,
@@ -614,32 +617,25 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         node_moved.send(sender=node.__class__, instance=node,
                         target=target, position=position)
 
+    @delegate_manager
     def root_node(self, tree_id):
         """
         Returns the root node of the tree with the given id.
         """
-        if self._base_manager:
-            return self._base_manager.root_node(tree_id)
-
         return self._mptt_filter(tree_id=tree_id, parent=None).get()
 
+    @delegate_manager
     def root_nodes(self):
         """
         Creates a ``QuerySet`` containing root nodes.
         """
-        if self._base_manager:
-            return self._base_manager.root_nodes()
-
         return self._mptt_filter(parent=None)
 
+    @delegate_manager
     def rebuild(self):
         """
         Rebuilds all trees in the database table using `parent` link.
         """
-
-        if self._base_manager:
-            return self._base_manager.rebuild()
-
         opts = self.model._mptt_meta
 
         qs = self._mptt_filter(parent=None)
@@ -654,13 +650,12 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             rebuild_helper(pk, 1, idx)
     rebuild.alters_data = True
 
+    @delegate_manager
     def partial_rebuild(self, tree_id):
         """
         Partially rebuilds a tree i.e. It rebuilds only the tree with given
         ``tree_id`` in database table using ``parent`` link.
         """
-        if self._base_manager:
-            return self._base_manager.partial_rebuild(tree_id)
         opts = self.model._mptt_meta
 
         qs = self._mptt_filter(parent=None, tree_id=tree_id)
