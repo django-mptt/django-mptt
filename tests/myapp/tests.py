@@ -14,8 +14,11 @@ from django.db.models.query_utils import DeferredAttribute
 from django.apps import apps
 from django.forms.models import modelform_factory
 from django.template import Template, TemplateSyntaxError, Context
-from django.test import TestCase
+from django.test import RequestFactory, TestCase
 from django.utils.six import string_types, PY3, b, assertRaisesRegex
+from django.contrib.admin.views.main import ChangeList
+from django.contrib.admin import ModelAdmin, site
+from mptt.admin import TreeRelatedFieldListFilter
 
 try:
     from mock_django import mock_signal_receiver
@@ -36,7 +39,7 @@ from mptt.utils import print_debug_info
 from myapp.models import (
     Category, Item, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel,
     ConcreteModel, OrderedInsertion, AutoNowDateFieldModel, Person,
-    CustomTreeQueryset, Node, ReferencingModel, CustomTreeManager)
+    CustomTreeQueryset, Node, ReferencingModel, CustomTreeManager, Book)
 
 
 def get_tree_details(nodes):
@@ -2051,3 +2054,222 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
             '<script type="text/javascript" src="/static/asset2.js"'
             ' answer="&quot;42&quot;" id="something"></script>'
         )
+
+
+class BookAdmin(ModelAdmin):
+    list_filter = (
+        ('fk', TreeRelatedFieldListFilter),
+        ('m2m', TreeRelatedFieldListFilter),
+    )
+    ordering = ('id',)
+
+
+class CategoryAdmin(ModelAdmin):
+    list_filter = (
+        ('books_fk', TreeRelatedFieldListFilter),
+        ('books_m2m', TreeRelatedFieldListFilter),
+    )
+    ordering = ('id',)
+
+
+class ListFiltersTests(TestCase):
+
+    def setUp(self):
+        self.request_factory = RequestFactory()
+
+        self.parent_category = Category.objects.create(name='Parent category')
+        self.child_category1 = Category.objects.create(name='Child category1',
+                                                       parent=self.parent_category)
+        self.child_category2 = Category.objects.create(name='Child category2',
+                                                       parent=self.parent_category)
+        self.simple_category = Category.objects.create(name='Simple category')
+
+        self.book1 = Book.objects.create(name='book1', fk=self.child_category1)
+        self.book2 = Book.objects.create(name='book2', fk=self.parent_category, parent=self.book1)
+        self.book3 = Book.objects.create(name='book3', fk=self.simple_category, parent=self.book1)
+        self.book4 = Book.objects.create(name='book4')
+
+        self.book1.m2m.add(self.child_category1)
+        self.book2.m2m.add(self.parent_category)
+        self.book3.m2m.add(self.simple_category)
+
+    def get_changelist(self, request, model, modeladmin):
+        return ChangeList(
+            request, model, modeladmin.list_display,
+            modeladmin.list_display_links, modeladmin.list_filter,
+            modeladmin.date_hierarchy, modeladmin.search_fields,
+            modeladmin.list_select_related, modeladmin.list_per_page,
+            modeladmin.list_max_show_all, modeladmin.list_editable, modeladmin,
+        )
+
+    def test_treerelatedfieldlistfilter_foreignkey(self):
+        modeladmin = BookAdmin(Book, site)
+
+        request = self.request_factory.get('/')
+        changelist = self.get_changelist(request, Book, modeladmin)
+
+        # Make sure that all categories are present in the referencing model's list filter
+        filterspec = changelist.get_filters(request)[0][0]
+        expected = [
+            (self.parent_category.pk, self.parent_category.name, ' style="padding-left:0px"'),
+            (self.child_category1.pk, self.child_category1.name, ' style="padding-left:10px"'),
+            (self.child_category2.pk, self.child_category2.name, ' style="padding-left:10px"'),
+            (self.simple_category.pk, self.simple_category.name, ' style="padding-left:0px"'),
+        ]
+        self.assertEqual(sorted(filterspec.lookup_choices), sorted(expected))
+
+        request = self.request_factory.get('/', {'fk__isnull': 'True'})
+        changelist = self.get_changelist(request, Book, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual(list(queryset), [self.book4])
+
+        # Make sure the last choice is None and is selected
+        filterspec = changelist.get_filters(request)[0][0]
+        choices = list(filterspec.choices(changelist))
+        self.assertEqual(choices[-1]['selected'], True)
+        self.assertEqual(choices[-1]['query_string'], '?fk__isnull=True')
+
+        # Make sure child's categories books included
+        request = self.request_factory.get('/', {'fk__id__inhierarchy': self.parent_category.pk})
+        changelist = self.get_changelist(request, Book, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual((list(queryset)), [self.book1, self.book2])
+
+        # Make sure filter for child category works as expected
+        request = self.request_factory.get('/', {'fk__id__inhierarchy': self.child_category1.pk})
+        changelist = self.get_changelist(request, Book, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual((list(queryset)), [self.book1])
+
+        # Make sure filter for empty category works as expected
+        request = self.request_factory.get('/', {'fk__id__inhierarchy': self.child_category2.pk})
+        changelist = self.get_changelist(request, Book, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual(queryset.count(), 0)
+
+        # Make sure filter for simple category with no hierarchy works as expected
+        request = self.request_factory.get('/', {'fk__id__inhierarchy': self.simple_category.pk})
+        changelist = self.get_changelist(request, Book, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual((list(queryset)), [self.book3])
+
+    def test_treerelatedfieldlistfilter_manytomany(self):
+        modeladmin = BookAdmin(Book, site)
+
+        request = self.request_factory.get('/')
+        changelist = self.get_changelist(request, Book, modeladmin)
+
+        # Make sure that all categories are present in the referencing model's list filter
+        filterspec = changelist.get_filters(request)[0][1]
+        expected = [
+            (self.parent_category.pk, self.parent_category.name, ' style="padding-left:0px"'),
+            (self.child_category1.pk, self.child_category1.name, ' style="padding-left:10px"'),
+            (self.child_category2.pk, self.child_category2.name, ' style="padding-left:10px"'),
+            (self.simple_category.pk, self.simple_category.name, ' style="padding-left:0px"'),
+
+        ]
+        self.assertEqual(sorted(filterspec.lookup_choices), sorted(expected))
+
+        request = self.request_factory.get('/', {'m2m__isnull': 'True'})
+        changelist = self.get_changelist(request, Book, modeladmin)
+
+        # Make sure the correct queryset is returned
+        queryset = changelist.get_queryset(request)
+        self.assertEqual(list(queryset), [self.book4])
+
+        # Make sure the last choice is None and is selected
+        filterspec = changelist.get_filters(request)[0][1]
+        choices = list(filterspec.choices(changelist))
+        self.assertEqual(choices[-1]['selected'], True)
+        self.assertEqual(choices[-1]['query_string'], '?m2m__isnull=True')
+
+        # Make sure child's categories books included
+        request = self.request_factory.get('/', {'m2m__id__inhierarchy': self.parent_category.pk})
+        changelist = self.get_changelist(request, Book, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual((list(queryset)), [self.book1, self.book2])
+
+        # Make sure filter for child category works as expected
+        request = self.request_factory.get('/', {'m2m__id__inhierarchy': self.child_category1.pk})
+        changelist = self.get_changelist(request, Book, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual((list(queryset)), [self.book1])
+
+        # Make sure filter for empty category works as expected
+        request = self.request_factory.get('/', {'fk__id__inhierarchy': self.child_category2.pk})
+        changelist = self.get_changelist(request, Book, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual(queryset.count(), 0)
+
+        # Make sure filter for simple category with no hierarchy works as expected
+        request = self.request_factory.get('/', {'m2m__id__inhierarchy': self.simple_category.pk})
+        changelist = self.get_changelist(request, Book, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual((list(queryset)), [self.book3])
+
+    def test_treerelatedfieldlistfilter_reverse_relationships(self):
+        modeladmin = CategoryAdmin(Category, site)
+
+        # FK relationship -----
+        request = self.request_factory.get('/', {'books_fk__isnull': 'True'})
+        changelist = self.get_changelist(request, Category, modeladmin)
+
+        # Make sure the correct queryset is returned
+        queryset = changelist.get_queryset(request)
+        self.assertEqual(list(queryset), [self.child_category2])
+
+        # Make sure the last choice is None and is selected
+        filterspec = changelist.get_filters(request)[0][0]
+        choices = list(filterspec.choices(changelist))
+        self.assertEqual(choices[-1]['selected'], True)
+        self.assertEqual(choices[-1]['query_string'], '?books_fk__isnull=True')
+
+        # Make sure child's books categories included
+        request = self.request_factory.get('/', {'books_fk__id__inhierarchy': self.book1.pk})
+        changelist = self.get_changelist(request, Category, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual((list(queryset)),
+                         [self.parent_category, self.child_category1, self.simple_category])
+
+        # Make sure filter for child book works as expected
+        request = self.request_factory.get('/', {'books_fk__id__inhierarchy': self.book2.pk})
+        changelist = self.get_changelist(request, Category, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual((list(queryset)), [self.parent_category])
+
+        # Make sure filter for book with no category works as expected
+        request = self.request_factory.get('/', {'books_fk__id__inhierarchy': self.book4.pk})
+        changelist = self.get_changelist(request, Category, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual(queryset.count(), 0)
+
+        # M2M relationship -----
+        request = self.request_factory.get('/', {'books_m2m__isnull': 'True'})
+        changelist = self.get_changelist(request, Category, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual(list(queryset), [self.child_category2])
+
+        # Make sure the last choice is None and is selected
+        filterspec = changelist.get_filters(request)[0][1]
+        choices = list(filterspec.choices(changelist))
+        self.assertEqual(choices[-1]['selected'], True)
+        self.assertEqual(choices[-1]['query_string'], '?books_m2m__isnull=True')
+
+        # Make sure child's books categories included
+        request = self.request_factory.get('/', {'books_m2m__id__inhierarchy': self.book1.pk})
+        changelist = self.get_changelist(request, Category, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual((list(queryset)),
+                         [self.parent_category, self.child_category1, self.simple_category])
+
+        # Make sure filter for child book works as expected
+        request = self.request_factory.get('/', {'books_m2m__id__inhierarchy': self.book2.pk})
+        changelist = self.get_changelist(request, Category, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual((list(queryset)), [self.parent_category])
+
+        # Make sure filter for book with no category works as expected
+        request = self.request_factory.get('/', {'books_m2m__id__inhierarchy': self.book4.pk})
+        changelist = self.get_changelist(request, Category, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual(queryset.count(), 0)

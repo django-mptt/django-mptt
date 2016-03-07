@@ -290,3 +290,13 @@ TreeForeignKey(
     Group, blank=True, null=True, on_delete=models.CASCADE
 ).contribute_to_class(Group, 'parent')
 mptt.register(Group, order_insertion_by=('name',))
+
+
+class Book(MPTTModel):
+    parent = TreeForeignKey(
+        'self', null=True, blank=True, related_name='children',
+        on_delete=models.CASCADE)
+
+    name = models.CharField(max_length=50)
+    fk = TreeForeignKey(Category, null=True, blank=True, related_name='books_fk')
+    m2m = TreeManyToManyField(Category, null=True, blank=True, related_name='books_m2m')

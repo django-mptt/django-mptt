@@ -151,3 +151,39 @@ to ``20``)::
 
 .. _overriding admin templates: https://docs.djangoproject.com/en/1.9/ref/contrib/admin/#overriding-admin-templates
 .. _FeinCMS: https://github.com/feincms/feincms/
+
+
+``mptt.admin.TreeRelatedFieldListFilter``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Admin filter class which filters models related to parent model with all it's descendants.
+
+.. image:: treerelatedfieldlistlilter-genres.png
+    :align: center
+    :width: 26.21cm
+    :alt: MPTTModelAdmin screenshot
+
+Usage::
+
+    from mptt.admin import TreeRelatedFieldListFilter
+
+    @admin.register(models.MyModel)
+    class MyModelAdmin(admin.ModelAdmin):
+        model = models.MyModel
+        list_filter =
+        (
+            ('my_related_model', TreeRelatedFieldListFilter),
+        )
+
+
+Changing the indentation of list filter nodes
+---------------------------------------------
+
+Simply set ``mptt_level_indent`` to a different pixel value (defaults
+to ``10``)::
+
+    # ...
+    class MyTreeRelatedFieldListFilter(TreeRelatedFieldListFilter):
+    mptt_level_indent = 20
+    # ...
+
