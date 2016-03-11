@@ -311,3 +311,31 @@ class Book(MPTTModel):
     name = models.CharField(max_length=50)
     fk = TreeForeignKey(Category, null=True, blank=True, related_name='books_fk')
     m2m = TreeManyToManyField(Category, null=True, blank=True, related_name='books_m2m')
+
+
+class Model1(MPTTModel):
+    parent = TreeForeignKey('self', null=True, blank=True)
+
+    class Meta:
+        order_with_respect_to = 'parent'
+
+
+class Model2(MPTTModel):
+    parent = TreeForeignKey('self', null=True, blank=True)
+    key = models.IntegerField(default=0)
+
+    class MPTTMeta:
+        order_insertion_by = ['key']
+
+    class Meta:
+        order_with_respect_to = 'parent'
+
+
+class Model3(MPTTModel):
+    parent = TreeForeignKey('self', null=True, blank=True)
+
+    class MPTTMeta:
+        order_insertion_by = ['_order']
+
+    class Meta:
+        order_with_respect_to = 'parent'

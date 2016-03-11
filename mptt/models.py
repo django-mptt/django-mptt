@@ -247,6 +247,12 @@ class MPTTModelBase(ModelBase):
             class MPTTMeta:
                 pass
 
+        # There's no point setting Meta.order_with_respect_to without MPTTMeta.order_insertion_by
+        model_meta = class_dict.get('Meta', None)
+        order_with_respect_to = getattr(model_meta, 'order_with_respect_to', None)
+        if order_with_respect_to:
+            MPTTMeta.order_insertion_by = ['_order']
+
         initial_options = frozenset(dir(MPTTMeta))
 
         # extend MPTTMeta from base classes
@@ -278,6 +284,17 @@ class MPTTModelBase(ModelBase):
             cls._threadlocal = threading.local()
             # set on first access (to make threading errors more obvious):
             #    cls._threadlocal.mptt_delayed_tree_changes = None
+
+        # Decorate original set_FIELD_order to call partial_rebuild
+        if cls._meta.order_with_respect_to:
+            meth_name = 'set_%s_order' % cls._meta.order_with_respect_to.rel.to.__name__.lower()
+            meth = getattr(cls, meth_name)
+
+            def set_field_order(self, tree_id):
+                meth(self, tree_id)
+                cls._tree_manager.partial_rebuild(self.tree_id)
+
+            setattr(cls, meth_name, set_field_order)
 
         return cls
 
@@ -846,6 +863,17 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                     setattr(self, opts.level_attr, 0)
                     setattr(self, opts.tree_id_attr, 0)
             return super(MPTTModel, self).save(*args, **kwargs)
+
+        meta = self._meta
+
+        if meta.order_with_respect_to:
+            # If this is a model with an order_with_respect_to
+            # autopopulate the _order field.
+            field = meta.order_with_respect_to
+            order_value = type(self)._base_manager.filter(
+                **{field.name: getattr(self, field.attname)}).count()
+            self._order = order_value
+            # We set _order field here since it will be used later.
 
         parent_id = opts.get_raw_field_value(self, opts.parent_attr)
 

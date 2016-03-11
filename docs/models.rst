@@ -101,6 +101,10 @@ exist, they will be added to the model dynamically:
    option is handy if you're maintaining mostly static structures, such
    as trees of categories, which should always be in alphabetical order.
 
+   This option is ignored if ``Meta.order_with_respect_to`` is set
+   and the ordering added by ``Meta.order_with_respect_to`` will apply
+   whenever you obtain a list of objects of this model.
+
 
 Registration of existing models
 ===============================

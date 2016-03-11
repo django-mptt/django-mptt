@@ -40,7 +40,7 @@ from myapp.models import (
     Category, Item, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel,
     ConcreteModel, OrderedInsertion, AutoNowDateFieldModel, Person,
     CustomTreeQueryset, Node, ReferencingModel, CustomTreeManager, Book,
-    UUIDNode, Student)
+    UUIDNode, Student, Model1, Model2, Model3)
 
 
 def get_tree_details(nodes):
@@ -2351,3 +2351,39 @@ class DirectParentAssignment(TreeTestCase):
         n2 = Node.objects.create()
         n1.parent_id = n2.id
         n1.save()
+
+
+class OrderWithRespectToTests(TestCase):
+    def test_order_insertion_by_works_implicitly(self):
+        parent = Model1.objects.create()
+        child1 = Model1.objects.create(parent=parent)
+        child2 = Model1.objects.create(parent=parent)
+
+        default_order = list(parent.get_model1_order())
+        self.assertEqual(default_order, [child1.pk, child2.pk])
+        new_order = list(reversed(default_order))
+        parent.set_model1_order(new_order)
+        self.assertEqual(list(parent.get_model1_order()), new_order)
+
+    def test_order_insertion_by_works_implicitly_with_order_with_respect_to(self):
+        parent = Model2.objects.create()
+        child2 = Model2.objects.create(parent=parent, key=2)
+        child1 = Model2.objects.create(parent=parent, key=1)
+
+        default_order = list(parent.get_model2_order())
+        self.assertEqual(default_order, [child2.pk, child1.pk])
+        # order_insertion_by = ['key'] is ignored, ordered by _order instead
+        new_order = list(reversed(default_order))
+        parent.set_model2_order(new_order)
+        self.assertEqual(list(parent.get_model2_order()), new_order)
+
+    def test_order_insertion_by(self):
+        parent = Model3.objects.create()
+        child1 = Model3.objects.create(parent=parent)
+        child2 = Model3.objects.create(parent=parent)
+
+        default_order = list(parent.get_model3_order())
+        self.assertEqual(default_order, [child1.pk, child2.pk])
+        new_order = list(reversed(default_order))
+        parent.set_model3_order(new_order)
+        self.assertEqual(list(parent.get_model3_order()), new_order)
