@@ -2362,3 +2362,73 @@ class NullableOrderedInsertion(TreeTestCase):
             2 1 1 1 2 3
             3 1 1 1 4 5
         """)
+
+
+class BulkLoadTests(TestCase):
+
+    fixtures = ['categories.json']
+
+    def setUp(self):
+        self.games = {
+            'id': 11,
+            'name': 'Role-playing',
+            'children': [
+                {
+                    'id': 12,
+                    'parent_id': 11,
+                    'name': 'Single-player',
+                },
+                {
+                    'id': 13,
+                    'parent_id': 11,
+                    'name': 'Multi-player',
+                },
+            ],
+        }
+
+    def test_bulk_root(self):
+        data = {
+            'id': 11,
+            'name': 'Enterprise Software',
+            'children': [
+                {
+                    'id': 12,
+                    'parent_id': 11,
+                    'name': 'Databases',
+                },
+                {
+                    'id': 13,
+                    'parent_id': 11,
+                    'name': 'Timekeeping',
+                },
+            ],
+        }
+        records = Category.bulk_load(data)
+        self.assertEqual(len(records), 3)
+        self.assertEqual((records[0].lft, records[0].rght), (1, 6))
+        self.assertEqual((records[1].lft, records[1].rght), (2, 3))
+        self.assertEqual((records[2].lft, records[2].rght), (4, 5))
+
+    def test_bulk_last_child(self):
+        games = Category.objects.get(id=3)
+        records = Category.bulk_load(self.games, target=games)
+        self.assertEqual(len(records), 3)
+        for record in records:
+            self.assertEqual(record.tree_id, games.tree_id)
+        self.assertEqual((records[0].lft, records[0].rght), (4, 9))
+        self.assertEqual((records[1].lft, records[1].rght), (5, 6))
+        self.assertEqual((records[2].lft, records[2].rght), (7, 8))
+        games.refresh_from_db()
+        self.assertEqual((games.lft, games.rght), (3, 10))
+
+    def test_bulk_left(self):
+        games = Category.objects.get(id=3)
+        records = Category.bulk_load(self.games, target=games, position='left')
+        self.assertEqual(len(records), 3)
+        for record in records:
+            self.assertEqual(record.tree_id, games.tree_id)
+        self.assertEqual((records[0].lft, records[0].rght), (3, 8))
+        self.assertEqual((records[1].lft, records[1].rght), (4, 5))
+        self.assertEqual((records[2].lft, records[2].rght), (6, 7))
+        games.refresh_from_db()
+        self.assertEqual((games.lft, games.rght), (9, 10))
