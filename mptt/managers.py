@@ -6,7 +6,7 @@ import functools
 import contextlib
 from itertools import groupby
 
-from django.db import models, connections, router
+from django.db import models, connections, router, transaction
 from django.db.models import F, ManyToManyField, Max, Q
 from django.utils.translation import ugettext as _
 
@@ -632,6 +632,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         return self._mptt_filter(parent=None)
 
     @delegate_manager
+    @transaction.atomic
     def rebuild(self):
         """
         Rebuilds all trees in the database table using `parent` link.
