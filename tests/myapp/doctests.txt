@@ -176,7 +176,7 @@
 
 >>> form = MoveNodeForm(Genre.objects.get(pk=7))
 >>> print(form['target'])
-<select id="id_target" name="target" size="10">
+<select id="id_target" name="target" size="10"...>
 <option value="" selected="selected">---------</option>
 <option value="1"> Action</option>
 <option value="2">--- Platformer</option>
@@ -189,7 +189,7 @@
 
 >>> form = MoveNodeForm(Genre.objects.get(pk=7), level_indicator=u'+--', target_select_size=5)
 >>> print(form['target'])
-<select id="id_target" name="target" size="5">
+<select id="id_target" name="target" size="5"...>
 <option value="" selected="selected">---------</option>
 <option value="1"> Action</option>
 <option value="2">+-- Platformer</option>
@@ -202,7 +202,7 @@
 
 >>> form = MoveNodeForm(Genre.objects.get(pk=7), position_choices=(('left', 'left'),))
 >>> print(form['position'])
-<select id="id_position" name="position">
+<select id="id_position" name="position"...>
 <option value="left">left</option>
 </select>
 

@@ -114,7 +114,7 @@ class DocTestTestCase(TreeTestCase):
                 doctest.testfile(
                     temp.name,
                     module_relative=False,
-                    optionflags=doctest.IGNORE_EXCEPTION_DETAIL,
+                    optionflags=doctest.IGNORE_EXCEPTION_DETAIL | doctest.ELLIPSIS,
                     encoding='utf-8',
                 )
                 sys.stdout = before
