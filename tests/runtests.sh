@@ -15,13 +15,7 @@ else
     export COVERAGE=''
 fi
 
-export args="$@"
-if [ -z "$args" ] ; then
-    # avoid running the tests for django.contrib.* (they're in INSTALLED_APPS)
-    export args=myapp
-fi
-
-$COVERAGE $DJANGO_ADMIN test --traceback --settings=$DJANGO_SETTINGS_MODULE --verbosity 2 --pythonpath="../" "$args"
+$COVERAGE $DJANGO_ADMIN test --traceback --settings=$DJANGO_SETTINGS_MODULE --verbosity 2 --pythonpath="../" "$@"
 
 if [ `which coverage` ] ; then
     coverage report
