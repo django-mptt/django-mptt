@@ -131,10 +131,11 @@ class MPTTOptions(object):
                 if f[0] == '-':
                     f = f[1:]
                 field_names.add(f)
+        deferred_fields = instance.get_deferred_fields()
         for field_name in field_names:
-            if instance._deferred:
+            if deferred_fields:
                 field = instance._meta.get_field(field_name)
-                if field.attname in instance.get_deferred_fields() \
+                if field.attname in deferred_fields \
                         and field.attname not in instance.__dict__:
                     # deferred attribute (i.e. via .only() or .defer())
                     # It'd be silly to cache this (that'd do a database query)
