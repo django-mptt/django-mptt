@@ -300,3 +300,10 @@ class Book(MPTTModel):
     name = models.CharField(max_length=50)
     fk = TreeForeignKey(Category, null=True, blank=True, related_name='books_fk')
     m2m = TreeManyToManyField(Category, null=True, blank=True, related_name='books_m2m')
+
+# test behaviour with unique_together
+class UniqueCodePerParentModel(MPTTModel):
+    class Meta:
+        unique_together = (('parent','code',),)
+    parent = TreeForeignKey('self', null=True)
+    code = models.CharField(max_length=50)
