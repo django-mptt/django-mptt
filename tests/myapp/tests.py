@@ -11,6 +11,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.db.models import Q, Manager
 from django.db.models.query_utils import DeferredAttribute
+from django.db.utils import IntegrityError
 from django.apps import apps
 from django.forms.models import modelform_factory
 from django.template import Template, TemplateSyntaxError, Context
@@ -40,7 +41,7 @@ from myapp.models import (
     Category, Item, Genre, CustomPKName, SingleProxyModel,
     ConcreteModel, OrderedInsertion, AutoNowDateFieldModel, Person,
     CustomTreeQueryset, Node, ReferencingModel, CustomTreeManager, Book,
-    UUIDNode)
+    UUIDNode, UniqueCodePerParentModel)
 
 
 def get_tree_details(nodes):
@@ -2018,3 +2019,34 @@ class FromDoctests(TreeTestCase):
         2 - 1 0 1 2
         1 - 2 0 1 2
         ''')
+
+
+class UniqueTogetherTestCase(TreeTestCase):
+    def test_move_and_conflict(self):
+        a = UniqueCodePerParentModel.objects.create(code='a', parent=None)
+        b = UniqueCodePerParentModel.objects.create(code='b', parent=None)
+        UniqueCodePerParentModel.objects.create(code='1', parent=a)
+        b1 = UniqueCodePerParentModel.objects.create(code='1', parent=b)
+
+        b1.parent = a  # it tries to be a1, conflicting
+        self.assertRaises(IntegrityError, lambda: b1.save())
+
+    def test_move_and_deconflict(self):
+        c = UniqueCodePerParentModel.objects.create(code='c', parent=None)
+        d = UniqueCodePerParentModel.objects.create(code='d', parent=None)
+        UniqueCodePerParentModel.objects.create(code='1', parent=c)
+        d1 = UniqueCodePerParentModel.objects.create(code='1', parent=d)
+
+        d1.code = '2'
+        d1.parent = c
+        d1.save()  # it tries to be c2, not conflicting
+
+    def test_deconflict_and_move(self):
+        e = UniqueCodePerParentModel.objects.create(code='e', parent=None)
+        f = UniqueCodePerParentModel.objects.create(code='f', parent=None)
+        UniqueCodePerParentModel.objects.create(code='1', parent=e)
+        e2 = UniqueCodePerParentModel.objects.create(code='2', parent=e)
+
+        e2.code = '1'
+        e2.parent = f
+        e2.save()  # it tries to be f1, not conflicting
