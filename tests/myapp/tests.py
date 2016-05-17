@@ -14,8 +14,11 @@ from django.db.models.query_utils import DeferredAttribute
 from django.apps import apps
 from django.forms.models import modelform_factory
 from django.template import Template, TemplateSyntaxError, Context
-from django.test import TestCase
+from django.test import RequestFactory, TestCase
 from django.utils.six import string_types, PY3, b, assertRaisesRegex
+from django.contrib.admin.views.main import ChangeList
+from django.contrib.admin import ModelAdmin, site
+from mptt.admin import TreeRelatedFieldListFilter
 
 try:
     from mock_django import mock_signal_receiver
@@ -36,7 +39,8 @@ from mptt.utils import print_debug_info
 from myapp.models import (
     Category, Item, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel,
     ConcreteModel, OrderedInsertion, AutoNowDateFieldModel, Person,
-    CustomTreeQueryset, Node, ReferencingModel, CustomTreeManager)
+    CustomTreeQueryset, Node, ReferencingModel, CustomTreeManager, Book,
+    UUIDNode)
 
 
 def get_tree_details(nodes):
@@ -69,6 +73,7 @@ def tree_details(text):
 
 
 class TreeTestCase(TestCase):
+
     def assertTreeEqual(self, tree1, tree2):
         if not isinstance(tree1, string_types):
             tree1 = get_tree_details(tree1)
@@ -80,6 +85,7 @@ class TreeTestCase(TestCase):
 
 
 class DocTestTestCase(TreeTestCase):
+
     def test_run_doctest(self):
         class DummyStream:
             content = ""
@@ -139,6 +145,7 @@ class DocTestTestCase(TreeTestCase):
 
 
 class ReparentingTestCase(TreeTestCase):
+
     """
     Test that trees are in the appropriate state after reparenting and
     that reparented items have the correct tree attributes defined,
@@ -318,10 +325,12 @@ class ReparentingTestCase(TreeTestCase):
 
 
 class ConcurrencyTestCase(TreeTestCase):
+
     """
     Test that tree structure remains intact when saving nodes (without setting new parent) after
     tree structure has been changed.
     """
+
     def setUp(self):
         fruit = ConcreteModel.objects.create(name="Fruit")
         vegie = ConcreteModel.objects.create(name="Vegie")
@@ -424,6 +433,7 @@ class ConcurrencyTestCase(TreeTestCase):
 
 
 class DeletionTestCase(TreeTestCase):
+
     """
     Tests that the tree structure is maintained appropriately in various
     deletion scenarios.
@@ -536,6 +546,7 @@ class PositionedInsertionTestCase(TreeTestCase):
 
 
 class CustomPKNameTestCase(TreeTestCase):
+
     def setUp(self):
         manager = CustomPKName.objects
         c1 = manager.create(name="c1")
@@ -555,6 +566,7 @@ class CustomPKNameTestCase(TreeTestCase):
 
 
 class DisabledUpdatesTestCase(TreeTestCase):
+
     def setUp(self):
         self.a = ConcreteModel.objects.create(name="a")
         self.b = ConcreteModel.objects.create(name="b", parent=self.a)
@@ -745,6 +757,7 @@ class DisabledUpdatesTestCase(TreeTestCase):
 
 
 class DelayedUpdatesTestCase(TreeTestCase):
+
     def setUp(self):
         self.a = ConcreteModel.objects.create(name="a")
         self.b = ConcreteModel.objects.create(name="b", parent=self.a)
@@ -949,6 +962,7 @@ class DelayedUpdatesTestCase(TreeTestCase):
 
 
 class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
+
     def setUp(self):
         self.c = OrderedInsertion.objects.create(name="c")
         self.d = OrderedInsertion.objects.create(name="d", parent=self.c)
@@ -1280,6 +1294,7 @@ class ManagerTests(TreeTestCase):
 
 
 class CacheTreeChildrenTestCase(TreeTestCase):
+
     """
     Tests for the ``cache_tree_children`` template filter.
     """
@@ -1320,6 +1335,7 @@ class CacheTreeChildrenTestCase(TreeTestCase):
 
 
 class RecurseTreeTestCase(TreeTestCase):
+
     """
     Tests for the ``recursetree`` template filter.
     """
@@ -1518,6 +1534,7 @@ class TestAutoNowDateFieldModel(TreeTestCase):
 
 
 class RegisteredRemoteModel(TreeTestCase):
+
     def test_save_registered_model(self):
         g1 = Group.objects.create(name='group 1')
         g1.save()
@@ -1600,6 +1617,7 @@ class TestForms(TreeTestCase):
 
 
 class TestAltersData(TreeTestCase):
+
     def test_alters_data(self):
         node = Node()
         output = Template('{{ node.save }}').render(Context({
@@ -1676,6 +1694,7 @@ class AdminBatch(TreeTestCase):
 
 
 class TestUnsaved(TreeTestCase):
+
     def test_unsaved(self):
         for method in [
             'get_ancestors',
@@ -1755,6 +1774,7 @@ class TreeManagerTestCase(TreeTestCase):
 
 
 class TestOrderedInsertionBFS(TreeTestCase):
+
     def test_insert_ordered_DFS_backwards_root_nodes(self):
         rock = OrderedInsertion.objects.create(name="Rock")
 
@@ -1829,6 +1849,7 @@ class TestOrderedInsertionBFS(TreeTestCase):
 
 
 class CacheChildrenTestCase(TreeTestCase):
+
     """
     Tests that the queryset function `get_cached_trees` results in a minimum
     number of database queries.
@@ -1907,9 +1928,11 @@ class Signals(TestCase):
 
 
 class DeferredAttributeTests(TreeTestCase):
+
     """
     Regression tests for #176 and #424
     """
+
     def setUp(self):
         OrderedInsertion.objects.create(name="a")
 
@@ -1949,6 +1972,7 @@ class DeferredAttributeTests(TreeTestCase):
 
 
 class DraggableMPTTAdminTestCase(TreeTestCase):
+
     def setUp(self):
         self.user = User.objects.create_superuser(
             'admin', 'test@example.com', 'p')
@@ -2051,3 +2075,242 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
             '<script type="text/javascript" src="/static/asset2.js"'
             ' answer="&quot;42&quot;" id="something"></script>'
         )
+
+
+class BookAdmin(ModelAdmin):
+    list_filter = (
+        ('fk', TreeRelatedFieldListFilter),
+        ('m2m', TreeRelatedFieldListFilter),
+    )
+    ordering = ('id',)
+
+
+class CategoryAdmin(ModelAdmin):
+    list_filter = (
+        ('books_fk', TreeRelatedFieldListFilter),
+        ('books_m2m', TreeRelatedFieldListFilter),
+    )
+    ordering = ('id',)
+
+
+class ListFiltersTests(TestCase):
+
+    def setUp(self):
+        self.request_factory = RequestFactory()
+
+        self.parent_category = Category.objects.create(name='Parent category')
+        self.child_category1 = Category.objects.create(name='Child category1',
+                                                       parent=self.parent_category)
+        self.child_category2 = Category.objects.create(name='Child category2',
+                                                       parent=self.parent_category)
+        self.simple_category = Category.objects.create(name='Simple category')
+
+        self.book1 = Book.objects.create(name='book1', fk=self.child_category1)
+        self.book2 = Book.objects.create(name='book2', fk=self.parent_category, parent=self.book1)
+        self.book3 = Book.objects.create(name='book3', fk=self.simple_category, parent=self.book1)
+        self.book4 = Book.objects.create(name='book4')
+
+        self.book1.m2m.add(self.child_category1)
+        self.book2.m2m.add(self.parent_category)
+        self.book3.m2m.add(self.simple_category)
+
+    def get_changelist(self, request, model, modeladmin):
+        return ChangeList(
+            request, model, modeladmin.list_display,
+            modeladmin.list_display_links, modeladmin.list_filter,
+            modeladmin.date_hierarchy, modeladmin.search_fields,
+            modeladmin.list_select_related, modeladmin.list_per_page,
+            modeladmin.list_max_show_all, modeladmin.list_editable, modeladmin,
+        )
+
+    def test_treerelatedfieldlistfilter_foreignkey(self):
+        modeladmin = BookAdmin(Book, site)
+
+        request = self.request_factory.get('/')
+        changelist = self.get_changelist(request, Book, modeladmin)
+
+        # Make sure that all categories are present in the referencing model's list filter
+        filterspec = changelist.get_filters(request)[0][0]
+        expected = [
+            (self.parent_category.pk, self.parent_category.name, ' style="padding-left:0px"'),
+            (self.child_category1.pk, self.child_category1.name, ' style="padding-left:10px"'),
+            (self.child_category2.pk, self.child_category2.name, ' style="padding-left:10px"'),
+            (self.simple_category.pk, self.simple_category.name, ' style="padding-left:0px"'),
+        ]
+        self.assertEqual(sorted(filterspec.lookup_choices), sorted(expected))
+
+        request = self.request_factory.get('/', {'fk__isnull': 'True'})
+        changelist = self.get_changelist(request, Book, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual(list(queryset), [self.book4])
+
+        # Make sure the last choice is None and is selected
+        filterspec = changelist.get_filters(request)[0][0]
+        choices = list(filterspec.choices(changelist))
+        self.assertEqual(choices[-1]['selected'], True)
+        self.assertEqual(choices[-1]['query_string'], '?fk__isnull=True')
+
+        # Make sure child's categories books included
+        request = self.request_factory.get('/', {'fk__id__inhierarchy': self.parent_category.pk})
+        changelist = self.get_changelist(request, Book, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual((list(queryset)), [self.book1, self.book2])
+
+        # Make sure filter for child category works as expected
+        request = self.request_factory.get('/', {'fk__id__inhierarchy': self.child_category1.pk})
+        changelist = self.get_changelist(request, Book, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual((list(queryset)), [self.book1])
+
+        # Make sure filter for empty category works as expected
+        request = self.request_factory.get('/', {'fk__id__inhierarchy': self.child_category2.pk})
+        changelist = self.get_changelist(request, Book, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual(queryset.count(), 0)
+
+        # Make sure filter for simple category with no hierarchy works as expected
+        request = self.request_factory.get('/', {'fk__id__inhierarchy': self.simple_category.pk})
+        changelist = self.get_changelist(request, Book, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual((list(queryset)), [self.book3])
+
+    def test_treerelatedfieldlistfilter_manytomany(self):
+        modeladmin = BookAdmin(Book, site)
+
+        request = self.request_factory.get('/')
+        changelist = self.get_changelist(request, Book, modeladmin)
+
+        # Make sure that all categories are present in the referencing model's list filter
+        filterspec = changelist.get_filters(request)[0][1]
+        expected = [
+            (self.parent_category.pk, self.parent_category.name, ' style="padding-left:0px"'),
+            (self.child_category1.pk, self.child_category1.name, ' style="padding-left:10px"'),
+            (self.child_category2.pk, self.child_category2.name, ' style="padding-left:10px"'),
+            (self.simple_category.pk, self.simple_category.name, ' style="padding-left:0px"'),
+
+        ]
+        self.assertEqual(sorted(filterspec.lookup_choices), sorted(expected))
+
+        request = self.request_factory.get('/', {'m2m__isnull': 'True'})
+        changelist = self.get_changelist(request, Book, modeladmin)
+
+        # Make sure the correct queryset is returned
+        queryset = changelist.get_queryset(request)
+        self.assertEqual(list(queryset), [self.book4])
+
+        # Make sure the last choice is None and is selected
+        filterspec = changelist.get_filters(request)[0][1]
+        choices = list(filterspec.choices(changelist))
+        self.assertEqual(choices[-1]['selected'], True)
+        self.assertEqual(choices[-1]['query_string'], '?m2m__isnull=True')
+
+        # Make sure child's categories books included
+        request = self.request_factory.get('/', {'m2m__id__inhierarchy': self.parent_category.pk})
+        changelist = self.get_changelist(request, Book, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual((list(queryset)), [self.book1, self.book2])
+
+        # Make sure filter for child category works as expected
+        request = self.request_factory.get('/', {'m2m__id__inhierarchy': self.child_category1.pk})
+        changelist = self.get_changelist(request, Book, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual((list(queryset)), [self.book1])
+
+        # Make sure filter for empty category works as expected
+        request = self.request_factory.get('/', {'fk__id__inhierarchy': self.child_category2.pk})
+        changelist = self.get_changelist(request, Book, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual(queryset.count(), 0)
+
+        # Make sure filter for simple category with no hierarchy works as expected
+        request = self.request_factory.get('/', {'m2m__id__inhierarchy': self.simple_category.pk})
+        changelist = self.get_changelist(request, Book, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual((list(queryset)), [self.book3])
+
+    def test_treerelatedfieldlistfilter_reverse_relationships(self):
+        modeladmin = CategoryAdmin(Category, site)
+
+        # FK relationship -----
+        request = self.request_factory.get('/', {'books_fk__isnull': 'True'})
+        changelist = self.get_changelist(request, Category, modeladmin)
+
+        # Make sure the correct queryset is returned
+        queryset = changelist.get_queryset(request)
+        self.assertEqual(list(queryset), [self.child_category2])
+
+        # Make sure the last choice is None and is selected
+        filterspec = changelist.get_filters(request)[0][0]
+        choices = list(filterspec.choices(changelist))
+        self.assertEqual(choices[-1]['selected'], True)
+        self.assertEqual(choices[-1]['query_string'], '?books_fk__isnull=True')
+
+        # Make sure child's books categories included
+        request = self.request_factory.get('/', {'books_fk__id__inhierarchy': self.book1.pk})
+        changelist = self.get_changelist(request, Category, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual((list(queryset)),
+                         [self.parent_category, self.child_category1, self.simple_category])
+
+        # Make sure filter for child book works as expected
+        request = self.request_factory.get('/', {'books_fk__id__inhierarchy': self.book2.pk})
+        changelist = self.get_changelist(request, Category, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual((list(queryset)), [self.parent_category])
+
+        # Make sure filter for book with no category works as expected
+        request = self.request_factory.get('/', {'books_fk__id__inhierarchy': self.book4.pk})
+        changelist = self.get_changelist(request, Category, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual(queryset.count(), 0)
+
+        # M2M relationship -----
+        request = self.request_factory.get('/', {'books_m2m__isnull': 'True'})
+        changelist = self.get_changelist(request, Category, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual(list(queryset), [self.child_category2])
+
+        # Make sure the last choice is None and is selected
+        filterspec = changelist.get_filters(request)[0][1]
+        choices = list(filterspec.choices(changelist))
+        self.assertEqual(choices[-1]['selected'], True)
+        self.assertEqual(choices[-1]['query_string'], '?books_m2m__isnull=True')
+
+        # Make sure child's books categories included
+        request = self.request_factory.get('/', {'books_m2m__id__inhierarchy': self.book1.pk})
+        changelist = self.get_changelist(request, Category, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual((list(queryset)),
+                         [self.parent_category, self.child_category1, self.simple_category])
+
+        # Make sure filter for child book works as expected
+        request = self.request_factory.get('/', {'books_m2m__id__inhierarchy': self.book2.pk})
+        changelist = self.get_changelist(request, Category, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual((list(queryset)), [self.parent_category])
+
+        # Make sure filter for book with no category works as expected
+        request = self.request_factory.get('/', {'books_m2m__id__inhierarchy': self.book4.pk})
+        changelist = self.get_changelist(request, Category, modeladmin)
+        queryset = changelist.get_queryset(request)
+        self.assertEqual(queryset.count(), 0)
+
+
+class UUIDPrimaryKey(TreeTestCase):
+
+    def test_save_uuid_model(self):
+        n1 = UUIDNode.objects.create(name='node')
+        n2 = UUIDNode.objects.create(name='sub_node', parent=n1)
+        self.assertEqual(n1.name, 'node')
+        self.assertEqual(n1.tree_id, n2.tree_id)
+        self.assertEqual(n2.parent, n1)
+
+    def test_move_uuid_node(self):
+        n1 = UUIDNode.objects.create(name='n1')
+        n2 = UUIDNode.objects.create(name='n2', parent=n1)
+        n3 = UUIDNode.objects.create(name='n3', parent=n1)
+        self.assertEqual(list(n1.get_children()), [n2, n3])
+
+        n3.move_to(n2, 'left')
+
+        self.assertEqual(list(n1.get_children()), [n3, n2])
