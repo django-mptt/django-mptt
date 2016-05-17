@@ -73,6 +73,7 @@ def delegate_manager(method):
 
 
 class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
+
     """
     A manager for working with trees of objects.
     """
@@ -1164,7 +1165,8 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             left_boundary, right_boundary, gap_size,
             left, right, left_right_change,
             left_boundary, right_boundary, gap_size,
-            node.pk, parent.pk,
+            node._meta.get_field(node._meta.pk.name).get_db_prep_value(node.pk, connection),
+            parent._meta.get_field(parent._meta.pk.name).get_db_prep_value(parent.pk, connection),
             tree_id])
 
         # Update the node to be consistent with the updated
