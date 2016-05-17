@@ -843,7 +843,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             gap_target_left, gap_size,
             left, right, left_right_change,
             gap_target_left, gap_size,
-            node.pk,
+            node._meta.pk.get_db_prep_value(node.pk, connection),
             getattr(node, self.tree_id_attr)
         ]
         if parent_pk is not None:
@@ -1036,8 +1036,10 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         # Make space for the subtree which will be moved
         self._create_space(tree_width, space_target, new_tree_id)
         # Move the subtree
+        connection = self._get_connection(instance=node)
         self._inter_tree_move_and_close_gap(
-            node, level_change, left_right_change, new_tree_id, parent.pk)
+            node, level_change, left_right_change, new_tree_id,
+            parent._meta.pk.get_db_prep_value(parent.pk, connection))
 
         # Update the node to be consistent with the updated
         # tree in the database.
@@ -1233,7 +1235,10 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         cursor = connection.cursor()
         cursor.execute(move_tree_query, [
             level_change, left_right_change, left_right_change,
-            new_tree_id, node.pk, parent.pk, left, right, tree_id])
+            new_tree_id,
+            node._meta.pk.get_db_prep_value(node.pk, connection),
+            parent._meta.pk.get_db_prep_value(parent.pk, connection),
+            left, right, tree_id])
 
         # Update the former root node to be consistent with the updated
         # tree in the database.

@@ -2314,3 +2314,24 @@ class UUIDPrimaryKey(TreeTestCase):
         n3.move_to(n2, 'left')
 
         self.assertEqual(list(n1.get_children()), [n3, n2])
+
+    def test_move_root_node(self):
+        root1 = UUIDNode.objects.create(name='n1')
+        child = UUIDNode.objects.create(name='n2', parent=root1)
+        root2 = UUIDNode.objects.create(name='n3')
+        self.assertEqual(list(root1.get_children()), [child])
+
+        root2.move_to(child, 'left')
+
+        self.assertEqual(list(root1.get_children()), [root2, child])
+
+    def test_move_child_node(self):
+        root1 = UUIDNode.objects.create(name='n1')
+        child1 = UUIDNode.objects.create(name='n2', parent=root1)
+        root2 = UUIDNode.objects.create(name='n3')
+        child2 = UUIDNode.objects.create(name='n4', parent=root2)
+        self.assertEqual(list(root1.get_children()), [child1])
+
+        child2.move_to(child1, 'left')
+
+        self.assertEqual(list(root1.get_children()), [child2, child1])
