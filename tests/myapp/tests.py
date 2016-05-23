@@ -11,6 +11,7 @@ from django import forms
 from django.contrib.auth.models import Group, User
 from django.db.models import Q
 from django.db.models.query_utils import DeferredAttribute
+from django.db.utils import IntegrityError
 from django.apps import apps
 from django.forms.models import modelform_factory
 from django.template import Template, TemplateSyntaxError, Context
@@ -39,7 +40,7 @@ from mptt.utils import print_debug_info
 from myapp.models import (
     Category, Item, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel,
     ConcreteModel, OrderedInsertion, AutoNowDateFieldModel, Person,
-    CustomTreeQueryset, Node, ReferencingModel, CustomTreeManager, Book)
+    CustomTreeQueryset, Node, ReferencingModel, CustomTreeManager, Book, UniqueCodePerParentModel)
 
 
 def get_tree_details(nodes):
@@ -2273,3 +2274,36 @@ class ListFiltersTests(TestCase):
         changelist = self.get_changelist(request, Category, modeladmin)
         queryset = changelist.get_queryset(request)
         self.assertEqual(queryset.count(), 0)
+
+
+class UniqueTogetherTestCase(TreeTestCase):
+
+
+    def test_move_and_conflict(self):
+        a = UniqueCodePerParentModel.objects.create(code='a',parent=None)
+        b = UniqueCodePerParentModel.objects.create(code='b',parent=None)
+        a1 = UniqueCodePerParentModel.objects.create(code='1',parent=a)
+        b1 = UniqueCodePerParentModel.objects.create(code='1',parent=b)
+
+        b1.parent = a# it tries to be a1, conflincting
+        self.assertRaises( IntegrityError, lambda: b1.save() ) # it tries to be a1, conflincting
+
+    def test_move_and_deconflict(self):
+        c = UniqueCodePerParentModel.objects.create(code='c',parent=None)
+        d = UniqueCodePerParentModel.objects.create(code='d',parent=None)
+        c1 = UniqueCodePerParentModel.objects.create(code='1',parent=c)
+        d1 = UniqueCodePerParentModel.objects.create(code='1',parent=d)
+
+        d1.code = '2'
+        d1.parent = c
+        d1.save() # it tries to be c2, not conflicting
+
+    def test_deconflict_and_move(self):
+        e = UniqueCodePerParentModel.objects.create(code='e',parent=None)
+        f = UniqueCodePerParentModel.objects.create(code='f',parent=None)
+        e1 = UniqueCodePerParentModel.objects.create(code='1',parent=e)
+        e2 = UniqueCodePerParentModel.objects.create(code='2',parent=e)
+
+        e2.code = '1'
+        e2.parent = f
+        e2.save() # it tries to be f1, not conflicting
