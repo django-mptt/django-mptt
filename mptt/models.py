@@ -346,8 +346,13 @@ class MPTTModelBase(ModelBase):
 
                 # make sure we have a tree manager somewhere
                 tree_manager = None
-                cls_managers = cls._meta.concrete_managers + cls._meta.abstract_managers
-                for __, __, cls_manager in cls_managers:
+                if hasattr(cls._meta, 'concrete_managers'):  # Django < 1.10
+                    cls_managers = cls._meta.concrete_managers + cls._meta.abstract_managers
+                    cls_managers = [r[2] for r in cls_managers]
+                else:
+                    cls_managers = cls._meta.managers
+
+                for cls_manager in cls_managers:
                     if isinstance(cls_manager, TreeManager):
                         # prefer any locally defined manager (i.e. keep going if not local)
                         if cls_manager.model is cls:
