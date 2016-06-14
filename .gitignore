@@ -6,3 +6,4 @@ dist
 MANIFEST
 tests/mydatabase
 *.egg
+.eggs
