@@ -6,7 +6,6 @@ import re
 import sys
 import tempfile
 import unittest
-import uuid
 
 from django import forms
 from django.contrib.auth.models import Group, User
@@ -16,8 +15,7 @@ from django.apps import apps
 from django.forms.models import modelform_factory
 from django.template import Template, TemplateSyntaxError, Context
 from django.test import RequestFactory, TestCase
-from django.utils.six import (
-    string_types, PY3, b, assertRaisesRegex, integer_types)
+from django.utils.six import string_types, PY3, b, assertRaisesRegex
 from django.contrib.admin.views.main import ChangeList
 from django.contrib.admin import ModelAdmin, site
 from mptt.admin import TreeRelatedFieldListFilter
