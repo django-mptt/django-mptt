@@ -14,13 +14,6 @@ setup(
     license='MIT License',
     packages=find_packages(exclude=['tests', 'tests.*']),
     include_package_data=True,
-    install_requires=(
-        'Django>=1.8',
-    ),
-    tests_require=(
-        'mock-django>=0.6.7',
-        'mock>=1.3',
-    ),
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
