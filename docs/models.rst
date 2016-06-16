@@ -328,7 +328,7 @@ These may come in useful on other models that relate to your tree model in some 
 
 
 .. note::
-   You can't use a many-to-many as your 'parent' field. That's because 
+   You can't use a many-to-many as your 'parent' field. That's because
    the mptt algorithm only handles trees, not arbitrary graphs. A tree where nodes
    can have multiple parents isn't really a tree at all.
 
@@ -366,6 +366,9 @@ Rebuilds the mptt fields for the entire table. This can be handy:
 
  * if your tree gets corrupted somehow.
  * After large bulk operations, when you've used ``disable_mptt_updates``
+
+It is recommended to rebuild the tree inside a ``transaction.atomic()`` block
+for safety and better performance.
 
 ``add_related_count(queryset, rel_cls, rel_field, count_attr, cumulative=False)``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
