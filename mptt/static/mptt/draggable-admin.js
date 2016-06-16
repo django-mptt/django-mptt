@@ -352,6 +352,10 @@ django.jQuery(function($){
     };
 
     function keyboardNavigationHandler(event) {
+        // On form element? Ignore.
+        if (/textarea|select|input/i.test(event.target.nodeName))
+            return;
+
         // console.log('keydown', this, event.keyCode);
         switch (event.keyCode) {
             case 40: // down
