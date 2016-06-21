@@ -65,10 +65,10 @@ Set up your model
 -----------------
 
 Start with a basic subclass of MPTTModel, something like this::
-   
+
     from django.db import models
     from mptt.models import MPTTModel, TreeForeignKey
-    
+
     class Genre(MPTTModel):
         name = models.CharField(max_length=50, unique=True)
         parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
@@ -83,8 +83,9 @@ other fields: ``level``, ``lft``, ``rght``, and ``tree_id``. These fields are ma
 
 That ``MPTTMeta`` class adds some tweaks to ``django-mptt`` - in this case, just ``order_insertion_by``. This indicates the natural ordering of the data in the tree.
 
-Now create your table in the database::
+Now create and apply the migrations to create the table in the database::
 
+    python manage.py makemigrations <your_app>
     python manage.py migrate
 
 
