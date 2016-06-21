@@ -85,7 +85,7 @@ That ``MPTTMeta`` class adds some tweaks to ``django-mptt`` - in this case, just
 
 Now create your table in the database::
 
-    python manage.py syncdb
+    python manage.py migrate
 
 
 Create some data
