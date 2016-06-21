@@ -212,7 +212,7 @@ class MPTTOptions(object):
                 # Fall back on tree id ordering if multiple root nodes have
                 # the same values.
                 order_by.append(opts.tree_id_attr)
-            queryset = node.__class__._tree_manager.filter(filters).order_by(*order_by)
+            queryset = node.__class__._tree_manager.db_manager(node._state.db).filter(filters).order_by(*order_by)
             if node.pk:
                 queryset = queryset.exclude(pk=node.pk)
             try:
@@ -394,6 +394,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
     def __init__(self, *args, **kwargs):
         super(MPTTModel, self).__init__(*args, **kwargs)
         self._mptt_meta.update_mptt_cached_fields(self)
+        self._tree_manager = self._tree_manager.db_manager(self._state.db)
 
     def _mpttfield(self, fieldname):
         translated_fieldname = getattr(self._mptt_meta, fieldname + '_attr')
