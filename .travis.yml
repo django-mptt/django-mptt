@@ -1,5 +1,6 @@
 sudo: false
 language: python
+
 python:
   - "3.5"
   - "3.4"
@@ -7,9 +8,12 @@ python:
   - "3.2"
   - "2.7"
   - "pypy"
+
 env:
   - DJANGO="Django>=1.8,<1.9"
   - DJANGO="Django>=1.9,<1.10"
+  - DJANGO="https://github.com/django/django/archive/master.tar.gz"
+
 matrix:
   exclude:
     - env: DJANGO="Django>=1.8,<1.9"
@@ -18,11 +22,14 @@ matrix:
       python: "3.2"
     - env: DJANGO="Django>=1.9,<1.10"
       python: "3.3"
+    - env: DJANGO="https://github.com/django/django/archive/master.tar.gz"
+      python: "3.2"
+    - env: DJANGO="https://github.com/django/django/archive/master.tar.gz"
+      python: "3.3"
+  allow_failures:
+    - env: DJANGO="https://github.com/django/django/archive/master.tar.gz"
 
 # command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install: pip install $DJANGO mock-django==0.6.9
 # command to run tests, e.g. python setup.py test
 script: cd tests/ && ./runtests.sh
-
-# Run on travis' container infrastructure
-sudo: false

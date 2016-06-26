@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
+from uuid import uuid4
 
 import mptt
 from mptt.fields import TreeForeignKey, TreeOneToOneField, TreeManyToManyField
@@ -10,11 +11,13 @@ from django.db.models.query import QuerySet
 
 
 class CustomTreeQueryset(QuerySet):
+
     def custom_method(self):
         pass
 
 
 class CustomTreeManager(TreeManager):
+
     def get_query_set(self):
         return CustomTreeQueryset(model=self.model, using=self._db)
 
@@ -111,6 +114,15 @@ class Node(MPTTModel):
         right_attr = 'zis'
         level_attr = 'level'
         tree_id_attr = 'work'
+
+
+class UUIDNode(MPTTModel):
+    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+    uuid = models.UUIDField(primary_key=True, default=uuid4)
+    name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
 
 
 @python_2_unicode_compatible
@@ -226,6 +238,7 @@ class ConcreteModel(AbstractModel):
 
 class AbstractConcreteAbstract(ConcreteModel):
     # abstract --> concrete --> abstract
+
     class Meta:
         abstract = True
 
@@ -250,6 +263,7 @@ class SingleProxyModel(ConcreteModel):
 
 
 class DoubleProxyModel(SingleProxyModel):
+
     class Meta:
         proxy = True
 

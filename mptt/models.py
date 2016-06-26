@@ -131,10 +131,11 @@ class MPTTOptions(object):
                 if f[0] == '-':
                     f = f[1:]
                 field_names.add(f)
+        deferred_fields = instance.get_deferred_fields()
         for field_name in field_names:
-            if instance._deferred:
+            if deferred_fields:
                 field = instance._meta.get_field(field_name)
-                if field.attname in instance.get_deferred_fields() \
+                if field.attname in deferred_fields \
                         and field.attname not in instance.__dict__:
                     # deferred attribute (i.e. via .only() or .defer())
                     # It'd be silly to cache this (that'd do a database query)
@@ -211,7 +212,7 @@ class MPTTOptions(object):
                 # Fall back on tree id ordering if multiple root nodes have
                 # the same values.
                 order_by.append(opts.tree_id_attr)
-            queryset = node.__class__._tree_manager.filter(filters).order_by(*order_by)
+            queryset = node.__class__._tree_manager.db_manager(node._state.db).filter(filters).order_by(*order_by)
             if node.pk:
                 queryset = queryset.exclude(pk=node.pk)
             try:
@@ -345,8 +346,13 @@ class MPTTModelBase(ModelBase):
 
                 # make sure we have a tree manager somewhere
                 tree_manager = None
-                cls_managers = cls._meta.concrete_managers + cls._meta.abstract_managers
-                for __, __, cls_manager in cls_managers:
+                if hasattr(cls._meta, 'concrete_managers'):  # Django < 1.10
+                    cls_managers = cls._meta.concrete_managers + cls._meta.abstract_managers
+                    cls_managers = [r[2] for r in cls_managers]
+                else:
+                    cls_managers = cls._meta.managers
+
+                for cls_manager in cls_managers:
                     if isinstance(cls_manager, TreeManager):
                         # prefer any locally defined manager (i.e. keep going if not local)
                         if cls_manager.model is cls:
@@ -388,6 +394,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
     def __init__(self, *args, **kwargs):
         super(MPTTModel, self).__init__(*args, **kwargs)
         self._mptt_meta.update_mptt_cached_fields(self)
+        self._tree_manager = self._tree_manager.db_manager(self._state.db)
 
     def _mpttfield(self, fieldname):
         translated_fieldname = getattr(self._mptt_meta, fieldname + '_attr')
