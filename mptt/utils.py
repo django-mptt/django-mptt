@@ -144,7 +144,7 @@ def drilldown_tree_for_node(node, rel_cls=None, rel_field=None, count_attr=None,
        descendants, otherwise it will be for each child itself.
     """
     if rel_cls and rel_field and count_attr:
-        children = node._tree_manager.add_related_count(
+        children = node.__class__._default_manager.add_related_count(
             node.get_children(), rel_cls, rel_field, count_attr, cumulative)
     else:
         children = node.get_children()

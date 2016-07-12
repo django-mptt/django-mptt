@@ -75,7 +75,7 @@ class MPTTModelAdmin(ModelAdmin):
         # If this is True, the confirmation page has been displayed
         if request.POST.get('post'):
             n = 0
-            with queryset.model._tree_manager.delay_mptt_updates():
+            with queryset.model._default_manager.delay_mptt_updates():
                 for obj in queryset:
                     if self.has_delete_permission(request, obj):
                         obj.delete()
@@ -225,7 +225,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
             return http.HttpResponse('FAIL, no permission.')
 
         try:
-            self.model._tree_manager.move_node(cut_item, pasted_on, position)
+            self.model._default_manager.move_node(cut_item, pasted_on, position)
         except InvalidMove as e:
             self.message_user(request, '%s' % e)
             return http.HttpResponse('FAIL, invalid move.')
@@ -303,10 +303,7 @@ class TreeRelatedFieldListFilter(RelatedFieldListFilter):
 
     def __init__(self, field, request, params, model, model_admin, field_path):
         self.other_model = get_model_from_relation(field)
-        if hasattr(field, 'rel'):
-            self.rel_name = field.rel.get_related_field().name
-        else:
-            self.rel_name = self.other_model._meta.pk.name
+        self.rel_name = self.other_model._meta.pk.name
         self.changed_lookup_kwarg = '%s__%s__inhierarchy' % (field_path, self.rel_name)
         super(TreeRelatedFieldListFilter, self).__init__(field, request, params,
                                                          model, model_admin, field_path)
@@ -376,7 +373,7 @@ class TreeRelatedFieldListFilter(RelatedFieldListFilter):
             }
         if (isinstance(self.field, ForeignObjectRel) and
                 (self.field.field.null or isinstance(self.field.field, ManyToManyField)) or
-                hasattr(self.field, 'rel') and
+                hasattr(self.field, 'remote_field') and
                 (self.field.null or isinstance(self.field, ManyToManyField))):
             yield {
                 'selected': bool(self.lookup_val_isnull),

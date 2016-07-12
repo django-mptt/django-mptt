@@ -3,6 +3,7 @@ from functools import reduce, wraps
 import operator
 import threading
 
+import django
 from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.query import Q
@@ -212,7 +213,7 @@ class MPTTOptions(object):
                 # Fall back on tree id ordering if multiple root nodes have
                 # the same values.
                 order_by.append(opts.tree_id_attr)
-            queryset = node.__class__._tree_manager.db_manager(node._state.db).filter(filters).order_by(*order_by)
+            queryset = node._tree_manager.db_manager(node._state.db).filter(filters).order_by(*order_by)
             if node.pk:
                 queryset = queryset.exclude(pk=node.pk)
             try:
@@ -271,7 +272,7 @@ class MPTTModelBase(ModelBase):
             bases = [base for base in cls.mro() if issubclass(base, MPTTModel)]
         for base in bases:
             if (not (base._meta.abstract or base._meta.proxy) and
-                    base._tree_manager.tree_model is base):
+                    getattr(base._default_manager, 'tree_model', None) is base):
                 cls._mptt_tracking_base = base
                 break
         if cls is cls._mptt_tracking_base:
@@ -293,8 +294,6 @@ class MPTTModelBase(ModelBase):
 
         if not hasattr(cls, '_mptt_meta'):
             cls._mptt_meta = MPTTOptions(**kwargs)
-
-        abstract = getattr(cls._meta, 'abstract', False)
 
         try:
             MPTTModel
@@ -334,7 +333,8 @@ class MPTTModelBase(ModelBase):
                         field.contribute_to_class(cls, field_name)
 
             # Add a tree manager, if there isn't one already
-            if not abstract:
+            # NOTE: Django 1.10 lets models inherit managers without handholding.
+            if django.VERSION < (1, 10) and not cls._meta.abstract:
                 manager = getattr(cls, 'objects', None)
                 if manager is None:
                     manager = cls._default_manager._copy_to_model(cls)
@@ -363,10 +363,8 @@ class MPTTModelBase(ModelBase):
                     tree_manager = tree_manager._copy_to_model(cls)
                 elif tree_manager is None:
                     tree_manager = TreeManager()
-                tree_manager.contribute_to_class(cls, '_tree_manager')
+                tree_manager.contribute_to_class(cls, '_default_manager')
 
-                # avoid using ManagerDescriptor, so instances can refer to self._tree_manager
-                setattr(cls, '_tree_manager', tree_manager)
         return cls
 
 
@@ -386,7 +384,8 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
     """
     Base class for tree models.
     """
-    _default_manager = TreeManager()
+
+    objects = TreeManager()
 
     class Meta:
         abstract = True
@@ -394,7 +393,10 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
     def __init__(self, *args, **kwargs):
         super(MPTTModel, self).__init__(*args, **kwargs)
         self._mptt_meta.update_mptt_cached_fields(self)
-        self._tree_manager = self._tree_manager.db_manager(self._state.db)
+
+    @property
+    def _tree_manager(self):
+        return self.__class__._default_manager.tree_model._default_manager
 
     def _mpttfield(self, fieldname):
         translated_fieldname = getattr(self._mptt_meta, fieldname + '_attr')
@@ -789,7 +791,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         if not self.pk or self._mpttfield('tree_id') is None:
             return False
         opts = self._meta
-        if opts.pk.rel is None:
+        if opts.pk.remote_field is None:
             return True
         else:
             if not hasattr(self, '_mptt_saved'):
@@ -1031,7 +1033,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
     def _mptt_refresh(self):
         if not self.pk:
             return
-        manager = type(self)._tree_manager
+        manager = type(self)._default_manager
         opts = self._mptt_meta
         values = manager.filter(pk=self.pk).values(
             opts.left_attr,

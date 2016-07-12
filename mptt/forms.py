@@ -121,7 +121,7 @@ class MoveNodeForm(forms.Form):
         super(MoveNodeForm, self).__init__(*args, **kwargs)
         opts = node._mptt_meta
         if valid_targets is None:
-            valid_targets = node._tree_manager.exclude(**{
+            valid_targets = node.__class__._default_manager.exclude(**{
                 opts.tree_id_attr: getattr(node, opts.tree_id_attr),
                 opts.left_attr + '__gte': getattr(node, opts.left_attr),
                 opts.right_attr + '__lte': getattr(node, opts.right_attr),

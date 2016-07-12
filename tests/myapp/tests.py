@@ -9,7 +9,7 @@ import unittest
 
 from django import forms
 from django.contrib.auth.models import Group, User
-from django.db.models import Q
+from django.db.models import Q, Manager
 from django.db.models.query_utils import DeferredAttribute
 from django.apps import apps
 from django.forms.models import modelform_factory
@@ -1152,7 +1152,7 @@ class ManagerTests(TreeTestCase):
         for model in apps.get_models():
             if not issubclass(model, MPTTModel):
                 continue
-            tm = model._tree_manager
+            tm = model._default_manager
             if id(tm) in seen:
                 self.fail(
                     "Tree managers for %s and %s are the same manager"
@@ -1164,27 +1164,12 @@ class ManagerTests(TreeTestCase):
         for model in apps.get_models():
             if not issubclass(model, MPTTModel):
                 continue
-            self.assertEqual(model._tree_manager.model, model)
-
-    def test_base_manager_infinite_recursion(self):
-        # repeatedly calling _base_manager should eventually return None
-        for model in apps.get_models():
-            if not issubclass(model, MPTTModel):
-                continue
-            manager = model._tree_manager
-            for i in range(20):
-                manager = manager._base_manager
-                if manager is None:
-                    break
-            else:
-                self.fail("Detected infinite recursion in %s._tree_manager._base_manager" % model)
+            self.assertEqual(model._default_manager.model, model)
 
     def test_proxy_custom_manager(self):
-        self.assertIsInstance(SingleProxyModel._tree_manager, CustomTreeManager)
-        self.assertIsInstance(SingleProxyModel._tree_manager._base_manager, TreeManager)
-
+        self.assertIsInstance(SingleProxyModel._default_manager, CustomTreeManager)
         self.assertIsInstance(SingleProxyModel.objects, CustomTreeManager)
-        self.assertIsInstance(SingleProxyModel.objects._base_manager, TreeManager)
+        self.assertIsInstance(SingleProxyModel._base_manager, Manager)
 
     def test_get_queryset_descendants(self):
         def get_desc_names(qs, include_self=False):

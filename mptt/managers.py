@@ -66,6 +66,7 @@ def delegate_manager(method):
     """
     @functools.wraps(method)
     def wrapped(self, *args, **kwargs):
+        return method(self, *args, **kwargs)  # FIXME what should this really do?
         if self._base_manager:
             return getattr(self._base_manager, method.__name__)(*args, **kwargs)
         return method(self, *args, **kwargs)
@@ -78,16 +79,9 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
     A manager for working with trees of objects.
     """
 
-    def contribute_to_class(self, model, name):
-        super(TreeManager, self).contribute_to_class(model, name)
-
-        if not model._meta.abstract:
-            self.tree_model = _get_tree_model(model)
-
-            self._base_manager = None
-            if self.tree_model is not model:
-                # _base_manager is the treemanager on tree_model
-                self._base_manager = self.tree_model._tree_manager
+    @property
+    def tree_model(self):
+        return _get_tree_model(self.model)
 
     def get_queryset(self, *args, **kwargs):
         """
@@ -482,7 +476,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                     'rel_table': qn(rel_model._meta.db_table),
                     'mptt_fk': qn(rel_model._meta.get_field(rel_field).column),
                     'mptt_table': qn(self.tree_model._meta.db_table),
-                    'mptt_rel_to': qn(mptt_field.rel.field_name),
+                    'mptt_rel_to': qn(mptt_field.remote_field.field_name),
                     'tree_id': qn(meta.get_field(self.tree_id_attr).column),
                     'left': qn(meta.get_field(self.left_attr).column),
                     'right': qn(meta.get_field(self.right_attr).column),
@@ -492,7 +486,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                     'rel_table': qn(rel_model._meta.db_table),
                     'mptt_fk': qn(rel_model._meta.get_field(rel_field).column),
                     'mptt_table': qn(self.tree_model._meta.db_table),
-                    'mptt_rel_to': qn(mptt_field.rel.field_name),
+                    'mptt_rel_to': qn(mptt_field.remote_field.field_name),
                 }
         return queryset.extra(select={count_attr: subquery})
 
