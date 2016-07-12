@@ -268,7 +268,7 @@ django.jQuery(function($){
     /* Every time the user expands or collapses a part of the tree, we remember
        the current state of the tree so we can restore it on a reload. */
     function storeCollapsedNodes(nodes) {
-        window.sessionStorage && window.sessionStorage.setItem(
+        window.localStorage && window.localStorage.setItem(
             DraggableMPTTAdmin.storageName,
             JSON.stringify(nodes)
         );
@@ -276,7 +276,7 @@ django.jQuery(function($){
 
     function retrieveCollapsedNodes() {
         try {
-            return JSON.parse(window.sessionStorage.getItem(
+            return JSON.parse(window.localStorage.getItem(
                 DraggableMPTTAdmin.storageName
             ));
         } catch(e) {
