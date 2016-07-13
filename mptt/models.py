@@ -1035,15 +1035,8 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
     delete.alters_data = True
 
     def _mptt_refresh(self):
-        if not self.pk:
-            return
-        manager = type(self)._tree_manager
-        opts = self._mptt_meta
-        values = manager.filter(pk=self.pk).values(
-            opts.left_attr,
-            opts.right_attr,
-            opts.level_attr,
-            opts.tree_id_attr,
-        )[0]
-        for k, v in values.items():
-            setattr(self, k, v)
+        self.refresh_from_db(fields=(
+            'tree_id', 'lft', 'rght', 'level', self._mptt_meta.parent_attr))
+        parent = getattr(self, self._mptt_meta.parent_attr)
+        self._mptt_cached_fields[self._mptt_meta.parent_attr] =\
+            parent.pk if parent else None
