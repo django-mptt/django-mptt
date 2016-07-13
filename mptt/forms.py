@@ -27,13 +27,12 @@ class TreeNodeChoiceFieldMixin(object):
         # if a queryset is supplied, enforce ordering
         if hasattr(queryset, 'model'):
             mptt_opts = queryset.model._mptt_meta
-            queryset = queryset.order_by(mptt_opts.tree_id_attr, mptt_opts.left_attr)
+            queryset = queryset.order_by('tree_id', 'lft')
 
         super(TreeNodeChoiceFieldMixin, self).__init__(queryset, *args, **kwargs)
 
     def _get_level_indicator(self, obj):
-        level = getattr(obj, obj._mptt_meta.level_attr)
-        return mark_safe(conditional_escape(self.level_indicator) * level)
+        return mark_safe(conditional_escape(self.level_indicator) * obj.level)
 
     def label_from_instance(self, obj):
         """
@@ -119,13 +118,12 @@ class MoveNodeForm(forms.Form):
         position_choices = kwargs.pop('position_choices', None)
         level_indicator = kwargs.pop('level_indicator', None)
         super(MoveNodeForm, self).__init__(*args, **kwargs)
-        opts = node._mptt_meta
         if valid_targets is None:
-            valid_targets = node._tree_manager.exclude(**{
-                opts.tree_id_attr: getattr(node, opts.tree_id_attr),
-                opts.left_attr + '__gte': getattr(node, opts.left_attr),
-                opts.right_attr + '__lte': getattr(node, opts.right_attr),
-            })
+            valid_targets = node._tree_manager.exclude(
+                tree_id=node.tree_id,
+                lft__gte=node.lft,
+                rght__lte=node.rght,
+            )
         self.fields['target'].queryset = valid_targets
         self.fields['target'].widget.attrs['size'] = target_select_size
         if level_indicator:

@@ -50,11 +50,16 @@ def get_tree_details(nodes):
         nodes = list(nodes.order_by('tree_id', 'lft', 'pk'))
     nodes = list(nodes)
     opts = nodes[0]._mptt_meta
-    return '\n'.join(['%s %s %s %s %s %s' %
-                      (n.pk, getattr(n, '%s_id' % opts.parent_attr) or '-',
-                       getattr(n, opts.tree_id_attr), getattr(n, opts.level_attr),
-                       getattr(n, opts.left_attr), getattr(n, opts.right_attr))
-                      for n in nodes])
+    return '\n'.join([
+        '%s %s %s %s %s %s' % (
+            n.pk,
+            getattr(n, '%s_id' % opts.parent_attr) or '-',
+            n.tree_id,
+            n.level,
+            n.lft,
+            n.rght,
+        ) for n in nodes
+    ])
 
 
 leading_whitespace_re = re.compile(r'^\s+', re.MULTILINE)
@@ -1439,10 +1444,10 @@ class TreeInfoTestCase(TreeTestCase):
             '<li>10</li><li>11</li></ul></li></ul>')
 
         html = Template(self.template).render(Context({
-            'nodes': Genre.objects.filter(**{
-                '%s__gte' % Genre._mptt_meta.level_attr: 1,
-                '%s__lte' % Genre._mptt_meta.level_attr: 2,
-            }),
+            'nodes': Genre.objects.filter(
+                level__gte=1,
+                level__lte=2,
+            ),
         })).replace('\n', '')
 
         self.assertEqual(
@@ -1451,10 +1456,10 @@ class TreeInfoTestCase(TreeTestCase):
             '<li>7</li><li>8</li></ul></li><li>10</li><li>11</li></ul>')
 
         html = Template(self.template_with_ancestors).render(Context({
-            'nodes': Genre.objects.filter(**{
-                '%s__gte' % Genre._mptt_meta.level_attr: 1,
-                '%s__lte' % Genre._mptt_meta.level_attr: 2,
-            }),
+            'nodes': Genre.objects.filter(
+                level__gte=1,
+                level__lte=2,
+            ),
         })).replace('\n', '')
 
         self.assertEqual(
@@ -1617,7 +1622,7 @@ class AdminBatch(TreeTestCase):
         mptt_opts = Category._mptt_meta
         self.assertSequenceEqual(
             response.context['cl'].result_list.query.order_by[:2],
-            [mptt_opts.tree_id_attr, mptt_opts.left_attr])
+            ['tree_id', 'lft'])
 
         data = {
             'action': 'delete_selected',
@@ -1935,7 +1940,7 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
         p2 = Person.objects.create(name='Fritz')
         p3 = Person.objects.create(name='Hans')
 
-        self.assertNotEqual(p1._mpttfield('tree_id'), p2._mpttfield('tree_id'))
+        self.assertNotEqual(p1.tree_id, p2.tree_id)
 
         response = self.client.get('/admin/myapp/person/')
         self.assertContains(response, 'class="drag-handle"', 3)

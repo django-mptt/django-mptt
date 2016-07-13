@@ -106,14 +106,6 @@ class Node(MPTTModel):
     parent = TreeForeignKey(
         'self', null=True, blank=True, related_name='children',
         on_delete=models.CASCADE)
-    # To check that you can set level_attr etc to an existing field.
-    level = models.IntegerField()
-
-    class MPTTMeta:
-        left_attr = 'does'
-        right_attr = 'zis'
-        level_attr = 'level'
-        tree_id_attr = 'work'
 
 
 class UUIDNode(MPTTModel):
@@ -145,15 +137,6 @@ class Tree(MPTTModel):
     parent = TreeForeignKey(
         'self', null=True, blank=True, related_name='children',
         on_delete=models.CASCADE)
-
-
-class NewStyleMPTTMeta(MPTTModel):
-    parent = TreeForeignKey(
-        'self', null=True, blank=True, related_name='children',
-        on_delete=models.CASCADE)
-
-    class MPTTMeta(object):
-        left_attr = 'testing'
 
 
 @python_2_unicode_compatible

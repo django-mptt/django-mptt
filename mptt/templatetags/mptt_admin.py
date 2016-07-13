@@ -158,10 +158,9 @@ def mptt_items_for_result(cl, result, form):
 
         # #### MPTT ADDITION START
         if field_name == mptt_indent_field:
-            level = getattr(result, result._mptt_meta.level_attr)
             padding_attr = mark_safe(' style="padding-%s:%spx"' % (
                 'right' if get_language_bidi() else 'left',
-                8 + mptt_level_indent * level))
+                8 + mptt_level_indent * result.level))
         else:
             padding_attr = ''
         # #### MPTT ADDITION END

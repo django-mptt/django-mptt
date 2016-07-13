@@ -66,7 +66,7 @@ class MPTTModelAdmin(ModelAdmin):
         Changes the default ordering for changelists to tree-order.
         """
         mptt_opts = self.model._mptt_meta
-        return self.ordering or (mptt_opts.tree_id_attr, mptt_opts.left_attr)
+        return self.ordering or ('tree_id', 'lft')
 
     def delete_selected_tree(self, modeladmin, request, queryset):
         """
@@ -167,7 +167,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
             '<div class="tree-node" data-pk="{}" data-level="{}"'
             ' data-url="{}"></div>',
             item.pk,
-            item._mpttfield('level'),
+            item.level,
             url,
         )
     tree_actions.short_description = ''
@@ -179,7 +179,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         """
         return format_html(
             '<div style="text-indent:{}px">{}</div>',
-            item._mpttfield('level') * self.mptt_level_indent,
+            item.level * self.mptt_level_indent,
             item,
         )
     indented_title.short_description = ugettext_lazy('title')
@@ -345,7 +345,7 @@ class TreeRelatedFieldListFilter(RelatedFieldListFilter):
         initial_choices = field.get_choices(include_blank=False)
         pks = [pk for pk, val in initial_choices]
         models = field.related_model._default_manager.filter(pk__in=pks)
-        levels_dict = {model.pk: getattr(model, model._mptt_meta.level_attr) for model in models}
+        levels_dict = {model.pk: model.level for model in models}
         choices = []
         for pk, val in initial_choices:
             padding_style = ' style="padding-%s:%spx"' % (
