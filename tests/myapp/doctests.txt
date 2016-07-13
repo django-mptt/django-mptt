@@ -7,8 +7,7 @@
 ...     opts = nodes[0]._mptt_meta
 ...     print('\n'.join(['%s %s %s %s %s %s' % \
 ...                      (n.pk, getattr(n, '%s_id' % opts.parent_attr) or '-',
-...                       getattr(n, opts.tree_id_attr), getattr(n, opts.level_attr),
-...                       getattr(n, opts.left_attr), getattr(n, opts.right_attr)) \
+...                       n.tree_id, n.level, n.lft, n.rght)\
 ...                      for n in nodes]))
 
 >>> def reset_sequence(model):

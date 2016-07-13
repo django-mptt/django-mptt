@@ -76,10 +76,9 @@ def tree_item_iterator(items, ancestors=False):
         if opts is None:
             opts = current._mptt_meta
 
-        current_level = getattr(current, opts.level_attr)
+        current_level = current.level
         if previous:
-            structure['new_level'] = (getattr(previous,
-                                              opts.level_attr) < current_level)
+            structure['new_level'] = previous.level < current_level
             if ancestors:
                 # If the previous node was the end of any number of
                 # levels, remove the appropriate number of ancestors
@@ -99,10 +98,7 @@ def tree_item_iterator(items, ancestors=False):
 
             first_item_level = current_level
         if next_:
-            structure['closed_levels'] = list(range(
-                current_level,
-                getattr(next_, opts.level_attr),
-                -1))
+            structure['closed_levels'] = list(range(current_level, next_.level, -1))
         else:
             # All remaining levels need to be closed
             structure['closed_levels'] = list(range(
@@ -161,16 +157,16 @@ def print_debug_info(qs, file=None):
     writer = csv.writer(sys.stdout if file is None else file)
     header = (
         'pk',
-        opts.level_attr,
+        'level',
         '%s_id' % opts.parent_attr,
-        opts.tree_id_attr,
-        opts.left_attr,
-        opts.right_attr,
+        'tree_id',
+        'lft',
+        'rght',
         'pretty',
     )
     writer.writerow(header)
     for n in qs.order_by('tree_id', 'lft'):
-        level = getattr(n, opts.level_attr)
+        level = n.level
         row = []
         for field in header[:-1]:
             row.append(getattr(n, field))
