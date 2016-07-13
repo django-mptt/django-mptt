@@ -524,7 +524,8 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         elif target.is_root_node() and position in ['left', 'right']:
             if refresh_target:
                 # Ensure mptt values on target are not stale.
-                target._mptt_refresh()
+                target.refresh_from_db(fields=(
+                    'lft', 'rght', 'level', 'tree_id'))
 
             target_tree_id = getattr(target, self.tree_id_attr)
             if position == 'left':
@@ -546,7 +547,9 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
 
             if refresh_target:
                 # Ensure mptt values on target are not stale.
-                target._mptt_refresh()
+                target.refresh_from_db(fields=(
+                    'lft', 'rght', 'level', 'tree_id'))
+
 
             space_target, level, left, parent, right_shift = \
                 self._calculate_inter_tree_move_values(node, target, position)
