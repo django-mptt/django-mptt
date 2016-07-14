@@ -882,9 +882,10 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         ``delete`` will not return anything. """
 
         # Reduce all lft and rght values to the right by this node's width:
+        self._mptt_refresh()
         self._tree_manager._manage_space(
             -(self.rght - self.lft + 1),
-            target_right,
+            self.rght,
             self.tree_id,
         )
 
@@ -893,10 +894,18 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
             parent._mptt_refresh()
 
         super(MPTTModel, self).delete(*args, **kwargs)
+
+        if self.is_root_node():
+            # Close gap.
+            self._tree_manager._create_tree_space(
+                self.tree_id,
+                -1,
+            )
     delete.alters_data = True
 
     def _mptt_refresh(self):
-        self.refresh_from_db(fields=(
-            'tree_id', 'lft', 'rght', 'level', self._mptt_meta.parent_attr))
-        self._mptt_cached_fields[self._mptt_meta.parent_attr] = getattr(
-            self._mptt_meta.parent_attr).pk
+        try:
+            self.refresh_from_db(fields=('tree_id', 'lft', 'rght', 'level'))
+        except self.DoesNotExist:
+            # Already deleted. Ignore.
+            pass

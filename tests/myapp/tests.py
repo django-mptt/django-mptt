@@ -470,7 +470,7 @@ class DeletionTestCase(TreeTestCase):
         self.assertTreeEqual(
             Category.objects.all(), """
             11 - 1 0 1 2
-            12 - 3 0 1 2
+            12 - 2 0 1 2
         """)
 
     def test_delete_last_node_with_siblings(self):
