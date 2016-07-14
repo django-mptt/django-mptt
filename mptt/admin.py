@@ -269,10 +269,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         all_nodes = {}
 
         mptt_opts = self.model._mptt_meta
-        items = queryset.values_list(
-            'pk',
-            '%s_id' % mptt_opts.parent_attr,
-        )
+        items = queryset.values_list('pk', 'parent_id')
         for p_id, parent_id in items:
             all_nodes.setdefault(
                 str(parent_id) if parent_id else 0,

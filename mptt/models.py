@@ -57,11 +57,14 @@ class MPTTOptions(object):
         class MyModel(MPTTModel):
             class MPTTMeta:
                 order_insertion_by = ['name']
-                parent_attr = 'myparent'
     """
 
     order_insertion_by = []
-    parent_attr = 'parent'
+
+    @property
+    def parent_attr(self):
+        warnings.warn('Use "parent(_id)" directly.', DeprecationWarning, stacklevel=2)
+        return 'parent'
 
     @property
     def left_attr(self):
@@ -142,7 +145,7 @@ class MPTTOptions(object):
         so that the MPTT fields need to be updated.
         """
         instance._mptt_cached_fields = {}
-        field_names = set((self.parent_attr,))
+        field_names = set(('parent',))
         if self.order_insertion_by:
             for f in self.order_insertion_by:
                 if f[0] == '-':
@@ -220,12 +223,12 @@ class MPTTOptions(object):
             order_by = opts.order_insertion_by[:]
             filters = self.insertion_target_filters(node, order_by)
             if parent:
-                filters = filters & Q(**{opts.parent_attr: parent})
+                filters = filters & Q(parent=parent)
                 # Fall back on tree ordering if multiple child nodes have
                 # the same values.
                 order_by.append('lft')
             else:
-                filters = filters & Q(**{opts.parent_attr: None})
+                filters = filters & Q(parent=None)
                 # Fall back on tree id ordering if multiple root nodes have
                 # the same values.
                 order_by.append('tree_id')
@@ -438,11 +441,11 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
             ancestors = []
             p = self
             if not include_self:
-                p = getattr(p, opts.parent_attr)
+                p = p.parent
 
             while p is not None:
                 ancestors.append(p)
-                p = getattr(p, opts.parent_attr)
+                p = p.parent
 
             ancestors.reverse()
             qs._result_cache = ancestors
@@ -562,7 +565,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         else:
             qs = self._tree_manager._mptt_filter(
                 qs,
-                parent__pk=getattr(self, self._mptt_meta.parent_attr + '_id'),
+                parent__pk=self.parent_id,
                 lft__gt=self.rght,
             )
 
@@ -587,7 +590,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         else:
             qs = self._tree_manager._mptt_filter(
                 qs,
-                parent__pk=getattr(self, opts.parent_attr + '_id'),
+                parent__pk=self.parent_id,
                 rght__lt=self.lft,
             )
             qs = qs.order_by('-rght')
@@ -621,8 +624,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         if self.is_root_node():
             queryset = self._tree_manager._mptt_filter(parent=None)
         else:
-            parent_id = getattr(self, self._mptt_meta.parent_attr + '_id')
-            queryset = self._tree_manager._mptt_filter(parent__pk=parent_id)
+            queryset = self._tree_manager._mptt_filter(parent__pk=self.parent_id)
         if not include_self:
             queryset = queryset.exclude(pk=self.pk)
         return queryset
@@ -652,7 +654,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         Returns ``True`` if this model instance is a root node,
         ``False`` otherwise.
         """
-        return getattr(self, self._mptt_meta.parent_attr + '_id') is None
+        return self.parent_id is None
 
     @raise_if_unsaved
     def is_descendant_of(self, other, include_self=False):
@@ -720,8 +722,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         from django.db.models.fields import AutoField
 
         field_names = []
-        internal_fields = (
-            'lft', 'rght', 'tree_id', 'level', self._mptt_meta.parent_attr)
+        internal_fields = ('lft', 'rght', 'tree_id', 'level', 'parent')
         for field in self._meta.fields:
             if (field.name not in internal_fields) and (not isinstance(field, AutoField)) and (not field.primary_key):  # noqa
                 field_names.append(field.name)
@@ -747,7 +748,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         """
 
         opts = self._mptt_meta
-        parent_id = opts.get_raw_field_value(self, opts.parent_attr)
+        parent_id = opts.get_raw_field_value(self, 'parent')
 
         # determine whether this instance is already in the db
         force_update = kwargs.get('force_update', False)
@@ -756,7 +757,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         deferred_fields = self.get_deferred_fields()
         if force_update or (not force_insert and self._is_saved(using=kwargs.get('using'))):
             # it already exists, so do a move
-            old_parent_id = self._mptt_cached_fields[opts.parent_attr]
+            old_parent_id = self._mptt_cached_fields['parent']
             if old_parent_id is DeferredAttribute:
                 same_order = True
             else:
@@ -771,15 +772,15 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                         same_order = False
                         break
             if not same_order:
-                opts.set_raw_field_value(self, opts.parent_attr, old_parent_id)
+                opts.set_raw_field_value(self, 'parent', old_parent_id)
                 try:
                     right_sibling = None
                     if opts.order_insertion_by:
                         right_sibling = opts.get_ordered_insertion_target(
-                            self, getattr(self, opts.parent_attr))
+                            self, self.parent)
 
                     if parent_id is not None:
-                        parent = getattr(self, opts.parent_attr)
+                        parent = self.parent
                         # If we aren't already a descendant of the new parent,
                         # we need to update the parent.rght so things like
                         # get_children and get_descendant_count work correctly.
@@ -811,13 +812,13 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                 finally:
                     # Make sure the new parent is always
                     # restored on the way out in case of errors.
-                    opts.set_raw_field_value(self, opts.parent_attr, parent_id)
+                    opts.set_raw_field_value(self, 'parent', parent_id)
 
                 # If there were no exceptions raised then send a moved signal
                 node_moved.send(sender=self.__class__, instance=self,
-                                target=getattr(self, opts.parent_attr))
+                                target=self.parent)
             else:
-                opts.set_raw_field_value(self, opts.parent_attr, parent_id)
+                opts.set_raw_field_value(self, 'parent', parent_id)
                 # When not using delayed/disabled updates,
                 # populate update_fields with user defined model fields.
                 # This helps preserve tree integrity when saving model on top
@@ -837,7 +838,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                 # This node has already been set up for insertion.
                 pass
             else:
-                parent = getattr(self, opts.parent_attr)
+                parent = self.parent
 
                 right_sibling = None
                 if opts.order_insertion_by:
@@ -882,7 +883,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
             self.tree_id,
         )
 
-        parent = getattr(self, '_%s_cache' % self._mptt_meta.parent_attr, None)
+        parent = getattr(self, '_parent_cache', None)
         if parent:
             parent._mptt_refresh()
 
