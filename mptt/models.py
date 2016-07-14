@@ -426,7 +426,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                 left -= 1
                 right += 1
 
-            qs = self._tree_manager._mptt_filter(
+            qs = self._tree_manager.filter(
                 lft__lte=left,
                 rght__gte=right,
                 tree_id=self.tree_id,
@@ -496,7 +496,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
             if self.is_leaf_node():
                 return self._tree_manager.none()
 
-            return self._tree_manager._mptt_filter(parent=self)
+            return self._tree_manager.filter(parent=self)
 
     @raise_if_unsaved
     def get_descendants(self, include_self=False):
@@ -521,7 +521,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
             left += 1
             right -= 1
 
-        return self._tree_manager._mptt_filter(
+        return self._tree_manager.filter(
             tree_id=self.tree_id,
             lft__gte=left,
             lft__lte=right
@@ -544,8 +544,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         """
         descendants = self.get_descendants(include_self=include_self)
 
-        return self._tree_manager._mptt_filter(
-            descendants,
+        return descendants.filter(
             lft=models.F('rght') - 1,
         )
 
@@ -557,14 +556,12 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         """
         qs = self._tree_manager.filter(*filter_args, **filter_kwargs)
         if self.is_root_node():
-            qs = self._tree_manager._mptt_filter(
-                qs,
+            qs = qs.filter(
                 parent=None,
                 tree_id__gt=self.tree_id,
             )
         else:
-            qs = self._tree_manager._mptt_filter(
-                qs,
+            qs = qs.filter(
                 parent__pk=self.parent_id,
                 lft__gt=self.rght,
             )
@@ -581,15 +578,13 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         opts = self._mptt_meta
         qs = self._tree_manager.filter(*filter_args, **filter_kwargs)
         if self.is_root_node():
-            qs = self._tree_manager._mptt_filter(
-                qs,
+            qs = qs.filter(
                 parent=None,
                 tree_id__lt=self.tree_id,
             )
             qs = qs.order_by('-tree_id')
         else:
-            qs = self._tree_manager._mptt_filter(
-                qs,
+            qs = qs.filter(
                 parent__pk=self.parent_id,
                 rght__lt=self.lft,
             )
@@ -606,7 +601,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         if self.is_root_node() and type(self) == self._tree_manager.tree_model:
             return self
 
-        return self._tree_manager._mptt_filter(
+        return self._tree_manager.filter(
             tree_id=self.tree_id,
             parent=None,
         ).get()
@@ -622,9 +617,9 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         include this model instance.
         """
         if self.is_root_node():
-            queryset = self._tree_manager._mptt_filter(parent=None)
+            queryset = self._tree_manager.filter(parent=None)
         else:
-            queryset = self._tree_manager._mptt_filter(parent__pk=self.parent_id)
+            queryset = self._tree_manager.filter(parent__pk=self.parent_id)
         if not include_self:
             queryset = queryset.exclude(pk=self.pk)
         return queryset

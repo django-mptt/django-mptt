@@ -219,35 +219,6 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         """
         return self._get_queryset_relatives(queryset, 'asc', include_self)
 
-    def _translate_lookups(self, **lookups):
-        new_lookups = {}
-        join_parts = '__'.join
-        for k, v in lookups.items():
-            parts = k.split('__')
-            new_parts = []
-            new_parts__append = new_parts.append
-            for part in parts:
-                new_parts__append(getattr(self, part + '_attr', part))
-            new_lookups[join_parts(new_parts)] = v
-        return new_lookups
-
-    def _mptt_filter(self, qs=None, **filters):
-        """
-        Like ``self.filter()``, but translates name-agnostic filters for MPTT
-        fields.
-        """
-        if qs is None:
-            qs = self
-        return qs.filter(**self._translate_lookups(**filters))
-
-    def _mptt_update(self, qs=None, **items):
-        """
-        Like ``self.update()``, but translates name-agnostic MPTT fields.
-        """
-        if qs is None:
-            qs = self
-        return qs.update(**self._translate_lookups(**items))
-
     def _get_connection(self, **hints):
         return connections[router.db_for_write(self.model, **hints)]
 
@@ -442,13 +413,13 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         """
         Returns the root node of the tree with the given id.
         """
-        return self._mptt_filter(tree_id=tree_id, parent=None).get()
+        return self.filter(tree_id=tree_id, parent=None).get()
 
     def root_nodes(self):
         """
         Creates a ``QuerySet`` containing root nodes.
         """
-        return self._mptt_filter(parent=None)
+        return self.filter(parent=None)
 
     def rebuild(self):
         """
@@ -456,7 +427,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         """
         opts = self.model._mptt_meta
 
-        qs = self._mptt_filter(parent=None)
+        qs = self.filter(parent=None)
         if opts.order_insertion_by:
             qs = qs.order_by(*opts.order_insertion_by)
         pks = qs.values_list('pk', flat=True)
@@ -475,7 +446,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         """
         opts = self.model._mptt_meta
 
-        qs = self._mptt_filter(parent=None, tree_id=tree_id)
+        qs = self.filter(parent=None, tree_id=tree_id)
         if opts.order_insertion_by:
             qs = qs.order_by(*opts.order_insertion_by)
         pks = qs.values_list('pk', flat=True)
@@ -492,7 +463,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         opts = self.model._mptt_meta
         right = left + 1
 
-        qs = self._mptt_filter(parent__pk=pk)
+        qs = self.filter(parent__pk=pk)
         if opts.order_insertion_by:
             qs = qs.order_by(*opts.order_insertion_by)
         child_ids = qs.values_list('pk', flat=True)
@@ -501,9 +472,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         for child_id in child_ids:
             right = rebuild_helper(child_id, right, tree_id, level + 1)
 
-        qs = self.model._default_manager.filter(pk=pk)
-        self._mptt_update(
-            qs,
+        qs = self.model._default_manager.filter(pk=pk).update(
             lft=left,
             rght=right,
             level=level,
@@ -553,8 +522,11 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         Creates space for a new tree by incrementing all tree ids
         greater than ``target_tree_id``.
         """
-        qs = self._mptt_filter(tree_id__gt=target_tree_id)
-        self._mptt_update(qs, tree_id=F('tree_id') + num_trees)
+        self.filter(
+            tree_id__gt=target_tree_id
+        ).update(
+            tree_id=F('tree_id') + num_trees,
+        )
 
     def _get_next_tree_id(self):
         """
