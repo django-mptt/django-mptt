@@ -916,11 +916,11 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                                                 lower_bound, upper_bound])
             node.tree_id = new_tree_id
 
-    def _manage_space(self, size, target, tree_id):
+    def _manage_space(self, width, right_of, tree_id):
         """
         Manages spaces in the tree identified by ``tree_id`` by changing
-        the values of the left and right columns by ``size`` after the
-        given ``target`` point.
+        the values of the left and right columns by ``width`` after the
+        given ``right_of`` point.
         """
         if self.tree_model._mptt_is_tracking:
             self.tree_model._mptt_track_tree_modified(tree_id)
@@ -943,8 +943,8 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                 'table': qn(self.tree_model._meta.db_table),
             }
             cursor = connection.cursor()
-            cursor.execute(space_query, [target, size, target, size, tree_id,
-                                         target, target])
+            cursor.execute(space_query, [right_of, width, right_of, width, tree_id,
+                                         right_of, right_of])
 
     def _move_child_node(self, node, target, position):
         """
