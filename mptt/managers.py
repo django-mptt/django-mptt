@@ -2,7 +2,7 @@
 A custom manager for working with trees of objects.
 """
 from __future__ import unicode_literals
-import functools
+
 import contextlib
 from itertools import groupby
 import warnings
@@ -11,7 +11,7 @@ from django.db import models, connections, router
 from django.db.models import F, ManyToManyField, Max, Q
 from django.utils.translation import ugettext as _
 
-from mptt.exceptions import CantDisableUpdates, InvalidMove
+from mptt.exceptions import InvalidMove
 from mptt.querysets import TreeQuerySet
 from mptt.utils import _get_tree_model
 from mptt.signals import node_moved
@@ -61,24 +61,21 @@ CUMULATIVE_COUNT_SUBQUERY_M2M = """(
 )"""
 
 
-def delegate_manager(method):
-    """
-    Delegate method calls to base manager, if exists.
-    """
-    @functools.wraps(method)
-    def wrapped(self, *args, **kwargs):
-        return method(self, *args, **kwargs)  # FIXME what should this really do?
-        if self._base_manager:
-            return getattr(self._base_manager, method.__name__)(*args, **kwargs)
-        return method(self, *args, **kwargs)
-    return wrapped
-
-
 class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
 
     """
     A manager for working with trees of objects.
     """
+
+    @contextlib.contextmanager
+    def disable_mptt_updates(self):
+        # Preserve API
+        yield
+
+    @contextlib.contextmanager
+    def delay_mptt_updates(self):
+        # Preserve API
+        yield
 
     @property
     def tree_model(self):
@@ -222,144 +219,6 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         """
         return self._get_queryset_relatives(queryset, 'asc', include_self)
 
-    @contextlib.contextmanager
-    def disable_mptt_updates(self):
-        """
-        Context manager. Disables mptt updates.
-
-        NOTE that this context manager causes inconsistencies! MPTT model
-        methods are not guaranteed to return the correct results.
-
-        When to use this method:
-            If used correctly, this method can be used to speed up bulk
-            updates.
-
-            This doesn't do anything clever. It *will* mess up your tree.  You
-            should follow this method with a call to ``TreeManager.rebuild()``
-            to ensure your tree stays sane, and you should wrap both calls in a
-            transaction.
-
-            This is best for updates that span a large part of the table.  If
-            you are doing localised changes (one tree, or a few trees) consider
-            using ``delay_mptt_updates``.
-
-            If you are making only minor changes to your tree, just let the
-            updates happen.
-
-        Transactions:
-            This doesn't enforce any transactional behavior.  You should wrap
-            this in a transaction to ensure database consistency.
-
-        If updates are already disabled on the model, this is a noop.
-
-        Usage::
-
-            with transaction.atomic():
-                with MyNode.objects.disable_mptt_updates():
-                    ## bulk updates.
-                MyNode.objects.rebuild()
-        """
-        # Error cases:
-        if self.model._meta.abstract:
-            #  an abstract model. Design decision needed - do we disable
-            #  updates for all concrete models that derive from this model?  I
-            #  vote no - that's a bit implicit and it's a weird use-case
-            #  anyway.  Open to further discussion :)
-            raise CantDisableUpdates(
-                "You can't disable/delay mptt updates on %s,"
-                " it's an abstract model" % self.model.__name__
-            )
-        elif self.model._meta.proxy:
-            #  a proxy model. disabling updates would implicitly affect other
-            #  models using the db table. Caller should call this on the
-            #  manager for the concrete model instead, to make the behavior
-            #  explicit.
-            raise CantDisableUpdates(
-                "You can't disable/delay mptt updates on %s, it's a proxy"
-                " model. Call the concrete model instead."
-                % self.model.__name__
-            )
-        elif self.tree_model is not self.model:
-            #  a multiple-inheritance child of an MPTTModel.  Disabling
-            #  updates may affect instances of other models in the tree.
-            raise CantDisableUpdates(
-                "You can't disable/delay mptt updates on %s, it doesn't"
-                " contain the mptt fields."
-                % self.model.__name__
-            )
-
-        if not self.model._mptt_updates_enabled:
-            # already disabled, noop.
-            yield
-        else:
-            self.model._set_mptt_updates_enabled(False)
-            try:
-                yield
-            finally:
-                self.model._set_mptt_updates_enabled(True)
-
-    @contextlib.contextmanager
-    def delay_mptt_updates(self):
-        """
-        Context manager. Delays mptt updates until the end of a block of bulk
-        processing.
-
-        NOTE that this context manager causes inconsistencies! MPTT model
-        methods are not guaranteed to return the correct results until the end
-        of the context block.
-
-        When to use this method:
-            If used correctly, this method can be used to speed up bulk
-            updates.  This is best for updates in a localised area of the db
-            table, especially if all the updates happen in a single tree and
-            the rest of the forest is left untouched.  No subsequent rebuild is
-            necessary.
-
-            ``delay_mptt_updates`` does a partial rebuild of the modified trees
-            (not the whole table).  If used indiscriminately, this can actually
-            be much slower than just letting the updates occur when they're
-            required.
-
-            The worst case occurs when every tree in the table is modified just
-            once.  That results in a full rebuild of the table, which can be
-            *very* slow.
-
-            If your updates will modify most of the trees in the table (not a
-            small number of trees), you should consider using
-            ``TreeManager.disable_mptt_updates``, as it does much fewer
-            queries.
-
-        Transactions:
-            This doesn't enforce any transactional behavior.  You should wrap
-            this in a transaction to ensure database consistency.
-
-        Exceptions:
-            If an exception occurs before the processing of the block, delayed
-            updates will not be applied.
-
-        Usage::
-
-            with transaction.atomic():
-                with MyNode.objects.delay_mptt_updates():
-                    ## bulk updates.
-        """
-        with self.disable_mptt_updates():
-            if self.model._mptt_is_tracking:
-                # already tracking, noop.
-                yield
-            else:
-                self.model._mptt_start_tracking()
-                try:
-                    yield
-                except Exception:
-                    # stop tracking, but discard results
-                    self.model._mptt_stop_tracking()
-                    raise
-                results = self.model._mptt_stop_tracking()
-                partial_rebuild = self.partial_rebuild
-                for tree_id in results:
-                    partial_rebuild(tree_id)
-
     @property
     def parent_attr(self):
         return self.model._mptt_meta.parent_attr
@@ -376,18 +235,15 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             new_lookups[join_parts(new_parts)] = v
         return new_lookups
 
-    @delegate_manager
     def _mptt_filter(self, qs=None, **filters):
         """
         Like ``self.filter()``, but translates name-agnostic filters for MPTT
         fields.
         """
-        warnings.warn('Stop doing that.', DeprecationWarning, stacklevel=2)
         if qs is None:
             qs = self
         return qs.filter(**self._translate_lookups(**filters))
 
-    @delegate_manager
     def _mptt_update(self, qs=None, **items):
         """
         Like ``self.update()``, but translates name-agnostic MPTT fields.
@@ -469,7 +325,6 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                 }
         return queryset.extra(select={count_attr: subquery})
 
-    @delegate_manager
     def insert_node(self, node, target, position='last-child', save=False,
                     allow_existing_pk=False, refresh_target=True):
         """
@@ -542,29 +397,23 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             setattr(node, self.parent_attr, parent)
 
             if parent:
-                self._post_insert_update_cached_parent_right(parent, right_shift)
+                parent._mptt_refresh()
 
         if save:
             node.save()
         return node
 
-    @delegate_manager
     def _move_node(self, node, target, position='last-child', save=True, refresh_target=True):
-        if self.tree_model._mptt_is_tracking:
-            # delegate to insert_node and clean up the gaps later.
-            return self.insert_node(node, target, position=position, save=save,
-                                    allow_existing_pk=True, refresh_target=refresh_target)
+        if target is None:
+            if node.is_child_node():
+                self._make_child_root_node(node)
+        elif target.is_root_node() and position in ('left', 'right'):
+            self._make_sibling_of_root_node(node, target, position)
         else:
-            if target is None:
-                if node.is_child_node():
-                    self._make_child_root_node(node)
-            elif target.is_root_node() and position in ('left', 'right'):
-                self._make_sibling_of_root_node(node, target, position)
+            if node.is_root_node():
+                self._move_root_node(node, target, position)
             else:
-                if node.is_root_node():
-                    self._move_root_node(node, target, position)
-                else:
-                    self._move_child_node(node, target, position)
+                self._move_child_node(node, target, position)
 
     def move_node(self, node, target, position='last-child'):
         """
@@ -593,21 +442,18 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         node_moved.send(sender=node.__class__, instance=node,
                         target=target, position=position)
 
-    @delegate_manager
     def root_node(self, tree_id):
         """
         Returns the root node of the tree with the given id.
         """
         return self._mptt_filter(tree_id=tree_id, parent=None).get()
 
-    @delegate_manager
     def root_nodes(self):
         """
         Creates a ``QuerySet`` containing root nodes.
         """
         return self._mptt_filter(parent=None)
 
-    @delegate_manager
     def rebuild(self):
         """
         Rebuilds all trees in the database table using `parent` link.
@@ -626,7 +472,6 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             rebuild_helper(pk, 1, idx)
     rebuild.alters_data = True
 
-    @delegate_manager
     def partial_rebuild(self, tree_id):
         """
         Partially rebuilds a tree i.e. It rebuilds only the tree with given
@@ -670,20 +515,6 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         )
 
         return right + 1
-
-    def _post_insert_update_cached_parent_right(self, instance, right_shift, seen=None):
-        instance.rght += right_shift
-        attr = '_%s_cache' % self.parent_attr
-        if hasattr(instance, attr):
-            parent = getattr(instance, attr)
-            if parent:
-                if not seen:
-                    seen = set()
-                seen.add(instance)
-                if parent in seen:
-                    # detect infinite recursion and throw an error
-                    raise InvalidMove
-                self._post_insert_update_cached_parent_right(parent, right_shift, seen=seen)
 
     def _calculate_inter_tree_move_values(self, node, target, position):
         """
@@ -742,7 +573,6 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         """
         qs = self._mptt_filter(tree_id__gt=target_tree_id)
         self._mptt_update(qs, tree_id=F('tree_id') + num_trees)
-        self.tree_model._mptt_track_tree_insertions(target_tree_id + 1, num_trees)
 
     def _get_next_tree_id(self):
         """
@@ -940,30 +770,27 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         the values of the left and right columns by ``size`` after the
         given ``target`` point.
         """
-        if self.tree_model._mptt_is_tracking:
-            self.tree_model._mptt_track_tree_modified(tree_id)
-        else:
-            connection = self._get_connection()
-            qn = connection.ops.quote_name
+        connection = self._get_connection()
+        qn = connection.ops.quote_name
 
-            opts = self.model._meta
-            space_query = """
-            UPDATE %(table)s
-            SET lft = CASE
-                    WHEN lft > %%s
-                        THEN lft + %%s
-                    ELSE lft END,
-                rght = CASE
-                    WHEN rght > %%s
-                        THEN rght + %%s
-                    ELSE rght END
-            WHERE tree_id = %%s
-              AND (lft > %%s OR rght > %%s)""" % {
-                'table': qn(self.tree_model._meta.db_table),
-            }
-            cursor = connection.cursor()
-            cursor.execute(space_query, [target, size, target, size, tree_id,
-                                         target, target])
+        opts = self.model._meta
+        space_query = """
+        UPDATE %(table)s
+        SET lft = CASE
+                WHEN lft > %%s
+                    THEN lft + %%s
+                ELSE lft END,
+            rght = CASE
+                WHEN rght > %%s
+                    THEN rght + %%s
+                ELSE rght END
+        WHERE tree_id = %%s
+          AND (lft > %%s OR rght > %%s)""" % {
+            'table': qn(self.tree_model._meta.db_table),
+        }
+        cursor = connection.cursor()
+        cursor.execute(space_query, [target, size, target, size, tree_id,
+                                     target, target])
 
     def _move_child_node(self, node, target, position):
         """
@@ -1134,11 +961,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
 
         # Update the node to be consistent with the updated
         # tree in the database.
-        node.lft = new_left
-        node.rght = new_right
-        node.level = level - level_change
-        setattr(node, self.parent_attr, parent)
-        node._mptt_cached_fields[self.parent_attr] = parent.pk
+        node._mptt_refresh()
 
     def _move_root_node(self, node, target, position):
         """
@@ -1199,9 +1022,4 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
 
         # Update the former root node to be consistent with the updated
         # tree in the database.
-        node.lft = left - left_right_change
-        node.rght = right - left_right_change
-        node.level = level - level_change
-        node.tree_id = new_tree_id
-        setattr(node, self.parent_attr, parent)
-        node._mptt_cached_fields[self.parent_attr] = parent.pk
+        node._mptt_refresh()

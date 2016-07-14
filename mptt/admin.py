@@ -75,13 +75,12 @@ class MPTTModelAdmin(ModelAdmin):
         # If this is True, the confirmation page has been displayed
         if request.POST.get('post'):
             n = 0
-            with queryset.model._default_manager.delay_mptt_updates():
-                for obj in queryset:
-                    if self.has_delete_permission(request, obj):
-                        obj.delete()
-                        n += 1
-                        obj_display = force_text(obj)
-                        self.log_deletion(request, obj, obj_display)
+            for obj in queryset:
+                if self.has_delete_permission(request, obj):
+                    obj.delete()
+                    n += 1
+                    obj_display = force_text(obj)
+                    self.log_deletion(request, obj, obj_display)
             self.message_user(
                 request,
                 _('Successfully deleted %(count)d items.') % {'count': n})

@@ -778,32 +778,6 @@ class DelayedUpdatesTestCase(TreeTestCase):
             5 - 3 0 1 2
         """)
 
-    def test_proxy(self):
-        self.assertFalse(ConcreteModel._mptt_is_tracking)
-        self.assertFalse(SingleProxyModel._mptt_is_tracking)
-
-        self.assertRaises(
-            CantDisableUpdates,
-            SingleProxyModel.objects.delay_mptt_updates().__enter__)
-
-        self.assertFalse(ConcreteModel._mptt_is_tracking)
-        self.assertFalse(SingleProxyModel._mptt_is_tracking)
-
-        with ConcreteModel.objects.delay_mptt_updates():
-            self.assertTrue(ConcreteModel._mptt_is_tracking)
-            self.assertTrue(SingleProxyModel._mptt_is_tracking)
-
-        self.assertFalse(ConcreteModel._mptt_is_tracking)
-        self.assertFalse(SingleProxyModel._mptt_is_tracking)
-
-    def test_double_context_manager(self):
-        with ConcreteModel.objects.delay_mptt_updates():
-            self.assertTrue(ConcreteModel._mptt_is_tracking)
-            with ConcreteModel.objects.delay_mptt_updates():
-                self.assertTrue(ConcreteModel._mptt_is_tracking)
-            self.assertTrue(ConcreteModel._mptt_is_tracking)
-        self.assertFalse(ConcreteModel._mptt_is_tracking)
-
     def test_insert_child(self):
         with self.assertNumQueries(8):
             with ConcreteModel.objects.delay_mptt_updates():
