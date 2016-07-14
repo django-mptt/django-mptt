@@ -822,12 +822,8 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
 
         # Update the node to be consistent with the updated
         # tree in the database.
-        node.lft = left - left_right_change
-        node.rght = right - left_right_change
-        node.level = level - level_change
-        node.tree_id = new_tree_id
+        node._mptt_refresh()
         setattr(node, self.parent_attr, parent)
-
         node._mptt_cached_fields[self.parent_attr] = parent.pk
 
     def _move_child_within_tree(self, node, target, position):
@@ -949,6 +945,8 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         # Update the node to be consistent with the updated
         # tree in the database.
         node._mptt_refresh()
+        setattr(node, self.parent_attr, parent)
+        node._mptt_cached_fields[self.parent_attr] = parent.pk
 
     def _move_root_node(self, node, target, position):
         """
@@ -1007,6 +1005,10 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             parent._meta.pk.get_db_prep_value(parent.pk, connection),
             left, right, tree_id])
 
+        self._create_tree_space(tree_id, -1)
+
         # Update the former root node to be consistent with the updated
         # tree in the database.
         node._mptt_refresh()
+        setattr(node, self.parent_attr, parent)
+        node._mptt_cached_fields[self.parent_attr] = parent.pk

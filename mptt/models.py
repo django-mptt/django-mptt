@@ -799,15 +799,9 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                     else:
                         # Default movement
                         if parent_id is None:
-                            root_nodes = self._tree_manager.root_nodes()
-                            try:
-                                rightmost_sibling = root_nodes.exclude(
-                                    pk=self.pk).order_by('-tree_id')[0]
-                                self._tree_manager._move_node(
-                                    self, rightmost_sibling, 'right', save=False,
-                                    refresh_target=False)
-                            except IndexError:
-                                pass
+                            self._tree_manager._move_node(
+                                self, None, 'right', save=False,
+                                refresh_target=False)
                         else:
                             self._tree_manager._move_node(
                                 self, parent, 'last-child', save=False)
@@ -867,8 +861,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                 self._tree_manager._create_tree_space(collapse_old_tree, -1)
 
         self._mptt_saved = True
-        self.refresh_from_db(fields=(
-            'lft', 'rght', 'level', 'tree_id'))
+        self._mptt_refresh()
         opts.update_mptt_cached_fields(self)
     save.alters_data = True
 
