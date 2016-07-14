@@ -540,7 +540,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             space_target, level, left, parent, right_shift = \
                 self._calculate_inter_tree_move_values(node, target, position)
 
-            self._create_space(2, space_target, target.tree_id)
+            self._manage_space(2, space_target, target.tree_id)
 
             node.lft = -left
             node.rght = -left + 1
@@ -728,20 +728,6 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             right_shift = 2 * (node.get_descendant_count() + 1)
 
         return space_target, level_change, left_right_change, parent, right_shift
-
-    def _close_gap(self, size, target, tree_id):
-        """
-        Closes a gap of a certain ``size`` after the given ``target``
-        point in the tree identified by ``tree_id``.
-        """
-        self._manage_space(-size, target, tree_id)
-
-    def _create_space(self, size, target, tree_id):
-        """
-        Creates a space of a certain ``size`` after the given ``target``
-        point in the tree identified by ``tree_id``.
-        """
-        self._manage_space(size, target, tree_id)
 
     def _create_tree_space(self, target_tree_id, num_trees=1):
         """
@@ -994,7 +980,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         tree_width = right - left + 1
 
         # Make space for the subtree which will be moved
-        self._create_space(tree_width, space_target, new_tree_id)
+        self._manage_space(tree_width, space_target, new_tree_id)
         # Move the subtree
         connection = self._get_connection(instance=node)
         self._inter_tree_move_and_close_gap(
@@ -1151,7 +1137,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             self._calculate_inter_tree_move_values(node, target, position)
 
         # Create space for the tree which will be inserted
-        self._create_space(width, space_target, new_tree_id)
+        self._manage_space(width, space_target, new_tree_id)
 
         # Move the root node, making it a child node
         connection = self._get_connection(instance=node)

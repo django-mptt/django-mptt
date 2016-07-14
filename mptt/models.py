@@ -709,16 +709,6 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         """
         return self.level
 
-    def insert_at(self, target, position='first-child', save=False,
-                  allow_existing_pk=False, refresh_target=True):
-        """
-        Convenience method for calling ``TreeManager.insert_node`` with this
-        model instance.
-        """
-        self._tree_manager.insert_node(
-            self, target, position, save, allow_existing_pk=allow_existing_pk,
-            refresh_target=refresh_target)
-
     def is_child_node(self):
         """
         Returns ``True`` if this model instance is a child node, ``False``
@@ -766,6 +756,16 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         if include_self and other.pk == self.pk:
             return True
         return other.is_descendant_of(self)
+
+    def insert_at(self, target, position='first-child', save=False,
+                  allow_existing_pk=False, refresh_target=True):
+        """
+        Convenience method for calling ``TreeManager.insert_node`` with this
+        model instance.
+        """
+        self._tree_manager.insert_node(
+            self, target, position, save, allow_existing_pk=allow_existing_pk,
+            refresh_target=refresh_target)
 
     def move_to(self, target, position='first-child'):
         """
@@ -1003,9 +1003,14 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         be passed directly to the django's ``Model.delete``.
 
         ``delete`` will not return anything. """
-        tree_width = self.rght - self.lft + 1
-        target_right = self.rght
-        self._tree_manager._close_gap(tree_width, target_right, self.tree_id)
+
+        # Reduce all lft and rght values to the right by this node's width:
+        self._tree_manager._manage_space(
+            -(self.rght - self.lft + 1),
+            target_right,
+            self.tree_id,
+        )
+
         parent = getattr(self, '_%s_cache' % self._mptt_meta.parent_attr, None)
         if parent:
             right_shift = -self.get_descendant_count() - 2
