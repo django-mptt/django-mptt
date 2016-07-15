@@ -374,7 +374,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         if target is None:
             if node.is_child_node():
                 self._make_child_root_node(node)
-            else:
+            elif target is None:
                 self._rotate_root_nodes(node, position)
 
         elif target.is_root_node() and position in ('left', 'right'):
@@ -405,11 +405,11 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             'target_tree_id': 1 if position == 'left' else self._get_next_tree_id() - 1,
         }
 
-        print(node, position, rotate_query, node.tree_id)
+        #print(node, position, rotate_query, node.tree_id)
 
-        print(cursor.execute(rotate_query, [
+        cursor.execute(rotate_query, [
             node.tree_id, node.tree_id,
-        ]))
+        ])
         node._mptt_refresh()
 
     def move_node(self, node, target, position='last-child'):

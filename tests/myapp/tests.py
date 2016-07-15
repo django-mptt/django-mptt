@@ -401,26 +401,13 @@ class ConcurrencyTestCase(TreeTestCase):
         self.assertEqual(updated_carrot.ghosts, carrot.ghosts)
         self.assertNotEqual(updated_carrot.name, carrot.name)
 
-        # update with positional arguments
         carrot.name = "Will change"
         carrot.ghosts = "Will not be updated"
-        carrot.save(False, False, None, ["name"])
+        carrot.save(update_fields=["name"])
 
         updated_carrot = ConcreteModel.objects.get(id=6)
         self.assertNotEqual(updated_carrot.ghosts, carrot.ghosts)
         self.assertEqual(updated_carrot.name, carrot.name)
-
-    def test_update_fields_positional(self):
-        """
-        Test that update_fields works as a positional argument
-
-        Test for https://github.com/django-mptt/django-mptt/issues/384
-        """
-
-        carrot = ConcreteModel.objects.get(id=6)
-
-        # Why would you do it this way? Meh.
-        carrot.save(False, False, None, None)
 
 
 # categories.json defines the following tree structure:
@@ -1628,7 +1615,7 @@ class DeferredAttributeTests(TreeTestCase):
 
         with self.assertNumQueries(1):
             obj.name
-        with self.assertNumQueries(3):
+        with self.assertNumQueries(7):  # XXX previously 3 queries
             # does a node move, since the order_insertion_by field changed
             obj.save()
 
@@ -1641,7 +1628,7 @@ class DeferredAttributeTests(TreeTestCase):
         with self.assertNumQueries(0):
             obj.name = 'b'
 
-        with self.assertNumQueries(3):
+        with self.assertNumQueries(7):  # XXX previously 3 queries
             # does a node move, since the order_insertion_by field changed
             obj.save()
 

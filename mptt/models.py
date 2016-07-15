@@ -723,7 +723,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                 field_names.append(field.name)
         return field_names
 
-    def save(self, *args, **kwargs):
+    def save(self, **kwargs):
         """
         If this is a new node, sets tree fields up before it is inserted
         into the database, making room in the tree structure as neccessary,
@@ -788,10 +788,21 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                         right_sibling = opts.get_ordered_insertion_target(
                             self, self.parent)
 
+                        # FIXME somewhat redundant, similar checks happen inside _move_node
+                        position = 'last-child'
+                        target = parent if parent_id is not None else None
+
+                        if right_sibling:
+                            position = 'left'
+                            target = right_sibling
+                        if right_sibling is None and self.is_root_node() and not parent_id:
+                            position = 'right'
+                            target = None
+
                         self._tree_manager._move_node(
                             self,
-                            right_sibling,
-                            'left' if right_sibling else 'right',
+                            target,
+                            position,
                             save=False,
                             refresh_target=False)
 
@@ -815,20 +826,12 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                 # If there were no exceptions raised then send a moved signal
                 node_moved.send(sender=self.__class__, instance=self,
                                 target=self.parent)
-            else:
-                opts.set_raw_field_value(self, 'parent', parent_id)
-                # When not using delayed/disabled updates,
-                # populate update_fields with user defined model fields.
-                # This helps preserve tree integrity when saving model on top
-                # of a modified tree.
-                if len(args) > 3:
-                    if not args[3]:
-                        args = list(args)
-                        args[3] = self._get_user_field_names()
-                        args = tuple(args)
-                else:
-                    if not kwargs.get("update_fields", None):
-                        kwargs["update_fields"] = self._get_user_field_names()
+
+            # populate update_fields with user defined model fields.
+            # This helps preserve tree integrity when saving model on top
+            # of a modified tree.
+            if not kwargs.get("update_fields", None):
+                kwargs["update_fields"] = self._get_user_field_names()
 
         else:
             # new node, do an insert
@@ -854,7 +857,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                     # Default insertion
                     self.insert_at(parent, position='last-child', allow_existing_pk=True)
         try:
-            super(MPTTModel, self).save(*args, **kwargs)
+            super(MPTTModel, self).save(**kwargs)
         finally:
             if collapse_old_tree is not None:
                 self._tree_manager._create_tree_space(collapse_old_tree, -1)
