@@ -769,11 +769,6 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
             if not same_order:
                 opts.set_raw_field_value(self, 'parent', old_parent_id)
                 try:
-                    right_sibling = None
-                    if opts.order_insertion_by:
-                        right_sibling = opts.get_ordered_insertion_target(
-                            self, self.parent)
-
                     if parent_id is not None:
                         parent = self.parent
                         # If we aren't already a descendant of the new parent,
@@ -788,10 +783,18 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                             self.lft < parent.lft or
                             self.rght > parent.rght)
 
-                    if right_sibling:
+                    right_sibling = None
+                    if opts.order_insertion_by:
+                        right_sibling = opts.get_ordered_insertion_target(
+                            self, self.parent)
+
                         self._tree_manager._move_node(
-                            self, right_sibling, 'left', save=False,
+                            self,
+                            right_sibling,
+                            'left' if right_sibling else 'right',
+                            save=False,
                             refresh_target=False)
+
                     else:
                         # Default movement
                         if parent_id is None:

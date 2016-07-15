@@ -2027,3 +2027,18 @@ class DirectParentAssignment(TreeTestCase):
         n2 = Node.objects.create()
         n1.parent_id = n2.id
         n1.save()
+
+
+class FromDoctests(TreeTestCase):
+    def test_sibling_ordered_root_nodes(self):
+        from django.conf import settings
+        # settings.DEBUG = True
+        a = OrderedInsertion.objects.create(name='a')
+        b = OrderedInsertion.objects.create(name='b')
+        a = OrderedInsertion.objects.get(name='a')
+        a.name = 'c'
+        a.save()
+        self.assertTreeEqual(OrderedInsertion.objects.all(), '''
+        2 - 1 0 1 2
+        1 - 2 0 1 2
+        ''')

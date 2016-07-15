@@ -374,6 +374,9 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         if target is None:
             if node.is_child_node():
                 self._make_child_root_node(node)
+            else:
+                self._rotate_root_nodes(node, position)
+
         elif target.is_root_node() and position in ('left', 'right'):
             self._make_sibling_of_root_node(node, target, position)
         else:
@@ -381,6 +384,33 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                 self._move_root_node(node, target, position)
             else:
                 self._move_child_node(node, target, position)
+
+    def _rotate_root_nodes(self, node, position):
+        node._mptt_refresh()
+        connection = self._get_connection(instance=node)
+        qn = connection.ops.quote_name
+        cursor = connection.cursor()
+        rotate_query = '''
+            UPDATE %(table)s
+            SET tree_id = CASE
+                WHEN tree_id = %%s
+                    THEN %(target_tree_id)s
+                WHEN tree_id %(direction)s %%s
+                    THEN tree_id %(offset)s
+                ELSE tree_id END
+        ''' % {
+            'table': qn(self.tree_model._meta.db_table),
+            'direction': '<' if position == 'left' else '>',
+            'offset': '+ 1' if position == 'left' else '- 1',
+            'target_tree_id': 1 if position == 'left' else self._get_next_tree_id() - 1,
+        }
+
+        print(node, position, rotate_query, node.tree_id)
+
+        print(cursor.execute(rotate_query, [
+            node.tree_id, node.tree_id,
+        ]))
+        node._mptt_refresh()
 
     def move_node(self, node, target, position='last-child'):
         """
