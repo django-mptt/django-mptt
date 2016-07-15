@@ -862,6 +862,9 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
     delete.alters_data = True
 
     def _mptt_refresh(self):
+        """Reload MPTT bookkeeping attributes (tree_id, lft, rght and level)
+        from the database."""
+
         try:
             self.refresh_from_db(fields=('tree_id', 'lft', 'rght', 'level'))
         except self.DoesNotExist:
