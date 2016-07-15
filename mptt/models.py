@@ -6,8 +6,8 @@ import warnings
 
 import django
 from django.db import models
+from django.db.models import F, Q
 from django.db.models.base import ModelBase
-from django.db.models.query import Q
 from django.db.models.query_utils import DeferredAttribute
 
 from django.utils import six
@@ -22,32 +22,6 @@ __all__ = (
     'TreeForeignKey', 'TreeOneToOneField', 'TreeManyToManyField',
     'TreeManager', 'MPTTOptions', 'MPTTModelBase', 'MPTTModel',
 )
-
-
-class _classproperty(object):
-    def __init__(self, getter, setter=None):
-        self.fget = getter
-        self.fset = setter
-
-    def __get__(self, cls, owner):
-        return self.fget(owner)
-
-    def __set__(self, cls, owner, value):
-        if not self.fset:
-            raise AttributeError("This classproperty is read only")
-        self.fset(owner, value)
-
-
-class classpropertytype(property):
-    def __init__(self, name, bases=(), members={}):
-        return super(classpropertytype, self).__init__(
-            members.get('__get__'),
-            members.get('__set__'),
-            members.get('__delete__'),
-            members.get('__doc__')
-        )
-
-classproperty = classpropertytype('classproperty')
 
 
 class MPTTOptions(object):
@@ -513,23 +487,16 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
             else:
                 return self._tree_manager.filter(pk=self.pk)
 
-        opts = self._mptt_meta
-        left = self.lft
-        right = self.rght
-
-        if not include_self:
-            left += 1
-            right -= 1
-
         return self._tree_manager.filter(
             tree_id=self.tree_id,
-            lft__gte=left,
-            lft__lte=right
+            lft__range=[self.lft + (0 if include_self else 1), self.rght],
         )
 
     def get_descendant_count(self):
         """
         Returns the number of descendants this model instance has.
+
+        Returns 0 if node is not saved yet.
         """
         return 0 if self.rght is None else (self.rght - self.lft - 1) // 2
 
@@ -545,7 +512,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         descendants = self.get_descendants(include_self=include_self)
 
         return descendants.filter(
-            lft=models.F('rght') - 1,
+            lft=F('rght') - 1,
         )
 
     @raise_if_unsaved
@@ -635,7 +602,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         Returns ``True`` if this model instance is a child node, ``False``
         otherwise.
         """
-        return not self.is_root_node()
+        return self.parent_id is not None
 
     def is_leaf_node(self):
         """
@@ -748,7 +715,6 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         # determine whether this instance is already in the db
         force_update = kwargs.get('force_update', False)
         force_insert = kwargs.get('force_insert', False)
-        collapse_old_tree = None
         deferred_fields = self.get_deferred_fields()
         if force_update or (not force_insert and self._is_saved(using=kwargs.get('using'))):
             # it already exists, so do a move
@@ -856,11 +822,8 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                 else:
                     # Default insertion
                     self.insert_at(parent, position='last-child', allow_existing_pk=True)
-        try:
-            super(MPTTModel, self).save(**kwargs)
-        finally:
-            if collapse_old_tree is not None:
-                self._tree_manager._create_tree_space(collapse_old_tree, -1)
+
+        super(MPTTModel, self).save(**kwargs)
 
         self._mptt_saved = True
         self._mptt_refresh()
