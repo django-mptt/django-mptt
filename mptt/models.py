@@ -681,10 +681,10 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
 
     def _get_user_field_names(self):
         """ Returns the list of user defined (i.e. non-mptt internal) field names. """
-        from django.db.models.fields import AutoField
+        from django.db.models import AutoField
 
         field_names = []
-        internal_fields = ('lft', 'rght', 'tree_id', 'level', 'parent')
+        internal_fields = ('lft', 'rght', 'tree_id', 'level')
         for field in self._meta.fields:
             if (field.name not in internal_fields) and (not isinstance(field, AutoField)) and (not field.primary_key):  # noqa
                 field_names.append(field.name)

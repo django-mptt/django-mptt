@@ -436,6 +436,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         move the node yourself by setting node.parent.
         """
         self._move_node(node, target, position=position)
+        node.save()
         node_moved.send(sender=node.__class__, instance=node,
                         target=target, position=position)
 
@@ -603,16 +604,9 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                     THEN rght - %%s
                 WHEN rght > %%s
                     THEN rght - %%s
-                ELSE rght END,
-            %(parent)s = CASE
-                WHEN %(pk)s = %%s
-                    THEN %(new_parent)s
-                ELSE %(parent)s END
+                ELSE rght END
         WHERE tree_id = %%s""" % {
             'table': qn(self.tree_model._meta.db_table),
-            'parent': qn(opts.get_field('parent').column),
-            'pk': qn(opts.pk.column),
-            'new_parent': parent_pk is None and 'NULL' or '%s',
         }
 
         left = node.lft
@@ -626,11 +620,8 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             gap_target_left, gap_size,
             left, right, left_right_change,
             gap_target_left, gap_size,
-            node._meta.pk.get_db_prep_value(node.pk, connection),
             node.tree_id,
         ]
-        if parent_pk is not None:
-            params.insert(-1, parent_pk)
 
         cursor = connection.cursor()
         cursor.execute(inter_tree_move_query, params)
@@ -918,15 +909,9 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                   THEN rght + %%s
                 WHEN rght >= %%s AND rght <= %%s
                   THEN rght + %%s
-                ELSE rght END,
-            %(parent)s = CASE
-                WHEN %(pk)s = %%s
-                  THEN %%s
-                ELSE %(parent)s END
+                ELSE rght END
         WHERE tree_id = %%s""" % {
             'table': qn(self.tree_model._meta.db_table),
-            'parent': qn(opts.get_field('parent').column),
-            'pk': qn(opts.pk.column),
         }
 
         cursor = connection.cursor()
@@ -936,8 +921,6 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             left_boundary, right_boundary, gap_size,
             left, right, left_right_change,
             left_boundary, right_boundary, gap_size,
-            node._meta.get_field(node._meta.pk.name).get_db_prep_value(node.pk, connection),
-            parent._meta.get_field(parent._meta.pk.name).get_db_prep_value(parent.pk, connection),
             tree_id])
 
         # Update the node to be consistent with the updated
@@ -983,24 +966,16 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         SET level = level - %%s,
             lft = lft - %%s,
             rght = rght - %%s,
-            tree_id = %%s,
-            %(parent)s = CASE
-                WHEN %(pk)s = %%s
-                    THEN %%s
-                ELSE %(parent)s END
+            tree_id = %%s
         WHERE lft >= %%s AND lft <= %%s
           AND tree_id = %%s""" % {
             'table': qn(self.tree_model._meta.db_table),
-            'parent': qn(opts.get_field('parent').column),
-            'pk': qn(opts.pk.column),
         }
 
         cursor = connection.cursor()
         cursor.execute(move_tree_query, [
             level_change, left_right_change, left_right_change,
             new_tree_id,
-            node._meta.pk.get_db_prep_value(node.pk, connection),
-            parent._meta.pk.get_db_prep_value(parent.pk, connection),
             left, right, tree_id])
 
         self._create_tree_space(tree_id, -1)
