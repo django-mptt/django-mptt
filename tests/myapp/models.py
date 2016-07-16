@@ -276,16 +276,6 @@ class AutoNowDateFieldModel(MPTTModel):
         order_insertion_by = ('now',)
 
 
-# test registering of remote model
-class Group(models.Model):
-    name = models.CharField(max_length=100)
-
-TreeForeignKey(
-    Group, blank=True, null=True, on_delete=models.CASCADE
-).contribute_to_class(Group, 'parent')
-mptt.register(Group, order_insertion_by=('name',))
-
-
 class Book(MPTTModel):
     parent = TreeForeignKey(
         'self', null=True, blank=True, related_name='children',

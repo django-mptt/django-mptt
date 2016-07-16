@@ -8,7 +8,7 @@ import tempfile
 import unittest
 
 from django import forms
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import User
 from django.db.models import Q, Manager
 from django.db.models.query_utils import DeferredAttribute
 from django.apps import apps
@@ -1195,13 +1195,6 @@ class TestAutoNowDateFieldModel(TreeTestCase):
     def test_save_auto_now_date_field_model(self):
         a = AutoNowDateFieldModel()
         a.save()
-
-
-class RegisteredRemoteModel(TreeTestCase):
-
-    def test_save_registered_model(self):
-        g1 = Group.objects.create(name='group 1')
-        g1.save()
 
 
 class TestForms(TreeTestCase):

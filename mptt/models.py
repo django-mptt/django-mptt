@@ -256,45 +256,8 @@ class MPTTModelBase(ModelBase):
         class_dict['_mptt_meta'] = MPTTOptions(MPTTMeta)
         super_new = super(MPTTModelBase, meta).__new__
         cls = super_new(meta, class_name, bases, class_dict)
-        cls = meta.register(cls)
 
-        return cls
-
-    @classmethod
-    def register(meta, cls, **kwargs):
-        """
-        For the weird cases when you need to add tree-ness to an *existing*
-        class. For other cases you should subclass MPTTModel instead of calling this.
-        """
-
-        if not issubclass(cls, models.Model):
-            raise ValueError(_("register() expects a Django model class argument"))
-
-        if not hasattr(cls, '_mptt_meta'):
-            cls._mptt_meta = MPTTOptions(**kwargs)
-
-        try:
-            MPTTModel
-        except NameError:
-            # We're defining the base class right now, so don't do anything
-            # We only want to add this stuff to the subclasses.
-            # (Otherwise if field names are customized, we'll end up adding two
-            # copies)
-            pass
-        else:
-            if not issubclass(cls, MPTTModel):
-                bases = list(cls.__bases__)
-
-                # strip out bases that are strict superclasses of MPTTModel.
-                # (i.e. Model, object)
-                # this helps linearize the type hierarchy if possible
-                for i in range(len(bases) - 1, -1, -1):
-                    if issubclass(MPTTModel, bases[i]):
-                        del bases[i]
-
-                bases.insert(0, MPTTModel)
-                cls.__bases__ = tuple(bases)
-
+        if not is_MPTTModel:
             # Add a tree manager, if there isn't one already
             # NOTE: Django 1.10 lets models inherit managers without handholding.
             if django.VERSION < (1, 10) and not cls._meta.abstract:
