@@ -364,6 +364,10 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
 
     @property
     def _tree_manager(self):
+        """
+        Returns the default manager for the model whose table contains the MPTT
+        bookkeeping attributes.
+        """
         return self.__class__._default_manager.tree_model._default_manager
 
     @raise_if_unsaved
