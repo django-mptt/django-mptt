@@ -153,7 +153,6 @@ def print_debug_info(qs, file=None):
     Use this when things go wrong.
     Please include the output from this method when filing bug issues.
     """
-    opts = qs.model._mptt_meta
     writer = csv.writer(sys.stdout if file is None else file)
     header = (
         'pk',

@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
+
 from functools import reduce, wraps
 import operator
-import threading
 import warnings
 
 import django
@@ -9,9 +9,7 @@ from django.db import models
 from django.db.models import F, Q
 from django.db.models.base import ModelBase
 from django.db.models.query_utils import DeferredAttribute
-
 from django.utils import six
-from django.utils.translation import ugettext as _
 
 from mptt.fields import TreeForeignKey, TreeOneToOneField, TreeManyToManyField
 from mptt.managers import TreeManager
@@ -354,8 +352,6 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                 # Filter on pk for efficiency.
                 qs = self._tree_manager.filter(pk=self.pk)
         else:
-            opts = self._mptt_meta
-
             order_by = 'lft'
             if ascending:
                 order_by = '-' + order_by
@@ -399,8 +395,6 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         Returns a ``QuerySet`` containing the ancestors, the model itself
         and the descendants, in tree order.
         """
-        opts = self._mptt_meta
-
         ancestors = Q(
             lft__lte=self.lft,
             rght__gte=self.rght,
@@ -509,7 +503,6 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         Returns this model instance's previous sibling in the tree, or
         ``None`` if it doesn't have a previous sibling.
         """
-        opts = self._mptt_meta
         qs = self._tree_manager.filter(*filter_args, **filter_kwargs)
         if self.is_root_node():
             qs = qs.filter(
@@ -592,8 +585,6 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         ``False`` otherwise.
         If include_self is True, also returns True if the two nodes are the same node.
         """
-        opts = self._mptt_meta
-
         if include_self and other.pk == self.pk:
             return True
 

@@ -26,7 +26,7 @@ except ImportError:
     mock_signal_receiver = None
 
 from mptt.admin import JS
-from mptt.exceptions import CantDisableUpdates, InvalidMove
+from mptt.exceptions import InvalidMove
 from mptt.forms import (
     MPTTAdminForm, TreeNodeChoiceField, TreeNodeMultipleChoiceField,
     MoveNodeForm)
@@ -37,7 +37,7 @@ from mptt.templatetags.mptt_tags import cache_tree_children
 from mptt.utils import print_debug_info
 
 from myapp.models import (
-    Category, Item, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel,
+    Category, Item, Genre, CustomPKName, SingleProxyModel,
     ConcreteModel, OrderedInsertion, AutoNowDateFieldModel, Person,
     CustomTreeQueryset, Node, ReferencingModel, CustomTreeManager, Book,
     UUIDNode)
@@ -52,7 +52,6 @@ def get_tree_details(nodes):
     if hasattr(nodes, 'order_by'):
         nodes = list(nodes.order_by('tree_id', 'lft', 'pk'))
     nodes = list(nodes)
-    opts = nodes[0]._mptt_meta
     return '\n'.join([
         '%s %s %s %s %s %s' % (
             n.pk,
@@ -1319,7 +1318,6 @@ class AdminBatch(TreeTestCase):
             'name="_selected_action"',
             10)
 
-        mptt_opts = Category._mptt_meta
         self.assertEqual(
             response.context['cl'].result_list.query.order_by[:2],
             ['tree_id', 'lft'])
@@ -2011,11 +2009,9 @@ class DirectParentAssignment(TreeTestCase):
 
 class FromDoctests(TreeTestCase):
     def test_sibling_ordered_root_nodes(self):
-        from django.conf import settings
-        # settings.DEBUG = True
         a = OrderedInsertion.objects.create(name='a')
-        b = OrderedInsertion.objects.create(name='b')
-        a = OrderedInsertion.objects.get(name='a')
+        OrderedInsertion.objects.create(name='b')
+        a.refresh_from_db()
         a.name = 'c'
         a.save()
         self.assertTreeEqual(OrderedInsertion.objects.all(), '''

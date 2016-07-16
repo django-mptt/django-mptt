@@ -1,13 +1,14 @@
 from __future__ import unicode_literals
-from django.db import models
-from django.utils.encoding import python_2_unicode_compatible
+
 from uuid import uuid4
 
-import mptt
-from mptt.fields import TreeForeignKey, TreeOneToOneField, TreeManyToManyField
-from mptt.models import MPTTModel
-from mptt.managers import TreeManager
+from django.db import models
 from django.db.models.query import QuerySet
+from django.utils.encoding import python_2_unicode_compatible
+
+from mptt.fields import TreeForeignKey, TreeOneToOneField, TreeManyToManyField
+from mptt.managers import TreeManager
+from mptt.models import MPTTModel
 
 
 class CustomTreeQueryset(QuerySet):
@@ -237,12 +238,6 @@ class ConcreteConcrete(ConcreteModel):
 
 class SingleProxyModel(ConcreteModel):
     objects = CustomTreeManager()
-
-    class Meta:
-        proxy = True
-
-
-class DoubleProxyModel(SingleProxyModel):
 
     class Meta:
         proxy = True

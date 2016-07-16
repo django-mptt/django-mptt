@@ -26,7 +26,6 @@ class TreeNodeChoiceFieldMixin(object):
 
         # if a queryset is supplied, enforce ordering
         if hasattr(queryset, 'model'):
-            mptt_opts = queryset.model._mptt_meta
             queryset = queryset.order_by('tree_id', 'lft')
 
         super(TreeNodeChoiceFieldMixin, self).__init__(queryset, *args, **kwargs)
@@ -118,7 +117,6 @@ class MoveNodeForm(forms.Form):
         position_choices = kwargs.pop('position_choices', None)
         level_indicator = kwargs.pop('level_indicator', None)
         super(MoveNodeForm, self).__init__(*args, **kwargs)
-        opts = node._mptt_meta
         if valid_targets is None:
             valid_targets = node.__class__._default_manager.exclude(
                 tree_id=node.tree_id,
@@ -161,7 +159,6 @@ class MPTTAdminForm(forms.ModelForm):
         super(MPTTAdminForm, self).__init__(*args, **kwargs)
         if self.instance and self.instance.pk:
             instance = self.instance
-            opts = self._meta.model._mptt_meta
             parent_field = self.fields.get('parent')
             if parent_field:
                 parent_qs = parent_field.queryset
@@ -174,7 +171,6 @@ class MPTTAdminForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super(MPTTAdminForm, self).clean()
-        opts = self._meta.model._mptt_meta
         parent = cleaned_data.get('parent')
         if self.instance and parent:
             if parent.is_descendant_of(self.instance, include_self=True):

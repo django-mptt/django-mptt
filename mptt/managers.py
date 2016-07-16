@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 
 import contextlib
 from itertools import groupby
-import warnings
 
 from django.db import models, connections, router
 from django.db.models import F, ManyToManyField, Max, Q
@@ -350,7 +349,6 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                 target.refresh_from_db(fields=(
                     'lft', 'rght', 'level', 'tree_id'))
 
-
             space_target, level, left, parent, right_shift = \
                 self._calculate_inter_tree_move_values(node, target, position)
 
@@ -403,8 +401,6 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             'offset': '+ 1' if position == 'left' else '- 1',
             'target_tree_id': 1 if position == 'left' else self._get_next_tree_id() - 1,
         }
-
-        #print(node, position, rotate_query, node.tree_id)
 
         cursor.execute(rotate_query, [
             node.tree_id, node.tree_id,
@@ -581,7 +577,6 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         connection = self._get_connection(instance=node)
         qn = connection.ops.quote_name
 
-        opts = self.model._meta
         inter_tree_move_query = """
         UPDATE %(table)s
         SET level = CASE
@@ -670,7 +665,6 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         if node == target:
             raise InvalidMove(_('A node may not be made a sibling of itself.'))
 
-        opts = self.model._meta
         tree_id = node.tree_id
         target_tree_id = target.tree_id
 
@@ -747,7 +741,6 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         connection = self._get_connection()
         qn = connection.ops.quote_name
 
-        opts = self.model._meta
         space_query = """
         UPDATE %(table)s
         SET lft = CASE
@@ -792,7 +785,6 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         """
         left = node.lft
         right = node.rght
-        level = node.level
         new_tree_id = target.tree_id
 
         space_target, level_change, left_right_change, parent, new_parent_right = \
@@ -886,7 +878,6 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         connection = self._get_connection(instance=node)
         qn = connection.ops.quote_name
 
-        opts = self.model._meta
         # The level update must come before the left update to keep
         # MySQL happy - left seems to refer to the updated value
         # immediately after its update has been specified in the query
@@ -939,7 +930,6 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         """
         left = node.lft
         right = node.rght
-        level = node.level
         tree_id = node.tree_id
         new_tree_id = target.tree_id
         width = right - left + 1
@@ -959,7 +949,6 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         connection = self._get_connection(instance=node)
         qn = connection.ops.quote_name
 
-        opts = self.model._meta
         move_tree_query = """
         UPDATE %(table)s
         SET level = level - %%s,

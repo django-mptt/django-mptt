@@ -63,7 +63,6 @@ class MPTTModelAdmin(ModelAdmin):
         """
         Changes the default ordering for changelists to tree-order.
         """
-        mptt_opts = self.model._mptt_meta
         return self.ordering or ('tree_id', 'lft')
 
     def delete_selected_tree(self, modeladmin, request, queryset):
@@ -268,7 +267,6 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         """
         all_nodes = {}
 
-        mptt_opts = self.model._mptt_meta
         items = queryset.values_list('pk', 'parent_id')
         for p_id, parent_id in items:
             all_nodes.setdefault(
