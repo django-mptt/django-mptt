@@ -13,7 +13,6 @@ from django.utils.translation import ugettext as _
 
 from mptt.exceptions import InvalidMove
 from mptt.querysets import TreeQuerySet
-from mptt.utils import _get_tree_model
 from mptt.signals import node_moved
 
 
@@ -79,7 +78,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
 
     @property
     def tree_model(self):
-        return _get_tree_model(self.model)
+        return self.model._meta.get_field('lft').model
 
     def get_queryset(self, *args, **kwargs):
         """

@@ -174,22 +174,6 @@ def print_debug_info(qs, file=None):
         writer.writerow(row)
 
 
-def _get_tree_model(model_class):
-    # Find the model that contains the tree fields.
-    # This is a weird way of going about it, but Django doesn't let us access
-    # the fields list to detect where the tree fields actually are,
-    # because the app cache hasn't been loaded yet.
-    # So, it *should* be the *last* concrete MPTTModel subclass in the mro().
-    bases = list(model_class.mro())
-    while bases:
-        b = bases.pop()
-        # NOTE can't use `issubclass(b, MPTTModel)` here because we can't import MPTTModel yet!
-        # So hasattr(b, '_mptt_meta') will have to do.
-        if hasattr(b, '_mptt_meta') and not (b._meta.abstract or b._meta.proxy):
-            return b
-    return None
-
-
 def get_cached_trees(queryset):
     """
     Takes a list/queryset of model objects in MPTT left (depth-first) order and
