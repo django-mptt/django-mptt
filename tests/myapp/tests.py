@@ -2335,3 +2335,12 @@ class UUIDPrimaryKey(TreeTestCase):
         child2.move_to(child1, 'left')
 
         self.assertEqual(list(root1.get_children()), [child2, child1])
+
+
+class DirectParentAssignment(TreeTestCase):
+    def test_assignment(self):
+        """Regression test for #428"""
+        n1 = Node.objects.create()
+        n2 = Node.objects.create()
+        n1.parent_id = n2.id
+        n1.save()
