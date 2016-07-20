@@ -908,7 +908,11 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                         # If we aren't already a descendant of the new parent,
                         # we need to update the parent.rght so things like
                         # get_children and get_descendant_count work correctly.
-                        update_cached_parent = (
+                        #
+                        # parent might be None if parent_id was assigned
+                        # directly -- then we certainly do not have to update
+                        # the cached parent.
+                        update_cached_parent = parent and (
                             getattr(self, opts.tree_id_attr) != getattr(parent, opts.tree_id_attr) or  # noqa
                             getattr(self, opts.left_attr) < getattr(parent, opts.left_attr) or
                             getattr(self, opts.right_attr) > getattr(parent, opts.right_attr))
