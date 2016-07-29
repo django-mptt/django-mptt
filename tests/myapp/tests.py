@@ -2050,3 +2050,32 @@ class UniqueTogetherTestCase(TreeTestCase):
         e2.code = '1'
         e2.parent = f
         e2.save()  # it tries to be f1, not conflicting
+
+
+class RebuildTestCase(TreeTestCase):
+    fixtures = ['genres.json']
+
+    def test_rebuild(self):
+        Genre.objects.update(
+            lft=-1,
+            rght=-1,
+            level=-1,
+            tree_id=-1,
+        )
+
+        with self.assertNumQueries(23):
+            Genre.objects.rebuild()
+
+        self.assertTreeEqual(Genre.objects.all(), """
+            1 - 1 0 1 16
+            2 1 1 1 2 9
+            3 2 1 2 3 4
+            4 2 1 2 5 6
+            5 2 1 2 7 8
+            6 1 1 1 10 15
+            7 6 1 2 11 12
+            8 6 1 2 13 14
+            9 - 2 0 1 6
+            10 9 2 1 2 3
+            11 9 2 1 4 5
+        """)
