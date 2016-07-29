@@ -431,7 +431,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         move the node yourself by setting node.parent.
         """
         self._move_node(node, target, position=position)
-        node.save()
+        node.save()  # XXX This was not necessary before! What changed?
         node_moved.send(sender=node.__class__, instance=node,
                         target=target, position=position)
 
