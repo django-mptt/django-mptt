@@ -707,21 +707,21 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                             self.lft < parent.lft or
                             self.rght > parent.rght)
 
-                    right_sibling = None
                     if opts.order_insertion_by:
                         right_sibling = opts.get_ordered_insertion_target(
                             self, self.parent)
 
-                        # FIXME somewhat redundant, similar checks happen inside _move_node
+                        # Default position is last.
                         position = 'last-child'
-                        target = parent if parent_id is not None else None
+                        target = None if parent_id is None else parent
 
                         if right_sibling:
                             position = 'left'
                             target = right_sibling
+
                         if right_sibling is None and self.is_root_node() and not parent_id:
+                            # Our tree should be the last of all.
                             position = 'right'
-                            target = None
 
                         self._tree_manager._move_node(
                             self,
