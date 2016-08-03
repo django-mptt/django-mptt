@@ -368,6 +368,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         return node
 
     def _move_node(self, node, target, position='last-child', save=True, refresh_target=True):
+        # FIXME the ``save`` argument is completely unused.
         if target is None:
             if node.is_child_node():
                 self._make_child_root_node(node)
