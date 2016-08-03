@@ -382,31 +382,6 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             else:
                 self._move_child_node(node, target, position)
 
-    def _rotate_root_nodes(self, node, position):
-        node._mptt_refresh()
-        connection = self._get_connection(instance=node)
-        qn = connection.ops.quote_name
-        cursor = connection.cursor()
-        rotate_query = '''
-            UPDATE %(table)s
-            SET tree_id = CASE
-                WHEN tree_id = %%s
-                    THEN %(target_tree_id)s
-                WHEN tree_id %(direction)s %%s
-                    THEN tree_id %(offset)s
-                ELSE tree_id END
-        ''' % {
-            'table': qn(self.tree_model._meta.db_table),
-            'direction': '<' if position == 'left' else '>',
-            'offset': '+ 1' if position == 'left' else '- 1',
-            'target_tree_id': 1 if position == 'left' else self._get_next_tree_id() - 1,
-        }
-
-        cursor.execute(rotate_query, [
-            node.tree_id, node.tree_id,
-        ])
-        node._mptt_refresh()
-
     def move_node(self, node, target, position='last-child'):
         """
         Moves ``node`` relative to a given ``target`` node as specified
@@ -973,3 +948,36 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         node._mptt_refresh()
         node.parent = parent
         node._mptt_cached_fields['parent'] = parent.pk
+
+    def _rotate_root_nodes(self, node, position):
+        """
+        Makes the root node ``node`` the first or last root node depending on
+        ``position`` (one of ``left`` or ``right``), which means that ``node``
+        will either have a ``tree_id`` of 1 or ``MAX(tree_id)`` at the end.
+        Renumbers all nodes between the starting and ending ``tree_id``.
+        """
+        node._mptt_refresh()
+        connection = self._get_connection(instance=node)
+        qn = connection.ops.quote_name
+        cursor = connection.cursor()
+        rotate_query = '''
+            UPDATE %(table)s
+            SET tree_id = CASE
+                WHEN tree_id = %%s
+                    THEN %(target_tree_id)s
+                WHEN tree_id %(direction)s %%s
+                    THEN tree_id %(offset)s
+                ELSE tree_id END
+        ''' % {
+            'table': qn(self.tree_model._meta.db_table),
+            'direction': '<' if position == 'left' else '>',
+            'offset': '+ 1' if position == 'left' else '- 1',
+            # We could also ask for MAX(tree_id) instead of _get_next_tree_id,
+            # but it does not really matter and we already have the latter.
+            'target_tree_id': 1 if position == 'left' else self._get_next_tree_id() - 1,
+        }
+
+        cursor.execute(rotate_query, [
+            node.tree_id, node.tree_id,
+        ])
+        node._mptt_refresh()
