@@ -203,7 +203,6 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
 
         return response
 
-    @transaction.atomic
     def _move_node(self, request):
         position = request.POST.get('position')
         if position not in ('last-child', 'left', 'right'):
@@ -223,13 +222,14 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
             return http.HttpResponse('FAIL, no permission.')
 
         try:
-            self.model._default_manager.move_node(cut_item, pasted_on, position)
+            with transaction.atomic():
+                self.model._default_manager.move_node(cut_item, pasted_on, position)
         except InvalidMove as e:
             self.message_user(request, '%s' % e)
             return http.HttpResponse('FAIL, invalid move.')
         except IntegrityError as e:
             self.message_user(request, _('Database error: %s') % e)
-            raise
+            return http.HttpResponse('FAIL, invalid move.')
 
         self.message_user(
             request,
