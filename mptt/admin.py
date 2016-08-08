@@ -43,7 +43,7 @@ class MPTTModelAdmin(ModelAdmin):
     form = MPTTAdminForm
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if issubclass(db_field.rel.to, MPTTModel) \
+        if issubclass(db_field.remote_field.model, MPTTModel) \
                 and not isinstance(db_field, TreeForeignKey) \
                 and db_field.name not in self.raw_id_fields:
             db = kwargs.get('using')
@@ -51,7 +51,7 @@ class MPTTModelAdmin(ModelAdmin):
             limit_choices_to = db_field.get_limit_choices_to()
             defaults = dict(
                 form_class=TreeNodeChoiceField,
-                queryset=db_field.rel.to._default_manager.using(
+                queryset=db_field.remote_field.model._default_manager.using(
                     db).complex_filter(limit_choices_to),
                 required=False)
             defaults.update(kwargs)
