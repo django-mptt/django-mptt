@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import json
 
 from django import http
+from django.apps import apps
 from django.conf import settings
 from django.contrib.admin.actions import delete_selected
 from django.contrib.admin.options import ModelAdmin
@@ -99,6 +100,17 @@ class MPTTModelAdmin(ModelAdmin):
         return actions
 
 
+def _static_url(path):
+    # Django >= 1.10 does this automatically. We can revert to simply using
+    # static(path) then.
+    if apps.is_installed('django.contrib.staticfiles'):
+        from django.contrib.staticfiles.storage import staticfiles_storage
+
+        return staticfiles_storage.url(path)
+    else:
+        return static(path)
+
+
 class JS(object):
     """
     Use this to insert a script tag via ``forms.Media`` containing additional
@@ -134,7 +146,7 @@ class JS(object):
     def __html__(self):
         return format_html(
             '{}"{}',
-            static(self.js),
+            _static_url(self.js),
             mark_safe(flatatt(self.attrs)),
         ).rstrip('"')
 
