@@ -335,15 +335,6 @@ class MPTTModelBase(ModelBase):
 
             # Add a tree manager, if there isn't one already
             if not abstract:
-                manager = getattr(cls, 'objects', None)
-                if manager is None:
-                    manager = cls._default_manager._copy_to_model(cls)
-                    manager.contribute_to_class(cls, 'objects')
-                elif manager.model != cls:
-                    # manager was inherited
-                    manager = manager._copy_to_model(cls)
-                    manager.contribute_to_class(cls, 'objects')
-
                 # make sure we have a tree manager somewhere
                 tree_manager = None
                 if hasattr(cls._meta, 'concrete_managers'):  # Django < 1.10
@@ -386,10 +377,11 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
     """
     Base class for tree models.
     """
-    _default_manager = TreeManager()
 
     class Meta:
         abstract = True
+
+    objects = TreeManager()
 
     def __init__(self, *args, **kwargs):
         super(MPTTModel, self).__init__(*args, **kwargs)

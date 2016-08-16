@@ -40,7 +40,7 @@ from myapp.models import (
     Category, Item, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel,
     ConcreteModel, OrderedInsertion, AutoNowDateFieldModel, Person,
     CustomTreeQueryset, Node, ReferencingModel, CustomTreeManager, Book,
-    UUIDNode)
+    UUIDNode, Student)
 
 
 def get_tree_details(nodes):
@@ -1158,6 +1158,13 @@ class ManagerTests(TreeTestCase):
                     "Tree managers for %s and %s are the same manager"
                     % (model.__name__, seen[id(tm)].__name__))
             seen[id(tm)] = model
+
+    def test_manager_multi_table_inheritance(self):
+        self.assertIs(Student._tree_manager.model, Student)
+        self.assertIs(Student._tree_manager.tree_model, Person)
+
+        self.assertIs(Person._tree_manager.model, Person)
+        self.assertIs(Person._tree_manager.tree_model, Person)
 
     def test_all_managers_have_correct_model(self):
         # all tree managers should have the correct model.
