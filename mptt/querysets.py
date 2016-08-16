@@ -8,14 +8,14 @@ class TreeQuerySet(models.query.QuerySet):
         """
         Alias to `mptt.managers.TreeManager.get_queryset_descendants`.
         """
-        return self.model._tree_manager.get_queryset_descendants(self, *args, **kwargs)
+        return self.model._default_manager.get_queryset_descendants(self, *args, **kwargs)
     get_descendants.queryset_only = True
 
     def get_ancestors(self, *args, **kwargs):
         """
         Alias to `mptt.managers.TreeManager.get_queryset_ancestors`.
         """
-        return self.model._tree_manager.get_queryset_ancestors(self, *args, **kwargs)
+        return self.model._default_manager.get_queryset_ancestors(self, *args, **kwargs)
     get_ancestors.queryset_only = True
 
     def get_cached_trees(self):

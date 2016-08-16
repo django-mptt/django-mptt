@@ -1,13 +1,14 @@
 from __future__ import unicode_literals
-from django.db import models
-from django.utils.encoding import python_2_unicode_compatible
+
 from uuid import uuid4
 
-import mptt
-from mptt.fields import TreeForeignKey, TreeOneToOneField, TreeManyToManyField
-from mptt.models import MPTTModel
-from mptt.managers import TreeManager
+from django.db import models
 from django.db.models.query import QuerySet
+from django.utils.encoding import python_2_unicode_compatible
+
+from mptt.fields import TreeForeignKey, TreeOneToOneField, TreeManyToManyField
+from mptt.managers import TreeManager
+from mptt.models import MPTTModel
 
 
 class CustomTreeQueryset(QuerySet):
@@ -106,14 +107,6 @@ class Node(MPTTModel):
     parent = TreeForeignKey(
         'self', null=True, blank=True, related_name='children',
         on_delete=models.CASCADE)
-    # To check that you can set level_attr etc to an existing field.
-    level = models.IntegerField()
-
-    class MPTTMeta:
-        left_attr = 'does'
-        right_attr = 'zis'
-        level_attr = 'level'
-        tree_id_attr = 'work'
 
 
 class UUIDNode(MPTTModel):
@@ -145,15 +138,6 @@ class Tree(MPTTModel):
         on_delete=models.CASCADE)
 
 
-class NewStyleMPTTMeta(MPTTModel):
-    parent = TreeForeignKey(
-        'self', null=True, blank=True, related_name='children',
-        on_delete=models.CASCADE)
-
-    class MPTTMeta(object):
-        left_attr = 'testing'
-
-
 @python_2_unicode_compatible
 class Person(MPTTModel):
     name = models.CharField(max_length=50)
@@ -163,9 +147,6 @@ class Person(MPTTModel):
 
     # just testing it's actually possible to override the tree manager
     objects = CustomTreeManager()
-
-    # This line is set because of https://github.com/django-mptt/django-mptt/issues/369
-    _default_manager = objects
 
     def __str__(self):
         return self.name
@@ -262,12 +243,6 @@ class SingleProxyModel(ConcreteModel):
         proxy = True
 
 
-class DoubleProxyModel(SingleProxyModel):
-
-    class Meta:
-        proxy = True
-
-
 # 5. swappable models
 
 class SwappableModel(MPTTModel):
@@ -296,16 +271,6 @@ class AutoNowDateFieldModel(MPTTModel):
         order_insertion_by = ('now',)
 
 
-# test registering of remote model
-class Group(models.Model):
-    name = models.CharField(max_length=100)
-
-TreeForeignKey(
-    Group, blank=True, null=True, on_delete=models.CASCADE
-).contribute_to_class(Group, 'parent')
-mptt.register(Group, order_insertion_by=('name',))
-
-
 class Book(MPTTModel):
     parent = TreeForeignKey(
         'self', null=True, blank=True, related_name='children',
@@ -314,3 +279,12 @@ class Book(MPTTModel):
     name = models.CharField(max_length=50)
     fk = TreeForeignKey(Category, null=True, blank=True, related_name='books_fk')
     m2m = TreeManyToManyField(Category, null=True, blank=True, related_name='books_m2m')
+
+
+# test behaviour with unique_together
+class UniqueCodePerParentModel(MPTTModel):
+    parent = TreeForeignKey('self', null=True)
+    code = models.CharField(max_length=50)
+
+    class Meta:
+        unique_together = (('parent', 'code',),)

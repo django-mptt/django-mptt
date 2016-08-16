@@ -30,7 +30,7 @@ class FullTreeForModelNode(template.Node):
             raise template.TemplateSyntaxError(
                 _('full_tree_for_model tag was given an invalid model: %s') % self.model
             )
-        context[self.context_var] = cls._tree_manager.all()
+        context[self.context_var] = cls._default_manager.all()
         return ''
 
 

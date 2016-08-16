@@ -76,10 +76,9 @@ def tree_item_iterator(items, ancestors=False):
         if opts is None:
             opts = current._mptt_meta
 
-        current_level = getattr(current, opts.level_attr)
+        current_level = current.level
         if previous:
-            structure['new_level'] = (getattr(previous,
-                                              opts.level_attr) < current_level)
+            structure['new_level'] = previous.level < current_level
             if ancestors:
                 # If the previous node was the end of any number of
                 # levels, remove the appropriate number of ancestors
@@ -99,10 +98,7 @@ def tree_item_iterator(items, ancestors=False):
 
             first_item_level = current_level
         if next_:
-            structure['closed_levels'] = list(range(
-                current_level,
-                getattr(next_, opts.level_attr),
-                -1))
+            structure['closed_levels'] = list(range(current_level, next_.level, -1))
         else:
             # All remaining levels need to be closed
             structure['closed_levels'] = list(range(
@@ -144,7 +140,7 @@ def drilldown_tree_for_node(node, rel_cls=None, rel_field=None, count_attr=None,
        descendants, otherwise it will be for each child itself.
     """
     if rel_cls and rel_field and count_attr:
-        children = node._tree_manager.add_related_count(
+        children = node.__class__._default_manager.add_related_count(
             node.get_children(), rel_cls, rel_field, count_attr, cumulative)
     else:
         children = node.get_children()
@@ -157,41 +153,24 @@ def print_debug_info(qs, file=None):
     Use this when things go wrong.
     Please include the output from this method when filing bug issues.
     """
-    opts = qs.model._mptt_meta
     writer = csv.writer(sys.stdout if file is None else file)
     header = (
         'pk',
-        opts.level_attr,
-        '%s_id' % opts.parent_attr,
-        opts.tree_id_attr,
-        opts.left_attr,
-        opts.right_attr,
+        'level',
+        'parent_id',
+        'tree_id',
+        'lft',
+        'rght',
         'pretty',
     )
     writer.writerow(header)
     for n in qs.order_by('tree_id', 'lft'):
-        level = getattr(n, opts.level_attr)
+        level = n.level
         row = []
         for field in header[:-1]:
             row.append(getattr(n, field))
         row.append('%s%s' % ('- ' * level, text_type(n).encode('utf-8')))
         writer.writerow(row)
-
-
-def _get_tree_model(model_class):
-    # Find the model that contains the tree fields.
-    # This is a weird way of going about it, but Django doesn't let us access
-    # the fields list to detect where the tree fields actually are,
-    # because the app cache hasn't been loaded yet.
-    # So, it *should* be the *last* concrete MPTTModel subclass in the mro().
-    bases = list(model_class.mro())
-    while bases:
-        b = bases.pop()
-        # NOTE can't use `issubclass(b, MPTTModel)` here because we can't import MPTTModel yet!
-        # So hasattr(b, '_mptt_meta') will have to do.
-        if hasattr(b, '_mptt_meta') and not (b._meta.abstract or b._meta.proxy):
-            return b
-    return None
 
 
 def get_cached_trees(queryset):
@@ -223,7 +202,6 @@ def get_cached_trees(queryset):
 
     if queryset:
         # Get the model's parent-attribute name
-        parent_attr = queryset[0]._mptt_meta.parent_attr
         root_level = None
         for obj in queryset:
             # Get the current mptt node level
@@ -255,7 +233,7 @@ def get_cached_trees(queryset):
                 # Cache the parent on the current node, and attach the current
                 # node to the parent's list of children
                 _parent = current_path[-1]
-                setattr(obj, parent_attr, _parent)
+                obj.parent = _parent
                 _parent._cached_children.append(obj)
 
                 if root_level == 0:

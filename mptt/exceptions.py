@@ -18,4 +18,5 @@ class CantDisableUpdates(Exception):
     User tried to disable updates on a model that doesn't support it
     (abstract, proxy or a multiple-inheritance subclass of an MPTTModel)
     """
+    # Deprecated since the whole delay/disable functionality has been removed
     pass

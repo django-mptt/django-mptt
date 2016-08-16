@@ -6,9 +6,8 @@
 >>> def print_tree_details(nodes):
 ...     opts = nodes[0]._mptt_meta
 ...     print('\n'.join(['%s %s %s %s %s %s' % \
-...                      (n.pk, getattr(n, '%s_id' % opts.parent_attr) or '-',
-...                       getattr(n, opts.tree_id_attr), getattr(n, opts.level_attr),
-...                       getattr(n, opts.left_attr), getattr(n, opts.right_attr)) \
+...                      (n.pk, n.parent_id or '-',
+...                       n.tree_id, n.level, n.lft, n.rght)\
 ...                      for n in nodes]))
 
 >>> def reset_sequence(model):
@@ -207,24 +206,13 @@
 </select>
 
 # TreeManager Methods #########################################################
-# check that tree manager is the explicitly defined tree manager for Person
->>> Person._tree_manager == Person.objects
-True
-
-# managers of non-abstract bases don't get inherited, so:
->>> Student._tree_manager == Student.objects
-False
-
->>> Student._tree_manager == Person._tree_manager
-False
-
->>> Student._tree_manager.model
+>>> Student._default_manager.model
 <class 'myapp.models.Student'>
->>> Student._tree_manager.tree_model
+>>> Student._default_manager.tree_model
 <class 'myapp.models.Person'>
->>> Person._tree_manager.model
+>>> Person._default_manager.model
 <class 'myapp.models.Person'>
->>> Person._tree_manager.tree_model
+>>> Person._default_manager.tree_model
 <class 'myapp.models.Person'>
 
 >>> Genre.objects.root_node(action.tree_id)

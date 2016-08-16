@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import json
 
 from django import http
+from django.apps import apps
 from django.conf import settings
 from django.contrib.admin.actions import delete_selected
 from django.contrib.admin.options import ModelAdmin
@@ -43,7 +44,7 @@ class MPTTModelAdmin(ModelAdmin):
     form = MPTTAdminForm
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if issubclass(db_field.rel.to, MPTTModel) \
+        if issubclass(db_field.remote_field.model, MPTTModel) \
                 and not isinstance(db_field, TreeForeignKey) \
                 and db_field.name not in self.raw_id_fields:
             db = kwargs.get('using')
@@ -51,7 +52,7 @@ class MPTTModelAdmin(ModelAdmin):
             limit_choices_to = db_field.get_limit_choices_to()
             defaults = dict(
                 form_class=TreeNodeChoiceField,
-                queryset=db_field.rel.to._default_manager.using(
+                queryset=db_field.remote_field.model._default_manager.using(
                     db).complex_filter(limit_choices_to),
                 required=False)
             defaults.update(kwargs)
@@ -63,8 +64,7 @@ class MPTTModelAdmin(ModelAdmin):
         """
         Changes the default ordering for changelists to tree-order.
         """
-        mptt_opts = self.model._mptt_meta
-        return self.ordering or (mptt_opts.tree_id_attr, mptt_opts.left_attr)
+        return self.ordering or ('tree_id', 'lft')
 
     def delete_selected_tree(self, modeladmin, request, queryset):
         """
@@ -75,13 +75,12 @@ class MPTTModelAdmin(ModelAdmin):
         # If this is True, the confirmation page has been displayed
         if request.POST.get('post'):
             n = 0
-            with queryset.model._tree_manager.delay_mptt_updates():
-                for obj in queryset:
-                    if self.has_delete_permission(request, obj):
-                        obj.delete()
-                        n += 1
-                        obj_display = force_text(obj)
-                        self.log_deletion(request, obj, obj_display)
+            for obj in queryset:
+                if self.has_delete_permission(request, obj):
+                    obj.delete()
+                    n += 1
+                    obj_display = force_text(obj)
+                    self.log_deletion(request, obj, obj_display)
             self.message_user(
                 request,
                 _('Successfully deleted %(count)d items.') % {'count': n})
@@ -99,6 +98,17 @@ class MPTTModelAdmin(ModelAdmin):
                 'delete_selected',
                 _('Delete selected %(verbose_name_plural)s'))
         return actions
+
+
+def _static_url(path):
+    # Django >= 1.10 does this automatically. We can revert to simply using
+    # static(path) then.
+    if apps.is_installed('django.contrib.staticfiles'):
+        from django.contrib.staticfiles.storage import staticfiles_storage
+
+        return staticfiles_storage.url(path)
+    else:
+        return static(path)
 
 
 class JS(object):
@@ -136,7 +146,7 @@ class JS(object):
     def __html__(self):
         return format_html(
             '{}"{}',
-            static(self.js),
+            _static_url(self.js),
             mark_safe(flatatt(self.attrs)),
         ).rstrip('"')
 
@@ -164,7 +174,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
             '<div class="tree-node" data-pk="{}" data-level="{}"'
             ' data-url="{}"></div>',
             item.pk,
-            item._mpttfield('level'),
+            item.level,
             url,
         )
     tree_actions.short_description = ''
@@ -176,7 +186,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         """
         return format_html(
             '<div style="text-indent:{}px">{}</div>',
-            item._mpttfield('level') * self.mptt_level_indent,
+            item.level * self.mptt_level_indent,
             item,
         )
     indented_title.short_description = ugettext_lazy('title')
@@ -205,7 +215,6 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
 
         return response
 
-    @transaction.atomic
     def _move_node(self, request):
         position = request.POST.get('position')
         if position not in ('last-child', 'left', 'right'):
@@ -225,13 +234,14 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
             return http.HttpResponse('FAIL, no permission.')
 
         try:
-            self.model._tree_manager.move_node(cut_item, pasted_on, position)
+            with transaction.atomic():
+                self.model._default_manager.move_node(cut_item, pasted_on, position)
         except InvalidMove as e:
             self.message_user(request, '%s' % e)
             return http.HttpResponse('FAIL, invalid move.')
         except IntegrityError as e:
             self.message_user(request, _('Database error: %s') % e)
-            raise
+            return http.HttpResponse('FAIL, invalid move.')
 
         self.message_user(
             request,
@@ -269,11 +279,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         """
         all_nodes = {}
 
-        mptt_opts = self.model._mptt_meta
-        items = queryset.values_list(
-            'pk',
-            '%s_id' % mptt_opts.parent_attr,
-        )
+        items = queryset.values_list('pk', 'parent_id')
         for p_id, parent_id in items:
             all_nodes.setdefault(
                 str(parent_id) if parent_id else 0,
@@ -303,10 +309,7 @@ class TreeRelatedFieldListFilter(RelatedFieldListFilter):
 
     def __init__(self, field, request, params, model, model_admin, field_path):
         self.other_model = get_model_from_relation(field)
-        if hasattr(field, 'rel'):
-            self.rel_name = field.rel.get_related_field().name
-        else:
-            self.rel_name = self.other_model._meta.pk.name
+        self.rel_name = self.other_model._meta.pk.name
         self.changed_lookup_kwarg = '%s__%s__inhierarchy' % (field_path, self.rel_name)
         super(TreeRelatedFieldListFilter, self).__init__(field, request, params,
                                                          model, model_admin, field_path)
@@ -339,7 +342,7 @@ class TreeRelatedFieldListFilter(RelatedFieldListFilter):
         initial_choices = field.get_choices(include_blank=False)
         pks = [pk for pk, val in initial_choices]
         models = field.related_model._default_manager.filter(pk__in=pks)
-        levels_dict = {model.pk: getattr(model, model._mptt_meta.level_attr) for model in models}
+        levels_dict = {model.pk: model.level for model in models}
         choices = []
         for pk, val in initial_choices:
             padding_style = ' style="padding-%s:%spx"' % (
@@ -376,7 +379,7 @@ class TreeRelatedFieldListFilter(RelatedFieldListFilter):
             }
         if (isinstance(self.field, ForeignObjectRel) and
                 (self.field.field.null or isinstance(self.field.field, ManyToManyField)) or
-                hasattr(self.field, 'rel') and
+                hasattr(self.field, 'remote_field') and
                 (self.field.null or isinstance(self.field, ManyToManyField))):
             yield {
                 'selected': bool(self.lookup_val_isnull),

@@ -8,9 +8,10 @@ import tempfile
 import unittest
 
 from django import forms
-from django.contrib.auth.models import Group, User
-from django.db.models import Q
+from django.contrib.auth.models import User
+from django.db.models import Q, Manager
 from django.db.models.query_utils import DeferredAttribute
+from django.db.utils import IntegrityError
 from django.apps import apps
 from django.forms.models import modelform_factory
 from django.template import Template, TemplateSyntaxError, Context
@@ -26,7 +27,7 @@ except ImportError:
     mock_signal_receiver = None
 
 from mptt.admin import JS
-from mptt.exceptions import CantDisableUpdates, InvalidMove
+from mptt.exceptions import InvalidMove
 from mptt.forms import (
     MPTTAdminForm, TreeNodeChoiceField, TreeNodeMultipleChoiceField,
     MoveNodeForm)
@@ -37,10 +38,10 @@ from mptt.templatetags.mptt_tags import cache_tree_children
 from mptt.utils import print_debug_info
 
 from myapp.models import (
-    Category, Item, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel,
+    Category, Item, Genre, CustomPKName, SingleProxyModel,
     ConcreteModel, OrderedInsertion, AutoNowDateFieldModel, Person,
     CustomTreeQueryset, Node, ReferencingModel, CustomTreeManager, Book,
-    UUIDNode)
+    UUIDNode, UniqueCodePerParentModel)
 
 
 def get_tree_details(nodes):
@@ -52,12 +53,16 @@ def get_tree_details(nodes):
     if hasattr(nodes, 'order_by'):
         nodes = list(nodes.order_by('tree_id', 'lft', 'pk'))
     nodes = list(nodes)
-    opts = nodes[0]._mptt_meta
-    return '\n'.join(['%s %s %s %s %s %s' %
-                      (n.pk, getattr(n, '%s_id' % opts.parent_attr) or '-',
-                       getattr(n, opts.tree_id_attr), getattr(n, opts.level_attr),
-                       getattr(n, opts.left_attr), getattr(n, opts.right_attr))
-                      for n in nodes])
+    return '\n'.join([
+        '%s %s %s %s %s %s' % (
+            n.pk,
+            n.parent_id or '-',
+            n.tree_id,
+            n.level,
+            n.lft,
+            n.rght,
+        ) for n in nodes
+    ])
 
 leading_whitespace_re = re.compile(r'^\s+', re.MULTILINE)
 
@@ -196,20 +201,20 @@ class ReparentingTestCase(TreeTestCase):
         rpg = Genre.objects.get(id=9)
         action.parent = rpg
         action.save()
-        self.assertTreeEqual([action], '1 9 2 1 6 21')
-        self.assertTreeEqual([rpg], '9 - 2 0 1 22')
+        self.assertTreeEqual([action], '1 9 1 1 6 21')
+        self.assertTreeEqual([rpg], '9 - 1 0 1 22')
         self.assertTreeEqual(Genre.objects.all(), """
-            9 - 2 0 1 22
-            10 9 2 1 2 3
-            11 9 2 1 4 5
-            1 9 2 1 6 21
-            2 1 2 2 7 14
-            3 2 2 3 8 9
-            4 2 2 3 10 11
-            5 2 2 3 12 13
-            6 1 2 2 15 20
-            7 6 2 3 16 17
-            8 6 2 3 18 19
+            9 - 1 0 1 22
+            10 9 1 1 2 3
+            11 9 1 1 4 5
+            1 9 1 1 6 21
+            2 1 1 2 7 14
+            3 2 1 3 8 9
+            4 2 1 3 10 11
+            5 2 1 3 12 13
+            6 1 1 2 15 20
+            7 6 1 3 16 17
+            8 6 1 3 18 19
         """)
 
     def test_move_leaf_to_other_tree(self):
@@ -396,26 +401,13 @@ class ConcurrencyTestCase(TreeTestCase):
         self.assertEqual(updated_carrot.ghosts, carrot.ghosts)
         self.assertNotEqual(updated_carrot.name, carrot.name)
 
-        # update with positional arguments
         carrot.name = "Will change"
         carrot.ghosts = "Will not be updated"
-        carrot.save(False, False, None, ["name"])
+        carrot.save(update_fields=["name"])
 
         updated_carrot = ConcreteModel.objects.get(id=6)
         self.assertNotEqual(updated_carrot.ghosts, carrot.ghosts)
         self.assertEqual(updated_carrot.name, carrot.name)
-
-    def test_update_fields_positional(self):
-        """
-        Test that update_fields works as a positional argument
-
-        Test for https://github.com/django-mptt/django-mptt/issues/384
-        """
-
-        carrot = ConcreteModel.objects.get(id=6)
-
-        # Why would you do it this way? Meh.
-        carrot.save(False, False, None, None)
 
 
 # categories.json defines the following tree structure:
@@ -465,7 +457,7 @@ class DeletionTestCase(TreeTestCase):
         self.assertTreeEqual(
             Category.objects.all(), """
             11 - 1 0 1 2
-            12 - 3 0 1 2
+            12 - 2 0 1 2
         """)
 
     def test_delete_last_node_with_siblings(self):
@@ -565,197 +557,6 @@ class CustomPKNameTestCase(TreeTestCase):
         self.assertTrue(sib is None)
 
 
-class DisabledUpdatesTestCase(TreeTestCase):
-
-    def setUp(self):
-        self.a = ConcreteModel.objects.create(name="a")
-        self.b = ConcreteModel.objects.create(name="b", parent=self.a)
-        self.c = ConcreteModel.objects.create(name="c", parent=self.a)
-        self.d = ConcreteModel.objects.create(name="d")
-        # state is now:
-        self.assertTreeEqual(ConcreteModel.objects.all(), """
-            1 - 1 0 1 6
-            2 1 1 1 2 3
-            3 1 1 1 4 5
-            4 - 2 0 1 2
-        """)
-
-    def test_single_proxy(self):
-        self.assertTrue(ConcreteModel._mptt_updates_enabled)
-        self.assertTrue(SingleProxyModel._mptt_updates_enabled)
-
-        self.assertRaises(
-            CantDisableUpdates,
-            SingleProxyModel.objects.disable_mptt_updates().__enter__)
-
-        self.assertTrue(ConcreteModel._mptt_updates_enabled)
-        self.assertTrue(SingleProxyModel._mptt_updates_enabled)
-
-        with ConcreteModel.objects.disable_mptt_updates():
-            self.assertFalse(ConcreteModel._mptt_updates_enabled)
-            self.assertFalse(SingleProxyModel._mptt_updates_enabled)
-
-        self.assertTrue(ConcreteModel._mptt_updates_enabled)
-        self.assertTrue(SingleProxyModel._mptt_updates_enabled)
-
-    def test_double_proxy(self):
-        self.assertTrue(ConcreteModel._mptt_updates_enabled)
-        self.assertTrue(DoubleProxyModel._mptt_updates_enabled)
-
-        self.assertRaises(
-            CantDisableUpdates,
-            DoubleProxyModel.objects.disable_mptt_updates().__enter__)
-
-        self.assertTrue(ConcreteModel._mptt_updates_enabled)
-        self.assertTrue(DoubleProxyModel._mptt_updates_enabled)
-
-        with ConcreteModel.objects.disable_mptt_updates():
-            self.assertFalse(ConcreteModel._mptt_updates_enabled)
-            self.assertFalse(DoubleProxyModel._mptt_updates_enabled)
-
-        self.assertTrue(ConcreteModel._mptt_updates_enabled)
-        self.assertTrue(DoubleProxyModel._mptt_updates_enabled)
-
-    def test_insert_child(self):
-        with self.assertNumQueries(2):
-            with ConcreteModel.objects.disable_mptt_updates():
-                # 1 query here:
-                with self.assertNumQueries(1):
-                    ConcreteModel.objects.create(name="e", parent=self.d)
-                # 2nd query here:
-                self.assertTreeEqual(ConcreteModel.objects.all(), """
-                    1 - 1 0 1 6
-                    2 1 1 1 2 3
-                    3 1 1 1 4 5
-                    4 - 2 0 1 2
-                    5 4 2 1 2 3
-                """)
-
-        # yes, this is wrong. that's what disable_mptt_updates() does :/
-        self.assertTreeEqual(ConcreteModel.objects.all(), """
-            1 - 1 0 1 6
-            2 1 1 1 2 3
-            3 1 1 1 4 5
-            4 - 2 0 1 2
-            5 4 2 1 2 3
-        """)
-
-    def test_insert_root(self):
-        with self.assertNumQueries(2):
-            with ConcreteModel.objects.disable_mptt_updates():
-                with self.assertNumQueries(1):
-                    # 1 query here:
-                    ConcreteModel.objects.create(name="e")
-                # 2nd query here:
-                self.assertTreeEqual(ConcreteModel.objects.all(), """
-                    5 - 0 0 1 2
-                    1 - 1 0 1 6
-                    2 1 1 1 2 3
-                    3 1 1 1 4 5
-                    4 - 2 0 1 2
-                """)
-        self.assertTreeEqual(ConcreteModel.objects.all(), """
-            5 - 0 0 1 2
-            1 - 1 0 1 6
-            2 1 1 1 2 3
-            3 1 1 1 4 5
-            4 - 2 0 1 2
-        """)
-
-    def test_move_node_same_tree(self):
-        with self.assertNumQueries(2):
-            with ConcreteModel.objects.disable_mptt_updates():
-                with self.assertNumQueries(1):
-                    # 2 queries here:
-                    #  (django does a query to determine if the row is in the db yet)
-                    self.c.parent = self.b
-                    self.c.save()
-                # 3rd query here:
-                self.assertTreeEqual(ConcreteModel.objects.all(), """
-                    1 - 1 0 1 6
-                    2 1 1 1 2 3
-                    3 2 1 1 4 5
-                    4 - 2 0 1 2
-                """)
-
-        # yes, this is wrong. that's what disable_mptt_updates() does :/
-        self.assertTreeEqual(ConcreteModel.objects.all(), """
-            1 - 1 0 1 6
-            2 1 1 1 2 3
-            3 2 1 1 4 5
-            4 - 2 0 1 2
-        """)
-
-    def test_move_node_different_tree(self):
-        with self.assertNumQueries(2):
-            with ConcreteModel.objects.disable_mptt_updates():
-                with self.assertNumQueries(1):
-                    # 1 update query
-                    self.c.parent = self.d
-                    self.c.save()
-                # query 2 here:
-                self.assertTreeEqual(ConcreteModel.objects.all(), """
-                    1 - 1 0 1 6
-                    2 1 1 1 2 3
-                    3 4 1 1 4 5
-                    4 - 2 0 1 2
-                """)
-
-        # yes, this is wrong. that's what disable_mptt_updates() does :/
-        self.assertTreeEqual(ConcreteModel.objects.all(), """
-            1 - 1 0 1 6
-            2 1 1 1 2 3
-            3 4 1 1 4 5
-            4 - 2 0 1 2
-        """)
-
-    def test_move_node_to_root(self):
-        with self.assertNumQueries(2):
-            with ConcreteModel.objects.disable_mptt_updates():
-                with self.assertNumQueries(1):
-                    # 1 update query
-                    self.c.parent = None
-                    self.c.save()
-                # query 2 here:
-                self.assertTreeEqual(ConcreteModel.objects.all(), """
-                    1 - 1 0 1 6
-                    2 1 1 1 2 3
-                    3 - 1 1 4 5
-                    4 - 2 0 1 2
-                """)
-
-        # yes, this is wrong. that's what disable_mptt_updates() does :/
-        self.assertTreeEqual(ConcreteModel.objects.all(), """
-            1 - 1 0 1 6
-            2 1 1 1 2 3
-            3 - 1 1 4 5
-            4 - 2 0 1 2
-        """)
-
-    def test_move_root_to_child(self):
-        with self.assertNumQueries(2):
-            with ConcreteModel.objects.disable_mptt_updates():
-                with self.assertNumQueries(1):
-                    # 1 update query
-                    self.d.parent = self.c
-                    self.d.save()
-                # query 2 here:
-                self.assertTreeEqual(ConcreteModel.objects.all(), """
-                    1 - 1 0 1 6
-                    2 1 1 1 2 3
-                    3 1 1 1 4 5
-                    4 3 2 0 1 2
-                """)
-
-        # yes, this is wrong. that's what disable_mptt_updates() does :/
-        self.assertTreeEqual(ConcreteModel.objects.all(), """
-            1 - 1 0 1 6
-            2 1 1 1 2 3
-            3 1 1 1 4 5
-            4 3 2 0 1 2
-        """)
-
-
 class DelayedUpdatesTestCase(TreeTestCase):
 
     def setUp(self):
@@ -773,49 +574,14 @@ class DelayedUpdatesTestCase(TreeTestCase):
             5 - 3 0 1 2
         """)
 
-    def test_proxy(self):
-        self.assertFalse(ConcreteModel._mptt_is_tracking)
-        self.assertFalse(SingleProxyModel._mptt_is_tracking)
-
-        self.assertRaises(
-            CantDisableUpdates,
-            SingleProxyModel.objects.delay_mptt_updates().__enter__)
-
-        self.assertFalse(ConcreteModel._mptt_is_tracking)
-        self.assertFalse(SingleProxyModel._mptt_is_tracking)
-
-        with ConcreteModel.objects.delay_mptt_updates():
-            self.assertTrue(ConcreteModel._mptt_is_tracking)
-            self.assertTrue(SingleProxyModel._mptt_is_tracking)
-
-        self.assertFalse(ConcreteModel._mptt_is_tracking)
-        self.assertFalse(SingleProxyModel._mptt_is_tracking)
-
-    def test_double_context_manager(self):
-        with ConcreteModel.objects.delay_mptt_updates():
-            self.assertTrue(ConcreteModel._mptt_is_tracking)
-            with ConcreteModel.objects.delay_mptt_updates():
-                self.assertTrue(ConcreteModel._mptt_is_tracking)
-            self.assertTrue(ConcreteModel._mptt_is_tracking)
-        self.assertFalse(ConcreteModel._mptt_is_tracking)
-
     def test_insert_child(self):
-        with self.assertNumQueries(8):
-            with ConcreteModel.objects.delay_mptt_updates():
-                with self.assertNumQueries(2):
-                    # 1 query for target stale check,
-                    # 1 query to save node.
-                    ConcreteModel.objects.create(name="e", parent=self.d)
-                # 3rd query here:
-                self.assertTreeEqual(ConcreteModel.objects.all(), """
-                    1 - 1 0 1 6
-                    2 1 1 1 2 3
-                    3 1 1 1 4 5
-                    4 - 2 0 1 2
-                    6 4 2 1 2 3
-                    5 - 3 0 1 2
-                """)
-                # remaining queries (4 through 8) are the partial rebuild process.
+        with self.assertNumQueries(5):
+            # 1. refresh parent (without "parent"??)
+            # 2. manage space
+            # 3. refresh parent again
+            # 4. insert
+            # 5. refresh our own mptt attributes
+            ConcreteModel.objects.create(name="e", parent=self.d)
 
         self.assertTreeEqual(ConcreteModel.objects.all(), """
             1 - 1 0 1 6
@@ -828,22 +594,11 @@ class DelayedUpdatesTestCase(TreeTestCase):
 
     def test_insert_root(self):
         with self.assertNumQueries(3):
-            with ConcreteModel.objects.delay_mptt_updates():
-                with self.assertNumQueries(2):
-                    # 2 queries required here:
-                    # (one to get the correct tree_id, then one to insert)
-                    ConcreteModel.objects.create(name="e")
-                # 3rd query here:
-                self.assertTreeEqual(ConcreteModel.objects.all(), """
-                    1 - 1 0 1 6
-                    2 1 1 1 2 3
-                    3 1 1 1 4 5
-                    4 - 2 0 1 2
-                    5 - 3 0 1 2
-                    6 - 4 0 1 2
-                """)
-                # no partial rebuild necessary, as no trees were modified
-                # (newly created tree is already okay)
+            # 1. select MAX tree_id
+            # 2. insert
+            # 3. mptt refresh
+            ConcreteModel.objects.create(name="e")
+
         self.assertTreeEqual(ConcreteModel.objects.all(), """
             1 - 1 0 1 6
             2 1 1 1 2 3
@@ -854,22 +609,14 @@ class DelayedUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_node_same_tree(self):
-        with self.assertNumQueries(10):
-            with ConcreteModel.objects.delay_mptt_updates():
-                with self.assertNumQueries(2):
-                    # 1 query to ensure target fields aren't stale
-                    # 1 update query
-                    self.c.parent = self.b
-                    self.c.save()
-                # query 3 here:
-                self.assertTreeEqual(ConcreteModel.objects.all(), """
-                    1 - 1 0 1 6
-                    2 1 1 1 2 3
-                    3 2 1 2 3 4
-                    4 - 2 0 1 2
-                    5 - 3 0 1 2
-                """)
-            # the remaining 7 queries are the partial rebuild.
+        with self.assertNumQueries(5):
+            # 1. update mptt
+            # 2. refresh mptt pk3
+            # 3. refresh mptt pk2
+            # 4. update
+            # 5. refresh mptt pk3
+            self.c.parent = self.b
+            self.c.save()
 
         self.assertTreeEqual(ConcreteModel.objects.all(), """
             1 - 1 0 1 6
@@ -880,23 +627,16 @@ class DelayedUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_node_different_tree(self):
-        with self.assertNumQueries(12):
-            with ConcreteModel.objects.delay_mptt_updates():
-                with self.assertNumQueries(2):
-                    # 2 queries here:
-                    #  1. update the node
-                    #  2. collapse old tree since it is now empty.
-                    self.d.parent = self.c
-                    self.d.save()
-                # query 3 here:
-                self.assertTreeEqual(ConcreteModel.objects.all(), """
-                    1 - 1 0 1 6
-                    2 1 1 1 2 3
-                    3 1 1 1 4 5
-                    4 3 1 2 5 6
-                    5 - 2 0 1 2
-                """)
-            # the other 9 queries are the partial rebuild
+        with self.assertNumQueries(7):
+            # 1. update mptt (create space)
+            # 2. update mptt (close space)
+            # 3. update mptt (tree_id)
+            # 4. refresh mptt pk4
+            # 5. refresh mptt pk3
+            # 6. update
+            # 7. refresh mptt pk4
+            self.d.parent = self.c
+            self.d.save()
 
         self.assertTreeEqual(ConcreteModel.objects.all(), """
             1 - 1 0 1 8
@@ -908,25 +648,15 @@ class DelayedUpdatesTestCase(TreeTestCase):
 
     def test_move_node_to_root(self):
         with self.assertNumQueries(4):
-            with ConcreteModel.objects.delay_mptt_updates():
-                with self.assertNumQueries(3):
-                    # 3 queries here!
-                    #   1. find the next tree_id to move to
-                    #   2. update the tree_id on all nodes to the right of that
-                    #   3. update tree fields on self.c
-                    self.c.parent = None
-                    self.c.save()
-                # 4th query here:
-                self.assertTreeEqual(ConcreteModel.objects.all(), """
-                    1 - 1 0 1 6
-                    2 1 1 1 2 3
-                    4 - 2 0 1 2
-                    5 - 3 0 1 2
-                    3 - 4 0 1 2
-                """)
+            # 1. create tree space
+            # 2. update mptt (move)
+            # 3. update
+            # 4. refresh mptt
+            self.c.parent = None
+            self.c.save()
 
         self.assertTreeEqual(ConcreteModel.objects.all(), """
-            1 - 1 0 1 6
+            1 - 1 0 1 4
             2 1 1 1 2 3
             4 - 2 0 1 2
             5 - 3 0 1 2
@@ -934,23 +664,16 @@ class DelayedUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_root_to_child(self):
-        with self.assertNumQueries(12):
-            with ConcreteModel.objects.delay_mptt_updates():
-                with self.assertNumQueries(2):
-                    # 2 queries here:
-                    #  1. update the node
-                    #  2. collapse old tree since it is now empty.
-                    self.d.parent = self.c
-                    self.d.save()
-                # query 3 here:
-                self.assertTreeEqual(ConcreteModel.objects.all(), """
-                    1 - 1 0 1 6
-                    2 1 1 1 2 3
-                    3 1 1 1 4 5
-                    4 3 1 2 5 6
-                    5 - 2 0 1 2
-                """)
-            # the remaining 9 queries are the partial rebuild.
+        with self.assertNumQueries(7):
+            # 1. update mptt (create space)
+            # 2. update mptt (close space)
+            # 3. update mptt (tree_id)
+            # 4. refresh mptt pk4
+            # 5. refresh mptt pk3
+            # 6. update
+            # 7. refresh mptt pk4
+            self.d.parent = self.c
+            self.d.save()
 
         self.assertTreeEqual(ConcreteModel.objects.all(), """
             1 - 1 0 1 8
@@ -979,21 +702,15 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
         """)
 
     def test_insert_child(self):
-        with self.assertNumQueries(12):
-            with OrderedInsertion.objects.delay_mptt_updates():
-                with self.assertNumQueries(2):
-                    # 1 query here:
-                    OrderedInsertion.objects.create(name="dd", parent=self.c)
-                # 2nd query here:
-                self.assertTreeEqual(OrderedInsertion.objects.all(), """
-                    1 - 1 0 1 6
-                    2 1 1 1 2 3
-                    3 1 1 1 4 5
-                    6 1 1 1 6 7
-                    4 - 2 0 1 2
-                    5 - 3 0 1 2
-                """)
-                # remaining 9 queries are the partial rebuild process.
+        with self.assertNumQueries(7):
+            # - find insertion point
+            # - select parent
+            # - create space
+            # - refresh mptt pk1
+            # - refresh mptt pk1 (FIXME? twice)
+            # - insert
+            # - refresh mptt pk6
+            OrderedInsertion.objects.create(name="dd", parent=self.c)
 
         self.assertTreeEqual(OrderedInsertion.objects.all(), """
             1 - 1 0 1 8
@@ -1006,24 +723,13 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
 
     def test_insert_root(self):
         with self.assertNumQueries(4):
+            # - find insertion point
+            # - update tree_id
+            # - insert
+            # - refresh mptt
             with OrderedInsertion.objects.delay_mptt_updates():
-                with self.assertNumQueries(3):
-                    # 3 queries required here:
-                    #   1. get correct tree_id (delay_mptt_updates doesn't handle
-                    #       root-level ordering when using ordered insertion)
-                    #   2. increment tree_id of all following trees
-                    #   3. insert the object
-                    OrderedInsertion.objects.create(name="ee")
-                # 4th query here:
-                self.assertTreeEqual(OrderedInsertion.objects.all(), """
-                    1 - 1 0 1 6
-                    2 1 1 1 2 3
-                    3 1 1 1 4 5
-                    6 - 2 0 1 2
-                    4 - 3 0 1 2
-                    5 - 4 0 1 2
-                """)
-            # no partial rebuild is required
+                OrderedInsertion.objects.create(name="ee")
+
         self.assertTreeEqual(OrderedInsertion.objects.all(), """
             1 - 1 0 1 6
             2 1 1 1 2 3
@@ -1034,21 +740,15 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_node_same_tree(self):
-        with self.assertNumQueries(9):
-            with OrderedInsertion.objects.delay_mptt_updates():
-                with self.assertNumQueries(1):
-                    # 1 update query
-                    self.e.name = 'before d'
-                    self.e.save()
-                # query 2 here:
-                self.assertTreeEqual(OrderedInsertion.objects.all(), """
-                    1 - 1 0 1 6
-                    2 1 1 1 2 3
-                    3 1 1 1 4 5
-                    4 - 2 0 1 2
-                    5 - 3 0 1 2
-                """)
-            # the remaining 7 queries are the partial rebuild.
+        with self.assertNumQueries(6):
+            # - find insertion point
+            # - select parent
+            # - manage space
+            # - refresh mptt pk3
+            # - update
+            # - refresh mptt pk3
+            self.e.name = 'before d'
+            self.e.save()
 
         self.assertTreeEqual(OrderedInsertion.objects.all(), """
             1 - 1 0 1 6
@@ -1059,24 +759,19 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_node_different_tree(self):
-        with self.assertNumQueries(12):
-            with OrderedInsertion.objects.delay_mptt_updates():
-                with self.assertNumQueries(2):
-                    # 2 queries here:
-                    #  1. update the node
-                    #  2. collapse old tree since it is now empty.
-                    self.f.parent = self.c
-                    self.f.name = 'dd'
-                    self.f.save()
-                # query 3 here:
-                self.assertTreeEqual(OrderedInsertion.objects.all(), """
-                    1 - 1 0 1 6
-                    2 1 1 1 2 3
-                    4 1 1 1 2 3
-                    3 1 1 1 4 5
-                    5 - 2 0 1 2
-                """)
-            # the remaining 9 queries are the partial rebuild
+        with self.assertNumQueries(9):
+            # - find insertion point
+            # - select parent
+            # - create space
+            # - remove space
+            # - update tree_id
+            # - refresh mptt pk4
+            # - refresh mptt pk1
+            # - update
+            # - refresh mptt pk4
+            self.f.parent = self.c
+            self.f.name = 'dd'
+            self.f.save()
 
         self.assertTreeEqual(OrderedInsertion.objects.all(), """
             1 - 1 0 1 8
@@ -1087,26 +782,17 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_node_to_root(self):
-        with self.assertNumQueries(4):
-            with OrderedInsertion.objects.delay_mptt_updates():
-                with self.assertNumQueries(3):
-                    # 3 queries here!
-                    #   1. find the next tree_id to move to
-                    #   2. update the tree_id on all nodes to the right of that
-                    #   3. update tree fields on self.c
-                    self.e.parent = None
-                    self.e.save()
-                # query 4 here:
-                self.assertTreeEqual(OrderedInsertion.objects.all(), """
-                    1 - 1 0 1 6
-                    2 1 1 1 2 3
-                    3 - 2 0 1 2
-                    4 - 3 0 1 2
-                    5 - 4 0 1 2
-                """)
+        with self.assertNumQueries(5):
+            # - find insertion point
+            # - update tree_id
+            # - manage space
+            # - update
+            # - refresh mptt
+            self.e.parent = None
+            self.e.save()
 
         self.assertTreeEqual(OrderedInsertion.objects.all(), """
-            1 - 1 0 1 6
+            1 - 1 0 1 4
             2 1 1 1 2 3
             3 - 2 0 1 2
             4 - 3 0 1 2
@@ -1114,23 +800,16 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
         """)
 
     def test_move_root_to_child(self):
-        with self.assertNumQueries(12):
-            with OrderedInsertion.objects.delay_mptt_updates():
-                with self.assertNumQueries(2):
-                    # 2 queries here:
-                    #  1. update the node
-                    #  2. collapse old tree since it is now empty.
-                    self.f.parent = self.e
-                    self.f.save()
-                # query 3 here:
-                self.assertTreeEqual(OrderedInsertion.objects.all(), """
-                    1 - 1 0 1 6
-                    2 1 1 1 2 3
-                    3 1 1 1 4 5
-                    4 3 1 2 5 6
-                    5 - 2 0 1 2
-                """)
-            # the remaining 9 queries are the partial rebuild.
+        with self.assertNumQueries(7):
+            # 1. create space
+            # 2. close space
+            # 3. update tree_id
+            # 4. refresh mptt
+            # 5. refresh mptt
+            # 6. update
+            # 7. refresh mptt
+            self.f.parent = self.e
+            self.f.save()
 
         self.assertTreeEqual(OrderedInsertion.objects.all(), """
             1 - 1 0 1 8
@@ -1152,7 +831,7 @@ class ManagerTests(TreeTestCase):
         for model in apps.get_models():
             if not issubclass(model, MPTTModel):
                 continue
-            tm = model._tree_manager
+            tm = model._default_manager
             if id(tm) in seen:
                 self.fail(
                     "Tree managers for %s and %s are the same manager"
@@ -1164,27 +843,12 @@ class ManagerTests(TreeTestCase):
         for model in apps.get_models():
             if not issubclass(model, MPTTModel):
                 continue
-            self.assertEqual(model._tree_manager.model, model)
-
-    def test_base_manager_infinite_recursion(self):
-        # repeatedly calling _base_manager should eventually return None
-        for model in apps.get_models():
-            if not issubclass(model, MPTTModel):
-                continue
-            manager = model._tree_manager
-            for i in range(20):
-                manager = manager._base_manager
-                if manager is None:
-                    break
-            else:
-                self.fail("Detected infinite recursion in %s._tree_manager._base_manager" % model)
+            self.assertEqual(model._default_manager.model, model)
 
     def test_proxy_custom_manager(self):
-        self.assertIsInstance(SingleProxyModel._tree_manager, CustomTreeManager)
-        self.assertIsInstance(SingleProxyModel._tree_manager._base_manager, TreeManager)
-
+        self.assertIsInstance(SingleProxyModel._default_manager, CustomTreeManager)
         self.assertIsInstance(SingleProxyModel.objects, CustomTreeManager)
-        self.assertIsInstance(SingleProxyModel.objects._base_manager, TreeManager)
+        self.assertIsInstance(SingleProxyModel._base_manager, Manager)
 
     def test_get_queryset_descendants(self):
         def get_desc_names(qs, include_self=False):
@@ -1427,10 +1091,10 @@ class TreeInfoTestCase(TreeTestCase):
             '<li>10</li><li>11</li></ul></li></ul>')
 
         html = Template(self.template).render(Context({
-            'nodes': Genre.objects.filter(**{
-                '%s__gte' % Genre._mptt_meta.level_attr: 1,
-                '%s__lte' % Genre._mptt_meta.level_attr: 2,
-            }),
+            'nodes': Genre.objects.filter(
+                level__gte=1,
+                level__lte=2,
+            ),
         })).replace('\n', '')
 
         self.assertEqual(
@@ -1439,10 +1103,10 @@ class TreeInfoTestCase(TreeTestCase):
             '<li>7</li><li>8</li></ul></li><li>10</li><li>11</li></ul>')
 
         html = Template(self.template_with_ancestors).render(Context({
-            'nodes': Genre.objects.filter(**{
-                '%s__gte' % Genre._mptt_meta.level_attr: 1,
-                '%s__lte' % Genre._mptt_meta.level_attr: 2,
-            }),
+            'nodes': Genre.objects.filter(
+                level__gte=1,
+                level__lte=2,
+            ),
         })).replace('\n', '')
 
         self.assertEqual(
@@ -1531,13 +1195,6 @@ class TestAutoNowDateFieldModel(TreeTestCase):
     def test_save_auto_now_date_field_model(self):
         a = AutoNowDateFieldModel()
         a.save()
-
-
-class RegisteredRemoteModel(TreeTestCase):
-
-    def test_save_registered_model(self):
-        g1 = Group.objects.create(name='group 1')
-        g1.save()
 
 
 class TestForms(TreeTestCase):
@@ -1662,10 +1319,9 @@ class AdminBatch(TreeTestCase):
             'name="_selected_action"',
             10)
 
-        mptt_opts = Category._mptt_meta
         self.assertEqual(
             response.context['cl'].result_list.query.order_by[:2],
-            [mptt_opts.tree_id_attr, mptt_opts.left_attr])
+            ['tree_id', 'lft'])
 
         data = {
             'action': 'delete_selected',
@@ -1951,7 +1607,7 @@ class DeferredAttributeTests(TreeTestCase):
 
         with self.assertNumQueries(1):
             obj.name
-        with self.assertNumQueries(3):
+        with self.assertNumQueries(7):  # XXX previously 3 queries
             # does a node move, since the order_insertion_by field changed
             obj.save()
 
@@ -1964,7 +1620,7 @@ class DeferredAttributeTests(TreeTestCase):
         with self.assertNumQueries(0):
             obj.name = 'b'
 
-        with self.assertNumQueries(3):
+        with self.assertNumQueries(7):  # XXX previously 3 queries
             # does a node move, since the order_insertion_by field changed
             obj.save()
 
@@ -1983,7 +1639,13 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
         p2 = Person.objects.create(name='Fritz')
         p3 = Person.objects.create(name='Hans')
 
-        self.assertNotEqual(p1._mpttfield('tree_id'), p2._mpttfield('tree_id'))
+        self.assertNotEqual(p1.tree_id, p2.tree_id)
+
+        self.assertTreeEqual(Person.objects.all(), '''
+        1 - 1 0 1 2
+        2 - 2 0 1 2
+        3 - 3 0 1 2
+        ''')
 
         response = self.client.get('/admin/myapp/person/')
         self.assertContains(response, 'class="drag-handle"', 3)
@@ -2014,9 +1676,9 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
         self.assertEqual(p1.parent, p2)
 
         self.assertTreeEqual(Person.objects.all(), """
-            2 - 2 0 1 4
-            1 2 2 1 2 3
-            3 - 3 0 1 2
+            2 - 1 0 1 4
+            1 2 1 1 2 3
+            3 - 2 0 1 2
             """)
 
         response = self.client.get('/admin/myapp/person/')
@@ -2036,9 +1698,9 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
         self.assertEqual(response.status_code, 200)
 
         self.assertTreeEqual(Person.objects.all(), """
-            2 - 2 0 1 6
-            3 2 2 1 2 3
-            1 2 2 1 4 5
+            2 - 1 0 1 6
+            3 2 1 1 2 3
+            1 2 1 1 4 5
             """)
 
         response = self.client.post('/admin/myapp/person/', {
@@ -2055,8 +1717,8 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
         self.assertRedirects(response, '/admin/myapp/person/')
 
         self.assertTreeEqual(Person.objects.all(), """
-            2 - 2 0 1 4
-            3 2 2 1 2 3
+            2 - 1 0 1 4
+            3 2 1 1 2 3
             """)
 
     def test_js(self):
@@ -2344,3 +2006,76 @@ class DirectParentAssignment(TreeTestCase):
         n2 = Node.objects.create()
         n1.parent_id = n2.id
         n1.save()
+
+
+class FromDoctests(TreeTestCase):
+    def test_sibling_ordered_root_nodes(self):
+        a = OrderedInsertion.objects.create(name='a')
+        OrderedInsertion.objects.create(name='b')
+        a.refresh_from_db()
+        a.name = 'c'
+        a.save()
+        self.assertTreeEqual(OrderedInsertion.objects.all(), '''
+        2 - 1 0 1 2
+        1 - 2 0 1 2
+        ''')
+
+
+class UniqueTogetherTestCase(TreeTestCase):
+    def test_move_and_conflict(self):
+        a = UniqueCodePerParentModel.objects.create(code='a', parent=None)
+        b = UniqueCodePerParentModel.objects.create(code='b', parent=None)
+        UniqueCodePerParentModel.objects.create(code='1', parent=a)
+        b1 = UniqueCodePerParentModel.objects.create(code='1', parent=b)
+
+        b1.parent = a  # it tries to be a1, conflicting
+        self.assertRaises(IntegrityError, lambda: b1.save())
+
+    def test_move_and_deconflict(self):
+        c = UniqueCodePerParentModel.objects.create(code='c', parent=None)
+        d = UniqueCodePerParentModel.objects.create(code='d', parent=None)
+        UniqueCodePerParentModel.objects.create(code='1', parent=c)
+        d1 = UniqueCodePerParentModel.objects.create(code='1', parent=d)
+
+        d1.code = '2'
+        d1.parent = c
+        d1.save()  # it tries to be c2, not conflicting
+
+    def test_deconflict_and_move(self):
+        e = UniqueCodePerParentModel.objects.create(code='e', parent=None)
+        f = UniqueCodePerParentModel.objects.create(code='f', parent=None)
+        UniqueCodePerParentModel.objects.create(code='1', parent=e)
+        e2 = UniqueCodePerParentModel.objects.create(code='2', parent=e)
+
+        e2.code = '1'
+        e2.parent = f
+        e2.save()  # it tries to be f1, not conflicting
+
+
+class RebuildTestCase(TreeTestCase):
+    fixtures = ['genres.json']
+
+    def test_rebuild(self):
+        Genre.objects.update(
+            lft=-1,
+            rght=-1,
+            level=-1,
+            tree_id=-1,
+        )
+
+        with self.assertNumQueries(23):
+            Genre.objects.rebuild()
+
+        self.assertTreeEqual(Genre.objects.all(), """
+            1 - 1 0 1 16
+            2 1 1 1 2 9
+            3 2 1 2 3 4
+            4 2 1 2 5 6
+            5 2 1 2 7 8
+            6 1 1 1 10 15
+            7 6 1 2 11 12
+            8 6 1 2 13 14
+            9 - 2 0 1 6
+            10 9 2 1 2 3
+            11 9 2 1 4 5
+        """)
