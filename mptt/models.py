@@ -394,7 +394,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
     def __init__(self, *args, **kwargs):
         super(MPTTModel, self).__init__(*args, **kwargs)
         self._mptt_meta.update_mptt_cached_fields(self)
-        self._tree_manager = self._tree_manager.db_manager(self._state.db)
+    #    self._tree_manager = self._tree_manager.db_manager(self._state.db)
 
     def _mpttfield(self, fieldname):
         translated_fieldname = getattr(self._mptt_meta, fieldname + '_attr')
