@@ -2,8 +2,25 @@
 Upgrade notes
 =============
 
+0.8.6
+=====
+
+Now supports django 1.10. After upgrading, you may come across this error when running migrations::
+
+    Unhandled exception in thread started by <function wrapper at 0x7f32e681faa0>
+    Traceback (most recent call last):
+      #...
+      File "venv/lib/python2.7/site-packages/django/db/models/manager.py", line 120, in contribute_to_class
+        setattr(model, name, ManagerDescriptor(self))
+    AttributeError: can't set attribute
+
+To fix this, please replace ``._default_manager`` in your historic migrations with ``.objects``. For more detailed information see `#469`_, `#498`_
+
+.. _`#469`: https://github.com/django-mptt/django-mptt/issues/469
+.. _`#498`: https://github.com/django-mptt/django-mptt/issues/498
+
 0.8.0
-===================
+=====
 
 Dropped support for old Django versions and Python 2.6
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -71,7 +88,7 @@ otherwise you will start seeing new '--------' choices appearing in them.
 Deprecated FeinCMSModelAdmin
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you were using ``mptt.admin.FeinCMSModelAdmin``, you should switch to using 
+If you were using ``mptt.admin.FeinCMSModelAdmin``, you should switch to using
 ``feincms.admin.tree_editor.TreeEditor`` instead, or you'll get a loud deprecation warning.
 
 0.4.2 to 0.5.5
@@ -155,14 +172,14 @@ Suppose you start with this::
 
     class Node(models.Model):
         ...
-    
+
     mptt.register(Node, order_insertion_by=['name'], parent_attr='padre')
 
 
 First, Make your model a subclass of ``MPTTModel``, instead of ``models.Model``::
 
     from mptt.models import MPTTModel
-    
+
     class Node(MPTTModel):
         ...
 
@@ -200,12 +217,12 @@ You should always put MPTTModel as the first model base. This is because there's
 complicated metaclass stuff going on behind the scenes, and if Django's model metaclass
 gets called before the MPTT one, strange things can happen.
 
-Isn't multiple inheritance evil? Well, maybe. However, the 
+Isn't multiple inheritance evil? Well, maybe. However, the
 `Django model docs`_ don't forbid this, and as long as your other model doesn't have conflicting methods, it should be fine.
 
 .. note::
    As always when dealing with multiple inheritance, approach with a bit of caution.
-   
+
    Our brief testing says it works, but if you find that the Django internals are somehow
    breaking this approach for you, please `create an issue`_ with specifics.
 
