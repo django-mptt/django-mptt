@@ -194,7 +194,7 @@ def _get_tree_model(model_class):
     return None
 
 
-def get_cached_trees(queryset):
+def get_cached_trees(queryset, allow_filtered=False):
     """
     Takes a list/queryset of model objects in MPTT left (depth-first) order and
     caches the children and parent on each node. This allows up and down
@@ -202,11 +202,19 @@ def get_cached_trees(queryset):
     include using a recursively included template or arbitrarily traversing
     trees.
 
-    NOTE: nodes _must_ be passed in the correct (depth-first) order. If they aren't,
-    a ValueError will be raised.
-
     Returns a list of top-level nodes. If a single tree was provided in its
     entirety, the list will of course consist of just the tree's root node.
+
+	The nodes are expected to be passed in the correct (depth-first) order. If
+    they aren't, a ValueError will be raised. For filtered querysets, which may 
+    not include any of the ancestors for a node, such nodes can be treated (and
+    will be returned as) top-level nodes by using the optional argument:
+
+    ``allow_filtered``
+        If set to True, errors for levels that appear out of order will be
+        suppressed, and nodes without previously encountered ancestors will be
+        returned as top-level nodes. This can be useful for filtered queryset
+        that may exclude all ancestors for some child nodes.
 
     Aliases to this function are also available:
 
@@ -225,19 +233,15 @@ def get_cached_trees(queryset):
         # Get the model's parent-attribute name
         parent_attr = queryset[0]._mptt_meta.parent_attr
         root_level = None
-        current_tree_id = None
         for obj in queryset:
-            # Get the current mptt node level and tree_id
+            # Get the current mptt node level
             node_level = obj.get_level()
-            node_tree_id = getattr(obj, obj._mptt_meta.tree_id_attr)
 
-            if node_tree_id != current_tree_id or root_level is None:
-                # First iteration or first node of a new tree, so set the root
-                # level to the top node level
+            if root_level is None or (allow_filtered and node_level < root_level):
+                # First iteration, or a new branch on a filtered queryset, so
+                # set the root level to the top node level
                 root_level = node_level
-                current_tree_id = node_tree_id
-
-            if node_level < root_level:
+            elif node_level < root_level:
                 # ``queryset`` was a list or other iterable (unable to order),
                 # and was provided in an order other than depth-first
                 raise ValueError(

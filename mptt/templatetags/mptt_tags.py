@@ -232,10 +232,16 @@ def tree_path(items, separator=' :: '):
 @register.filter
 def cache_tree_children(queryset):
     """
-    Alias to `mptt.utils.get_cached_trees`.
+    Alias to `mptt.utils.get_cached_trees`, suppressing errors for filtered
+    querysets to avoid 500 errors being thrown when using the django admin
+    search, and preserving previous behaviour as much as possible.
     """
 
-    return get_cached_trees(queryset)
+    allow_filtered = False
+    if hasattr(queryset, 'query') and hasattr(queryset.query, 'has_filters'):
+        allow_filtered = queryset.query.has_filters()
+
+    return get_cached_trees(queryset, allow_filtered=allow_filtered)
 
 
 class RecurseTreeNode(template.Node):
