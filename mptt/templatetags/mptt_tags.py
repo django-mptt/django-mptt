@@ -270,7 +270,7 @@ def cache_tree_children(queryset):
                 UserWarning,
             )
             queryset = queryset.order_by(tree_id_attr, left_attr)
-        if queryset.query.has_filters():
+        if queryset.query.where or queryset.query.having:
             is_filtered = True
 
     if queryset:
