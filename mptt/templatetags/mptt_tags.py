@@ -247,10 +247,14 @@ def cache_tree_children(queryset):
 
     Returns a list of top-level nodes. If a single tree was provided in its
     entirety, the list will of course consist of just the tree's root node.
+
+    For filtered querysets, if no ancestors for a node are included in the
+    queryset, it will appear in the returned list as a top-level node.
     """
 
     current_path = []
     top_nodes = []
+    is_filtered = False
 
     # If ``queryset`` is QuerySet-like, set ordering to depth-first
     if hasattr(queryset, 'order_by'):
@@ -266,24 +270,22 @@ def cache_tree_children(queryset):
                 UserWarning,
             )
             queryset = queryset.order_by(tree_id_attr, left_attr)
+        if queryset.query.has_filters():
+            is_filtered = True
 
     if queryset:
         # Get the model's parent-attribute name
         parent_attr = queryset[0]._mptt_meta.parent_attr
         root_level = None
-        current_tree_id = None
         for obj in queryset:
-            # Get the current mptt node level and tree_id
+            # Get the current mptt node level
             node_level = obj.get_level()
-            node_tree_id = getattr(obj, obj._mptt_meta.tree_id_attr)
 
-            if node_tree_id != current_tree_id or root_level is None:
-                # First iteration or first node of a new tree, so set the root
-                # level to the top node level
+            if root_level is None or (is_filtered and node_level < root_level):
+                # First iteration, or a new branch on a filtered queryset, so
+                # set the root level to the top node level
                 root_level = node_level
-                current_tree_id = node_tree_id
-
-            if node_level < root_level:
+            elif node_level < root_level:
                 # ``queryset`` was a list or other iterable (unable to order),
                 # and was provided in an order other than depth-first
                 raise ValueError(
