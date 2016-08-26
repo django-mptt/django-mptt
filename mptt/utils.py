@@ -225,13 +225,17 @@ def get_cached_trees(queryset):
         # Get the model's parent-attribute name
         parent_attr = queryset[0]._mptt_meta.parent_attr
         root_level = None
+        current_tree_id = None
         for obj in queryset:
-            # Get the current mptt node level
+            # Get the current mptt node level and tree_id
             node_level = obj.get_level()
+            node_tree_id = getattr(obj, obj._mptt_meta.tree_id_attr)
 
-            if root_level is None:
-                # First iteration, so set the root level to the top node level
+            if node_tree_id != current_tree_id or root_level is None:
+                # First iteration or first node of a new tree, so set the root
+                # level to the top node level
                 root_level = node_level
+                current_tree_id = node_tree_id
 
             if node_level < root_level:
                 # ``queryset`` was a list or other iterable (unable to order),
