@@ -1653,10 +1653,18 @@ class AdminBatch(TreeTestCase):
         data['post'] = 'yes'
         response = self.client.post('/admin/myapp/category/', data)
 
+        # Due to a strange bug, the session gets corrupted when using Python 3.2
+        # and Django 1.7+ after the above call, though all other aspects of the
+        # call succeed, so subsequent calls redirect to login page. Work around
+        # this by avoiding fetching the redirect URL,
+        redirect_kwargs = {}
+        if django.VERSION >= (1, 7) and (3, 2) <= sys.version_info < (3, 3):
+            redirect_kwargs = {'fetch_redirect_response': False}
+
         self.assertRedirects(
             response,
             '/admin/myapp/category/',
-            fetch_redirect_response=False)
+            **redirect_kwargs)
 
         self.assertEqual(Category.objects.count(), 4)
 
