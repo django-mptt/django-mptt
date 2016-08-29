@@ -1655,7 +1655,8 @@ class AdminBatch(TreeTestCase):
 
         self.assertRedirects(
             response,
-            '/admin/myapp/category/')
+            '/admin/myapp/category/',
+            fetch_redirect_response=False)
 
         self.assertEqual(Category.objects.count(), 4)
 
