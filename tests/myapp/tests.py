@@ -1480,9 +1480,9 @@ class DrilldownTreeTestCase(TreeTestCase):
         {% load mptt_tags %}
         {% drilldown_tree_for_node node as tree count myapp.Game.genre in game_count %}
         {% for n in tree %}
-            {% ifequal n node %}[{% endifequal %}
+            {% if n == node %}[{% endif %}
             {{ n.pk }}:{{ n.game_count }}
-            {% ifequal n node %}]{% endifequal %}{% if not forloop.last %},{% endif %}
+            {% if n == node %}]{% endif %}{% if not forloop.last %},{% endif %}
         {% endfor %}
         ''')
 

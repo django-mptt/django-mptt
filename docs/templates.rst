@@ -209,12 +209,12 @@ children::
     {% drilldown_tree_for_node genre as drilldown cumulative count tests.Game.genre in game_count %}
     {% for node,structure in drilldown|tree_info %}
         {% if structure.new_level %}<ul><li>{% else %}</li><li>{% endif %}
-        {% ifequal node genre %}
+        {% if node == genre %}
             <strong>{{ node.name }}</strong>
         {% else %}
             <a href="{{ node.get_absolute_url }}">{{ node.name }}</a>
-            {% ifequal node.parent_id genre.pk %}({{ node.game_count }}){% endifequal %}
-        {% endifequal %}
+            {% if node.parent_id == genre.pk %}({{ node.game_count }}){% endif %}
+        {% endif %}
         {% for level in structure.closed_levels %}</li></ul>{% endfor %}
     {% endfor %}
 
