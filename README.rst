@@ -78,11 +78,16 @@ Feature overview
   * rebuild the MPTT fields for the tree (useful when you do bulk updates
     outside of django)
 
-* Form fields for tree models.
+* `Form fields`_ for tree models.
 
-* Utility functions for tree models.
+* `Utility functions`_ for tree models.
 
-* Template tags and filters for rendering trees.
+* `Template tags and filters`_ for rendering trees.
 
-* Admin classes for visualizing and modifying trees in Django's administration
+* `Admin classes`_ for visualizing and modifying trees in Django's administration
   interface.
+
+.. _`Form fields`: http://django-mptt.github.io/django-mptt/forms.html
+.. _`Utility functions`: http://django-mptt.github.io/django-mptt/utilities.html
+.. _`Template tags and filters`: http://django-mptt.github.io/django-mptt/templates.html
+.. _`Admin classes`: http://django-mptt.github.io/django-mptt/admin.html
