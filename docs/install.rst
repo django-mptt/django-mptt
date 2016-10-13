@@ -8,9 +8,11 @@ Installation
 Official releases
 =================
 
-Official releases are available from `PyPI`_.
+Official releases are available from `PyPI`_. You can install it using the `pip`_
 
-Download the .zip distribution file and unpack it. Inside is a script
+   pip install django-mptt
+
+You can also download the .zip distribution file and unpack it. Inside is a script
 named ``setup.py``. Enter this command::
 
    python setup.py install
@@ -18,6 +20,7 @@ named ``setup.py``. Enter this command::
 ...and the package will install automatically.
 
 .. _`PyPI`: http://pypi.python.org/pypi/django-mptt/
+.. _`pip`: https://pip.pypa.io/en/stable/
 
 
 Development version
