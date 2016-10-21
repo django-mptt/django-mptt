@@ -1318,7 +1318,7 @@ class ManagerTests(TreeTestCase):
         for node in level_qs:
             per_node.extend(node.get_descendants(include_self=False))
 
-        self.assertItemsEqual(manager_qs, per_node)
+        self.assertListEqual(manager_qs, per_node)
 
 
 class CacheTreeChildrenTestCase(TreeTestCase):
