@@ -1299,6 +1299,27 @@ class ManagerTests(TreeTestCase):
                 Category.objects.all(), include_self=True)
             self.assertEqual(len(qs), 10)
 
+    def test_get_queryset_descendants_include_self(self):
+        """Fails when siblings>=3 and sibling_level=1."""
+        siblings = 3
+        sibling_level = 1
+
+        parent = Node.objects.create(level=0)
+        for i in range(1, sibling_level):
+            parent = Node.objects.create(level=i)
+        for i in range(siblings):
+            level_node = Node.objects.create(parent=parent)
+            Node.objects.create(parent=level_node)
+
+        level_qs = Node.objects.filter(level=sibling_level)
+        manager_qs = list(Node.objects.get_queryset_descendants(level_qs, include_self=False))
+
+        per_node = []
+        for node in level_qs:
+            per_node.extend(node.get_descendants(include_self=False))
+
+        self.assertItemsEqual(manager_qs, per_node)
+
 
 class CacheTreeChildrenTestCase(TreeTestCase):
 
