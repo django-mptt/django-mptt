@@ -1299,26 +1299,33 @@ class ManagerTests(TreeTestCase):
                 Category.objects.all(), include_self=True)
             self.assertEqual(len(qs), 10)
 
-    def test_get_queryset_descendants_include_self(self):
-        """Fails when siblings>=3 and sibling_level=1."""
-        siblings = 3
-        sibling_level = 1
+    def test_get_queryset_family(self):
+        """Tests that levels are respected when finding ancestors/descendants of siblings."""
 
-        parent = Node.objects.create(level=0)
-        for i in range(1, sibling_level):
-            parent = Node.objects.create(level=i)
-        for i in range(siblings):
-            level_node = Node.objects.create(parent=parent)
-            Node.objects.create(parent=level_node)
+        # Level 0
+        parent = UUIDNode.objects.create(name='parent')
 
-        level_qs = Node.objects.filter(level=sibling_level)
-        manager_qs = list(Node.objects.get_queryset_descendants(level_qs, include_self=False))
+        # Level 1
+        child1 = UUIDNode.objects.create(name='child1', parent=parent)
+        child2 = UUIDNode.objects.create(name='child2', parent=parent)
+        child3 = UUIDNode.objects.create(name='child3', parent=parent)
 
-        per_node = []
-        for node in level_qs:
-            per_node.extend(node.get_descendants(include_self=False))
+        # Level 2
+        grandchild1 = UUIDNode.objects.create(name='grandchild1', parent=child1)
+        grandchild2 = UUIDNode.objects.create(name='grandchild2', parent=child2)
+        grandchild3 = UUIDNode.objects.create(name='grandchild3', parent=child3)
+        grandchild4 = UUIDNode.objects.create(name='grandchild4', parent=child3)
 
-        self.assertListEqual(manager_qs, per_node)
+        level_1_qs = UUIDNode.objects.filter(level=1)
+        manager_ancestors_exclude_qs = list(UUIDNode.objects.get_queryset_ancestors(level_1_qs, include_self=False))
+        manager_ancestors_include_qs = list(UUIDNode.objects.get_queryset_ancestors(level_1_qs, include_self=True))
+        manager_descendants_exclude_qs = list(UUIDNode.objects.get_queryset_descendants(level_1_qs, include_self=False))
+        manager_descendants_include_qs = list(UUIDNode.objects.get_queryset_descendants(level_1_qs, include_self=True))
+
+        self.assertListEqual(manager_ancestors_exclude_qs, [parent])
+        self.assertListEqual(manager_ancestors_include_qs, [parent, child1, child2, child3])
+        self.assertListEqual(manager_descendants_exclude_qs, [grandchild1, grandchild2, grandchild3, grandchild4])
+        self.assertListEqual(manager_descendants_include_qs, [child1, grandchild1, child2, grandchild2,  child3, grandchild3, grandchild4])
 
 
 class CacheTreeChildrenTestCase(TreeTestCase):
