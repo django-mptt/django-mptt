@@ -12,7 +12,10 @@ from django.contrib.admin.utils import (
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.template import Library
-from django.core.urlresolvers import NoReverseMatch
+try:
+    from django.urls import NoReverseMatch
+except ImportError:  # Django < 1.10 pragma: no cover
+    from django.core.urlresolvers import NoReverseMatch
 from django.utils.deprecation import RemovedInDjango20Warning
 from django.utils.encoding import force_text
 from django.utils.html import format_html
