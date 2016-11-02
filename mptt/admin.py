@@ -20,6 +20,7 @@ from django.utils.encoding import smart_text
 from django.utils.translation import get_language_bidi
 from django.db.models.fields.related import ForeignObjectRel, ManyToManyField
 
+from mptt.compat import remote_field, remote_model
 from mptt.exceptions import InvalidMove
 from mptt.forms import MPTTAdminForm, TreeNodeChoiceField
 from mptt.models import MPTTModel, TreeForeignKey
@@ -43,7 +44,7 @@ class MPTTModelAdmin(ModelAdmin):
     form = MPTTAdminForm
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if issubclass(db_field.rel.to, MPTTModel) \
+        if issubclass(remote_model(db_field), MPTTModel) \
                 and not isinstance(db_field, TreeForeignKey) \
                 and db_field.name not in self.raw_id_fields:
             db = kwargs.get('using')
@@ -51,7 +52,7 @@ class MPTTModelAdmin(ModelAdmin):
             limit_choices_to = db_field.get_limit_choices_to()
             defaults = dict(
                 form_class=TreeNodeChoiceField,
-                queryset=db_field.rel.to._default_manager.using(
+                queryset=remote_model(db_field)._default_manager.using(
                     db).complex_filter(limit_choices_to),
                 required=False)
             defaults.update(kwargs)
@@ -303,8 +304,8 @@ class TreeRelatedFieldListFilter(RelatedFieldListFilter):
 
     def __init__(self, field, request, params, model, model_admin, field_path):
         self.other_model = get_model_from_relation(field)
-        if hasattr(field, 'rel'):
-            self.rel_name = field.rel.get_related_field().name
+        if remote_field(field) is not None and hasattr(remote_field(field), 'get_related_field'):
+            self.rel_name = remote_field(field).get_related_field().name
         else:
             self.rel_name = self.other_model._meta.pk.name
         self.changed_lookup_kwarg = '%s__%s__inhierarchy' % (field_path, self.rel_name)
@@ -376,7 +377,7 @@ class TreeRelatedFieldListFilter(RelatedFieldListFilter):
             }
         if (isinstance(self.field, ForeignObjectRel) and
                 (self.field.field.null or isinstance(self.field.field, ManyToManyField)) or
-                hasattr(self.field, 'rel') and
+                remote_field(self.field) is not None and
                 (self.field.null or isinstance(self.field, ManyToManyField))):
             yield {
                 'selected': bool(self.lookup_val_isnull),
