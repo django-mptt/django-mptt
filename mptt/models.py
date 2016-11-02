@@ -11,6 +11,7 @@ from django.db.models.query_utils import DeferredAttribute
 from django.utils import six
 from django.utils.translation import ugettext as _
 
+from mptt.compat import remote_field
 from mptt.fields import TreeForeignKey, TreeOneToOneField, TreeManyToManyField
 from mptt.managers import TreeManager
 from mptt.signals import node_moved
@@ -780,7 +781,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         if not self.pk or self._mpttfield('tree_id') is None:
             return False
         opts = self._meta
-        if opts.pk.rel is None:
+        if remote_field(opts.pk) is None:
             return True
         else:
             if not hasattr(self, '_mptt_saved'):
