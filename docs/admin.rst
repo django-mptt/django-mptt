@@ -120,7 +120,7 @@ recommend using the following code::
             return format_html(
                 '<div style="text-indent:{}px">{}</div>',
                 instance._mpttfield('level') * self.mptt_level_indent,
-                item.name,  # Or whatever you want to put here
+                instance.name,  # Or whatever you want to put here
             )
         something.short_description = _('something nice')
 
