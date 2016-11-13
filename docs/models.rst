@@ -339,7 +339,7 @@ The ``TreeManager`` custom manager
 The default manager for an MPTTModel is a ``TreeManager``.
 
 Any ``QuerySet`` created with this manager will be ordered based on the
-tree structure, with root nodes appearing in tree id order and and their
+tree structure, with root nodes appearing in tree id order and their
 descendants being ordered in a depth-first fashion.
 
 Methods
