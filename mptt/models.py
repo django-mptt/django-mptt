@@ -338,18 +338,23 @@ class MPTTModelBase(ModelBase):
             if not abstract:
                 # make sure we have a tree manager somewhere
                 tree_manager = None
-                if hasattr(cls._meta, 'concrete_managers'):  # Django < 1.10
-                    cls_managers = cls._meta.concrete_managers + cls._meta.abstract_managers
-                    cls_managers = [r[2] for r in cls_managers]
+                # Use the default manager defined on the class if any
+                if cls._default_manager and isinstance(cls._default_manager, TreeManager):
+                    tree_manager = cls._default_manager
                 else:
-                    cls_managers = cls._meta.managers
+                    if hasattr(cls._meta, 'concrete_managers'):  # Django < 1.10
+                        # Django < 1.10 doesn't sort managers
+                        cls_managers = sorted(cls._meta.concrete_managers + cls._meta.abstract_managers)
+                        cls_managers = [r[2] for r in cls_managers]
+                    else:
+                        cls_managers = cls._meta.managers
 
-                for cls_manager in cls_managers:
-                    if isinstance(cls_manager, TreeManager):
-                        # prefer any locally defined manager (i.e. keep going if not local)
-                        if cls_manager.model is cls:
-                            tree_manager = cls_manager
-                            break
+                    for cls_manager in cls_managers:
+                        if isinstance(cls_manager, TreeManager):
+                            # prefer any locally defined manager (i.e. keep going if not local)
+                            if cls_manager.model is cls:
+                                tree_manager = cls_manager
+                                break
 
                 if tree_manager and tree_manager.model is not cls:
                     tree_manager = tree_manager._copy_to_model(cls)
