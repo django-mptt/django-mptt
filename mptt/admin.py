@@ -16,6 +16,7 @@ from django.contrib.admin import RelatedFieldListFilter
 from django.contrib.admin.utils import get_model_from_relation
 from django.contrib.admin.options import IncorrectLookupParameters
 from django.core.exceptions import ValidationError
+from django.core.serializers.json import DjangoJSONEncoder
 from django.utils.encoding import smart_text
 from django.utils.translation import get_language_bidi
 from django.db.models.fields.related import ForeignObjectRel, ManyToManyField
@@ -196,7 +197,9 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
             response.context_data['media'].add_js((
                 JS('mptt/draggable-admin.js', {
                     'id': 'draggable-admin-context',
-                    'data-context': json.dumps(self._tree_context(request)),
+                    'data-context': json.dumps(
+                        self._tree_context(request), cls=DjangoJSONEncoder
+                    ),
                 }),
             ),)
         except (AttributeError, KeyError):
