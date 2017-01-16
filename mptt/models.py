@@ -1017,7 +1017,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
             right_shift = -self.get_descendant_count() - 2
             self._tree_manager._post_insert_update_cached_parent_right(parent, right_shift)
 
-        super(MPTTModel, self).delete(*args, **kwargs)
+        return super(MPTTModel, self).delete(*args, **kwargs)
     delete.alters_data = True
 
     def _mptt_refresh(self):
