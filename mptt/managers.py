@@ -149,11 +149,14 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         if direction == 'asc':
             max_attr = opts.left_attr
             min_attr = opts.right_attr
+            level_dir = max_op
         elif direction == 'desc':
             max_attr = opts.right_attr
             min_attr = opts.left_attr
+            level_dir = min_op
 
         tree_key = opts.tree_id_attr
+        level_key = '%s__%s' % (opts.level_attr, level_dir)
         min_key = '%s__%s' % (min_attr, min_op)
         max_key = '%s__%s' % (max_attr, max_op)
 
@@ -164,6 +167,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             min_attr,
             max_attr,
             opts.parent_attr,
+            opts.level_attr,
             # These fields are used by MPTTModel.update_mptt_cached_fields()
             *[f.lstrip('-') for f in opts.order_insertion_by]
         )
@@ -179,30 +183,35 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                 )):
             next_lft = None
             for node in list(group[1]):
-                tree, lft, rght, min_val, max_val = (getattr(node, opts.tree_id_attr),
+                tree, lft, rght, min_val, max_val, level = (getattr(node, opts.tree_id_attr),
                                                      getattr(node, opts.left_attr),
                                                      getattr(node, opts.right_attr),
                                                      getattr(node, min_attr),
-                                                     getattr(node, max_attr))
+                                                     getattr(node, max_attr),
+                                                     getattr(node, opts.level_attr))
                 if next_lft is None:
                     next_lft = rght + 1
-                    min_max = {'min': min_val, 'max': max_val}
+                    min_max = {'min': min_val, 'max': max_val, 'level': level}
                 elif lft == next_lft:
                     if min_val < min_max['min']:
                         min_max['min'] = min_val
                     if max_val > min_max['max']:
                         min_max['max'] = max_val
+                    if level < min_max['level']:
+                        min_max['level'] = level
                     next_lft = rght + 1
                 elif lft != next_lft:
                     filters |= Q(**{
                         tree_key: tree,
+                        level_key: min_max['level'],
                         min_key: min_max['min'],
                         max_key: min_max['max'],
                     })
-                    min_max = {'min': min_val, 'max': max_val}
+                    min_max = {'min': min_val, 'max': max_val, 'level': level}
                     next_lft = rght + 1
             filters |= Q(**{
                 tree_key: tree,
+                level_key: min_max['level'],
                 min_key: min_max['min'],
                 max_key: min_max['max'],
             })
