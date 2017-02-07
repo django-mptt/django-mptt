@@ -182,12 +182,21 @@ def mptt_items_for_result(cl, result, form):
                 else:
                     attr = pk
                 value = result.serializable_value(attr)
+                if cl.is_popup:
+                    if django.VERSION < (1, 10):
+                        opener = format_html(
+                            ' onclick="opener.dismissRelatedLookupPopup(window, &#39;{}&#39;); return false;"', value
+                        )
+                    else:
+                        opener = format_html(
+                            ' data-popup-opener="{}"', value
+                        )
+                else:
+                    opener = ''
                 link_or_text = format_html(
                     '<a href="{}"{}>{}</a>',
                     url,
-                    format_html(
-                        ' data-popup-opener="{}"', value
-                    ) if cl.is_popup else '',
+                    opener,
                     result_repr)
 
             # #### MPTT SUBSTITUTION START
