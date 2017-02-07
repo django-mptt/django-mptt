@@ -283,6 +283,22 @@ class SwappedInModel(MPTTModel):
     name = models.CharField(max_length=50)
 
 
+# Default manager
+class MultipleManager(TreeManager):
+    def get_queryset(self):
+        return super(MultipleManager, self).get_queryset().exclude(published=False)
+
+
+class MultipleManagerModel(MPTTModel):
+    parent = TreeForeignKey(
+        'self', null=True, blank=True, related_name='children',
+        on_delete=models.CASCADE)
+    published = models.BooleanField()
+
+    objects = TreeManager()
+    foo_objects = MultipleManager()
+
+
 class AutoNowDateFieldModel(MPTTModel):
     parent = TreeForeignKey(
         'self', null=True, blank=True, related_name='children',

@@ -40,7 +40,7 @@ from myapp.models import (
     Category, Item, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel,
     ConcreteModel, OrderedInsertion, AutoNowDateFieldModel, Person,
     CustomTreeQueryset, Node, ReferencingModel, CustomTreeManager, Book,
-    UUIDNode, Student)
+    UUIDNode, Student, MultipleManagerModel)
 
 
 def get_tree_details(nodes):
@@ -1298,6 +1298,13 @@ class ManagerTests(TreeTestCase):
             qs = Category.objects.get_queryset_descendants(
                 Category.objects.all(), include_self=True)
             self.assertEqual(len(qs), 10)
+
+    def test_default_manager_with_multiple_managers(self):
+        """
+        Test that a model with multiple managers defined always uses the
+        default manager as the tree manager.
+        """
+        self.assertEqual(type(MultipleManagerModel._tree_manager), TreeManager)
 
 
 class CacheTreeChildrenTestCase(TreeTestCase):
