@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import datetime
 import warnings
 
+import django
 from django.conf import settings
 from django.contrib.admin.templatetags.admin_list import (
     result_hidden_fields, result_headers)
