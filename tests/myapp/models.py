@@ -326,4 +326,4 @@ class Book(MPTTModel):
 
     name = models.CharField(max_length=50)
     fk = TreeForeignKey(Category, null=True, blank=True, related_name='books_fk')
-    m2m = TreeManyToManyField(Category, null=True, blank=True, related_name='books_m2m')
+    m2m = TreeManyToManyField(Category, blank=True, related_name='books_m2m')
