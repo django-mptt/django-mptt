@@ -24,14 +24,17 @@ INSTALLED_APPS = (
 
 STATIC_URL = '/static/'
 SECRET_KEY = 'abc123'
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
-)
+]
+# Compatibility for Django < 1.10
+MIDDLEWARE_CLASSES = MIDDLEWARE + [
+    'django.contrib.auth.middleware.SessionAuthenticationMiddleware'
+]
 
 TEMPLATES = [
     {

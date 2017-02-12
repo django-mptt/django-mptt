@@ -17,7 +17,10 @@ try:
     from django.urls import NoReverseMatch
 except ImportError:  # Django < 1.10 pragma: no cover
     from django.core.urlresolvers import NoReverseMatch
-from django.utils.deprecation import RemovedInDjango20Warning
+try:
+    from django.utils.deprecation import RemovedInDjango20Warning
+except ImportError:
+    RemovedInDjango20Warning = RuntimeWarning
 from django.utils.encoding import force_text
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
