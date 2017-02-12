@@ -12,7 +12,6 @@ from django.contrib.auth.models import Group, User
 from django.db.models import Q
 from django.db.models.query_utils import DeferredAttribute
 from django.apps import apps
-from django.forms.models import modelform_factory
 from django.template import Template, TemplateSyntaxError, Context
 from django.test import RequestFactory, TestCase
 from django.utils.six import string_types, PY3, b, assertRaisesRegex
@@ -27,9 +26,6 @@ except ImportError:
 
 from mptt.admin import JS
 from mptt.exceptions import CantDisableUpdates, InvalidMove
-from mptt.forms import (
-    MPTTAdminForm, TreeNodeChoiceField, TreeNodeMultipleChoiceField,
-    MoveNodeForm)
 from mptt.models import MPTTModel
 from mptt.managers import TreeManager
 from mptt.signals import node_moved
@@ -39,8 +35,8 @@ from mptt.utils import print_debug_info
 from myapp.models import (
     Category, Item, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel,
     ConcreteModel, OrderedInsertion, AutoNowDateFieldModel, Person,
-    CustomTreeQueryset, Node, ReferencingModel, CustomTreeManager, Book,
-    UUIDNode, Student, MultipleManagerModel)
+    CustomTreeQueryset, Node, CustomTreeManager, Book, UUIDNode, Student,
+    MultipleManagerModel)
 
 
 def get_tree_details(nodes):
@@ -1552,82 +1548,6 @@ class RegisteredRemoteModel(TreeTestCase):
     def test_save_registered_model(self):
         g1 = Group.objects.create(name='group 1')
         g1.save()
-
-
-class TestForms(TreeTestCase):
-    fixtures = ['categories.json']
-
-    def test_adminform_instantiation(self):
-        # https://github.com/django-mptt/django-mptt/issues/264
-        c = Category.objects.get(name='Nintendo Wii')
-        CategoryForm = modelform_factory(
-            Category,
-            form=MPTTAdminForm,
-            fields=('name', 'parent'),
-        )
-        self.assertTrue(CategoryForm(instance=c))
-
-        # Test that the parent field is properly limited. (queryset)
-        form = CategoryForm({
-            'name': c.name,
-            'parent': c.children.all()[0].pk,
-        }, instance=c)
-        self.assertFalse(form.is_valid())
-        self.assertIn(
-            'Select a valid choice',
-            '%s' % form.errors)
-
-        # Test that even though we remove the field queryset limit,
-        # validation still fails.
-        form = CategoryForm({
-            'name': c.name,
-            'parent': c.children.all()[0].pk,
-        }, instance=c)
-        form.fields['parent'].queryset = Category.objects.all()
-        self.assertFalse(form.is_valid())
-        self.assertIn(
-            'Invalid parent',
-            '%s' % form.errors)
-
-    def test_field_types(self):
-        ReferencingModelForm = modelform_factory(
-            ReferencingModel,
-            exclude=('id',))
-
-        form = ReferencingModelForm()
-
-        # Also check whether we have the correct form field type
-        self.assertTrue(isinstance(
-            form.fields['fk'],
-            TreeNodeChoiceField))
-        self.assertTrue(isinstance(
-            form.fields['one'],
-            TreeNodeChoiceField))
-        self.assertTrue(isinstance(
-            form.fields['m2m'],
-            TreeNodeMultipleChoiceField))
-
-    def test_movenodeform(self):
-        c = Category.objects.get(pk=2)
-        form = MoveNodeForm(c, {
-            'target': '5',
-            'position': 'first-child',
-        })
-        self.assertTrue(form.is_valid())
-        form.save()
-
-        self.assertTreeEqual(Category.objects.all(), '''
-            1 - 1 0 1 20
-            5 1 1 1 2 13
-            2 5 1 2 3 8
-            3 2 1 3 4 5
-            4 2 1 3 6 7
-            6 5 1 2 9 10
-            7 5 1 2 11 12
-            8 1 1 1 14 19
-            9 8 1 2 15 16
-            10 8 1 2 17 18
-        ''')
 
 
 class TestAltersData(TreeTestCase):
