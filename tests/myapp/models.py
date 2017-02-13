@@ -117,7 +117,9 @@ class Node(MPTTModel):
 
 
 class UUIDNode(MPTTModel):
-    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+    parent = models.ForeignKey(
+        'self', null=True, blank=True, related_name='children',
+        on_delete=models.CASCADE)
     uuid = models.UUIDField(primary_key=True, default=uuid4)
     name = models.CharField(max_length=50)
 
@@ -325,5 +327,7 @@ class Book(MPTTModel):
         on_delete=models.CASCADE)
 
     name = models.CharField(max_length=50)
-    fk = TreeForeignKey(Category, null=True, blank=True, related_name='books_fk')
+    fk = TreeForeignKey(
+        Category, null=True, blank=True, related_name='books_fk',
+        on_delete=models.CASCADE)
     m2m = TreeManyToManyField(Category, blank=True, related_name='books_m2m')
