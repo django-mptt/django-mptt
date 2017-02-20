@@ -1,6 +1,8 @@
 from __future__ import unicode_literals
 import os
 
+import django
+
 DIRNAME = os.path.dirname(__file__)
 
 DEBUG = True
@@ -31,10 +33,12 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
 ]
+
 # Compatibility for Django < 1.10
-MIDDLEWARE_CLASSES = MIDDLEWARE + [
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware'
-]
+if django.VERSION < (1, 10):
+    MIDDLEWARE_CLASSES = MIDDLEWARE + [
+        'django.contrib.auth.middleware.SessionAuthenticationMiddleware'
+    ]
 
 TEMPLATES = [
     {
