@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
 import io
@@ -1573,13 +1574,29 @@ class TestAltersData(TreeTestCase):
 class TestDebugInfo(TreeTestCase):
     fixtures = ['categories.json']
 
+    def get_stream_type(self):
+        return io.StringIO if PY3 else io.BytesIO
+
+    def decode_stream(self, stream):
+        return stream if PY3 else stream.decode('utf-8')
+
     def test_debug_info(self):  # Currently fails either on PY2 or PY3.
-        stream_type = io.StringIO if PY3 else io.BytesIO
+        stream_type = self.get_stream_type()
         with stream_type() as out:
             print_debug_info(Category.objects.all(), file=out)
             output = out.getvalue()
 
-        self.assertIn('1,0,,1,1,20', output)
+        self.assertIn('1,0,,1,1,20', self.decode_stream(output))
+
+    def test_debug_info_with_non_ascii_representations(self):
+        Category.objects.create(name='El niño')
+
+        stream_type = self.get_stream_type()
+        with stream_type() as out:
+            print_debug_info(Category.objects.all(), file=out)
+            output = out.getvalue()
+
+        self.assertIn('El niño', self.decode_stream(output))
 
 
 class AdminBatch(TreeTestCase):

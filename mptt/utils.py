@@ -8,7 +8,7 @@ import csv
 import itertools
 import sys
 
-from django.utils.six import next, text_type
+from django.utils.six import next, PY3, text_type
 from django.utils.six.moves import zip
 from django.utils.translation import ugettext as _
 
@@ -174,7 +174,14 @@ def print_debug_info(qs, file=None):
         row = []
         for field in header[:-1]:
             row.append(getattr(n, field))
-        row.append('%s%s' % ('- ' * level, text_type(n).encode('utf-8')))
+
+        row_text = '%s%s' % ('- ' * level, text_type(n))
+        # Python 3 expects CSV data to be unicode, Python 2 expects it to be
+        # encoded
+        if PY3:
+            row.append(row_text)
+        else:
+            row.append(row_text.encode('utf-8'))
         writer.writerow(row)
 
 
