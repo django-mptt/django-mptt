@@ -128,14 +128,12 @@ Create a template called ``genres.html`` in your template directory and put this
     {% load mptt_tags %}
     <ul>
         {% recursetree nodes %}
-            <li>
-                {{ node.name }}
+            <li> {{ node.name }} </li>
                 {% if not node.is_leaf_node %}
                     <ul class="children">
                         {{ children }}
                     </ul>
                 {% endif %}
-            </li>
         {% endrecursetree %}
     </ul>
 
