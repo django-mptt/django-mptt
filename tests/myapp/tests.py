@@ -56,6 +56,7 @@ def get_tree_details(nodes):
                        getattr(n, opts.left_attr), getattr(n, opts.right_attr))
                       for n in nodes])
 
+
 leading_whitespace_re = re.compile(r'^\s+', re.MULTILINE)
 
 

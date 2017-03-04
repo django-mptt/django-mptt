@@ -315,6 +315,7 @@ class AutoNowDateFieldModel(MPTTModel):
 class Group(models.Model):
     name = models.CharField(max_length=100)
 
+
 TreeForeignKey(
     Group, blank=True, null=True, on_delete=models.CASCADE
 ).contribute_to_class(Group, 'parent')
