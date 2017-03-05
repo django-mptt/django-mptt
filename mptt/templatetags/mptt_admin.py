@@ -178,7 +178,9 @@ def mptt_items_for_result(cl, result, form):
             except NoReverseMatch:
                 link_or_text = result_repr
             else:
-                url = add_preserved_filters({'preserved_filters': cl.preserved_filters, 'opts': cl.opts}, url)
+                url = add_preserved_filters(
+                    {'preserved_filters': cl.preserved_filters, 'opts': cl.opts}, url,
+                )
                 # Convert the pk to something that can be used in Javascript.
                 # Problem cases are long ints (23L) and non-ASCII strings.
                 if cl.to_field:
@@ -189,7 +191,8 @@ def mptt_items_for_result(cl, result, form):
                 if cl.is_popup:
                     if django.VERSION < (1, 10):
                         opener = format_html(
-                            ' onclick="opener.dismissRelatedLookupPopup(window, &#39;{}&#39;); return false;"', value
+                            ' onclick="opener.dismissRelatedLookupPopup(window, &#39;{}&#39;);'
+                            ' return false;"', value
                         )
                     else:
                         opener = format_html(
@@ -244,6 +247,7 @@ def mptt_result_list(cl):
             'result_hidden_fields': list(result_hidden_fields(cl)),
             'result_headers': list(result_headers(cl)),
             'results': list(mptt_results(cl))}
+
 
 # custom template is merely so we can strip out sortable-ness from the column headers
 # Based on admin/change_list_results.html (1.3.1)

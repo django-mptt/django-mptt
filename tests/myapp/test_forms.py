@@ -124,12 +124,11 @@ class TestForms(TreeTestCase):
             str(form['target'])
         )
         form = MoveNodeForm(Genre.objects.get(pk=7), position_choices=(('left', 'left'),))
-        self.assertHTMLEqual(
-            str(form['position']),
-            ('<select id="id_position" name="position" {required}>'
+        self.assertHTMLEqual(str(form['position']), (
+            '<select id="id_position" name="position" {required}>'
             '<option value="left">left</option>'
-            '</select>').format(required='required' if required_on_select_without_empty else '')
-        )
+            '</select>'
+        ).format(required='required' if required_on_select_without_empty else ''))
 
     def test_treenodechoicefield(self):
         field = TreeNodeChoiceField(queryset=Genre.objects.all())

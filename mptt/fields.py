@@ -39,6 +39,7 @@ class TreeManyToManyField(models.ManyToManyField):
         kwargs.setdefault('form_class', TreeNodeMultipleChoiceField)
         return super(TreeManyToManyField, self).formfield(**kwargs)
 
+
 # South integration
 if 'south' in settings.INSTALLED_APPS:  # pragma: no cover
     from south.modelsinspector import add_introspection_rules

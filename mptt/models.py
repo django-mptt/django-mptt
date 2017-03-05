@@ -47,6 +47,7 @@ class classpropertytype(property):
             members.get('__doc__')
         )
 
+
 classproperty = classpropertytype('classproperty')
 
 
@@ -213,7 +214,8 @@ class MPTTOptions(object):
                 # Fall back on tree id ordering if multiple root nodes have
                 # the same values.
                 order_by.append(opts.tree_id_attr)
-            queryset = node.__class__._tree_manager.db_manager(node._state.db).filter(filters).order_by(*order_by)
+            queryset = node.__class__._tree_manager.db_manager(
+                node._state.db).filter(filters).order_by(*order_by)
             if node.pk:
                 queryset = queryset.exclude(pk=node.pk)
             try:
@@ -344,7 +346,8 @@ class MPTTModelBase(ModelBase):
                 else:
                     if hasattr(cls._meta, 'concrete_managers'):  # Django < 1.10
                         # Django < 1.10 doesn't sort managers
-                        cls_managers = sorted(cls._meta.concrete_managers + cls._meta.abstract_managers)
+                        cls_managers = sorted(
+                            cls._meta.concrete_managers + cls._meta.abstract_managers)
                         cls_managers = [r[2] for r in cls_managers]
                     else:
                         cls_managers = cls._meta.managers
