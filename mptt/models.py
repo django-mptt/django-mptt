@@ -182,6 +182,11 @@ class MPTTOptions(object):
                 field = instance._meta.get_field(field_name)
                 value = field.pre_save(instance, True)
 
+            # not really sure how this works, but fixes #340 
+            if value is None:
+                value = bool(filter_suffix=='__lt')
+                filter_suffix = '__isnull' 
+            
             q = Q(**{field_name + filter_suffix: value})
 
             filters__append(reduce(and_, [Q(**{f: v}) for f, v in fields] + [q]))
