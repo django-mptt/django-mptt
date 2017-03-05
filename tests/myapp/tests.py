@@ -37,7 +37,7 @@ from myapp.models import (
     Category, Item, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel,
     ConcreteModel, OrderedInsertion, AutoNowDateFieldModel, Person,
     CustomTreeQueryset, Node, CustomTreeManager, Book, UUIDNode, Student,
-    MultipleManagerModel)
+    MultipleManagerModel, NullableOrderedInsertionModel)
 
 
 def get_tree_details(nodes):
@@ -2296,3 +2296,17 @@ class DirectParentAssignment(TreeTestCase):
         n2 = Node.objects.create()
         n1.parent_id = n2.id
         n1.save()
+
+
+class NullableOrderedInsertion(TreeTestCase):
+    def test_nullable_ordered_insertion(self):
+
+        genreA = NullableOrderedInsertionModel.objects.create(name='A', parent=None)
+        genreA1 = NullableOrderedInsertionModel.objects.create(name='A1', parent=genreA)
+        genreAnone = NullableOrderedInsertionModel.objects.create(name=None, parent=genreA)
+
+        self.assertTreeEqual(NullableOrderedInsertionModel.objects.all(), """
+            1 - 1 0 1 6
+            3 1 1 1 2 3
+            2 1 1 1 4 5
+        """)
