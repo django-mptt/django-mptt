@@ -182,11 +182,12 @@ class MPTTOptions(object):
                 field = instance._meta.get_field(field_name)
                 value = field.pre_save(instance, True)
 
-            # not really sure how this works, but fixes #340 
             if value is None:
-                value = bool(filter_suffix=='__lt')
-                filter_suffix = '__isnull' 
-            
+                # we have to use __isnull instead of __lt or __gt becase __lt = Null is invalid
+                # depending on order, we need to find the first node where code is null or not null
+                value = (filter_suffix == '__lt')
+                filter_suffix = '__isnull'
+
             q = Q(**{field_name + filter_suffix: value})
 
             filters__append(reduce(and_, [Q(**{f: v}) for f, v in fields] + [q]))
