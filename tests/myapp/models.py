@@ -332,3 +332,29 @@ class Book(MPTTModel):
         Category, null=True, blank=True, related_name='books_fk',
         on_delete=models.CASCADE)
     m2m = TreeManyToManyField(Category, blank=True, related_name='books_m2m')
+
+
+class NullableOrderedInsertionModel(MPTTModel):
+    name = models.CharField(max_length=50, null=True)
+    parent = TreeForeignKey(
+        'self', null=True, blank=True, related_name='children',
+        on_delete=models.CASCADE)
+
+    class MPTTMeta:
+        order_insertion_by = ['name']
+
+    def __str__(self):
+        return self.name
+
+
+class NullableDescOrderedInsertionModel(MPTTModel):
+    name = models.CharField(max_length=50, null=True)
+    parent = TreeForeignKey(
+        'self', null=True, blank=True, related_name='children',
+        on_delete=models.CASCADE)
+
+    class MPTTMeta:
+        order_insertion_by = ['-name']
+
+    def __str__(self):
+        return self.name
