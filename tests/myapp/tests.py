@@ -37,7 +37,7 @@ from myapp.models import (
     Category, Item, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel,
     ConcreteModel, OrderedInsertion, AutoNowDateFieldModel, Person,
     CustomTreeQueryset, Node, CustomTreeManager, Book, UUIDNode, Student,
-    MultipleManagerModel, NullableOrderedInsertionModel, NullableDescOrderedInsertionModel)
+    MultipleManagerModel, UniqueTogetherModel, NullableOrderedInsertionModel, NullableDescOrderedInsertionModel)
 
 
 def get_tree_details(nodes):
@@ -2296,6 +2296,46 @@ class DirectParentAssignment(TreeTestCase):
         n2 = Node.objects.create()
         n1.parent_id = n2.id
         n1.save()
+
+
+class MovingNodeWithUniqueConstraint(TreeTestCase):
+    def test_unique_together_move_to_same_parent_change_code(self):
+        """Regression test for #466 1"""
+
+        UniqueTogetherModel.objects.all().delete()
+
+        a = UniqueTogetherModel.objects.create(code='a', parent=None)
+        b = UniqueTogetherModel.objects.create(code='b', parent=None)
+        a1 = UniqueTogetherModel.objects.create(code='1', parent=a)
+        b1 = UniqueTogetherModel.objects.create(code='1', parent=b)
+        b1.parent, b1.code = a, '2'  # b1 -> a2
+        b1.save()
+
+        self.assertTreeEqual(UniqueTogetherModel.objects.all(), """
+            1 - 1 0 1 6
+            3 1 1 1 2 3
+            4 1 1 1 4 5
+            2 - 2 0 1 2
+        """)
+
+    def test_unique_together_move_to_same_code_change_parent(self):
+        """Regression test for #466 1"""
+
+        UniqueTogetherModel.objects.all().delete()
+
+        a = UniqueTogetherModel.objects.create(code='a', parent=None)
+        b = UniqueTogetherModel.objects.create(code='b', parent=None)
+        a1 = UniqueTogetherModel.objects.create(code='1', parent=a)
+        a2 = UniqueTogetherModel.objects.create(code='2', parent=a)
+        a2.parent, a2.code = b, '1'  # a2 -> b1
+        a2.save()
+
+        self.assertTreeEqual(UniqueTogetherModel.objects.all(), """
+            1 - 1 0 1 4
+            3 1 1 1 2 3
+            2 - 2 0 1 4
+            4 2 2 1 2 3
+        """)
 
 
 class NullableOrderedInsertion(TreeTestCase):

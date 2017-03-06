@@ -334,6 +334,13 @@ class Book(MPTTModel):
     m2m = TreeManyToManyField(Category, blank=True, related_name='books_m2m')
 
 
+class UniqueTogetherModel( MPTTModel ):
+    class Meta:
+        unique_together = (('parent','code',),)
+    parent = TreeForeignKey('self', null=True)
+    code = models.CharField(max_length=10)
+
+    
 class NullableOrderedInsertionModel(MPTTModel):
     name = models.CharField(max_length=50, null=True)
     parent = TreeForeignKey(
@@ -358,3 +365,4 @@ class NullableDescOrderedInsertionModel(MPTTModel):
 
     def __str__(self):
         return self.name
+
