@@ -1615,7 +1615,7 @@ class AdminBatch(TreeTestCase):
             10)
 
         mptt_opts = Category._mptt_meta
-        self.assertEqual(
+        self.assertSequenceEqual(
             response.context['cl'].result_list.query.order_by[:2],
             [mptt_opts.tree_id_attr, mptt_opts.left_attr])
 
