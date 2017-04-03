@@ -103,6 +103,11 @@ see below.)
 ``list_per_page`` is set to 2000 by default (which effectively disables
 pagination for most trees).
 
+You may set the attribute ``expand_tree_by_default = True`` in your
+DraggableMPTTAdmin to expand the tree on first page visit (default is
+False). After this the state of every node (expanded or collapsed) is saved
+to the browser storage.
+
 
 Replacing ``indented_title``
 ----------------------------

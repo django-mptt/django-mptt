@@ -154,6 +154,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
     list_display = ('tree_actions', 'indented_title')  # Sane defaults.
     list_display_links = ('indented_title',)  # Sane defaults.
     mptt_level_indent = 20
+    expand_tree_by_default = False
 
     def tree_actions(self, item):
         try:
@@ -256,6 +257,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
                 'collapseTree': _('Collapse tree'),
                 'expandTree': _('Expand tree'),
             },
+            'expandTreeByDefault': self.expand_tree_by_default,
         }
 
     def _build_tree_structure(self, queryset):
