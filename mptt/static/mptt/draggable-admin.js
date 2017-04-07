@@ -402,7 +402,9 @@ django.jQuery(function($){
                 expandOrCollapseNode(treeNode(storedNodes[i]));
             }
         } else {
-            collapseTree();
+            if (!DraggableMPTTAdmin.expandTreeByDefault) {
+                collapseTree();
+            }
         }
     }
 
