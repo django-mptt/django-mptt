@@ -100,6 +100,9 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             self.tree_id_attr, self.left_attr
         )
 
+    if django.VERSION < (1, 6):
+        get_query_set = get_queryset
+
     def _get_queryset_relatives(self, queryset, direction, include_self):
         """
         Returns a queryset containing either the descendants
