@@ -739,7 +739,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         Returns ``True`` if this model instance is a leaf node (it has no
         children), ``False`` otherwise.
         """
-        return not self.get_descendant_count()
+        return getattr(self, self._mptt_meta.left_attr) + 1 == getattr(self, self._mptt_meta.right_attr)
 
     def is_root_node(self):
         """
