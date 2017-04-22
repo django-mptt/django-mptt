@@ -11,7 +11,7 @@ Django Models and working with trees of Model instances.
 
 Project home: http://github.com/django-mptt/django-mptt/
 
-Documentation: http://django-mptt.github.io/django-mptt/
+Documentation: https://django-mptt.readthedocs.io/
 
 Discussion group: http://groups.google.com/group/django-mptt-dev
 
@@ -87,7 +87,7 @@ Feature overview
 * `Admin classes`_ for visualizing and modifying trees in Django's administration
   interface.
 
-.. _`Form fields`: http://django-mptt.github.io/django-mptt/forms.html
-.. _`Utility functions`: http://django-mptt.github.io/django-mptt/utilities.html
-.. _`Template tags and filters`: http://django-mptt.github.io/django-mptt/templates.html
-.. _`Admin classes`: http://django-mptt.github.io/django-mptt/admin.html
+.. _`Form fields`: https://django-mptt.readthedocs.io/en/latest/forms.html
+.. _`Utility functions`: https://django-mptt.readthedocs.io/en/latest/utilities.html
+.. _`Template tags and filters`: https://django-mptt.readthedocs.io/en/latest/templates.html
+.. _`Admin classes`: https://django-mptt.readthedocs.io/en/latest/admin.html
