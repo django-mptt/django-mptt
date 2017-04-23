@@ -28,9 +28,9 @@ required to keep the tree structure in a good state at all times.
 Here are a few articles about MPTT to whet your appetite and provide
 details about how the technique itself works:
 
-    * `Trees in SQL`_
-    * `Storing Hierarchical Data in a Database`_
-    * `Managing Hierarchical Data in MySQL`_
+* `Trees in SQL`_
+* `Storing Hierarchical Data in a Database`_
+* `Managing Hierarchical Data in MySQL`_
 
 .. _`Trees in SQL`: http://www.ibase.ru/files/articles/programming/dbmstrees/sqltrees.html
 .. _`Storing Hierarchical Data in a Database`: http://www.sitepoint.com/print/hierarchical-data-database
