@@ -3,6 +3,7 @@ from functools import reduce, wraps
 import operator
 import threading
 
+import django
 from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.query import Q
