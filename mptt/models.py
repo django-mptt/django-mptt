@@ -341,6 +341,17 @@ class MPTTModelBase(ModelBase):
                     if field_name not in existing_field_names:
                         field = models.PositiveIntegerField(db_index=True, editable=False)
                         field.contribute_to_class(cls, field_name)
+                        
+                if django.VERSION >= (1, 11):
+                    
+                    tree_id_attr = getattr(cls._mptt_meta, 'tree_id_attr')
+                    lft_attr = getattr(cls._mptt_meta, 'left_attr')
+
+                    meta = getattr(base, '_meta')
+                    if not hasattr(meta, 'indexes'):
+                        setattr(meta, 'indexes', [])
+                        
+                    meta.indexes.append(models.Index(fields=[tree_id_attr, lft_attr]))
 
             # Add a tree manager, if there isn't one already
             if not abstract:
