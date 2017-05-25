@@ -64,12 +64,16 @@ CUMULATIVE_COUNT_SUBQUERY_M2M = """(
 
 def delegate_manager(method):
     """
-    Delegate method calls to base manager, if exists.
+    Delegate method calls to tree model manager.
+
+    This is necessary because calling .get_descendants() on a Student instance should
+    return a Person queryset in order to be consistent with Django's multi-table inheritance
+    filtering.
     """
     @functools.wraps(method)
     def wrapped(self, *args, **kwargs):
-        if self._base_manager:
-            return getattr(self._base_manager, method.__name__)(*args, **kwargs)
+        if self.tree_model is not self.model:
+            self = self.tree_model._tree_manager
         return method(self, *args, **kwargs)
     return wrapped
 
@@ -86,10 +90,16 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         if not model._meta.abstract:
             self.tree_model = _get_tree_model(model)
 
-            self._base_manager = None
-            if self.tree_model is not model:
-                # _base_manager is the treemanager on tree_model
-                self._base_manager = self.tree_model._tree_manager
+    def _get_tree_model_manager(self):
+        """
+        Returns the manager whose queryset yields instances of self.tree_model.
+
+        Usually that's self, but in multi-table-inheritance it may be something different.
+        """
+        if self.tree_model is self.model:
+            return self
+        else:
+            return self.tree_model._tree_manager
 
     def get_queryset(self, *args, **kwargs):
         """
