@@ -158,7 +158,7 @@ def print_debug_info(qs, file=None):
     header = (
         'pk',
         'level',
-        '%s_id' % opts.parent_attr,
+        'parent_id',
         'tree_id',
         'lft',
         'rght',
@@ -226,7 +226,6 @@ def get_cached_trees(queryset):
 
     if queryset:
         # Get the model's parent-attribute name
-        parent_attr = queryset[0]._mptt_meta.parent_attr
         root_level = None
         for obj in queryset:
             # Get the current mptt node level
@@ -258,7 +257,7 @@ def get_cached_trees(queryset):
                 # Cache the parent on the current node, and attach the current
                 # node to the parent's list of children
                 _parent = current_path[-1]
-                setattr(obj, parent_attr, _parent)
+                obj.parent = _parent
                 _parent._cached_children.append(obj)
 
                 if root_level == 0:

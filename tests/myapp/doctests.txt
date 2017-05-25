@@ -6,7 +6,7 @@
 >>> def print_tree_details(nodes):
 ...     opts = nodes[0]._mptt_meta
 ...     print('\n'.join(['%s %s %s %s %s %s' % \
-...                      (n.pk, getattr(n, '%s_id' % opts.parent_attr) or '-',
+...                      (n.pk, n.parent_id or '-',
 ...                       n.tree_id, n.level, n.lft, n.rght)\
 ...                      for n in nodes]))
 

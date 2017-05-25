@@ -165,13 +165,13 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         min_key = '%s__%s' % (min_attr, min_op)
         max_key = '%s__%s' % (max_attr, max_op)
 
-        q = queryset.order_by('tree_id', opts.parent_attr, 'lft').only(
+        q = queryset.order_by('tree_id', 'parent', 'lft').only(
             'tree_id',
             'lft',
             'rght',
             min_attr,
             max_attr,
-            opts.parent_attr,
+            'parent',
             # These fields are used by MPTTModel.update_mptt_cached_fields()
             *[f.lstrip('-') for f in opts.order_insertion_by]
         )
@@ -183,7 +183,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                 q,
                 key=lambda n: (
                     n.tree_id,
-                    getattr(n, opts.parent_attr + '_id'),
+                    n.parent_id,
                 )):
             next_lft = None
             for node in list(group[1]):
@@ -377,10 +377,6 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                 for tree_id in results:
                     partial_rebuild(tree_id)
 
-    @property
-    def parent_attr(self):
-        return self.model._mptt_meta.parent_attr
-
     def _translate_lookups(self, **lookups):
         new_lookups = {}
         join_parts = '__'.join
@@ -527,7 +523,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             node.rght = 2
             node.level = 0
             node.tree_id = tree_id
-            setattr(node, self.parent_attr, None)
+            node.parent = None
         elif target.is_root_node() and position in ['left', 'right']:
             if refresh_target:
                 # Ensure mptt values on target are not stale.
@@ -547,7 +543,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             node.rght = 2
             node.level = 0
             node.tree_id = tree_id
-            setattr(node, self.parent_attr, None)
+            node.parent = None
         else:
             node.lft = 0
             node.level = 0
@@ -567,7 +563,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             node.rght = -left + 1
             node.level = -level
             node.tree_id = target.tree_id
-            setattr(node, self.parent_attr, parent)
+            node.parent = parent
 
             if parent:
                 self._post_insert_update_cached_parent_right(parent, right_shift)
@@ -700,17 +696,15 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
 
     def _post_insert_update_cached_parent_right(self, instance, right_shift, seen=None):
         instance.rght += right_shift
-        attr = '_%s_cache' % self.parent_attr
-        if hasattr(instance, attr):
-            parent = getattr(instance, attr)
-            if parent:
-                if not seen:
-                    seen = set()
-                seen.add(instance)
-                if parent in seen:
-                    # detect infinite recursion and throw an error
-                    raise InvalidMove
-                self._post_insert_update_cached_parent_right(parent, right_shift, seen=seen)
+        parent = getattr(instance, '_parent_cache', None)
+        if parent:
+            if not seen:
+                seen = set()
+            seen.add(instance)
+            if parent in seen:
+                # detect infinite recursion and throw an error
+                raise InvalidMove
+            self._post_insert_update_cached_parent_right(parent, right_shift, seen=seen)
 
     def _calculate_inter_tree_move_values(self, node, target, position):
         """
@@ -736,7 +730,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             else:
                 space_target = target_right
             level_change = level - target_level
-            parent = getattr(target, self.parent_attr)
+            parent = target.parent
         else:
             raise ValueError(_('An invalid position was given: %s.') % position)
 
@@ -852,8 +846,8 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         node.rght = right - left_right_change
         node.level = 0
         node.tree_id = new_tree_id
-        setattr(node, self.parent_attr, None)
-        node._mptt_cached_fields[self.parent_attr] = None
+        node.parent = None
+        node._mptt_cached_fields['parent'] = None
 
     def _make_sibling_of_root_node(self, node, target, position):
         """
@@ -1015,9 +1009,8 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         node.rght = right - left_right_change
         node.level = level - level_change
         node.tree_id = new_tree_id
-        setattr(node, self.parent_attr, parent)
-
-        node._mptt_cached_fields[self.parent_attr] = parent.pk
+        node.parent = parent
+        node._mptt_cached_fields['parent'] = parent.pk
 
     def _move_child_within_tree(self, node, target, position):
         """
@@ -1077,7 +1070,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                     new_left = target_right + 1
                     new_right = target_right + width
             level_change = level - target_level
-            parent = getattr(target, self.parent_attr)
+            parent = target.parent
         else:
             raise ValueError(_('An invalid position was given: %s.') % position)
 
@@ -1131,8 +1124,8 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         node.lft = new_left
         node.rght = new_right
         node.level = level - level_change
-        setattr(node, self.parent_attr, parent)
-        node._mptt_cached_fields[self.parent_attr] = parent.pk
+        node.parent = parent
+        node._mptt_cached_fields['parent'] = parent.pk
 
     def _move_root_node(self, node, target, position):
         """
@@ -1188,5 +1181,5 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         node.rght = right - left_right_change
         node.level = level - level_change
         node.tree_id = new_tree_id
-        setattr(node, self.parent_attr, parent)
-        node._mptt_cached_fields[self.parent_attr] = parent.pk
+        node.parent = parent
+        node._mptt_cached_fields['parent'] = parent.pk
