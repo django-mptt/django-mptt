@@ -170,6 +170,21 @@ class ReparentingTestCase(TreeTestCase):
             8 6 3 1 4 5
         """)
 
+    def test_moving_nested_nodes_works(self):
+        Genre.objects.all().delete()
+        g0 = Genre.objects.create(name='Zero')
+        g1 = Genre.objects.create(name='One')
+        g2 = Genre.objects.create(name='Two', parent=g1)
+        g3 = Genre.objects.create(name='Three', parent=g2)
+        g4 = Genre.objects.create(name='Four', parent=g3)
+
+        g1.parent = g0
+        g1.save()
+        g3.parent = g1
+        g3.save()
+
+        self.assertEqual(list(Genre.objects.get(id=g4.id).get_ancestors()), [g0, g1, g3])
+
     def test_new_root_from_leaf_with_siblings(self):
         platformer_2d = Genre.objects.get(id=3)
         platformer_2d.parent = None
