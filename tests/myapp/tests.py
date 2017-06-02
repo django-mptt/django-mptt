@@ -53,7 +53,7 @@ def get_tree_details(nodes):
     return '\n'.join([
         '%s %s %s %s %s %s' % (
             n.pk,
-            getattr(n, '%s_id' % opts.parent_attr) or '-',
+            n.parent_id or '-',
             n.tree_id,
             n.level,
             n.lft,
