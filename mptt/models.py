@@ -236,7 +236,8 @@ class MPTTOptions(object):
                 # Fall back on tree id ordering if multiple root nodes have
                 # the same values.
                 order_by.append('tree_id')
-            queryset = node.__class__._tree_manager.db_manager(node._state.db).filter(filters).order_by(*order_by)
+            mgr = node.__class__._tree_manager._get_tree_model_manager()
+            queryset = mgr.db_manager(node._state.db).filter(filters).order_by(*order_by)
             if node.pk:
                 queryset = queryset.exclude(pk=node.pk)
             try:
@@ -481,12 +482,13 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         If ``include_self`` is ``True``, the ``QuerySet`` will also
         include this model instance.
         """
+        mgr = self._tree_manager._get_tree_model_manager()
         if self.is_root_node():
             if not include_self:
-                return self._tree_manager.none()
+                return mgr.none()
             else:
                 # Filter on pk for efficiency.
-                qs = self._tree_manager.filter(pk=self.pk)
+                qs = mgr.filter(pk=self.pk)
         else:
             opts = self._mptt_meta
 
@@ -501,7 +503,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                 left -= 1
                 right += 1
 
-            qs = self._tree_manager._mptt_filter(
+            qs = mgr.filter(
                 lft__lte=left,
                 rght__gte=right,
                 tree_id=self.tree_id,
@@ -546,7 +548,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
             tree_id=self.tree_id,
         )
 
-        return self._tree_manager.filter(ancestors | descendants)
+        return self._tree_manager._get_tree_model_manager().filter(ancestors | descendants)
 
     @raise_if_unsaved
     def get_children(self):
@@ -562,15 +564,16 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         If called from a template where the tree has been walked by the
         ``cache_tree_children`` filter, no database query is required.
         """
+        mgr = self._tree_manager._get_tree_model_manager()
         if hasattr(self, '_cached_children'):
-            qs = self._tree_manager.filter(pk__in=[n.pk for n in self._cached_children])
+            qs = mgr.filter(pk__in=[n.pk for n in self._cached_children])
             qs._result_cache = self._cached_children
             return qs
         else:
             if self.is_leaf_node():
-                return self._tree_manager.none()
+                return mgr.none()
 
-            return self._tree_manager._mptt_filter(parent=self)
+            return mgr.filter(parent=self)
 
     @raise_if_unsaved
     def get_descendants(self, include_self=False):
@@ -581,11 +584,12 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         If ``include_self`` is ``True``, the ``QuerySet`` will also
         include this model instance.
         """
+        mgr = self._tree_manager._get_tree_model_manager()
         if self.is_leaf_node():
             if not include_self:
-                return self._tree_manager.none()
+                return mgr.none()
             else:
-                return self._tree_manager.filter(pk=self.pk)
+                return mgr.filter(pk=self.pk)
 
         left = self.lft
         right = self.rght
@@ -594,7 +598,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
             left += 1
             right -= 1
 
-        return self._tree_manager._mptt_filter(
+        return mgr.filter(
             tree_id=self.tree_id,
             lft__gte=left,
             lft__lte=right
@@ -617,8 +621,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         """
         descendants = self.get_descendants(include_self=include_self)
 
-        return self._tree_manager._mptt_filter(
-            descendants,
+        return descendants.filter(
             lft=models.F('rght') - 1,
         )
 
@@ -628,17 +631,16 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         Returns this model instance's next sibling in the tree, or
         ``None`` if it doesn't have a next sibling.
         """
-        qs = self._tree_manager.filter(*filter_args, **filter_kwargs)
+        mgr = self._tree_manager._get_tree_model_manager()
+        qs = mgr.filter(*filter_args, **filter_kwargs)
         if self.is_root_node():
-            qs = self._tree_manager._mptt_filter(
-                qs,
+            qs = qs.filter(
                 parent=None,
                 tree_id__gt=self.tree_id,
             )
         else:
-            qs = self._tree_manager._mptt_filter(
-                qs,
-                parent__pk=getattr(self, self._mptt_meta.parent_attr + '_id'),
+            qs = qs.filter(
+                parent__pk=self.parent_id,
                 lft__gt=self.rght,
             )
 
@@ -651,19 +653,16 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         Returns this model instance's previous sibling in the tree, or
         ``None`` if it doesn't have a previous sibling.
         """
-        opts = self._mptt_meta
-        qs = self._tree_manager.filter(*filter_args, **filter_kwargs)
+        qs = self._tree_manager._get_tree_model_manager().filter(*filter_args, **filter_kwargs)
         if self.is_root_node():
-            qs = self._tree_manager._mptt_filter(
-                qs,
+            qs = qs.filter(
                 parent=None,
                 tree_id__lt=self.tree_id,
             )
             qs = qs.order_by('-tree_id')
         else:
-            qs = self._tree_manager._mptt_filter(
-                qs,
-                parent__pk=getattr(self, opts.parent_attr + '_id'),
+            qs = qs.filter(
+                parent__pk=self.parent_id,
                 rght__lt=self.lft,
             )
             qs = qs.order_by('-rght')
@@ -679,10 +678,10 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         if self.is_root_node() and type(self) == self._tree_manager.tree_model:
             return self
 
-        return self._tree_manager._mptt_filter(
+        return self._tree_manager._get_tree_model_manager().get(
             tree_id=self.tree_id,
             parent=None,
-        ).get()
+        )
 
     @raise_if_unsaved
     def get_siblings(self, include_self=False):
@@ -694,11 +693,11 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         If ``include_self`` is ``True``, the ``QuerySet`` will also
         include this model instance.
         """
+        mgr = self._tree_manager._get_tree_model_manager()
         if self.is_root_node():
-            queryset = self._tree_manager._mptt_filter(parent=None)
+            queryset = mgr.filter(parent=None)
         else:
-            parent_id = getattr(self, self._mptt_meta.parent_attr + '_id')
-            queryset = self._tree_manager._mptt_filter(parent__pk=parent_id)
+            queryset = mgr.filter(parent__pk=self.parent_id)
         if not include_self:
             queryset = queryset.exclude(pk=self.pk)
         return queryset

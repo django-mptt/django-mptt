@@ -1165,9 +1165,11 @@ class ManagerTests(TreeTestCase):
     def test_manager_multi_table_inheritance(self):
         self.assertIs(Student._tree_manager.model, Student)
         self.assertIs(Student._tree_manager.tree_model, Person)
+        self.assertIs(Student._tree_manager._get_tree_model_manager(), Person._tree_manager)
 
         self.assertIs(Person._tree_manager.model, Person)
         self.assertIs(Person._tree_manager.tree_model, Person)
+        self.assertIs(Person._tree_manager._get_tree_model_manager(), Person._tree_manager)
 
     def test_all_managers_have_correct_model(self):
         # all tree managers should have the correct model.
@@ -1176,25 +1178,13 @@ class ManagerTests(TreeTestCase):
                 continue
             self.assertEqual(model._tree_manager.model, model)
 
-    def test_base_manager_infinite_recursion(self):
-        # repeatedly calling _base_manager should eventually return None
-        for model in apps.get_models():
-            if not issubclass(model, MPTTModel):
-                continue
-            manager = model._tree_manager
-            for i in range(20):
-                manager = manager._base_manager
-                if manager is None:
-                    break
-            else:
-                self.fail("Detected infinite recursion in %s._tree_manager._base_manager" % model)
-
     def test_proxy_custom_manager(self):
         self.assertIsInstance(SingleProxyModel._tree_manager, CustomTreeManager)
-        self.assertIsInstance(SingleProxyModel._tree_manager._base_manager, TreeManager)
-
+        self.assertIs(
+            SingleProxyModel._tree_manager._get_tree_model_manager(),
+            ConcreteModel._tree_manager
+        )
         self.assertIsInstance(SingleProxyModel.objects, CustomTreeManager)
-        self.assertIsInstance(SingleProxyModel.objects._base_manager, TreeManager)
 
     def test_get_queryset_descendants(self):
         def get_desc_names(qs, include_self=False):
@@ -1619,7 +1609,6 @@ class AdminBatch(TreeTestCase):
             'name="_selected_action"',
             10)
 
-        mptt_opts = Category._mptt_meta
         self.assertSequenceEqual(
             response.context['cl'].result_list.query.order_by[:2],
             ['tree_id', 'lft'])
