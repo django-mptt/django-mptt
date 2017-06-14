@@ -736,7 +736,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             setattr(node, opts.left_attr, cursor)
             for child in children:
                 cursor = treeify(child, cursor=cursor + 1, level=level + 1)
-            cursor = cursor + 1
+            cursor += 1
             setattr(node, opts.right_attr, cursor)
             return cursor
 
