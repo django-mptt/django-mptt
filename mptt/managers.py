@@ -720,7 +720,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                 else:
                     cursor = getattr(target, opts.right_attr)
         else:
-            tree_id = self.tree_model._tree_manager._get_next_tree_id()
+            tree_id = self._get_next_tree_id()
             cursor = 1
             level = 0
 
@@ -743,7 +743,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         treeify(data, cursor=cursor, level=level)
 
         if target:
-            self.tree_model._tree_manager._create_space(2 * len(stack), cursor - 1, tree_id)
+            self._create_space(2 * len(stack), cursor - 1, tree_id)
 
         return stack
 
