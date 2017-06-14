@@ -2403,7 +2403,7 @@ class BulkLoadTests(TestCase):
                 },
             ],
         }
-        records = Category.objects.bulk_load(data)
+        records = Category.objects.build_tree_nodes(data)
         self.assertEqual(len(records), 3)
         self.assertEqual((records[0].lft, records[0].rght), (1, 6))
         self.assertEqual((records[1].lft, records[1].rght), (2, 3))
@@ -2411,7 +2411,7 @@ class BulkLoadTests(TestCase):
 
     def test_bulk_last_child(self):
         games = Category.objects.get(id=3)
-        records = Category.objects.bulk_load(self.games, target=games)
+        records = Category.objects.build_tree_nodes(self.games, target=games)
         self.assertEqual(len(records), 3)
         for record in records:
             self.assertEqual(record.tree_id, games.tree_id)
@@ -2423,7 +2423,7 @@ class BulkLoadTests(TestCase):
 
     def test_bulk_left(self):
         games = Category.objects.get(id=3)
-        records = Category.objects.bulk_load(self.games, target=games, position='left')
+        records = Category.objects.build_tree_nodes(self.games, target=games, position='left')
         self.assertEqual(len(records), 3)
         for record in records:
             self.assertEqual(record.tree_id, games.tree_id)

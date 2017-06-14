@@ -675,7 +675,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         self._rebuild_helper(pks[0], 1, tree_id)
 
     @delegate_manager
-    def bulk_load(self, data, target=None, position='last-child'):
+    def build_tree_nodes(self, data, target=None, position='last-child'):
         """
         Load a tree from a nested dictionary for bulk insert, returning an
         array of records. Use to efficiently insert many nodes within a tree
@@ -683,7 +683,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
 
         ::
 
-            records = MyModel.objects.bulk_load({
+            records = MyModel.objects.build_tree_nodes({
                 'id': 7,
                 'name': 'parent',
                 'children': [
