@@ -2362,3 +2362,53 @@ class NullableOrderedInsertion(TreeTestCase):
             2 1 1 1 2 3
             3 1 1 1 4 5
         """)
+        
+
+class ModelMeta(TreeTestCase):
+    def test_index_together(self):
+        already_idx = [['tree_id', 'lft'], ('tree_id', 'lft')]
+        no_idx = [tuple(), list()]
+        some_idx = [['tree_id'], ('tree_id',), [['tree_id']], (('tree_id',),)]
+        
+        for idx, case in enumerate(already_idx + no_idx + some_idx):
+            class Meta:
+                index_together = case
+                app_label = 'myapp'
+
+            # Use type() here and in test_index_together_different_attr over
+            # an explicit class X(MPTTModel):, as this throws a warning that
+            # re-registering models with the same name (which is what an explicit
+            # class does) could cause errors. Kind of... weird, but surprisingly
+            # effective.
+
+            # Use str(__name__) as __module__ must be a 'str' type and not unicode
+            # on Python 2.7
+
+            SomeModel = type(str('model_{0}'.format(idx)), (MPTTModel,), {
+                'Meta': Meta,
+                '__module__': str(__name__)
+            })
+
+            self.assertIn(('tree_id', 'lft'), SomeModel._meta.index_together)
+
+    def test_index_together_different_attr(self):
+        already_idx = [['abc', 'def'], ('abc', 'def')]
+        no_idx = [tuple(), list()]
+        some_idx = [['abc'], ('abc',), [['abc']], (('abc',),)]
+
+        for idx, case in enumerate(already_idx + no_idx + some_idx):
+            class MPTTMeta:
+                tree_id_attr = 'abc'
+                left_attr = 'def'
+
+            class Meta:
+                index_together = case
+                app_label = 'myapp'
+
+            SomeModel = type(str('model__different_attr_{0}'.format(idx)), (MPTTModel,), {
+                'MPTTMeta': MPTTMeta,
+                'Meta': Meta,
+                '__module__': str(__name__)
+            })
+
+            self.assertIn(('abc', 'def'), SomeModel._meta.index_together)

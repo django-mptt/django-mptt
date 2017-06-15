@@ -1,5 +1,8 @@
 sudo: false
 language: python
+cache: pip
+git:
+  depth: 1
 
 python:
   - "3.6"

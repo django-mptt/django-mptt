@@ -326,8 +326,10 @@ class MPTTModelBase(ModelBase):
 
                 bases.insert(0, MPTTModel)
                 cls.__bases__ = tuple(bases)
-
-            if _get_tree_model(cls) is cls:
+                
+            is_cls_tree_model = _get_tree_model(cls) is cls
+            
+            if is_cls_tree_model:
                 # HACK: _meta.get_field() doesn't work before AppCache.ready in Django>=1.8
                 # ( see https://code.djangoproject.com/ticket/24231 )
                 # So the only way to get existing fields is using local_fields on all superclasses.
@@ -336,11 +338,19 @@ class MPTTModelBase(ModelBase):
                     if hasattr(base, '_meta'):
                         existing_field_names.update([f.name for f in base._meta.local_fields])
 
-                for key in ('left_attr', 'right_attr', 'tree_id_attr', 'level_attr'):
-                    field_name = getattr(cls._mptt_meta, key)
+                mptt_meta = cls._mptt_meta
+                field_names = (mptt_meta.left_attr, mptt_meta.right_attr, mptt_meta.tree_id_attr, mptt_meta.level_attr)
+
+                for field_name in field_names:
                     if field_name not in existing_field_names:
                         field = models.PositiveIntegerField(db_index=True, editable=False)
                         field.contribute_to_class(cls, field_name)
+
+                # Add an index_together on tree_id_attr and left_attr, as these are very
+                # commonly queried (pretty much all reads).
+                index_together = (cls._mptt_meta.tree_id_attr, cls._mptt_meta.left_attr)
+                if index_together not in cls._meta.index_together:
+                    cls._meta.index_together += (index_together,)
 
             # Add a tree manager, if there isn't one already
             if not abstract:
