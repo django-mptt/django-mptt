@@ -326,9 +326,9 @@ class MPTTModelBase(ModelBase):
 
                 bases.insert(0, MPTTModel)
                 cls.__bases__ = tuple(bases)
-                
+
             is_cls_tree_model = _get_tree_model(cls) is cls
-            
+
             if is_cls_tree_model:
                 # HACK: _meta.get_field() doesn't work before AppCache.ready in Django>=1.8
                 # ( see https://code.djangoproject.com/ticket/24231 )
@@ -339,11 +339,12 @@ class MPTTModelBase(ModelBase):
                         existing_field_names.update([f.name for f in base._meta.local_fields])
 
                 mptt_meta = cls._mptt_meta
+                indexed_attrs = (mptt_meta.tree_id_attr,)
                 field_names = (mptt_meta.left_attr, mptt_meta.right_attr, mptt_meta.tree_id_attr, mptt_meta.level_attr)
 
                 for field_name in field_names:
                     if field_name not in existing_field_names:
-                        field = models.PositiveIntegerField(db_index=True, editable=False)
+                        field = models.PositiveIntegerField(db_index=field_name in indexed_attrs, editable=False)
                         field.contribute_to_class(cls, field_name)
 
                 # Add an index_together on tree_id_attr and left_attr, as these are very
@@ -357,10 +358,11 @@ class MPTTModelBase(ModelBase):
                 # make sure we have a tree manager somewhere
                 tree_manager = None
                 # Use the default manager defined on the class if any
+                _meta = cls._meta
                 if cls._default_manager and isinstance(cls._default_manager, TreeManager):
                     tree_manager = cls._default_manager
                 else:
-                    if hasattr(cls._meta, 'concrete_managers'):  # Django < 1.10
+                    if hasattr(_meta, 'concrete_managers'):  # Django < 1.10
                         # Django < 1.10 doesn't sort managers
                         cls_managers = sorted(
                             cls._meta.concrete_managers + cls._meta.abstract_managers)
@@ -374,7 +376,13 @@ class MPTTModelBase(ModelBase):
                             if cls_manager.model is cls:
                                 tree_manager = cls_manager
                                 break
+                
+                if is_cls_tree_model:
+                    idx_together = (cls._mptt_meta.tree_id_attr, cls._mptt_meta.left_attr)
 
+                    if idx_together not in cls._meta.index_together:
+                        cls._meta.index_together += (idx_together,)
+                            
                 if tree_manager and tree_manager.model is not cls:
                     tree_manager = tree_manager._copy_to_model(cls)
                 elif tree_manager is None:

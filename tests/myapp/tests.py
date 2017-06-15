@@ -2362,14 +2362,26 @@ class NullableOrderedInsertion(TreeTestCase):
             2 1 1 1 2 3
             3 1 1 1 4 5
         """)
-        
 
-class ModelMeta(TreeTestCase):
+
+class ModelMetaIndexes(TreeTestCase):
+    def test_no_index_set(self):
+        class SomeModel(MPTTModel):
+            class Meta:
+                app_label = 'myapp'
+
+        tree_id_attr = getattr(SomeModel._mptt_meta, 'tree_id_attr')
+        self.assertTrue(SomeModel._meta.get_field(tree_id_attr).db_index)
+
+        for key in ('right_attr', 'left_attr', 'level_attr'):
+            field_name = getattr(SomeModel._mptt_meta, key)
+            self.assertFalse(SomeModel._meta.get_field(field_name).db_index)
+
     def test_index_together(self):
         already_idx = [['tree_id', 'lft'], ('tree_id', 'lft')]
         no_idx = [tuple(), list()]
         some_idx = [['tree_id'], ('tree_id',), [['tree_id']], (('tree_id',),)]
-        
+
         for idx, case in enumerate(already_idx + no_idx + some_idx):
             class Meta:
                 index_together = case
