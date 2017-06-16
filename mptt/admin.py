@@ -95,7 +95,7 @@ class MPTTModelAdmin(ModelAdmin):
 
     def get_actions(self, request):
         actions = super(MPTTModelAdmin, self).get_actions(request)
-        if 'delete_selected' in actions:
+        if actions is not None and 'delete_selected' in actions:
             actions['delete_selected'] = (
                 self.delete_selected_tree,
                 'delete_selected',
