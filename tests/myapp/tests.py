@@ -528,6 +528,22 @@ class DeletionTestCase(TreeTestCase):
             10 8 1 2 11 12
         """)
 
+    def test_delete_multiple_nodes(self):
+        """Regression test for Issue 576."""
+        queryset = Category.objects.filter(id__in=[6,7])
+        for category in queryset:
+            category .delete()
+
+        self.assertTreeEqual(Category.objects.all(), """
+            1 - 1 0 1 16
+            2 1 1 1 2 7
+            3 2 1 2 3 4
+            4 2 1 2 5 6
+            5 1 1 1 8 9
+            8 1 1 1 10 15
+            9 8 1 2 11 12
+            10 8 1 2 13 14""")
+
 
 class IntraTreeMovementTestCase(TreeTestCase):
     pass
