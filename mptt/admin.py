@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 import json
 
-from django import http
+from django import forms, http
 from django.conf import settings
 from django.contrib.admin.actions import delete_selected
 from django.contrib.admin.options import ModelAdmin
@@ -109,10 +109,10 @@ class JS(object):
     attributes (such as ``id`` and ``data-*`` for CSP-compatible data
     injection.)::
 
-        media.add_js([
+        forms.Media(js=[
             JS('asset.js', {
                 'id': 'asset-script',
-                'data-the-answer': '"42"',
+                'data-answer': '"42"',
             }),
         ])
 
@@ -140,7 +140,7 @@ class JS(object):
             '{}"{}',
             static(self.js),
             mark_safe(flatatt(self.attrs)),
-        ).rstrip('"')
+        )[:-1] if self.attrs else static(self.js)
 
 
 class DraggableMPTTAdmin(MPTTModelAdmin):
@@ -192,17 +192,19 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
             request, *args, **kwargs)
 
         try:
-            response.context_data['media'].add_css({'all': (
-                'mptt/draggable-admin.css',
-            )})
-            response.context_data['media'].add_js((
-                JS('mptt/draggable-admin.js', {
-                    'id': 'draggable-admin-context',
-                    'data-context': json.dumps(
-                        self._tree_context(request), cls=DjangoJSONEncoder
-                    ),
-                }),
-            ),)
+            response.context_data['media'] = response.context_data['media'] + forms.Media(
+                css={
+                    'all': ['mptt/draggable-admin.css'],
+                },
+                js=[
+                    JS('mptt/draggable-admin.js', {
+                        'id': 'draggable-admin-context',
+                        'data-context': json.dumps(
+                            self._tree_context(request), cls=DjangoJSONEncoder
+                        ),
+                    }),
+                ],
+            )
         except (AttributeError, KeyError):
             # Not meant for us if there is no context_data attribute (no
             # TemplateResponse) or no media in the context.

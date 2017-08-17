@@ -2012,20 +2012,36 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
             """)
 
     def test_js(self):
-        media = forms.Media()
-        media.add_js([
-            JS('asset1.js', {}),
-            JS('asset2.js', {'id': 'something', 'answer': '"42"'}),
-        ])
+        media = forms.Media(
+            css={
+                'print': ['app/print.css'],
+            },
+            js=[
+                'app/test.js',
+                JS('app/asset.js', {
+                    'id': 'asset-script',
+                    'data-the-answer': 42,
+                }),
+                JS('app/asset-without.js', {}),
+            ],
+        )
+        html = '%s' % media
 
-        # We can test the exact representation since forms.Media has been
-        # really stable for a long time, and JS() uses flatatt which
-        # alphabetically sorts its attributes.
-        self.assertEqual(
-            '%s' % media,
-            '<script type="text/javascript" src="/static/asset1.js"></script>\n'
-            '<script type="text/javascript" src="/static/asset2.js"'
-            ' answer="&quot;42&quot;" id="something"></script>'
+        self.assertInHTML(
+            '<link href="/static/app/print.css" type="text/css" media="print" rel="stylesheet" />',  # noqa
+            html,
+        )
+        self.assertInHTML(
+            '<script type="text/javascript" src="/static/app/test.js"></script>',  # noqa
+            html,
+        )
+        self.assertInHTML(
+            '<script type="text/javascript" src="/static/app/asset.js" data-the-answer="42" id="asset-script"></script>',  # noqa
+            html,
+        )
+        self.assertInHTML(
+            '<script type="text/javascript" src="/static/app/asset-without.js"></script>',  # noqa
+            html,
         )
 
 
