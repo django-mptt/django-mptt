@@ -8,7 +8,6 @@ import sys
 import tempfile
 import unittest
 
-from django import forms
 from django.contrib.auth.models import Group, User
 from django.db.models import Q
 from django.db.models.query_utils import DeferredAttribute
@@ -25,7 +24,6 @@ try:
 except ImportError:
     mock_signal_receiver = None
 
-from mptt.admin import JS
 from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.models import MPTTModel
 from mptt.managers import TreeManager
@@ -2010,39 +2008,6 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
             2 - 2 0 1 4
             3 2 2 1 2 3
             """)
-
-    def test_js(self):
-        media = forms.Media(
-            css={
-                'print': ['app/print.css'],
-            },
-            js=[
-                'app/test.js',
-                JS('app/asset.js', {
-                    'id': 'asset-script',
-                    'data-the-answer': 42,
-                }),
-                JS('app/asset-without.js', {}),
-            ],
-        )
-        html = '%s' % media
-
-        self.assertInHTML(
-            '<link href="/static/app/print.css" type="text/css" media="print" rel="stylesheet" />',  # noqa
-            html,
-        )
-        self.assertInHTML(
-            '<script type="text/javascript" src="/static/app/test.js"></script>',  # noqa
-            html,
-        )
-        self.assertInHTML(
-            '<script type="text/javascript" src="/static/app/asset.js" data-the-answer="42" id="asset-script"></script>',  # noqa
-            html,
-        )
-        self.assertInHTML(
-            '<script type="text/javascript" src="/static/app/asset-without.js"></script>',  # noqa
-            html,
-        )
 
 
 class BookAdmin(ModelAdmin):

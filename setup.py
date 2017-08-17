@@ -14,6 +14,9 @@ setup(
     license='MIT License',
     packages=find_packages(exclude=['tests', 'tests.*']),
     include_package_data=True,
+    install_requires=[
+        'django-js-asset',
+    ],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
