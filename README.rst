@@ -49,7 +49,7 @@ Requirements
 ------------
 
 * Python 2.7 or 3.3+
-* A supported version of Django (currently 1.8+)
+* A supported version of Django (currently 1.8, 1.10+)
 
 Feature overview
 ----------------
