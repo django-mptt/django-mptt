@@ -80,10 +80,10 @@ class MPTTModelAdmin(ModelAdmin):
             with queryset.model._tree_manager.delay_mptt_updates():
                 for obj in queryset:
                     if self.has_delete_permission(request, obj):
-                        obj.delete()
-                        n += 1
                         obj_display = force_text(obj)
                         self.log_deletion(request, obj, obj_display)
+                        obj.delete()
+                        n += 1
             self.message_user(
                 request,
                 _('Successfully deleted %(count)d items.') % {'count': n})
