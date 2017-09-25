@@ -10,7 +10,7 @@ from django.db import models, connections, router
 from django.db.models import F, ManyToManyField, Max, Q
 from django.utils.translation import ugettext as _
 
-from mptt.compat import remote_field
+from mptt.compat import cached_field_value, remote_field
 from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.querysets import TreeQuerySet
 from mptt.utils import _get_tree_model
@@ -700,17 +700,15 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
 
     def _post_insert_update_cached_parent_right(self, instance, right_shift, seen=None):
         setattr(instance, self.right_attr, getattr(instance, self.right_attr) + right_shift)
-        attr = '_%s_cache' % self.parent_attr
-        if hasattr(instance, attr):
-            parent = getattr(instance, attr)
-            if parent:
-                if not seen:
-                    seen = set()
-                seen.add(instance)
-                if parent in seen:
-                    # detect infinite recursion and throw an error
-                    raise InvalidMove
-                self._post_insert_update_cached_parent_right(parent, right_shift, seen=seen)
+        parent = cached_field_value(instance, self.parent_attr)
+        if parent:
+            if not seen:
+                seen = set()
+            seen.add(instance)
+            if parent in seen:
+                # detect infinite recursion and throw an error
+                raise InvalidMove
+            self._post_insert_update_cached_parent_right(parent, right_shift, seen=seen)
 
     def _calculate_inter_tree_move_values(self, node, target, position):
         """

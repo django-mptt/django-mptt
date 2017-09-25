@@ -11,7 +11,7 @@ from django.db.models.query_utils import DeferredAttribute
 from django.utils import six
 from django.utils.translation import ugettext as _
 
-from mptt.compat import remote_field
+from mptt.compat import cached_field_value, remote_field
 from mptt.fields import TreeForeignKey, TreeOneToOneField, TreeManyToManyField
 from mptt.managers import TreeManager
 from mptt.signals import node_moved
@@ -855,7 +855,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
             # unless we're also inside TreeManager.delay_mptt_updates()
             if self._mpttfield('left') is None:
                 # we need to set *some* values, though don't care too much what.
-                parent = getattr(self, '_%s_cache' % opts.parent_attr, None)
+                parent = cached_field_value(self, opts.parent_attr)
                 # if we have a cached parent, have a stab at getting
                 # possibly-correct values.  otherwise, meh.
                 if parent:
@@ -1036,7 +1036,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         target_right = self._mpttfield('right')
         tree_id = self._mpttfield('tree_id')
         self._tree_manager._close_gap(tree_width, target_right, tree_id)
-        parent = getattr(self, '_%s_cache' % self._mptt_meta.parent_attr, None)
+        parent = cached_field_value(self, self._mptt_meta.parent_attr)
         if parent:
             right_shift = -self.get_descendant_count() - 2
             self._tree_manager._post_insert_update_cached_parent_right(parent, right_shift)
