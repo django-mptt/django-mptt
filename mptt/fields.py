@@ -43,6 +43,6 @@ class TreeManyToManyField(models.ManyToManyField):
 # South integration
 if 'south' in settings.INSTALLED_APPS:  # pragma: no cover
     from south.modelsinspector import add_introspection_rules
-    add_introspection_rules([], ["^mptt\.fields\.TreeForeignKey"])
-    add_introspection_rules([], ["^mptt\.fields\.TreeOneToOneField"])
-    add_introspection_rules([], ["^mptt\.fields\.TreeManyToManyField"])
+    add_introspection_rules([], [r"^mptt\.fields\.TreeForeignKey"])
+    add_introspection_rules([], [r"^mptt\.fields\.TreeOneToOneField"])
+    add_introspection_rules([], [r"^mptt\.fields\.TreeManyToManyField"])
