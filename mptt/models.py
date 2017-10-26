@@ -540,7 +540,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
             if depth > 0:
                 qs = qs.filter(level__range=(self.level - depth, self.level))
             else:
-                raise ValueError('depth has to be larger than 0 or None. Got {}'.format(depth))
+                raise ValueError('depth has to be larger than 0 or None. Got %(depth)s' % {'depth': depth})
 
         return qs
 
