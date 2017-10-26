@@ -477,7 +477,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         cls._threadlocal.mptt_delayed_tree_changes = new_changes
 
     @raise_if_unsaved
-    def get_ancestors(self, ascending=False, include_self=False):
+    def get_ancestors(self, ascending=False, include_self=False, depth=None):
         """
         Creates a ``QuerySet`` containing the ancestors of this model
         instance.
@@ -489,6 +489,8 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
 
         If ``include_self`` is ``True``, the ``QuerySet`` will also
         include this model instance.
+
+        if ``depth`` is defined, it limits the number of levels the ``QuerySet`` contains.
         """
         if self.is_root_node():
             if not include_self:
@@ -533,6 +535,12 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
 
             ancestors.reverse()
             qs._result_cache = ancestors
+
+        if depth:
+            if depth > 0:
+                qs = qs._mptt_filter(level__range=(self.level - depth, self.level))
+            else:
+                raise ValueError('depth has to be larger than 0 or None. Got {}'.format(depth))
 
         return qs
 
@@ -586,13 +594,15 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
             return self._tree_manager._mptt_filter(parent=self)
 
     @raise_if_unsaved
-    def get_descendants(self, include_self=False):
+    def get_descendants(self, include_self=False, depth=None):
         """
         Creates a ``QuerySet`` containing descendants of this model
         instance, in tree order.
 
         If ``include_self`` is ``True``, the ``QuerySet`` will also
         include this model instance.
+
+        if ``depth`` is defined, it limits the number of levels the ``QuerySet`` contains.
         """
         if self.is_leaf_node():
             if not include_self:
@@ -608,11 +618,20 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
             left += 1
             right -= 1
 
-        return self._tree_manager._mptt_filter(
+        qs = self._tree_manager._mptt_filter(
             tree_id=self._mpttfield('tree_id'),
             left__gte=left,
             left__lte=right
         )
+
+        if depth:
+            if depth > 0:
+                qs = qs._mptt_filter(level__range=(self.level, self.level + depth))
+            else:
+                raise ValueError('depth has to be larger than 0 or None. Got %(depth)s' % {'depth': depth})
+
+        return qs
+
 
     def get_descendant_count(self):
         """
