@@ -18,6 +18,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.utils.encoding import smart_text
 from django.utils.translation import get_language_bidi
 from django.db.models.fields.related import ForeignObjectRel, ManyToManyField
+from django.contrib.staticfiles.templatetags.staticfiles import static
 
 from js_asset import JS
 
@@ -154,10 +155,10 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         try:
             response.context_data['media'] = response.context_data['media'] + forms.Media(
                 css={
-                    'all': ['mptt/draggable-admin.css'],
+                    'all': [static('mptt/draggable-admin.css')],
                 },
                 js=[
-                    JS('mptt/draggable-admin.js', {
+                    JS(static('mptt/draggable-admin.js'), {
                         'id': 'draggable-admin-context',
                         'data-context': json.dumps(
                             self._tree_context(request), cls=DjangoJSONEncoder
