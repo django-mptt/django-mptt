@@ -1,4 +1,0 @@
-mock-django
-Django
-coverage
-django-js-asset
