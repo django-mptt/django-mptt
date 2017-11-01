@@ -158,7 +158,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
                     'all': [static('mptt/draggable-admin.css')],
                 },
                 js=[
-                    JS(static('mptt/draggable-admin.js'), {
+                    JS('mptt/draggable-admin.js', {
                         'id': 'draggable-admin-context',
                         'data-context': json.dumps(
                             self._tree_context(request), cls=DjangoJSONEncoder
