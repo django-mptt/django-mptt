@@ -957,8 +957,23 @@ class DelayedUpdatesTestCase(TreeTestCase):
         """)
 
 
-class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
+class OrderedInsertionSortingTestCase(TestCase):
+    def test_proper_cache_reloading(self):
+        root = OrderedInsertion.objects.create(name="")
+        b = OrderedInsertion.objects.create(name="b", parent=root)
+        a = OrderedInsertion.objects.create(name="a", parent=root)
 
+        a_ancestors = a.get_ancestors(include_self=True)
+        b_ancestors = b.get_ancestors(include_self=True)
+
+        assert a in a_ancestors
+        assert b in b_ancestors
+
+        assert a not in b_ancestors
+        assert b not in a_ancestors
+
+
+class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
     def setUp(self):
         self.c = OrderedInsertion.objects.create(name="c")
         self.d = OrderedInsertion.objects.create(name="d", parent=self.c)
