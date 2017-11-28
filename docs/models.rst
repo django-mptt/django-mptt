@@ -96,11 +96,21 @@ exist, they will be added to the model dynamically:
    It is assumed that any field identified as defining ordering will
    never be ``NULL`` in the database.
 
-   Note that this will require an extra database query to determine
-   where nodes should be positioned when they are being saved. This
-   option is handy if you're maintaining mostly static structures, such
-   as trees of categories, which should always be in alphabetical order.
+   .. note::
 
+      This will require an extra database query to determine
+      where nodes should be positioned when they are being saved. This
+      option is handy if you're maintaining mostly static structures, such
+      as trees of categories, which should always be in alphabetical order.
+
+
+   .. warning::
+
+      Please take extra caution in case you keep the references to the
+      in-database objects when using this field. In cases of insertion
+      or other updates, where ``django-mptt`` will need to re-order the
+      tree you will most likely be left with dangling references.
+      Please see :ref:`order_insertion_by_gotcha` for details.
 
 Registration of existing models
 ===============================

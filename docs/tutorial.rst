@@ -146,3 +146,57 @@ There's more; `check out the docs`_ for custom admin-site stuff, more template t
 Now you can stop thinking about how to do trees, and start making a great django app!
 
 .. _`check out the docs`: http://django-mptt.github.com/django-mptt/
+
+.. _order_insertion_by_gotcha:
+
+``order_insertion_by`` gotcha
+-----------------------------
+
+In the example above, we used ``order_insertion_by`` option, which makes ``django-mptt`` order items
+in the tree automatically, using ``name`` key. What does this mean, technically? Well, in case you add
+items in an unordered manner, ``django-mptt`` will update the database, so they will be ordered
+in the tree.
+
+So why this is exactly a gotcha?
+
+Well, it is not. As long as you don't keep instances with references to old data. But chances are
+you do keep them and you don't even know about this.
+
+In case you do, you will need to reload your items from the database, or else you will be left
+with strange bugs, looking like data inconsistency.
+
+The sole reason behind that is we can't actually tell Django to reload every single instance
+of ``django.db.models.Model`` based on the table row. You will need to reload manually, by
+calling `Model.refresh_from_db()`_.
+
+For example, using that model from the previous code snippet:
+
+.. highlightlang:: python
+
+.. python::
+
+>>> root = Genre.objects.create(name="")
+#
+# Bear in mind, that we're going to add children in an unordered
+# manner:
+#
+>>> b = OrderedInsertion.objects.create(name="b", parent=root)
+>>> a = OrderedInsertion.objects.create(name="a", parent=root)
+#
+# At this point, the tree will be reorganized in the database
+# and unless you will refresh the 'b' instance, it will be left
+# containing old data, which in turn will lead to bugs like:
+#
+>>> a in a.get_ancestors(include_self=True)
+True
+>>> b in b.get_ancestors(include_self=True)
+False
+#
+# What? That's wrong! Let's reload
+#
+>>> b.refresh_from_db()
+>>> b in b.get_ancestors(include_self=True)
+True
+# Everything's back to normal.
+
+.. _`Model.refresh_from_db()`: https://docs.djangoproject.com/en/dev/ref/models/instances/#refreshing-objects-from-database
