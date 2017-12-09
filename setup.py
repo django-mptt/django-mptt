@@ -5,8 +5,10 @@ from setuptools import find_packages, setup
 
 setup(
     name='django-mptt',
-    description='''Utilities for implementing Modified Preorder Tree Traversal
-        with your Django Models and working with trees of Model instances.''',
+    description=(
+        'Utilities for implementing Modified Preorder Tree Traversal '
+        'with your Django Models and working with trees of Model instances.'
+    ),
     version=__import__('mptt').__version__,
     author='Craig de Stigter',
     author_email='craig.ds@gmail.com',
