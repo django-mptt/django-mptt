@@ -2,6 +2,13 @@
 Upgrade notes
 =============
 
+0.9.0
+=====
+
+Now supports django 1.11 and 2.0.
+
+Removed tests for unsupported django versions (django 1.9, 1.10)
+
 0.8.6
 =====
 
