@@ -110,7 +110,7 @@ Make a view
 This one's pretty simple for now. Add this lightweight view to your ``views.py``::
 
     def show_genres(request):
-        return render(request, "genres.html", {'nodes':Genre.objects.all()})
+        return render(request, "genres.html", {'genres': Genre.objects.all()})
 
 And add a URL for it in ``urls.py``::
 
