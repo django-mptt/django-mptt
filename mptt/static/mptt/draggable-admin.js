@@ -360,10 +360,10 @@ django.jQuery(function($){
     }
 
     function addObjectTool(title, handler) {
-        var $a = $('<a href/>');
+        var $a = $('<a class="btn btn-info" href/>');
         $a.click(handler);
         $a.text(title);
-        $a.prependTo('.object-tools').wrap('<li>');
+        $a.prependTo('.object-tools');
     }
 
     // Some old browsers do not support JSON.parse (the only thing we require)
