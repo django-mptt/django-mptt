@@ -89,6 +89,17 @@
 (<Genre: Action RPG>, True, [u'Role-playing Game'], [])
 (<Genre: Tactical RPG>, False, [u'Role-playing Game'], [1, 0])
 
+>>> for i,s in tree_item_iterator(Genre.objects.all(), ancestors=True, callback=lambda x: x):
+...     print((i, s['new_level'], s['ancestors'], list(s['closed_levels'])))
+(<Genre: Action>, True, [], [])
+(<Genre: Platformer>, True, [<Genre: Action>], [])
+(<Genre: 2D Platformer>, True, [<Genre: Action>, <Genre: Platformer>], [])
+(<Genre: 3D Platformer>, False, [<Genre: Action>, <Genre: Platformer>], [])
+(<Genre: 4D Platformer>, False, [<Genre: Action>, <Genre: Platformer>], [2, 1])
+(<Genre: Role-playing Game>, False, [], [])
+(<Genre: Action RPG>, True, [<Genre: Role-playing Game>], [])
+(<Genre: Tactical RPG>, False, [<Genre: Role-playing Game>], [1, 0])
+
 >>> action = Genre.objects.get(pk=action.pk)
 >>> [item.name for item in drilldown_tree_for_node(action)]
 [u'Action', u'Platformer']
