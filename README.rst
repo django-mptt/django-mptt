@@ -5,7 +5,7 @@ django-mptt
 Utilities for implementing Modified Preorder Tree Traversal with your
 Django Models and working with trees of Model instances.
 
-.. image:: https://secure.travis-ci.org/django-mptt/django-mptt.png?branch=master
+.. image:: https://secure.travis-ci.org/django-mptt/django-mptt.svg?branch=master
     :alt: Build Status
     :target: https://travis-ci.org/django-mptt/django-mptt
 
