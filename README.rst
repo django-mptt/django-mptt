@@ -6,8 +6,12 @@ Utilities for implementing Modified Preorder Tree Traversal with your
 Django Models and working with trees of Model instances.
 
 .. image:: https://secure.travis-ci.org/django-mptt/django-mptt.svg?branch=master
-    :alt: Build Status
-    :target: https://travis-ci.org/django-mptt/django-mptt
+   :alt: Build Status
+   :target: https://travis-ci.org/django-mptt/django-mptt
+
+.. image:: https://jazzband.co/static/img/badge.svg
+   :alt: Jazzband
+   :target: https://jazzband.co/
 
 Project home: http://github.com/django-mptt/django-mptt/
 
