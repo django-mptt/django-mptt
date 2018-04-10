@@ -1725,6 +1725,14 @@ class TreeManagerTestCase(TreeTestCase):
 
 class TestOrderedInsertionBFS(TreeTestCase):
 
+    def test_back_and_forth_updates(self):
+        b = OrderedInsertion.objects.create(name="b")
+        a = OrderedInsertion.objects.create(name="a")
+        b.name = "bb"
+        b.save()
+        b.name = "ba"
+        b.save()
+
     def test_insert_ordered_DFS_backwards_root_nodes(self):
         rock = OrderedInsertion.objects.create(name="Rock")
 
