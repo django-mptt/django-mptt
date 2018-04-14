@@ -63,7 +63,7 @@ options::
    +-- Child 2.1
    +--+-- Child 2.1.1
 
-.. _`ModelChoiceField`: http://docs.djangoproject.com/en/dev/ref/forms/fields/#django.forms.ModelChoiceField
+.. _`ModelChoiceField`: https://docs.djangoproject.com/en/dev/ref/forms/fields/#django.forms.ModelChoiceField
 
 ``TreeNodeMultipleChoiceField``
 -------------------------------
@@ -76,7 +76,7 @@ Just like ``TreeNodeChoiceField``, but accepts more than one value.
 A subclass of `ChoiceField`_ whose choices default to the valid arguments
 for the `move_to method`_.
 
-.. _`ChoiceField`: http://docs.djangoproject.com/en/dev/ref/forms/fields/#choicefield
+.. _`ChoiceField`: https://docs.djangoproject.com/en/dev/ref/forms/fields/#choicefield
 
 
 Forms

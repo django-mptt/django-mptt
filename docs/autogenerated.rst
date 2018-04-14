@@ -11,4 +11,4 @@ They're not necessarily very helpful. You might be just as well off reading the 
 
    mptt
 
-.. _`source code`: http://github.com/django-mptt/django-mptt/
+.. _`source code`: https://github.com/django-mptt/django-mptt/

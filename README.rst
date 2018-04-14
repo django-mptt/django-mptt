@@ -9,11 +9,11 @@ Django Models and working with trees of Model instances.
     :alt: Build Status
     :target: https://travis-ci.org/django-mptt/django-mptt
 
-Project home: http://github.com/django-mptt/django-mptt/
+Project home: https://github.com/django-mptt/django-mptt/
 
 Documentation: https://django-mptt.readthedocs.io/
 
-Discussion group: http://groups.google.com/group/django-mptt-dev
+Discussion group: https://groups.google.com/forum/#!forum/django-mptt-dev
 
 What is Modified Preorder Tree Traversal?
 =========================================
@@ -32,8 +32,8 @@ details about how the technique itself works:
 * `Storing Hierarchical Data in a Database`_
 * `Managing Hierarchical Data in MySQL`_
 
-.. _`Trees in SQL`: http://www.ibase.ru/files/articles/programming/dbmstrees/sqltrees.html
-.. _`Storing Hierarchical Data in a Database`: http://www.sitepoint.com/print/hierarchical-data-database
+.. _`Trees in SQL`: https://www.ibase.ru/files/articles/programming/dbmstrees/sqltrees.html
+.. _`Storing Hierarchical Data in a Database`: https://www.sitepoint.com/hierarchical-data-database/
 .. _`Managing Hierarchical Data in MySQL`: http://mikehillyer.com/articles/managing-hierarchical-data-in-mysql/
 
 What is ``django-mptt``?

@@ -19,7 +19,7 @@ named ``setup.py``. Enter this command::
 
 ...and the package will install automatically.
 
-.. _`PyPI`: http://pypi.python.org/pypi/django-mptt/
+.. _`PyPI`: https://pypi.python.org/pypi/django-mptt/
 .. _`pip`: https://pip.pypa.io/en/stable/
 
 
@@ -52,6 +52,6 @@ from within the ``django-mptt`` directory.
    If you're tracking master, keep an eye on the recent `Commit History`_ 
    before you update your copy of the source code.
 
-.. _`git`: http://git-scm.com/
+.. _`git`: https://git-scm.com/
 .. _`PYTHONPATH`: http://docs.python.org/tut/node8.html#SECTION008110000000000000000
-.. _`Commit History`: http://github.com/django-mptt/django-mptt/commits/master
+.. _`Commit History`: https://github.com/django-mptt/django-mptt/commits/master
