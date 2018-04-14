@@ -96,7 +96,7 @@ exclusive.
 
 Note: In the above paragraph 'client code' means any django app that uses mptt base models.
 
-.. _`LOCK/UNLOCK statements are not transaction safe`: http://dev.mysql.com/doc/refman/5.0/en/lock-tables-and-transactions.html
+.. _`LOCK/UNLOCK statements are not transaction safe`: https://dev.mysql.com/doc/refman/5.7/en/lock-tables-and-transactions.html
 
  
 

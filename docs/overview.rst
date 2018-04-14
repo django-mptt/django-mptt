@@ -23,8 +23,8 @@ details about how the technique itself works:
     * `Storing Hierarchical Data in a Database`_
     * `Managing Hierarchical Data in MySQL`_
     
-.. _`Trees in SQL`: http://www.ibase.ru/files/articles/programming/dbmstrees/sqltrees.html
-.. _`Storing Hierarchical Data in a Database`: http://www.sitepoint.com/print/hierarchical-data-database
+.. _`Trees in SQL`: https://www.ibase.ru/files/articles/programming/dbmstrees/sqltrees.html
+.. _`Storing Hierarchical Data in a Database`: https://www.sitepoint.com/hierarchical-data-database/
 .. _`Managing Hierarchical Data in MySQL`: http://mikehillyer.com/articles/managing-hierarchical-data-in-mysql/
 
 

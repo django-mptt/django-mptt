@@ -233,8 +233,8 @@ Isn't multiple inheritance evil? Well, maybe. However, the
    Our brief testing says it works, but if you find that the Django internals are somehow
    breaking this approach for you, please `create an issue`_ with specifics.
 
-.. _`create an issue`: http://github.com/django-mptt/django-mptt/issues
-.. _`Django model docs`: http://docs.djangoproject.com/en/dev/topics/db/models/#multiple-inheritance
+.. _`create an issue`: https://github.com/django-mptt/django-mptt/issues
+.. _`Django model docs`: https://docs.djangoproject.com/en/dev/topics/db/models/#multiple-inheritance
 
 
 Compatibility with 0.3

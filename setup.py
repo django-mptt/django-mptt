@@ -12,7 +12,7 @@ setup(
     version=__import__('mptt').__version__,
     author='Craig de Stigter',
     author_email='craig.ds@gmail.com',
-    url='http://github.com/django-mptt/django-mptt',
+    url='https://github.com/django-mptt/django-mptt',
     license='MIT License',
     packages=find_packages(exclude=['tests', 'tests.*']),
     include_package_data=True,

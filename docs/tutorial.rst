@@ -39,7 +39,7 @@ tl;dr: MPTT makes most tree operations much cheaper in terms of queries. In fact
 And this one takes zero queries:
  * count the descendants of a given node
 
-.. _`Storing Hierarchical Data in a Database`: http://www.sitepoint.com/hierarchical-data-database/
+.. _`Storing Hierarchical Data in a Database`: https://www.sitepoint.com/hierarchical-data-database/
 .. _`Managing Hierarchical Data in Mysql`: http://mikehillyer.com/articles/managing-hierarchical-data-in-mysql/
 
 Enough intro. Let's get started.

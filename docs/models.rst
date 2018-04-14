@@ -476,7 +476,7 @@ For more details, see the `move_to documentation`_ above.
 
 Creates a ``QuerySet`` containing root nodes.
 
-.. _`extra method`: http://docs.djangoproject.com/en/dev/ref/models/querysets/#extra-select-none-where-none-params-none-tables-none-order-by-none-select-params-none
+.. _`extra method`: https://docs.djangoproject.com/en/dev/ref/models/querysets/#extra-select-none-where-none-params-none-tables-none-order-by-none-select-params-none
 
 Example usage
 -------------
