@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 import datetime
 import warnings
 
-import django
 from django.conf import settings
 from django.contrib.admin.templatetags.admin_list import (
     result_hidden_fields, result_headers)
@@ -13,10 +12,7 @@ from django.contrib.admin.utils import (
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.template import Library
-try:
-    from django.urls import NoReverseMatch
-except ImportError:  # Django < 1.10 pragma: no cover
-    from django.core.urlresolvers import NoReverseMatch
+from django.urls import NoReverseMatch
 try:
     from django.utils.deprecation import RemovedInDjango20Warning
 except ImportError:
@@ -25,8 +21,7 @@ from django.utils.encoding import force_text
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import get_language_bidi
-
-from mptt.compat import remote_field
+from django.contrib.admin.templatetags.admin_list import _coerce_field_name
 
 
 register = Library()
@@ -34,29 +29,6 @@ register = Library()
 
 MPTT_ADMIN_LEVEL_INDENT = getattr(settings, 'MPTT_ADMIN_LEVEL_INDENT', 10)
 IS_GRAPPELLI_INSTALLED = True if 'grappelli' in settings.INSTALLED_APPS else False
-
-
-###
-# Ripped from contrib.admin (1.10)
-def _coerce_field_name(field_name, field_index):
-    """
-    Coerce a field_name (which may be a callable) to a string.
-    """
-    if callable(field_name):
-        if field_name.__name__ == '<lambda>':
-            return 'lambda' + str(field_index)
-        else:
-            return field_name.__name__
-    return field_name
-
-
-def get_empty_value_display(cl):
-    if hasattr(cl.model_admin, 'get_empty_value_display'):
-        return cl.model_admin.get_empty_value_display()
-    else:
-        # Django < 1.9
-        from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
-        return EMPTY_CHANGELIST_VALUE
 
 
 ###
@@ -99,7 +71,7 @@ def mptt_items_for_result(cl, result, form):
 
     for field_index, field_name in enumerate(cl.list_display):
         # #### MPTT SUBSTITUTION START
-        empty_value_display = get_empty_value_display(cl)
+        empty_value_display = cl.model_admin.get_empty_value_display()
         # #### MPTT SUBSTITUTION END
         row_classes = ['field-%s' % _coerce_field_name(field_name, field_index)]
         try:
@@ -114,12 +86,7 @@ def mptt_items_for_result(cl, result, form):
                 allow_tags = getattr(attr, 'allow_tags', False)
                 boolean = getattr(attr, 'boolean', False)
                 # #### MPTT SUBSTITUTION START
-                try:
-                    # Changed in Django 1.9, now takes 3 arguments
-                    result_repr = display_for_value(
-                        value, empty_value_display, boolean)
-                except TypeError:
-                    result_repr = display_for_value(value, boolean)
+                result_repr = display_for_value(value, empty_value_display, boolean)
                 # #### MPTT SUBSTITUTION END
                 if allow_tags:
                     warnings.warn(
@@ -133,7 +100,7 @@ def mptt_items_for_result(cl, result, form):
                     row_classes.append('nowrap')
             else:
                 # #### MPTT SUBSTITUTION START
-                is_many_to_one = isinstance(remote_field(f), models.ManyToOneRel)
+                is_many_to_one = isinstance(f.remote_field, models.ManyToOneRel)
                 if is_many_to_one:
                     # #### MPTT SUBSTITUTION END
                     field_val = getattr(result, f.name)
@@ -143,12 +110,7 @@ def mptt_items_for_result(cl, result, form):
                         result_repr = field_val
                 else:
                     # #### MPTT SUBSTITUTION START
-                    try:
-                        result_repr = display_for_field(value, f)
-                    except TypeError:
-                        # Changed in Django 1.9, now takes 3 arguments
-                        result_repr = display_for_field(
-                            value, f, empty_value_display)
+                    result_repr = display_for_field(value, f, empty_value_display)
                     # #### MPTT SUBSTITUTION END
                 if isinstance(f, (models.DateField, models.TimeField, models.ForeignKey)):
                     row_classes.append('nowrap')
@@ -189,15 +151,7 @@ def mptt_items_for_result(cl, result, form):
                     attr = pk
                 value = result.serializable_value(attr)
                 if cl.is_popup:
-                    if django.VERSION < (1, 10):
-                        opener = format_html(
-                            ' onclick="opener.dismissRelatedLookupPopup(window, &#39;{}&#39;);'
-                            ' return false;"', value
-                        )
-                    else:
-                        opener = format_html(
-                            ' data-popup-opener="{}"', value
-                        )
+                    opener = format_html(' data-popup-opener="{}"', value)
                 else:
                     opener = ''
                 link_or_text = format_html(
