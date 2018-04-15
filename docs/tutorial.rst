@@ -71,7 +71,7 @@ Start with a basic subclass of MPTTModel, something like this::
 
     class Genre(MPTTModel):
         name = models.CharField(max_length=50, unique=True)
-        parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
+        parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
 
         class MPTTMeta:
             order_insertion_by = ['name']
