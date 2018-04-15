@@ -11,7 +11,7 @@ from django.db.models.query_utils import DeferredAttribute
 from django.utils import six
 from django.utils.translation import ugettext as _
 
-from mptt.compat import cached_field_value, remote_field
+from mptt.compat import cached_field_value
 from mptt.fields import TreeForeignKey, TreeOneToOneField, TreeManyToManyField
 from mptt.managers import TreeManager
 from mptt.signals import node_moved
@@ -360,15 +360,7 @@ class MPTTModelBase(ModelBase):
                 if cls._default_manager and isinstance(cls._default_manager, TreeManager):
                     tree_manager = cls._default_manager
                 else:
-                    if hasattr(cls._meta, 'concrete_managers'):  # Django < 1.10
-                        # Django < 1.10 doesn't sort managers
-                        cls_managers = sorted(
-                            cls._meta.concrete_managers + cls._meta.abstract_managers)
-                        cls_managers = [r[2] for r in cls_managers]
-                    else:
-                        cls_managers = cls._meta.managers
-
-                    for cls_manager in cls_managers:
+                    for cls_manager in cls._meta.managers:
                         if isinstance(cls_manager, TreeManager):
                             # prefer any locally defined manager (i.e. keep going if not local)
                             if cls_manager.model is cls:
@@ -805,7 +797,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
         if not self.pk or self._mpttfield('tree_id') is None:
             return False
         opts = self._meta
-        if remote_field(opts.pk) is None:
+        if opts.pk.remote_field is None:
             return True
         else:
             if not hasattr(self, '_mptt_saved'):
