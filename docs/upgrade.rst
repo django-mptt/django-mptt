@@ -2,6 +2,11 @@
 Upgrade notes
 =============
 
+UNRELEASED
+==========
+
+Removed South support. Projects should use Django builtin migrations instead.
+
 0.9.0
 =====
 
