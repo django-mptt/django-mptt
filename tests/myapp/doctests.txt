@@ -1477,4 +1477,3 @@ ValueError: Cannot insert a node which has already been saved.
 <Person: Jess>
 >>> list(jane.get_ancestors())
 [<Person: Jess>, <Person: Jeff>]
-

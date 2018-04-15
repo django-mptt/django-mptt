@@ -191,4 +191,3 @@ to ``10``)::
     class MyTreeRelatedFieldListFilter(TreeRelatedFieldListFilter):
     mptt_level_indent = 20
     # ...
-
