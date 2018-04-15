@@ -2,8 +2,9 @@
 Upgrade notes
 =============
 
-UNRELASED
-=========
+
+UNRELEASED
+==========
 
 End of life Python 3.3 and Django 1.8 are no longer supported. These versions
 of Python and Django no longer receive security patches.
