@@ -1,6 +1,5 @@
 from __future__ import unicode_literals
 
-import django
 from django.forms.models import modelform_factory
 
 from mptt.forms import (
@@ -89,12 +88,9 @@ class TestForms(TreeTestCase):
     def test_movenodeform(self):
         self.maxDiff = 2000
         form = MoveNodeForm(Genre.objects.get(pk=7))
-        # Required attribute on select widgets depends on Django versions.
-        required_on_select = django.VERSION >= (1, 10)
-        required_on_select_without_empty = required_on_select and django.VERSION < (1, 11)
         expected = (
             '<tr><th><label for="id_target">Target:</label></th>'
-            '<td><select name="target" size="10" id="id_target" {required}>'
+            '<td><select name="target" size="10" id="id_target" required>'
             '<option value="" selected>---------</option>'
             '<option value="1"> Action</option>'
             '<option value="2">--- Platformer</option>'
@@ -108,14 +104,13 @@ class TestForms(TreeTestCase):
             '<option value="11">--- Tactical RPG</option>'
             '</select></td></tr>'
             '<tr><th><label for="id_position">Position:</label></th>'
-            '<td><select name="position" id="id_position" {required_no_empty}>'
+            '<td><select name="position" id="id_position">'
             '<option value="first-child">First child</option>'
             '<option value="last-child">Last child</option>'
             '<option value="left">Left sibling</option>'
             '<option value="right">Right sibling</option>'
             '</select></td></tr>'
-        ).format(required='required' if required_on_select else '',
-                 required_no_empty='required' if required_on_select_without_empty else '')
+        )
         self.assertHTMLEqual(str(form), expected)
         form = MoveNodeForm(Genre.objects.get(pk=7), level_indicator='+--', target_select_size=5)
         self.assertIn('size="5"', str(form['target']))
@@ -125,10 +120,10 @@ class TestForms(TreeTestCase):
         )
         form = MoveNodeForm(Genre.objects.get(pk=7), position_choices=(('left', 'left'),))
         self.assertHTMLEqual(str(form['position']), (
-            '<select id="id_position" name="position" {required}>'
+            '<select id="id_position" name="position">'
             '<option value="left">left</option>'
             '</select>'
-        ).format(required='required' if required_on_select_without_empty else ''))
+        ))
 
     def test_treenodechoicefield(self):
         field = TreeNodeChoiceField(queryset=Genre.objects.all())
