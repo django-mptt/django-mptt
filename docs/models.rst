@@ -16,7 +16,7 @@ Start with a basic subclass of MPTTModel, something like this::
 
     class Genre(MPTTModel):
         name = models.CharField(max_length=50, unique=True)
-        parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
+        parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children', db_index=True)
 
 You must define a parent field which is a ``ForeignKey`` to ``'self'``. Recommended: use ``TreeForeignKey``. You can
 call it something different if you want - see `Model Options`_ below.
@@ -42,7 +42,7 @@ To change the names, create an ``MPTTMeta`` class inside your class::
 
     class Genre(MPTTModel):
         name = models.CharField(max_length=50, unique=True)
-        parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
+        parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children', db_index=True)
 
         class MPTTMeta:
             level_attr = 'mptt_level'
@@ -58,7 +58,7 @@ The available options for the MPTTMeta class are:
    Users are responsible for setting this field up on the model class,
    which can be done like so::
 
-      parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
+      parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children', db_index=True)
 
 For the following four arguments, if fields with the given names do not
 exist, they will be added to the model dynamically:
@@ -116,7 +116,7 @@ You can't subclass MPTTModel without modifying the Group source. Instead, you ca
     from django.contrib.auth.models import Group
 
     # add a parent foreign key
-    TreeForeignKey(Group, blank=True, null=True, db_index=True).contribute_to_class(Group, 'parent')
+    TreeForeignKey(Group, on_delete=models.CASCADE, blank=True, null=True, db_index=True).contribute_to_class(Group, 'parent')
 
     mptt.register(Group, order_insertion_by=['name'])
 
