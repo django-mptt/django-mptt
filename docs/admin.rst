@@ -154,7 +154,7 @@ to ``20``)::
     # ...
 
 
-.. _overriding admin templates: https://docs.djangoproject.com/en/1.9/ref/contrib/admin/#overriding-admin-templates
+.. _overriding admin templates: https://docs.djangoproject.com/en/2.0/ref/contrib/admin/#overriding-admin-templates
 .. _FeinCMS: https://github.com/feincms/feincms/
 
 

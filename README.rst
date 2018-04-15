@@ -48,8 +48,8 @@ structure and provides tools for working with trees of model instances.
 Requirements
 ------------
 
-* Python 2.7 or 3.3+
-* A supported version of Django (currently 1.8+)
+* Python 2.7 or 3.4+
+* A supported version of Django (currently 1.11+)
 
 Feature overview
 ----------------

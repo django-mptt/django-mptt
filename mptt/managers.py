@@ -10,7 +10,7 @@ from django.db import models, connections, router
 from django.db.models import F, ManyToManyField, Max, Q
 from django.utils.translation import ugettext as _
 
-from mptt.compat import cached_field_value, remote_field
+from mptt.compat import cached_field_value
 from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.querysets import TreeQuerySet
 from mptt.utils import _get_tree_model
@@ -483,7 +483,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                     'rel_table': qn(rel_model._meta.db_table),
                     'mptt_fk': qn(rel_model._meta.get_field(rel_field).column),
                     'mptt_table': qn(self.tree_model._meta.db_table),
-                    'mptt_rel_to': qn(remote_field(mptt_field).field_name),
+                    'mptt_rel_to': qn(mptt_field.remote_field.field_name),
                     'tree_id': qn(meta.get_field(self.tree_id_attr).column),
                     'left': qn(meta.get_field(self.left_attr).column),
                     'right': qn(meta.get_field(self.right_attr).column),
@@ -493,7 +493,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                     'rel_table': qn(rel_model._meta.db_table),
                     'mptt_fk': qn(rel_model._meta.get_field(rel_field).column),
                     'mptt_table': qn(self.tree_model._meta.db_table),
-                    'mptt_rel_to': qn(remote_field(mptt_field).field_name),
+                    'mptt_rel_to': qn(mptt_field.remote_field.field_name),
                 }
         return queryset.extra(select={count_attr: subquery})
 

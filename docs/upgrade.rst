@@ -2,10 +2,12 @@
 Upgrade notes
 =============
 
+
 UNRELEASED
 ==========
 
-Removed South support. Projects should use Django builtin migrations instead.
+End of life Python 3.3 and Django 1.8 are no longer supported. These versions
+of Python and Django no longer receive security patches.
 
 0.9.0
 =====
