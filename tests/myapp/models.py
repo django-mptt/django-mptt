@@ -340,7 +340,7 @@ class UniqueTogetherModel(MPTTModel):
     parent = TreeForeignKey('self', null=True, on_delete=models.CASCADE)
     code = models.CharField(max_length=10)
 
-    
+
 class NullableOrderedInsertionModel(MPTTModel):
     name = models.CharField(max_length=50, null=True)
     parent = TreeForeignKey(
@@ -365,4 +365,3 @@ class NullableDescOrderedInsertionModel(MPTTModel):
 
     def __str__(self):
         return self.name
-

@@ -2343,14 +2343,14 @@ class NullableOrderedInsertion(TreeTestCase):
             2 1 1 1 2 3
             3 1 1 1 4 5
         """)
-        
+
 
 class ModelMeta(TreeTestCase):
     def test_index_together(self):
         already_idx = [['tree_id', 'lft'], ('tree_id', 'lft')]
         no_idx = [tuple(), list()]
         some_idx = [['tree_id'], ('tree_id',), [['tree_id']], (('tree_id',),)]
-        
+
         for idx, case in enumerate(already_idx + no_idx + some_idx):
             class Meta:
                 index_together = case

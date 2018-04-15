@@ -326,9 +326,9 @@ class MPTTModelBase(ModelBase):
 
                 bases.insert(0, MPTTModel)
                 cls.__bases__ = tuple(bases)
-                
+
             is_cls_tree_model = _get_tree_model(cls) is cls
-            
+
             if is_cls_tree_model:
                 # HACK: _meta.get_field() doesn't work before AppCache.ready in Django>=1.8
                 # ( see https://code.djangoproject.com/ticket/24231 )

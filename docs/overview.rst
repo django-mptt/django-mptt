@@ -22,7 +22,7 @@ details about how the technique itself works:
     * `Trees in SQL`_
     * `Storing Hierarchical Data in a Database`_
     * `Managing Hierarchical Data in MySQL`_
-    
+
 .. _`Trees in SQL`: https://www.ibase.ru/files/articles/programming/dbmstrees/sqltrees.html
 .. _`Storing Hierarchical Data in a Database`: https://www.sitepoint.com/hierarchical-data-database/
 .. _`Managing Hierarchical Data in MySQL`: http://mikehillyer.com/articles/managing-hierarchical-data-in-mysql/
@@ -31,7 +31,7 @@ details about how the technique itself works:
 What is ``django-mptt``?
 ========================
 
-``django-mptt`` is a reusable Django app which aims to make it easy for you 
+``django-mptt`` is a reusable Django app which aims to make it easy for you
 to use MPTT with your own Django models.
 
 It takes care of the details of managing a database table as a tree
@@ -58,7 +58,7 @@ Feature overview
 
 * A ``TreeManager`` manager is added to all registered models. This provides
   methods to:
-  
+
   * move nodes around a tree, or into a different tree
   * insert a node anywhere in a tree
   * rebuild the MPTT fields for the tree (useful when you do bulk updates

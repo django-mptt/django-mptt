@@ -31,7 +31,7 @@ Alternatively, you can get the latest source from our `git`_ repository::
    git clone git://github.com/django-mptt/django-mptt.git django-mptt
 
 Add the resulting folder to your `PYTHONPATH`_ or symlink the ``mptt`` directory
-inside it into a directory which is on your PYTHONPATH, such as your Python 
+inside it into a directory which is on your PYTHONPATH, such as your Python
 installation's ``site-packages`` directory.
 
 You can verify that the application is available on your PYTHONPATH by
@@ -49,7 +49,7 @@ from within the ``django-mptt`` directory.
    The development version may contain bugs which are not present in the
    release version and introduce backwards-incompatible changes.
 
-   If you're tracking master, keep an eye on the recent `Commit History`_ 
+   If you're tracking master, keep an eye on the recent `Commit History`_
    before you update your copy of the source code.
 
 .. _`git`: https://git-scm.com/

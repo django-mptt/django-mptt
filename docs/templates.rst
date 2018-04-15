@@ -51,11 +51,11 @@ These are magically inserted into your context while you're inside the
 
   ``node`` is an instance of your MPTT model.
 
-  ``children`` : This variable holds the rendered HTML for the children of 
+  ``children`` : This variable holds the rendered HTML for the children of
   ``node``.
 
 .. note::
-    If you already have variables called ``node`` or ``children`` in your 
+    If you already have variables called ``node`` or ``children`` in your
     template, and you need to access them inside the ``recursetree`` block,
     you'll need to alias them to some other name first::
 
@@ -202,7 +202,7 @@ Example::
 Examples
 ========
 
-Using ``drilldown_tree_for_node`` and ``tree_info`` together to render a 
+Using ``drilldown_tree_for_node`` and ``tree_info`` together to render a
 drilldown menu for a node, with cumulative counts of related items for the node's
 children::
 
@@ -218,7 +218,7 @@ children::
         {% for level in structure.closed_levels %}</li></ul>{% endfor %}
     {% endfor %}
 
-Using ``tree_info`` (with its optional argument) and ``tree_path`` together 
+Using ``tree_info`` (with its optional argument) and ``tree_path`` together
 to create a multiple-select, which:
 
 * doesn't contain root nodes
