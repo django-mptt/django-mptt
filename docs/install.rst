@@ -19,7 +19,7 @@ named ``setup.py``. Enter this command::
 
 ...and the package will install automatically.
 
-.. _`PyPI`: https://pypi.python.org/pypi/django-mptt/
+.. _`PyPI`: https://pypi.org/project/django-mptt/
 .. _`pip`: https://pip.pypa.io/en/stable/
 
 
