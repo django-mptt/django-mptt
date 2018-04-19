@@ -18,15 +18,8 @@ class CustomTreeQueryset(QuerySet):
 
 class CustomTreeManager(TreeManager):
 
-    def get_query_set(self):
-        return CustomTreeQueryset(model=self.model, using=self._db)
-
     def get_queryset(self):
-        # Django 1.8 removed the fallbacks here.
         return CustomTreeQueryset(model=self.model, using=self._db)
-
-    def get_empty_query_set(self):
-        return self.get_queryset().none()
 
 
 @python_2_unicode_compatible
