@@ -1041,11 +1041,11 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
             return
         manager = type(self)._tree_manager
         opts = self._mptt_meta
-        values = manager.filter(pk=self.pk).values(
+        values = manager.using(self._state.db).filter(pk=self.pk).values(
             opts.left_attr,
             opts.right_attr,
             opts.level_attr,
             opts.tree_id_attr,
-        )[0]
+        ).first()
         for k, v in values.items():
             setattr(self, k, v)
