@@ -1046,6 +1046,6 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
             opts.right_attr,
             opts.level_attr,
             opts.tree_id_attr,
-        ).first()
+        )[0]
         for k, v in values.items():
             setattr(self, k, v)
