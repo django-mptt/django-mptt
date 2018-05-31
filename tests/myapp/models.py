@@ -25,6 +25,7 @@ class CustomTreeManager(TreeManager):
 @python_2_unicode_compatible
 class Category(MPTTModel):
     name = models.CharField(max_length=50)
+    visible = models.BooleanField(default=True)
     parent = TreeForeignKey(
         'self', null=True, blank=True, related_name='children',
         on_delete=models.CASCADE)

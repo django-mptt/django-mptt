@@ -219,6 +219,9 @@ def get_cached_trees(queryset):
     Returns a list of top-level nodes. If a single tree was provided in its
     entirety, the list will of course consist of just the tree's root node.
 
+    For filtered querysets, if no ancestors for a node are included in the
+    queryset, it will appear in the returned list as a top-level node.
+
     Aliases to this function are also available:
 
     ``mptt.templatetags.mptt_tag.cache_tree_children``
@@ -236,15 +239,16 @@ def get_cached_trees(queryset):
         # Get the model's parent-attribute name
         parent_attr = queryset[0]._mptt_meta.parent_attr
         root_level = None
+        is_filtered = (hasattr(queryset, "query") and queryset.query.has_filters())
         for obj in queryset:
             # Get the current mptt node level
             node_level = obj.get_level()
 
-            if root_level is None:
+            if root_level is None or (is_filtered and node_level < root_level):
                 # First iteration, so set the root level to the top node level
                 root_level = node_level
 
-            if node_level < root_level:
+            elif node_level < root_level:
                 # ``queryset`` was a list or other iterable (unable to order),
                 # and was provided in an order other than depth-first
                 raise ValueError(
