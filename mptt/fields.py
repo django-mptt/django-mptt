@@ -38,11 +38,3 @@ class TreeManyToManyField(models.ManyToManyField):
     def formfield(self, **kwargs):
         kwargs.setdefault('form_class', TreeNodeMultipleChoiceField)
         return super(TreeManyToManyField, self).formfield(**kwargs)
-
-
-# South integration
-if 'south' in settings.INSTALLED_APPS:  # pragma: no cover
-    from south.modelsinspector import add_introspection_rules
-    add_introspection_rules([], [r"^mptt\.fields\.TreeForeignKey"])
-    add_introspection_rules([], [r"^mptt\.fields\.TreeOneToOneField"])
-    add_introspection_rules([], [r"^mptt\.fields\.TreeManyToManyField"])

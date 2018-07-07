@@ -1,4 +1,4 @@
 mock-django
-Django
+Django >= 1.11
 coverage
 django-js-asset

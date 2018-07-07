@@ -14,9 +14,9 @@ Reparenting
 
 Since it's not unreasonable to assume a good percentage of the people
 who use this application will also be using the ``django.contrib.admin``
-application or ``forms.ModelForm`` to edit their data, and since in these 
-cases only the parent field will be editable if users have allowed 
-``mptt.register`` to create tree fields for them, it would be nice if 
+application or ``forms.ModelForm`` to edit their data, and since in these
+cases only the parent field will be editable if users have allowed
+``mptt.register`` to create tree fields for them, it would be nice if
 Django MPTT automatically took care of the tree when a ``Model`` instance
 has its parent changed.
 

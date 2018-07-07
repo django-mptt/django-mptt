@@ -10,7 +10,7 @@ PYTHONPATH; this is useful if you're working from a git checkout.
 
 Requires:
  - Python 2.7 or newer
- - Django 1.8 or newer
+ - Django 1.11 or newer
 
 You can obtain Python from https://www.python.org/ and Django from
 https://www.djangoproject.com/

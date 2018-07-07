@@ -2,6 +2,20 @@
 Upgrade notes
 =============
 
+
+UNRELEASED
+==========
+
+End of life Python 3.3 and Django 1.8 are no longer supported. These versions
+of Python and Django no longer receive security patches.
+
+0.9.0
+=====
+
+Now supports django 1.11 and 2.0.
+
+Removed tests for unsupported django versions (django 1.9, 1.10)
+
 0.8.6
 =====
 
@@ -226,8 +240,8 @@ Isn't multiple inheritance evil? Well, maybe. However, the
    Our brief testing says it works, but if you find that the Django internals are somehow
    breaking this approach for you, please `create an issue`_ with specifics.
 
-.. _`create an issue`: http://github.com/django-mptt/django-mptt/issues
-.. _`Django model docs`: http://docs.djangoproject.com/en/dev/topics/db/models/#multiple-inheritance
+.. _`create an issue`: https://github.com/django-mptt/django-mptt/issues
+.. _`Django model docs`: https://docs.djangoproject.com/en/dev/topics/db/models/#multiple-inheritance
 
 
 Compatibility with 0.3

@@ -16,7 +16,7 @@ Start with a basic subclass of MPTTModel, something like this::
 
     class Genre(MPTTModel):
         name = models.CharField(max_length=50, unique=True)
-        parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
+        parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
 
 You must define a parent field which is a ``ForeignKey`` to ``'self'``. Recommended: use ``TreeForeignKey``. You can
 call it something different if you want - see `Model Options`_ below.
@@ -42,7 +42,7 @@ To change the names, create an ``MPTTMeta`` class inside your class::
 
     class Genre(MPTTModel):
         name = models.CharField(max_length=50, unique=True)
-        parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
+        parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
 
         class MPTTMeta:
             level_attr = 'mptt_level'
@@ -58,7 +58,7 @@ The available options for the MPTTMeta class are:
    Users are responsible for setting this field up on the model class,
    which can be done like so::
 
-      parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
+      parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
 
 For the following four arguments, if fields with the given names do not
 exist, they will be added to the model dynamically:
@@ -126,7 +126,7 @@ You can't subclass MPTTModel without modifying the Group source. Instead, you ca
     from django.contrib.auth.models import Group
 
     # add a parent foreign key
-    TreeForeignKey(Group, blank=True, null=True, db_index=True).contribute_to_class(Group, 'parent')
+    TreeForeignKey(Group, on_delete=models.CASCADE, blank=True, null=True).contribute_to_class(Group, 'parent')
 
     mptt.register(Group, order_insertion_by=['name'])
 
@@ -402,6 +402,51 @@ model.
    If ``True``, the count will be for each item and all of its
    descendants, otherwise it will be for each item itself.
 
+
+Example usage in the admin
+--------------------------
+
+::
+
+    from mptt.admin import DraggableMPTTAdmin
+    from .models import Category, Product
+
+
+    class CategoryAdmin(DraggableMPTTAdmin):
+        mptt_indent_field = "name"
+        list_display = ('tree_actions', 'indented_title',
+                        'related_products_count', 'related_products_cumulative_count')
+        list_display_links = ('indented_title',)
+
+        def get_queryset(self, request):
+            qs = super().get_queryset(request)
+
+            # Add cumulative product count
+            qs = Category.objects.add_related_count(
+                    qs,
+                    Product,
+                    'category',
+                    'products_cumulative_count',
+                    cumulative=True)
+
+            # Add non cumulative product count
+            qs = Category.objects.add_related_count(qs,
+                     Product,
+                     'categories',
+                     'products_count',
+                     cumulative=False)
+            return qs
+
+        def related_products_count(self, instance):
+            return instance.products_count
+        related_product_count.short_description = 'Related products (for this specific category)'
+
+        def related_products_cumulative_count(self, instance):
+            return instance.products_cumulative_count
+        related_products_cumulative_count.short_description = 'Related products (in tree)'
+
+
+
 ``root_node(tree_id)``
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -441,7 +486,7 @@ For more details, see the `move_to documentation`_ above.
 
 Creates a ``QuerySet`` containing root nodes.
 
-.. _`extra method`: http://docs.djangoproject.com/en/dev/ref/models/querysets/#extra-select-none-where-none-params-none-tables-none-order-by-none-select-params-none
+.. _`extra method`: https://docs.djangoproject.com/en/dev/ref/models/querysets/#extra-select-none-where-none-params-none-tables-none-order-by-none-select-params-none
 
 Example usage
 -------------

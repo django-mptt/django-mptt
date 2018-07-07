@@ -1,4 +1,3 @@
-
 ========
 Tutorial
 ========
@@ -39,7 +38,7 @@ tl;dr: MPTT makes most tree operations much cheaper in terms of queries. In fact
 And this one takes zero queries:
  * count the descendants of a given node
 
-.. _`Storing Hierarchical Data in a Database`: http://www.sitepoint.com/hierarchical-data-database/
+.. _`Storing Hierarchical Data in a Database`: https://www.sitepoint.com/hierarchical-data-database/
 .. _`Managing Hierarchical Data in Mysql`: http://mikehillyer.com/articles/managing-hierarchical-data-in-mysql/
 
 Enough intro. Let's get started.
@@ -71,7 +70,7 @@ Start with a basic subclass of MPTTModel, something like this::
 
     class Genre(MPTTModel):
         name = models.CharField(max_length=50, unique=True)
-        parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
+        parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
 
         class MPTTMeta:
             order_insertion_by = ['name']
@@ -110,13 +109,11 @@ Make a view
 This one's pretty simple for now. Add this lightweight view to your ``views.py``::
 
     def show_genres(request):
-        return render_to_response("genres.html",
-                              {'nodes':Genre.objects.all()},
-                              context_instance=RequestContext(request))
+        return render(request, "genres.html", {'genres': Genre.objects.all()})
 
 And add a URL for it in ``urls.py``::
 
-    (r'^genres/$', 'myapp.views.show_genres'),
+    (r'^genres/$', show_genres),
 
 Template
 --------
@@ -127,7 +124,7 @@ Create a template called ``genres.html`` in your template directory and put this
 
     {% load mptt_tags %}
     <ul>
-        {% recursetree nodes %}
+        {% recursetree genres %}
             <li>
                 {{ node.name }}
                 {% if not node.is_leaf_node %}

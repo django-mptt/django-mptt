@@ -10,7 +10,7 @@ from django.db import models, connections, router
 from django.db.models import F, ManyToManyField, Max, Q
 from django.utils.translation import ugettext as _
 
-from mptt.compat import cached_field_value, remote_field
+from mptt.compat import cached_field_value
 from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.querysets import TreeQuerySet
 from mptt.utils import _get_tree_model
@@ -483,7 +483,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                     'rel_table': qn(rel_model._meta.db_table),
                     'mptt_fk': qn(rel_model._meta.get_field(rel_field).column),
                     'mptt_table': qn(self.tree_model._meta.db_table),
-                    'mptt_rel_to': qn(remote_field(mptt_field).field_name),
+                    'mptt_rel_to': qn(mptt_field.remote_field.field_name),
                     'tree_id': qn(meta.get_field(self.tree_id_attr).column),
                     'left': qn(meta.get_field(self.left_attr).column),
                     'right': qn(meta.get_field(self.right_attr).column),
@@ -493,7 +493,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                     'rel_table': qn(rel_model._meta.db_table),
                     'mptt_fk': qn(rel_model._meta.get_field(rel_field).column),
                     'mptt_table': qn(self.tree_model._meta.db_table),
-                    'mptt_rel_to': qn(remote_field(mptt_field).field_name),
+                    'mptt_rel_to': qn(mptt_field.remote_field.field_name),
                 }
         return queryset.extra(select={count_attr: subquery})
 
@@ -780,16 +780,11 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
 
     def _inter_tree_move_and_close_gap(
             self, node, level_change,
-            left_right_change, new_tree_id, parent_pk=None):
+            left_right_change, new_tree_id):
         """
         Removes ``node`` from its current tree, with the given set of
         changes being applied to ``node`` and its descendants, closing
         the gap left by moving ``node`` as it does so.
-
-        If ``parent_pk`` is ``None``, this indicates that ``node`` is
-        being moved to a brand new tree as its root node, and will thus
-        have its parent field set to ``NULL``. Otherwise, ``node`` will
-        have ``parent_pk`` set for its parent field.
         """
         connection = self._get_connection(instance=node)
         qn = connection.ops.quote_name
@@ -1026,10 +1021,8 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         # Make space for the subtree which will be moved
         self._create_space(tree_width, space_target, new_tree_id)
         # Move the subtree
-        connection = self._get_connection(instance=node)
         self._inter_tree_move_and_close_gap(
-            node, level_change, left_right_change, new_tree_id,
-            parent._meta.pk.get_db_prep_value(parent.pk, connection))
+            node, level_change, left_right_change, new_tree_id)
 
         # Update the node to be consistent with the updated
         # tree in the database.

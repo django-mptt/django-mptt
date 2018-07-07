@@ -1,7 +1,9 @@
 from __future__ import unicode_literals
 
-VERSION = (0, 8, 7)
+VERSION = (0, 9, 0)
 __version__ = '.'.join(str(v) for v in VERSION)
+
+default_app_config = "mptt.apps.MpttConfig"
 
 
 def register(*args, **kwargs):
