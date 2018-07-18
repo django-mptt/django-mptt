@@ -6,12 +6,14 @@
 
 {% if results %}
     <div class="grp-module grp-changelist-results">
-        <table cellspacing="0" id="grp-sortable">
+        <table id="result_list" cellspacing="0" class="grp-table grp-sortable">
             <thead>
                 <tr>
                     {% for header in result_headers %}
                         <th scope="col" {{ header.class_attrib }}>
-                            {{ header.text|capfirst }}
+                            <div class="grp-text">
+                                <span>{{ header.text|capfirst }}</span>
+                            </div>
                         </th>{% endfor %}
                 </tr>
             </thead>
