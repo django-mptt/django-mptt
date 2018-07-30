@@ -8,7 +8,7 @@ Installation
 Official releases
 =================
 
-Official releases are available from `PyPI`_. You can install it using the `pip`_
+Official releases are available from `PyPI`_. You can install it using the `pip`::
 
    pip install django-mptt
 
