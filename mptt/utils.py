@@ -7,8 +7,10 @@ import copy
 import csv
 import itertools
 import sys
+from collections import Iterable
 
-from django.utils.six import next, PY3, text_type
+from django.utils.encoding import smart_text
+from django.utils.six import PY3, text_type
 from django.utils.six.moves import zip
 from django.utils.translation import ugettext as _
 
@@ -204,6 +206,24 @@ def _get_tree_model(model_class):
             return b
     return None
 
+
+def clean_tree_ids(tree_ids, root_ordering=False, vendor=None):
+    """
+    Cleans tree ids that are UUIDFields.  PostgreSQL uses a `uuid` column type that has dashes stored in it, all the
+    other backends use a string representation with the dashes stripped out.  This method and it's analog,
+    simply abstract away that logic.
+    """
+    def _clean_tree_id(tree_id, root_ordering, vendor):
+        return smart_text(tree_id).replace('-', '') if not root_ordering and vendor != 'postgresql' else tree_id
+
+    if not isinstance(tree_ids, Iterable):
+        # we have a single ID most likely, try to clean it
+        return _clean_tree_id(tree_ids, root_ordering, vendor)
+
+    results = tuple()
+    for tree_id in tree_ids:
+        results += (_clean_tree_id(tree_id, root_ordering, vendor),)
+    return results
 
 def get_cached_trees(queryset):
     """

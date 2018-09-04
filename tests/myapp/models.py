@@ -38,6 +38,17 @@ class Category(MPTTModel):
     delete.alters_data = True
 
 
+class UnorderedCategory(MPTTModel):
+    class MPTTMeta:
+        root_node_ordering = False
+
+    name = models.CharField(max_length=50)
+    parent = TreeForeignKey(
+        'self', null=True, blank=True, related_name='children',
+        on_delete=models.CASCADE)
+    category_uuid = models.CharField(max_length=50, unique=True, null=True)
+
+
 @python_2_unicode_compatible
 class Item(models.Model):
 
@@ -63,6 +74,15 @@ class Genre(MPTTModel):
     def __str__(self):
         return self.name
 
+
+class UnorderedGenre(MPTTModel):
+    class MPTTMeta:
+        root_node_ordering = False
+
+    name = models.CharField(max_length=50, unique=True)
+    parent = TreeForeignKey(
+        'self', null=True, blank=True, related_name='children',
+        on_delete=models.CASCADE)
 
 class Game(models.Model):
     genre = TreeForeignKey(Genre, on_delete=models.CASCADE)
@@ -118,6 +138,17 @@ class UUIDNode(MPTTModel):
 
     def __str__(self):
         return self.name
+
+
+class RootOrderingDisabledOrderedInsertion(MPTTModel):
+    name = models.CharField(max_length=50)
+    parent = TreeForeignKey(
+        'self', null=True, blank=True, related_name='children',
+        on_delete=models.CASCADE)
+
+    class MPTTMeta:
+        root_node_ordering_disabled = True
+        order_insertion_by = ['name']
 
 
 @python_2_unicode_compatible
@@ -345,6 +376,17 @@ class NullableOrderedInsertionModel(MPTTModel):
 
     def __str__(self):
         return self.name
+
+
+class NullableUnorderedInsertionModel(MPTTModel):
+    name = models.CharField(max_length=50, null=True)
+    parent = TreeForeignKey(
+        'self', null=True, blank=True, related_name='children',
+        on_delete=models.CASCADE)
+
+    class MPTTMeta:
+        root_node_ordering = False
+        order_insertion_by = ['name']
 
 
 class NullableDescOrderedInsertionModel(MPTTModel):

@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 from functools import reduce, wraps
 import operator
 import threading
+from uuid import uuid4
 
 from django.db import models
 from django.db.models.base import ModelBase
@@ -61,6 +62,7 @@ class MPTTOptions(object):
                 parent_attr = 'myparent'
     """
 
+    root_node_ordering = True
     order_insertion_by = []
     left_attr = 'lft'
     right_attr = 'rght'
@@ -201,8 +203,13 @@ class MPTTOptions(object):
         nodes) so that ordering by the fields specified by the node's class'
         ``order_insertion_by`` option is maintained.
 
+        Returns ``None`` if ``node`` is a root node and ``root_node_ordering`` is ``False``.
         Returns ``None`` if no suitable sibling can be found.
         """
+        # Short circuit root node order calculations, if we have disabled root node ordering...
+        if parent is None and not self.root_node_ordering:
+            return None
+
         right_sibling = None
         # Optimisation - if the parent doesn't have descendants,
         # the node will always be its last child.
@@ -343,7 +350,10 @@ class MPTTModelBase(ModelBase):
 
                 for field_name in field_names:
                     if field_name not in existing_field_names:
-                        field = models.PositiveIntegerField(db_index=True, editable=False)
+                        if field_name == mptt_meta.tree_id_attr and not mptt_meta.root_node_ordering:
+                            field = models.UUIDField(blank=True, null=False, db_index=True, default=uuid4)
+                        else:
+                            field = models.PositiveIntegerField(db_index=True, editable=False)
                         field.contribute_to_class(cls, field_name)
 
                 # Add an index_together on tree_id_attr and left_attr, as these are very
@@ -907,6 +917,7 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                 opts.set_raw_field_value(self, opts.parent_attr, old_parent_id)
                 try:
                     right_sibling = None
+                    parent = None
                     if opts.order_insertion_by:
                         right_sibling = opts.get_ordered_insertion_target(
                             self, getattr(self, opts.parent_attr))
@@ -930,8 +941,9 @@ class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
                             self, right_sibling, 'left', save=False,
                             refresh_target=False)
                     else:
-                        # Default movement
-                        if parent_id is None:
+                        # Default movement (root node ordering is enabled)
+                        if parent_id is None and opts.root_node_ordering:
+                            # we are moving a node to the root
                             root_nodes = self._tree_manager.root_nodes()
                             try:
                                 rightmost_sibling = root_nodes.exclude(
