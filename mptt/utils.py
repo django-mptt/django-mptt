@@ -8,7 +8,7 @@ import csv
 import itertools
 import sys
 
-from django.utils.six import next, PY3, text_type
+from django.utils.six import PY3, text_type
 from django.utils.six.moves import zip
 from django.utils.translation import ugettext as _
 
