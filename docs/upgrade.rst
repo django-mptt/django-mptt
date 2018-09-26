@@ -12,14 +12,14 @@ of Python and Django no longer receive security patches.
 0.9.1
 =====
 
-Support for django 2.1 has been added, support for django<1.11 is removed.
+Support for Django 2.1 has been added, support for Django<1.11 is removed.
 Support for deprecated South has been removed.
 
 Some updates have been made on the documentation such as:
 
 - Misc updates in the docs (formatting)
 - Added italian translation
-- Remove unnecessary db_index=True from doc examples
+- Remove unnecessary `db_index=True` from doc examples
 - Include on_delete in all TreeForeignKey examples in docs
 - Use https:// URLs throughout docs where available
 - Document project as stable and ready for use in production
@@ -36,12 +36,12 @@ Misc:
 
 - Update pypi.python.org URL to pypi.org
 - Remove redundant tox.ini options that respecify defaults
-- Remove unused argument from _inter_tree_move_and_close_gap()
+- Remove unused argument from `_inter_tree_move_and_close_gap()`
 - Trim trailing white space throughout the project
 - Pass python_requires argument to setuptools
 - Added MpttConfig
-- Add test case to support ancestor coersion callbacks. 
-- Extend tree_item_iterator with ancestor coersion callback. 
+- Add test case to support ancestor coercion callbacks. 
+- Extend tree_item_iterator with ancestor coercion callback. 
 
 0.9.0
 =====
