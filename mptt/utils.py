@@ -210,8 +210,8 @@ def _get_tree_model(model_class):
 def clean_tree_ids(*tree_ids, **kwargs):
     """
     Cleans tree ids that are UUIDFields.  PostgreSQL uses a `uuid` column type that has dashes stored in it, all the
-    other backends use a string representation with the dashes stripped out.  This method and it's analog,
-    simply abstract away that logic.
+    other backends use a string representation with the dashes stripped out.  This method simply abstracts away that
+    logic.
 
     Args:
         *tree_ids: tree_ids you wish to clean
