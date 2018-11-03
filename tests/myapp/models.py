@@ -140,17 +140,6 @@ class UUIDNode(MPTTModel):
         return self.name
 
 
-class RootOrderingDisabledOrderedInsertion(MPTTModel):
-    name = models.CharField(max_length=50)
-    parent = TreeForeignKey(
-        'self', null=True, blank=True, related_name='children',
-        on_delete=models.CASCADE)
-
-    class MPTTMeta:
-        root_node_ordering_disabled = True
-        order_insertion_by = ['name']
-
-
 @python_2_unicode_compatible
 class OrderedInsertion(MPTTModel):
     name = models.CharField(max_length=50)

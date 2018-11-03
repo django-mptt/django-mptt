@@ -773,8 +773,9 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
 
     def _get_next_tree_id(self):
         """
-        Determines the next largest unused tree id for the tree managed
-        by this manager.
+        Determines the next largest unused tree id for the tree managed by this manager, unless root_node_ordering is
+        disabled.  If root_node_ordering is disabled a new default value will be generated for the field (by default
+        this will be a new UUID).
         """
         if not self.model._mptt_meta.root_node_ordering:
             return self.model._meta.get_field(self.tree_id_attr).default()
