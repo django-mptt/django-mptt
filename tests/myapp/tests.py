@@ -14,7 +14,7 @@ from django.db.models.query_utils import DeferredAttribute
 from django.apps import apps
 from django.template import Template, TemplateSyntaxError, Context
 from django.test import RequestFactory, TestCase
-from django.utils.encoding import smart_text as _
+from django.utils.encoding import smart_text as _, smart_text
 from django.utils.six import string_types, PY3, b, assertRaisesRegex
 from django.contrib.admin.views.main import ChangeList
 from django.contrib.admin import ModelAdmin, site
@@ -30,7 +30,7 @@ from mptt.models import MPTTModel
 from mptt.managers import TreeManager
 from mptt.signals import node_moved
 from mptt.templatetags.mptt_tags import cache_tree_children
-from mptt.utils import print_debug_info
+from mptt.utils import print_debug_info, clean_tree_ids
 
 from myapp.models import (
     Category, Item, Genre, CustomPKName, SingleProxyModel, DoubleProxyModel,
@@ -2704,3 +2704,32 @@ class ModelMeta(TreeTestCase):
             })
 
             self.assertIn(('abc', 'def'), SomeModel._meta.index_together)
+
+
+class TestUtils(TestCase):
+
+    def test_clean_tree_ids(self):
+        import uuid
+
+        uuid1 = uuid.uuid4()
+        uuid2 = uuid.uuid4()
+        uuid3 = uuid.uuid4()
+
+        _ = lambda s: smart_text(s).replace('-', '')
+
+        self.assertEqual(clean_tree_ids(uuid1, vendor='postgresql'), uuid1)
+        self.assertEqual(clean_tree_ids(uuid1, vendor='mysql'), _(uuid1))
+        self.assertEqual(clean_tree_ids(uuid1, vendor='some_weird_vendor'), _(uuid1))
+
+        self.assertEqual(clean_tree_ids(uuid1, uuid2, uuid3, vendor='postgresql'), (uuid1, uuid2, uuid3))
+        self.assertEqual(clean_tree_ids(uuid1, uuid2, uuid3, vendor='mysql'), (_(uuid1), _(uuid2), _(uuid3)))
+        self.assertEqual(clean_tree_ids(uuid1, uuid2, uuid3, vendor='some_weird_vendor'),
+                         (_(uuid1), _(uuid2), _(uuid3)))
+
+        self.assertEqual(clean_tree_ids(1, root_ordering=True, vendor='postgresql'), 1)
+        self.assertEqual(clean_tree_ids(2, root_ordering=True, vendor='mysql'), 2)
+        self.assertEqual(clean_tree_ids(3, root_ordering=True, vendor='some_weird_vendor'), 3)
+
+        self.assertEqual(clean_tree_ids(1, 2, 3, root_ordering=True, vendor='postgresql'), (1, 2, 3))
+        self.assertEqual(clean_tree_ids(1, 2, 3, root_ordering=True, vendor='mysql'), (1, 2, 3))
+        self.assertEqual(clean_tree_ids(1, 2, 3, root_ordering=True, vendor='some_weird_vendor'), (1, 2, 3))

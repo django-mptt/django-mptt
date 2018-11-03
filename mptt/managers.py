@@ -830,7 +830,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         right = getattr(node, self.right_attr)
         gap_size = right - left + 1
         gap_target_left = left - 1
-        new_tree_id, current_tree_id = clean_tree_ids([new_tree_id, getattr(node, self.tree_id_attr)],
+        new_tree_id, current_tree_id = clean_tree_ids(new_tree_id, getattr(node, self.tree_id_attr),
                                                       root_ordering=root_ordering,
                                                       vendor=connection.vendor)
         params = [
@@ -956,7 +956,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                 'tree_id': qn(opts.get_field(self.tree_id_attr).column),
             }
 
-            cleaned_tree_id, cleaned_new_tree_id = clean_tree_ids([tree_id, new_tree_id],
+            cleaned_tree_id, cleaned_new_tree_id = clean_tree_ids(tree_id, new_tree_id,
                                                                   root_ordering=root_ordering,
                                                                   vendor=connection.vendor)
 
@@ -1219,8 +1219,8 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             'tree_id': qn(opts.get_field(self.tree_id_attr).column),
         }
 
-        cleaned_tree_id, cleaned_new_tree_id = clean_tree_ids([tree_id, new_tree_id],
-                                                              root_ordering=root_ordering, vendor=connection.vendor)
+        cleaned_tree_id, cleaned_new_tree_id = \
+            clean_tree_ids(tree_id, new_tree_id, root_ordering=root_ordering, vendor=connection.vendor)
 
         cursor = connection.cursor()
         cursor.execute(move_tree_query, [
