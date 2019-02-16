@@ -7,7 +7,6 @@ git:
 python:
   - "3.6"
   - "3.5"
-  - "3.4"
   - "2.7"
 
 env:
@@ -21,8 +20,6 @@ matrix:
       python: "2.7"
     - env: DJANGO="https://github.com/django/django/archive/master.tar.gz"
       python: "2.7"
-    - env: DJANGO="https://github.com/django/django/archive/master.tar.gz"
-      python: "3.4"
     - env: DJANGO="https://github.com/django/django/archive/master.tar.gz"
       python: "3.5"
   allow_failures:
