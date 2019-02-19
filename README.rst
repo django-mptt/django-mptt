@@ -48,7 +48,7 @@ structure and provides tools for working with trees of model instances.
 Requirements
 ------------
 
-* Python 2.7 or 3.5+
+* Python 3.5+
 * A supported version of Django (currently 1.11+)
 
 Feature overview

@@ -81,13 +81,13 @@
 >>> for i,s in tree_item_iterator(Genre.objects.all(), ancestors=True):
 ...     print((i, s['new_level'], s['ancestors'], list(s['closed_levels'])))
 (<Genre: Action>, True, [], [])
-(<Genre: Platformer>, True, [u'Action'], [])
-(<Genre: 2D Platformer>, True, [u'Action', u'Platformer'], [])
-(<Genre: 3D Platformer>, False, [u'Action', u'Platformer'], [])
-(<Genre: 4D Platformer>, False, [u'Action', u'Platformer'], [2, 1])
+(<Genre: Platformer>, True, ['Action'], [])
+(<Genre: 2D Platformer>, True, ['Action', 'Platformer'], [])
+(<Genre: 3D Platformer>, False, ['Action', 'Platformer'], [])
+(<Genre: 4D Platformer>, False, ['Action', 'Platformer'], [2, 1])
 (<Genre: Role-playing Game>, False, [], [])
-(<Genre: Action RPG>, True, [u'Role-playing Game'], [])
-(<Genre: Tactical RPG>, False, [u'Role-playing Game'], [1, 0])
+(<Genre: Action RPG>, True, ['Role-playing Game'], [])
+(<Genre: Tactical RPG>, False, ['Role-playing Game'], [1, 0])
 
 >>> for i,s in tree_item_iterator(Genre.objects.all(), ancestors=True, callback=lambda x: x):
 ...     print((i, s['new_level'], s['ancestors'], list(s['closed_levels'])))
@@ -102,15 +102,15 @@
 
 >>> action = Genre.objects.get(pk=action.pk)
 >>> [item.name for item in drilldown_tree_for_node(action)]
-[u'Action', u'Platformer']
+['Action', 'Platformer']
 
 >>> platformer = Genre.objects.get(pk=platformer.pk)
 >>> [item.name for item in drilldown_tree_for_node(platformer)]
-[u'Action', u'Platformer', u'2D Platformer', u'3D Platformer', u'4D Platformer']
+['Action', 'Platformer', '2D Platformer', '3D Platformer', '4D Platformer']
 
 >>> platformer_3d = Genre.objects.get(pk=platformer_3d.pk)
 >>> [item.name for item in drilldown_tree_for_node(platformer_3d)]
-[u'Action', u'Platformer', u'3D Platformer']
+['Action', 'Platformer', '3D Platformer']
 
 # TreeManager Methods #########################################################
 
@@ -125,7 +125,7 @@ Traceback (most recent call last):
 DoesNotExist: Genre matching query does not exist.
 
 >>> [g.name for g in Genre.objects.root_nodes()]
-[u'Action', u'Role-playing Game']
+['Action', 'Role-playing Game']
 
 >>> [g.parent for g in Genre.objects.only('parent')]
 [None, <Genre: Action>, <Genre: Platformer>, <Genre: Platformer>, <Genre: Platformer>, None, <Genre: Role-playing Game>, <Genre: Role-playing Game>]
@@ -137,19 +137,19 @@ DoesNotExist: Genre matching query does not exist.
 >>> [g.name for g in action.get_ancestors(ascending=True)]
 []
 >>> [g.name for g in action.get_children()]
-[u'Platformer']
+['Platformer']
 >>> [g.name for g in action.get_descendants()]
-[u'Platformer', u'2D Platformer', u'3D Platformer', u'4D Platformer']
+['Platformer', '2D Platformer', '3D Platformer', '4D Platformer']
 >>> [g.name for g in action.get_descendants(include_self=True)]
-[u'Action', u'Platformer', u'2D Platformer', u'3D Platformer', u'4D Platformer']
+['Action', 'Platformer', '2D Platformer', '3D Platformer', '4D Platformer']
 >>> [g.name for g in action.get_leafnodes()]
-[u'2D Platformer', u'3D Platformer', u'4D Platformer']
+['2D Platformer', '3D Platformer', '4D Platformer']
 >>> [g.name for g in action.get_leafnodes(include_self=False)]
-[u'2D Platformer', u'3D Platformer', u'4D Platformer']
+['2D Platformer', '3D Platformer', '4D Platformer']
 >>> [g.name for g in action.get_leafnodes(include_self=True)]
-[u'2D Platformer', u'3D Platformer', u'4D Platformer']
+['2D Platformer', '3D Platformer', '4D Platformer']
 >>> [g.name for g in platformer.get_family()]
-[u'Action', u'Platformer', u'2D Platformer', u'3D Platformer', u'4D Platformer']
+['Action', 'Platformer', '2D Platformer', '3D Platformer', '4D Platformer']
 >>> action.get_descendant_count()
 4
 >>> action.get_previous_sibling()
@@ -158,9 +158,9 @@ DoesNotExist: Genre matching query does not exist.
 >>> action.get_root()
 <Genre: Action>
 >>> [g.name for g in action.get_siblings()]
-[u'Role-playing Game']
+['Role-playing Game']
 >>> [g.name for g in action.get_siblings(include_self=True)]
-[u'Action', u'Role-playing Game']
+['Action', 'Role-playing Game']
 >>> action.is_root_node()
 True
 >>> action.is_child_node()
@@ -178,19 +178,19 @@ True
 
 >>> platformer = Genre.objects.get(pk=platformer.pk)
 >>> [g.name for g in platformer.get_ancestors()]
-[u'Action']
+['Action']
 >>> [g.name for g in platformer.get_ancestors(ascending=True)]
-[u'Action']
+['Action']
 >>> [g.name for g in platformer.get_children()]
-[u'2D Platformer', u'3D Platformer', u'4D Platformer']
+['2D Platformer', '3D Platformer', '4D Platformer']
 >>> [g.name for g in platformer.get_descendants()]
-[u'2D Platformer', u'3D Platformer', u'4D Platformer']
+['2D Platformer', '3D Platformer', '4D Platformer']
 >>> [g.name for g in platformer.get_descendants(include_self=True)]
-[u'Platformer', u'2D Platformer', u'3D Platformer', u'4D Platformer']
+['Platformer', '2D Platformer', '3D Platformer', '4D Platformer']
 >>> [g.name for g in platformer.get_leafnodes()]
-[u'2D Platformer', u'3D Platformer', u'4D Platformer']
+['2D Platformer', '3D Platformer', '4D Platformer']
 >>> [g.name for g in platformer.get_leafnodes(include_self=True)]
-[u'2D Platformer', u'3D Platformer', u'4D Platformer']
+['2D Platformer', '3D Platformer', '4D Platformer']
 >>> platformer.get_descendant_count()
 3
 >>> platformer.get_previous_sibling()
@@ -200,7 +200,7 @@ True
 >>> [g.name for g in platformer.get_siblings()]
 []
 >>> [g.name for g in platformer.get_siblings(include_self=True)]
-[u'Platformer']
+['Platformer']
 >>> platformer.is_root_node()
 False
 >>> platformer.is_child_node()
@@ -218,19 +218,19 @@ True
 
 >>> platformer_3d = Genre.objects.get(pk=platformer_3d.pk)
 >>> [g.name for g in platformer_3d.get_ancestors()]
-[u'Action', u'Platformer']
+['Action', 'Platformer']
 >>> [g.name for g in platformer_3d.get_ancestors(ascending=True)]
-[u'Platformer', u'Action']
+['Platformer', 'Action']
 >>> [g.name for g in platformer_3d.get_children()]
 []
 >>> [g.name for g in platformer_3d.get_descendants()]
 []
 >>> [g.name for g in platformer_3d.get_descendants(include_self=True)]
-[u'3D Platformer']
+['3D Platformer']
 >>> [g.name for g in platformer_3d.get_leafnodes()]
 []
 >>> [g.name for g in platformer_3d.get_leafnodes(include_self=True)]
-[u'3D Platformer']
+['3D Platformer']
 >>> platformer_3d.get_descendant_count()
 0
 >>> platformer_3d.get_previous_sibling()
@@ -240,9 +240,9 @@ True
 >>> platformer_3d.get_root()
 <Genre: Action>
 >>> [g.name for g in platformer_3d.get_siblings()]
-[u'2D Platformer', u'4D Platformer']
+['2D Platformer', '4D Platformer']
 >>> [g.name for g in platformer_3d.get_siblings(include_self=True)]
-[u'2D Platformer', u'3D Platformer', u'4D Platformer']
+['2D Platformer', '3D Platformer', '4D Platformer']
 >>> platformer_3d.is_root_node()
 False
 >>> platformer_3d.is_child_node()

@@ -1,8 +1,6 @@
 """
 Model fields for working with trees.
 """
-from __future__ import unicode_literals
-
 from django.db import models
 from django.conf import settings
 from mptt.forms import TreeNodeChoiceField, TreeNodeMultipleChoiceField

@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import io
 import os
 import re
@@ -14,7 +11,6 @@ from django.db.models.query_utils import DeferredAttribute
 from django.apps import apps
 from django.template import Template, TemplateSyntaxError, Context
 from django.test import RequestFactory, TestCase
-from django.utils.six import string_types, PY3, b, assertRaisesRegex
 from django.contrib.admin.views.main import ChangeList
 from django.contrib.admin import ModelAdmin, site
 from mptt.admin import TreeRelatedFieldListFilter
@@ -71,10 +67,10 @@ def tree_details(text):
 class TreeTestCase(TestCase):
 
     def assertTreeEqual(self, tree1, tree2):
-        if not isinstance(tree1, string_types):
+        if not isinstance(tree1, str):
             tree1 = get_tree_details(tree1)
         tree1 = tree_details(tree1)
-        if not isinstance(tree2, string_types):
+        if not isinstance(tree2, str):
             tree2 = get_tree_details(tree2)
         tree2 = tree_details(tree2)
         return self.assertEqual(tree1, tree2, "\n%r\n != \n%r" % (tree1, tree2))
@@ -83,6 +79,8 @@ class TreeTestCase(TestCase):
 class DocTestTestCase(TreeTestCase):
 
     def test_run_doctest(self):
+        import doctest
+
         class DummyStream:
             content = ""
             encoding = 'utf8'
@@ -97,33 +95,17 @@ class DocTestTestCase(TreeTestCase):
         before = sys.stdout
         sys.stdout = dummy_stream
 
-        with open(os.path.join(os.path.dirname(__file__), 'doctests.txt')) as f:
-            with tempfile.NamedTemporaryFile() as temp:
-                text = f.read()
-
-                if PY3:
-                    # unicode literals in the doctests screw up doctest on py3.
-                    # this is pretty icky, but I can't find any other
-                    # workarounds :(
-                    text = re.sub(r"""\bu(["\'])""", r"\1", text)
-                    temp.write(b(text))
-                else:
-                    temp.write(text)
-
-                temp.flush()
-
-                import doctest
-                doctest.testfile(
-                    temp.name,
-                    module_relative=False,
-                    optionflags=doctest.IGNORE_EXCEPTION_DETAIL | doctest.ELLIPSIS,
-                    encoding='utf-8',
-                )
-                sys.stdout = before
-                content = dummy_stream.content
-                if content:
-                    before.write(content + '\n')
-                    self.fail()
+        doctest.testfile(
+            os.path.join(os.path.dirname(__file__), 'doctests.txt'),
+            module_relative=False,
+            optionflags=doctest.IGNORE_EXCEPTION_DETAIL | doctest.ELLIPSIS,
+            encoding='utf-8',
+        )
+        sys.stdout = before
+        content = dummy_stream.content
+        if content:
+            before.write(content + '\n')
+            self.fail()
 
 # genres.json defines the following tree structure
 #
@@ -1573,29 +1555,21 @@ class TestAltersData(TreeTestCase):
 class TestDebugInfo(TreeTestCase):
     fixtures = ['categories.json']
 
-    def get_stream_type(self):
-        return io.StringIO if PY3 else io.BytesIO
-
-    def decode_stream(self, stream):
-        return stream if PY3 else stream.decode('utf-8')
-
-    def test_debug_info(self):  # Currently fails either on PY2 or PY3.
-        stream_type = self.get_stream_type()
-        with stream_type() as out:
+    def test_debug_info(self):
+        with io.StringIO() as out:
             print_debug_info(Category.objects.all(), file=out)
             output = out.getvalue()
 
-        self.assertIn('1,0,,1,1,20', self.decode_stream(output))
+        self.assertIn('1,0,,1,1,20', output)
 
     def test_debug_info_with_non_ascii_representations(self):
         Category.objects.create(name='El niño')
 
-        stream_type = self.get_stream_type()
-        with stream_type() as out:
+        with io.StringIO() as out:
             print_debug_info(Category.objects.all(), file=out)
             output = out.getvalue()
 
-        self.assertIn('El niño', self.decode_stream(output))
+        self.assertIn('El niño', output)
 
 
 class AdminBatch(TreeTestCase):
@@ -1657,8 +1631,7 @@ class TestUnsaved(TreeTestCase):
             'get_root',
             'get_siblings',
         ]:
-            assertRaisesRegex(
-                self,
+            self.assertRaisesRegex(
                 ValueError,
                 'Cannot call %s on unsaved Genre instances' % method,
                 getattr(Genre(), method))
@@ -2372,12 +2345,9 @@ class ModelMeta(TreeTestCase):
             # class does) could cause errors. Kind of... weird, but surprisingly
             # effective.
 
-            # Use str(__name__) as __module__ must be a 'str' type and not unicode
-            # on Python 2.7
-
             SomeModel = type(str('model_{0}'.format(idx)), (MPTTModel,), {
                 'Meta': Meta,
-                '__module__': str(__name__)
+                '__module__': __name__,
             })
 
             self.assertIn(('tree_id', 'lft'), SomeModel._meta.index_together)
