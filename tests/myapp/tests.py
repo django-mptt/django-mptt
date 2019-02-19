@@ -80,6 +80,8 @@ class TreeTestCase(TestCase):
 class DocTestTestCase(TreeTestCase):
 
     def test_run_doctest(self):
+        import doctest
+
         class DummyStream:
             content = ""
             encoding = 'utf8'
@@ -94,24 +96,17 @@ class DocTestTestCase(TreeTestCase):
         before = sys.stdout
         sys.stdout = dummy_stream
 
-        with open(os.path.join(os.path.dirname(__file__), 'doctests.txt')) as f:
-            with tempfile.NamedTemporaryFile() as temp:
-                text = f.read()
-                temp.write(text.encode("latin-1"))
-                temp.flush()
-
-                import doctest
-                doctest.testfile(
-                    temp.name,
-                    module_relative=False,
-                    optionflags=doctest.IGNORE_EXCEPTION_DETAIL | doctest.ELLIPSIS,
-                    encoding='utf-8',
-                )
-                sys.stdout = before
-                content = dummy_stream.content
-                if content:
-                    before.write(content + '\n')
-                    self.fail()
+        doctest.testfile(
+            os.path.join(os.path.dirname(__file__), 'doctests.txt'),
+            module_relative=False,
+            optionflags=doctest.IGNORE_EXCEPTION_DETAIL | doctest.ELLIPSIS,
+            encoding='utf-8',
+        )
+        sys.stdout = before
+        content = dummy_stream.content
+        if content:
+            before.write(content + '\n')
+            self.fail()
 
 # genres.json defines the following tree structure
 #
