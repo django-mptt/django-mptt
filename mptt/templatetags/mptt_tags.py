@@ -2,8 +2,6 @@
 Template tags for working with lists of model instances which represent
 trees.
 """
-from __future__ import unicode_literals
-
 from django import template
 from django.apps import apps
 from django.db.models.fields import FieldDoesNotExist

@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 from django.forms.models import modelform_factory
 
 from mptt.forms import (

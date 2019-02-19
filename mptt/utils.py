@@ -2,14 +2,11 @@
 Utilities for working with lists of model instances which represent
 trees.
 """
-from __future__ import unicode_literals
 import copy
 import csv
 import itertools
 import sys
 
-from django.utils.six import PY3, text_type
-from django.utils.six.moves import zip
 from django.utils.translation import ugettext as _
 
 __all__ = ('previous_current_next', 'tree_item_iterator',
@@ -36,7 +33,7 @@ def previous_current_next(items):
     return zip(prev, cur, nex)
 
 
-def tree_item_iterator(items, ancestors=False, callback=text_type):
+def tree_item_iterator(items, ancestors=False, callback=str):
     """
     Given a list of tree items, iterates over the list, generating
     two-tuples of the current tree item and a ``dict`` containing
@@ -179,13 +176,8 @@ def print_debug_info(qs, file=None):
         for field in header[:-1]:
             row.append(getattr(n, field))
 
-        row_text = '%s%s' % ('- ' * level, text_type(n))
-        # Python 3 expects CSV data to be unicode, Python 2 expects it to be
-        # encoded
-        if PY3:
-            row.append(row_text)
-        else:
-            row.append(row_text.encode('utf-8'))
+        row_text = '%s%s' % ('- ' * level, str(n))
+        row.append(row_text)
         writer.writerow(row)
 
 

@@ -1,7 +1,6 @@
 """
 Form components for working with trees.
 """
-from __future__ import unicode_literals
 from django import forms
 from django.forms.forms import NON_FIELD_ERRORS
 from django.utils.encoding import smart_text
@@ -20,7 +19,7 @@ __all__ = (
 # Fields ######################################################################
 
 
-class TreeNodeChoiceFieldMixin(object):
+class TreeNodeChoiceFieldMixin:
     def __init__(self, queryset, *args, **kwargs):
         self.level_indicator = kwargs.pop('level_indicator', DEFAULT_LEVEL_INDICATOR)
 
