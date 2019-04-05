@@ -1,6 +1,4 @@
-from __future__ import unicode_literals
 from django.db import models
-from django.utils.encoding import python_2_unicode_compatible
 from uuid import uuid4
 
 import mptt
@@ -22,7 +20,6 @@ class CustomTreeManager(TreeManager):
         return CustomTreeQueryset(model=self.model, using=self._db)
 
 
-@python_2_unicode_compatible
 class Category(MPTTModel):
     name = models.CharField(max_length=50)
     parent = TreeForeignKey(
@@ -49,7 +46,6 @@ class UnorderedCategory(MPTTModel):
     category_uuid = models.CharField(max_length=50, unique=True, null=True)
 
 
-@python_2_unicode_compatible
 class Item(models.Model):
 
     name = models.CharField(max_length=100)
@@ -64,7 +60,6 @@ class Item(models.Model):
         return self.name
 
 
-@python_2_unicode_compatible
 class Genre(MPTTModel):
     name = models.CharField(max_length=50, unique=True)
     parent = TreeForeignKey(
@@ -99,7 +94,6 @@ class Insert(MPTTModel):
         on_delete=models.CASCADE)
 
 
-@python_2_unicode_compatible
 class MultiOrder(MPTTModel):
     name = models.CharField(max_length=50)
     size = models.PositiveIntegerField()
@@ -140,7 +134,6 @@ class UUIDNode(MPTTModel):
         return self.name
 
 
-@python_2_unicode_compatible
 class OrderedInsertion(MPTTModel):
     name = models.CharField(max_length=50)
     parent = TreeForeignKey(
@@ -165,11 +158,10 @@ class NewStyleMPTTMeta(MPTTModel):
         'self', null=True, blank=True, related_name='children',
         on_delete=models.CASCADE)
 
-    class MPTTMeta(object):
+    class MPTTMeta:
         left_attr = 'testing'
 
 
-@python_2_unicode_compatible
 class Person(MPTTModel):
     name = models.CharField(max_length=50)
     parent = TreeForeignKey(
@@ -187,7 +179,6 @@ class Student(Person):
     type = models.CharField(max_length=50)
 
 
-@python_2_unicode_compatible
 class CustomPKName(MPTTModel):
     my_id = models.AutoField(db_column='my_custom_name', primary_key=True)
     name = models.CharField(max_length=50)

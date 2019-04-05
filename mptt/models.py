@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 from functools import reduce, wraps
 import operator
 import threading
@@ -9,7 +8,6 @@ from django.db.models.base import ModelBase
 from django.db.models.query import Q
 from django.db.models.query_utils import DeferredAttribute
 
-from django.utils import six
 from django.utils.translation import ugettext as _
 
 from mptt.compat import cached_field_value
@@ -25,7 +23,7 @@ __all__ = (
 )
 
 
-class _classproperty(object):
+class _classproperty:
     def __init__(self, getter, setter=None):
         self.fget = getter
         self.fset = setter
@@ -52,7 +50,7 @@ class classpropertytype(property):
 classproperty = classpropertytype('classproperty')
 
 
-class MPTTOptions(object):
+class MPTTOptions:
     """
     Options class for MPTT models. Use this as an inner class called ``MPTTMeta``::
 
@@ -89,7 +87,7 @@ class MPTTOptions(object):
             setattr(self, key, value)
 
         # Normalize order_insertion_by to a list
-        if isinstance(self.order_insertion_by, six.string_types):
+        if isinstance(self.order_insertion_by, str):
             self.order_insertion_by = [self.order_insertion_by]
         elif isinstance(self.order_insertion_by, tuple):
             self.order_insertion_by = list(self.order_insertion_by)
@@ -400,7 +398,7 @@ def raise_if_unsaved(func):
     return _fn
 
 
-class MPTTModel(six.with_metaclass(MPTTModelBase, models.Model)):
+class MPTTModel(models.Model, metaclass=MPTTModelBase):
     """
     Base class for tree models.
     """

@@ -1,7 +1,6 @@
 """
 A custom manager for working with trees of objects.
 """
-from __future__ import unicode_literals
 import functools
 import contextlib
 from itertools import groupby

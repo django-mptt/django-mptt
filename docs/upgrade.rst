@@ -6,12 +6,15 @@ Upgrade notes
 UNRELEASED
 ==========
 
-End of life Python 3.3 and Django 1.8 are no longer supported. These versions
-of Python and Django no longer receive security patches.
+End of life Python 3.4 is no longer supported.
+
+Support for Python 2.7, which will reach its end-of-life on January 1st 2020,
+has been removed.
 
 0.9.1
 =====
 
+Support for Python 3.3 has been removed.
 Support for Django 2.1 has been added, support for Django<1.11 is removed.
 Support for deprecated South has been removed.
 

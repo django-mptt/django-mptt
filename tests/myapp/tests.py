@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import io
 import os
 import re
@@ -14,10 +11,10 @@ from django.db.models.query_utils import DeferredAttribute
 from django.apps import apps
 from django.template import Template, TemplateSyntaxError, Context
 from django.test import RequestFactory, TestCase
-from django.utils.encoding import smart_text as _, smart_text
-from django.utils.six import string_types, PY3, b, assertRaisesRegex
 from django.contrib.admin.views.main import ChangeList
 from django.contrib.admin import ModelAdmin, site
+from django.utils.six import string_types
+
 from mptt.admin import TreeRelatedFieldListFilter
 
 try:
@@ -48,18 +45,18 @@ class ComparableTreeNode(object):
 
     def __init__(self, **fields):
         super(ComparableTreeNode, self).__init__()
-        self.pk = _(fields.get('pk', None))
-        self.parent_id = _(fields.get('parent_id', None))
-        self.tree_id = _(fields.get('tree_id', None))
-        self.level = _(fields.get('level', None))
-        self.left = _(fields.get('left', None))
-        self.right = _(fields.get('right', None))
+        self.pk = str(fields.get('pk', None))
+        self.parent_id = str(fields.get('parent_id', None))
+        self.tree_id = str(fields.get('tree_id', None))
+        self.level = str(fields.get('level', None))
+        self.left = str(fields.get('left', None))
+        self.right = str(fields.get('right', None))
 
     @staticmethod
     def get_tree_id(node, opts=None):
         if opts is None:
             opts = node._mptt_meta
-        tree_id = _(getattr(node, opts.tree_id_attr))
+        tree_id = str(getattr(node, opts.tree_id_attr))
         # only take the first 8 characters of a uuid
         if not opts.root_node_ordering:
             return tree_id[:8]
@@ -85,12 +82,12 @@ class ComparableTreeNode(object):
 
     def __str__(self):
         return '{} {} {} {} {} {}'.format(
-            self.pk.rjust(3),
-            self.parent_id.rjust(3),
-            self.tree_id.rjust(9),
-            self.level.rjust(3),
-            self.left.rjust(3),
-            self.right.rjust(3),
+            str(self.pk).rjust(3),
+            str(self.parent_id).rjust(3),
+            str(self.tree_id).rjust(9),
+            str(self.level).rjust(3),
+            str(self.left).rjust(3),
+            str(self.right).rjust(3),
         )
 
 
@@ -164,7 +161,7 @@ class ComparableTree(object):
         ln = lambda a: '-' * a
 
         HEADERS = ' id   p  tree_id   lvl  l   r'
-        NOT_PRESENT = _('{0} Not present {0}'.format(ln(8)))
+        NOT_PRESENT = '{0} Not present {0}'.format(ln(8))
 
         changes_display.append(sp(24) + 'FOUND' + sp(4) + '-->' + sp(3) + ' EXPECTED\n')
         changes_display.append(ln(70) + '\n')
@@ -172,9 +169,9 @@ class ComparableTree(object):
         changes_display.append(ln(70) + '\n')
 
         for id in changed_ids:
-            changes_display.append(_(self.nodes[id]) if id in self.nodes else NOT_PRESENT)
+            changes_display.append(str(self.nodes[id]) if id in self.nodes else NOT_PRESENT)
             changes_display.append('    -->  ')
-            changes_display.append(_(o.nodes[id]) if id in o.nodes else NOT_PRESENT)
+            changes_display.append(str(o.nodes[id]) if id in o.nodes else NOT_PRESENT)
             changes_display.append('\n')
 
         return 'Some nodes are not equivalent...\n{}'.format(''.join(changes_display))
@@ -207,6 +204,8 @@ class TreeTestCase(TestCase):
 class DocTestTestCase(TreeTestCase):
 
     def test_run_doctest(self):
+        import doctest
+
         class DummyStream:
             content = ""
             encoding = 'utf8'
@@ -221,33 +220,17 @@ class DocTestTestCase(TreeTestCase):
         before = sys.stdout
         sys.stdout = dummy_stream
 
-        with open(os.path.join(os.path.dirname(__file__), 'doctests.txt')) as f:
-            with tempfile.NamedTemporaryFile() as temp:
-                text = f.read()
-
-                if PY3:
-                    # unicode literals in the doctests screw up doctest on py3.
-                    # this is pretty icky, but I can't find any other
-                    # workarounds :(
-                    text = re.sub(r"""\bu(["\'])""", r"\1", text)
-                    temp.write(b(text))
-                else:
-                    temp.write(text)
-
-                temp.flush()
-
-                import doctest
-                doctest.testfile(
-                    temp.name,
-                    module_relative=False,
-                    optionflags=doctest.IGNORE_EXCEPTION_DETAIL | doctest.ELLIPSIS,
-                    encoding='utf-8',
-                )
-                sys.stdout = before
-                content = dummy_stream.content
-                if content:
-                    before.write(content + '\n')
-                    self.fail()
+        doctest.testfile(
+            os.path.join(os.path.dirname(__file__), 'doctests.txt'),
+            module_relative=False,
+            optionflags=doctest.IGNORE_EXCEPTION_DETAIL | doctest.ELLIPSIS,
+            encoding='utf-8',
+        )
+        sys.stdout = before
+        content = dummy_stream.content
+        if content:
+            before.write(content + '\n')
+            self.fail()
 
 
 # genres.json defines the following tree structure
@@ -311,7 +294,7 @@ class ReparentingTestCase(TreeTestCase):
         shmup = UnorderedGenre.objects.get(id=6)
         shmup.parent = None
         shmup.save()
-        tree_id = _(shmup.tree_id)[:8]
+        tree_id = str(shmup.tree_id)[:8]
         self.assertTreeEqual([shmup], '6 - {} 0 1 6'.format(tree_id))
         self.assertTreeEqual(UnorderedGenre.objects.all(), """
              1  -  11111111  0  1 10
@@ -350,7 +333,7 @@ class ReparentingTestCase(TreeTestCase):
         platformer_2d = UnorderedGenre.objects.get(id=3)
         platformer_2d.parent = None
         platformer_2d.save()
-        tree_id = _(platformer_2d.tree_id)[:8]
+        tree_id = str(platformer_2d.tree_id)[:8]
         self.assertTreeEqual([platformer_2d], '3 - {} 0 1 2'.format(tree_id))
         self.assertTreeEqual(UnorderedGenre.objects.all(), """
             1  -  11111111  0  1 14
@@ -676,8 +659,8 @@ class DeletionTestCase(TreeTestCase):
         UnorderedCategory(name=first).insert_at(UnorderedCategory.objects.get(id=1), 'left', save=True)
         UnorderedCategory(name=second).insert_at(UnorderedCategory.objects.get(id=1), 'right', save=True)
 
-        tree_1 = _(UnorderedCategory.objects.get(name=first).tree_id)[:8]
-        tree_2 = _(UnorderedCategory.objects.get(name=second).tree_id)[:8]
+        tree_1 = str(UnorderedCategory.objects.get(name=first).tree_id)[:8]
+        tree_2 = str(UnorderedCategory.objects.get(name=second).tree_id)[:8]
 
         self.assertTreeEqual(UnorderedCategory.objects.all(), """
             11  -  {tree_1}  0  1  2
@@ -1874,29 +1857,21 @@ class TestAltersData(TreeTestCase):
 class TestDebugInfo(TreeTestCase):
     fixtures = ['categories.json']
 
-    def get_stream_type(self):
-        return io.StringIO if PY3 else io.BytesIO
-
-    def decode_stream(self, stream):
-        return stream if PY3 else stream.decode('utf-8')
-
-    def test_debug_info(self):  # Currently fails either on PY2 or PY3.
-        stream_type = self.get_stream_type()
-        with stream_type() as out:
+    def test_debug_info(self):
+        with io.StringIO() as out:
             print_debug_info(Category.objects.all(), file=out)
             output = out.getvalue()
 
-        self.assertIn('1,0,,1,1,20', self.decode_stream(output))
+        self.assertIn('1,0,,1,1,20', output)
 
     def test_debug_info_with_non_ascii_representations(self):
         Category.objects.create(name='El niño')
 
-        stream_type = self.get_stream_type()
-        with stream_type() as out:
+        with io.StringIO() as out:
             print_debug_info(Category.objects.all(), file=out)
             output = out.getvalue()
 
-        self.assertIn('El niño', self.decode_stream(output))
+        self.assertIn('El niño', output)
 
 
 class AdminBatch(TreeTestCase):
@@ -1958,8 +1933,7 @@ class TestUnsaved(TreeTestCase):
             'get_root',
             'get_siblings',
         ]:
-            assertRaisesRegex(
-                self,
+            self.assertRaisesRegex(
                 ValueError,
                 'Cannot call %s on unsaved Genre instances' % method,
                 getattr(Genre(), method))
@@ -2673,12 +2647,9 @@ class ModelMeta(TreeTestCase):
             # class does) could cause errors. Kind of... weird, but surprisingly
             # effective.
 
-            # Use str(__name__) as __module__ must be a 'str' type and not unicode
-            # on Python 2.7
-
             SomeModel = type(str('model_{0}'.format(idx)), (MPTTModel,), {
                 'Meta': Meta,
-                '__module__': str(__name__)
+                '__module__': __name__,
             })
 
             self.assertIn(('tree_id', 'lft'), SomeModel._meta.index_together)
@@ -2715,7 +2686,7 @@ class TestUtils(TestCase):
         uuid2 = uuid.uuid4()
         uuid3 = uuid.uuid4()
 
-        _ = lambda s: smart_text(s).replace('-', '')
+        _ = lambda s: str(s).replace('-', '')
 
         self.assertEqual(clean_tree_ids(uuid1, vendor='postgresql'), uuid1)
         self.assertEqual(clean_tree_ids(uuid1, vendor='mysql'), _(uuid1))
