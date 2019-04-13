@@ -673,6 +673,79 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
 
         self._rebuild_helper(pks[0], 1, tree_id)
 
+    @delegate_manager
+    def build_tree_nodes(self, data, target=None, position='last-child'):
+        """
+        Load a tree from a nested dictionary for bulk insert, returning an
+        array of records. Use to efficiently insert many nodes within a tree
+        without an expensive `rebuild`.
+
+        ::
+
+            records = MyModel.objects.build_tree_nodes({
+                'id': 7,
+                'name': 'parent',
+                'children': [
+                    {
+                        'id': 8,
+                        'parent_id': 7,
+                        'name': 'child',
+                        'children': [
+                            {
+                                'id': 9,
+                                'parent_id': 8,
+                                'name': 'grandchild',
+                            }
+                        ]
+                    }
+                ]
+            })
+            MyModel.objects.bulk_create(records)
+
+        """
+        opts = self.model._mptt_meta
+        if target:
+            tree_id = target.tree_id
+            if position in ('left', 'right'):
+                level = getattr(target, opts.level_attr)
+                if position == 'left':
+                    cursor = getattr(target, opts.left_attr)
+                else:
+                    cursor = getattr(target, opts.right_attr) + 1
+            else:
+                level = getattr(target, opts.level_attr) + 1
+                if position == 'first-child':
+                    cursor = getattr(target, opts.left_attr) + 1
+                else:
+                    cursor = getattr(target, opts.right_attr)
+        else:
+            tree_id = self._get_next_tree_id()
+            cursor = 1
+            level = 0
+
+        stack = []
+
+        def treeify(data, cursor=1, level=0):
+            data = dict(data)
+            children = data.pop('children', [])
+            node = self.model(**data)
+            stack.append(node)
+            setattr(node, opts.tree_id_attr, tree_id)
+            setattr(node, opts.level_attr, level)
+            setattr(node, opts.left_attr, cursor)
+            for child in children:
+                cursor = treeify(child, cursor=cursor + 1, level=level + 1)
+            cursor += 1
+            setattr(node, opts.right_attr, cursor)
+            return cursor
+
+        treeify(data, cursor=cursor, level=level)
+
+        if target:
+            self._create_space(2 * len(stack), cursor - 1, tree_id)
+
+        return stack
+
     def _rebuild_helper(self, pk, left, tree_id, level=0):
         opts = self.model._mptt_meta
         right = left + 1
