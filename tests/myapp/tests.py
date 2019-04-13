@@ -939,8 +939,39 @@ class DelayedUpdatesTestCase(TreeTestCase):
         """)
 
 
-class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
+class OrderedInsertionSortingTestCase(TestCase):
+    def test_insert_unordered_stuff(self):
+        root = OrderedInsertion.objects.create(name="")
 
+        # "b" gets inserted first,
+        b = OrderedInsertion.objects.create(name="b", parent=root)
+
+        # "a" gets inserted later,
+        a = OrderedInsertion.objects.create(name="a", parent=root)
+        # ... but specifying OrderedInsertion.MPTTMeta.order_insertion_by
+        # tells django-mptt to order added items by the name. So basically
+        # instance "a", added later, will get the first place in the
+        # tree. So what's exactly seems to be the problem?
+        #
+        # The problem is, item "b" will not get refreshed in any
+        # way. We need to reload it manually or else there will be problems
+        # like the one demonstrated below:
+
+        self.assertIn(a, a.get_ancestors(include_self=True))
+
+        # This will raise an AssertionError, unless we reload the item from
+        # the database. As long as we won't come up with a sensible way
+        # of reloading all Django instances pointing to a given row in the
+        # database...
+        #   self.assertIn(b, b.get_ancestors(include_self=True)))
+        self.assertRaises(AssertionError, self.assertIn, b, b.get_ancestors(include_self=True))
+
+        # ... we need to reload it properly ourselves:
+        b.refresh_from_db()
+        self.assertIn(b, b.get_ancestors(include_self=True))
+
+
+class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
     def setUp(self):
         self.c = OrderedInsertion.objects.create(name="c")
         self.d = OrderedInsertion.objects.create(name="d", parent=self.c)
