@@ -1,4 +1,4 @@
-__version__ = "0.9.1"
+__version__ = "0.10.0"
 VERSION = tuple(__version__.split("."))
 
 default_app_config = "mptt.apps.MpttConfig"
