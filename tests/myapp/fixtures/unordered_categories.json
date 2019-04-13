@@ -1,0 +1,132 @@
+[
+  {
+    "pk": 1,
+    "model": "myapp.unorderedcategory",
+    "fields": {
+      "rght": 20,
+      "name": "PC & Video Games",
+      "category_uuid": "6263ac21-f08b-4b44-9462-0489c56e0d3d",
+      "parent": null,
+      "level": 0,
+      "lft": 1,
+      "tree_id": "11111111-1111-1111-1111-111111111111"
+    }
+  },
+  {
+    "pk": 2,
+    "model": "myapp.unorderedcategory",
+    "fields": {
+      "rght": 7,
+      "name": "Nintendo Wii",
+      "category_uuid": "c6125cec-ef08-4095-9a07-fd5c6db50cc1",
+      "parent": 1,
+      "level": 1,
+      "lft": 2,
+      "tree_id": "11111111-1111-1111-1111-111111111111"
+    }
+  },
+  {
+    "pk": 3,
+    "model": "myapp.unorderedcategory",
+    "fields": {
+      "rght": 4,
+      "name": "Games",
+      "category_uuid": "85da870c-837a-48a5-a3e8-ab651cfdd799",
+      "parent": 2,
+      "level": 2,
+      "lft": 3,
+      "tree_id": "11111111-1111-1111-1111-111111111111"
+    }
+  },
+  {
+    "pk": 4,
+    "model": "myapp.unorderedcategory",
+    "fields": {
+      "rght": 6,
+      "name": "Hardware & Accessories",
+      "category_uuid": "840d1ccb-9ecc-48b0-bf7c-5b0f08334d3d",
+      "parent": 2,
+      "level": 2,
+      "lft": 5,
+      "tree_id": "11111111-1111-1111-1111-111111111111"
+    }
+  },
+  {
+    "pk": 5,
+    "model": "myapp.unorderedcategory",
+    "fields": {
+      "rght": 13,
+      "name": "Xbox 360",
+      "category_uuid": "b6299e26-d5e9-4dc2-9e2a-3f8033c8dfe5",
+      "parent": 1,
+      "level": 1,
+      "lft": 8,
+      "tree_id": "11111111-1111-1111-1111-111111111111"
+    }
+  },
+  {
+    "pk": 6,
+    "model": "myapp.unorderedcategory",
+    "fields": {
+      "rght": 10,
+      "name": "Games",
+      "category_uuid": "8171b0ec-f6e6-46dc-aabc-46a6399d9290",
+      "parent": 5,
+      "level": 2,
+      "lft": 9,
+      "tree_id": "11111111-1111-1111-1111-111111111111"
+    }
+  },
+  {
+    "pk": 7,
+    "model": "myapp.unorderedcategory",
+    "fields": {
+      "rght": 12,
+      "name": "Hardware & Accessories",
+      "category_uuid": "a64720cb-af69-440a-9abc-5a8f095974e4",
+      "parent": 5,
+      "level": 2,
+      "lft": 11,
+      "tree_id": "11111111-1111-1111-1111-111111111111"
+    }
+  },
+  {
+    "pk": 8,
+    "model": "myapp.unorderedcategory",
+    "fields": {
+      "rght": 19,
+      "name": "PlayStation 3",
+      "category_uuid": "01cac717-454e-48bd-8180-8a0089613bbd",
+      "parent": 1,
+      "level": 1,
+      "lft": 14,
+      "tree_id": "11111111-1111-1111-1111-111111111111"
+    }
+  },
+  {
+    "pk": 9,
+    "model": "myapp.unorderedcategory",
+    "fields": {
+      "rght": 16,
+      "name": "Games",
+      "category_uuid": "74f9c250-6e75-4152-bbc9-f7a89969c82b",
+      "parent": 8,
+      "level": 2,
+      "lft": 15,
+      "tree_id": "11111111-1111-1111-1111-111111111111"
+    }
+  },
+  {
+    "pk": 10,
+    "model": "myapp.unorderedcategory",
+    "fields": {
+      "rght": 18,
+      "name": "Hardware & Accessories",
+      "category_uuid": "a4918038-4d03-48ca-8cc3-1c28e177bed5",
+      "parent": 8,
+      "level": 2,
+      "lft": 17,
+      "tree_id": "11111111-1111-1111-1111-111111111111"
+    }
+  }
+]

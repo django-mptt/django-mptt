@@ -12,9 +12,8 @@ from django.utils.translation import ugettext as _
 from mptt.compat import cached_field_value
 from mptt.exceptions import CantDisableUpdates, InvalidMove
 from mptt.querysets import TreeQuerySet
-from mptt.utils import _get_tree_model
 from mptt.signals import node_moved
-
+from mptt.utils import _get_tree_model, clean_tree_ids
 
 __all__ = ('TreeManager',)
 
@@ -517,6 +516,8 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         set the node's parent and let mptt call this during save.
         """
 
+        root_node_ordering = self.model._mptt_meta.root_node_ordering
+
         if node.pk and not allow_existing_pk and self.filter(pk=node.pk).exists():
             raise ValueError(_('Cannot insert a node which has already been saved.'))
 
@@ -535,11 +536,12 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             target_tree_id = getattr(target, self.tree_id_attr)
             if position == 'left':
                 tree_id = target_tree_id
-                space_target = target_tree_id - 1
+                space_target = target_tree_id - 1 if root_node_ordering else self._get_next_tree_id()
             else:
-                tree_id = target_tree_id + 1
+                tree_id = target_tree_id + 1 if root_node_ordering else self._get_next_tree_id()
                 space_target = target_tree_id
-            self._create_tree_space(space_target)
+            if root_node_ordering:
+                self._create_tree_space(space_target)
 
             setattr(node, self.left_attr, 1)
             setattr(node, self.right_attr, 2)
@@ -770,9 +772,13 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
 
     def _get_next_tree_id(self):
         """
-        Determines the next largest unused tree id for the tree managed
-        by this manager.
+        Determines the next largest unused tree id for the tree managed by this manager, unless root_node_ordering is
+        disabled.  If root_node_ordering is disabled a new default value will be generated for the field (by default
+        this will be a new UUID).
         """
+        if not self.model._mptt_meta.root_node_ordering:
+            return self.model._meta.get_field(self.tree_id_attr).default()
+
         max_tree_id = list(self.aggregate(Max(self.tree_id_attr)).values())[0]
         max_tree_id = max_tree_id or 0
         return max_tree_id + 1
@@ -789,6 +795,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         qn = connection.ops.quote_name
 
         opts = self.model._meta
+        root_ordering = self.model._mptt_meta.root_node_ordering
         inter_tree_move_query = """
         UPDATE %(table)s
         SET %(level)s = CASE
@@ -823,6 +830,9 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         right = getattr(node, self.right_attr)
         gap_size = right - left + 1
         gap_target_left = left - 1
+        new_tree_id, current_tree_id = clean_tree_ids(new_tree_id, getattr(node, self.tree_id_attr),
+                                                      root_ordering=root_ordering,
+                                                      vendor=connection.vendor)
         params = [
             left, right, level_change,
             left, right, new_tree_id,
@@ -830,7 +840,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             gap_target_left, gap_size,
             left, right, left_right_change,
             gap_target_left, gap_size,
-            getattr(node, self.tree_id_attr)
+            current_tree_id
         ]
 
         cursor = connection.cursor()
@@ -882,6 +892,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             raise InvalidMove(_('A node may not be made a sibling of itself.'))
 
         opts = self.model._meta
+        root_ordering = self.model._mptt_meta.root_node_ordering
         tree_id = getattr(node, self.tree_id_attr)
         target_tree_id = getattr(target, self.tree_id_attr)
 
@@ -945,8 +956,12 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                 'tree_id': qn(opts.get_field(self.tree_id_attr).column),
             }
 
+            cleaned_tree_id, cleaned_new_tree_id = clean_tree_ids(tree_id, new_tree_id,
+                                                                  root_ordering=root_ordering,
+                                                                  vendor=connection.vendor)
+
             cursor = connection.cursor()
-            cursor.execute(root_sibling_query, [tree_id, new_tree_id, shift,
+            cursor.execute(root_sibling_query, [cleaned_tree_id, cleaned_new_tree_id, shift,
                                                 lower_bound, upper_bound])
             setattr(node, self.tree_id_attr, new_tree_id)
 
@@ -963,6 +978,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             qn = connection.ops.quote_name
 
             opts = self.model._meta
+            root_ordering = self.model._mptt_meta.root_node_ordering
             space_query = """
             UPDATE %(table)s
             SET %(left)s = CASE
@@ -981,7 +997,8 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                 'tree_id': qn(opts.get_field(self.tree_id_attr).column),
             }
             cursor = connection.cursor()
-            cursor.execute(space_query, [target, size, target, size, tree_id,
+            cursor.execute(space_query, [target, size, target, size,
+                                         clean_tree_ids(tree_id, root_ordering=root_ordering, vendor=connection.vendor),
                                          target, target])
 
     def _move_child_node(self, node, target, position):
@@ -1106,6 +1123,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         qn = connection.ops.quote_name
 
         opts = self.model._meta
+        root_ordering = self.model._mptt_meta.root_node_ordering
         # The level update must come before the left update to keep
         # MySQL happy - left seems to refer to the updated value
         # immediately after its update has been specified in the query
@@ -1143,7 +1161,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             left_boundary, right_boundary, gap_size,
             left, right, left_right_change,
             left_boundary, right_boundary, gap_size,
-            tree_id])
+            clean_tree_ids(tree_id, root_ordering=root_ordering, vendor=connection.vendor)])
 
         # Update the node to be consistent with the updated
         # tree in the database.
@@ -1185,6 +1203,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         qn = connection.ops.quote_name
 
         opts = self.model._meta
+        root_ordering = self.model._mptt_meta.root_node_ordering
         move_tree_query = """
         UPDATE %(table)s
         SET %(level)s = %(level)s - %%s,
@@ -1200,11 +1219,14 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             'tree_id': qn(opts.get_field(self.tree_id_attr).column),
         }
 
+        cleaned_tree_id, cleaned_new_tree_id = \
+            clean_tree_ids(tree_id, new_tree_id, root_ordering=root_ordering, vendor=connection.vendor)
+
         cursor = connection.cursor()
         cursor.execute(move_tree_query, [
             level_change, left_right_change, left_right_change,
-            new_tree_id,
-            left, right, tree_id])
+            cleaned_new_tree_id,
+            left, right, cleaned_tree_id])
 
         # Update the former root node to be consistent with the updated
         # tree in the database.

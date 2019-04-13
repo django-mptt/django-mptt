@@ -197,6 +197,43 @@ def _get_tree_model(model_class):
     return None
 
 
+def clean_tree_ids(*tree_ids, **kwargs):
+    """
+    Cleans tree ids that are UUIDFields.  PostgreSQL uses a `uuid` column type that has dashes stored in it, all the
+    other backends use a string representation with the dashes stripped out.  This method simply abstracts away that
+    logic.
+
+    Args:
+        *tree_ids: tree_ids you wish to clean
+        **kwargs:
+            root_ordering: be a boolean specifying whether root node ordering is enabled, default is False.  If True,
+                this method will simply return the tree_ids as they were sent in.
+            vendor: string value representing the database vendor in use (ex 'postgresql' or 'mysql').  use django's
+                Connection.vendor as it will provide the vendor name safely.
+
+    Returns:
+        The cleaned tree_ids in tuple form if multiple ids were passed in, otherwise the singular cleaned tree id.
+    """
+    root_ordering = kwargs.get('root_ordering', False)
+    vendor = kwargs.get('vendor')
+
+    if root_ordering:
+        return tree_ids if len(tree_ids) > 1 else tree_ids[0]
+
+    def _clean_tree_id(tree_id, vendor):
+        return str(tree_id).replace('-', '') if vendor != 'postgresql' else tree_id
+
+    results = tuple()
+    for tree_id in tree_ids:
+        cleaned_tree_id = _clean_tree_id(tree_id, vendor)
+        if not results:
+            results = cleaned_tree_id
+        elif isinstance(results, tuple):
+            results += (cleaned_tree_id,)
+        else:
+            results = (results, cleaned_tree_id)
+    return results
+
 def get_cached_trees(queryset):
     """
     Takes a list/queryset of model objects in MPTT left (depth-first) order and
