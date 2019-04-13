@@ -1798,6 +1798,17 @@ class CacheChildrenTestCase(TreeTestCase):
                     for child2 in child.get_children():
                         self.assertIsInstance(child2, Genre)
 
+    def test_hide_nodes(self):
+        """
+        Test that caching a tree with missing nodes works
+        """
+        root = Category.objects.create(name='Root', visible=False)
+        child = Category.objects.create(name='Child', parent=root)
+        root2 = Category.objects.create(name='Root2')
+
+        list(Category.objects.all().get_cached_trees()) == [root, child, root2]
+        list(Category.objects.filter(visible=True).get_cached_trees()) == [child, root2]
+
 
 @unittest.skipUnless(mock_signal_receiver, "Signals tests require mock_django installed")
 class Signals(TestCase):
