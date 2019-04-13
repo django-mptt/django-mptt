@@ -85,7 +85,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             self.tree_model = _get_tree_model(model)
 
             self._base_manager = None
-            if self.tree_model is not model:
+            if self.tree_model and self.tree_model is not model:
                 # _base_manager is the treemanager on tree_model
                 self._base_manager = self.tree_model._tree_manager
 
