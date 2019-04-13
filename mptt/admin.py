@@ -323,14 +323,14 @@ class TreeRelatedFieldListFilter(RelatedFieldListFilter):
         # #### MPTT ADDITION END
         yield {
             'selected': self.lookup_val is None and not self.lookup_val_isnull,
-            'query_string': cl.get_query_string({}, [self.lookup_kwarg, self.lookup_kwarg_isnull]),
+            'query_string': cl.get_query_string({}, [self.changed_lookup_kwarg, self.lookup_kwarg_isnull]),
             'display': _('All'),
         }
         for pk_val, val, padding_style in self.lookup_choices:
             yield {
                 'selected': self.lookup_val == smart_text(pk_val),
                 'query_string': cl.get_query_string({
-                    self.lookup_kwarg: pk_val,
+                    self.changed_lookup_kwarg: pk_val,
                 }, [self.lookup_kwarg_isnull]),
                 'display': val,
                 # #### MPTT ADDITION START
@@ -345,6 +345,6 @@ class TreeRelatedFieldListFilter(RelatedFieldListFilter):
                 'selected': bool(self.lookup_val_isnull),
                 'query_string': cl.get_query_string({
                     self.lookup_kwarg_isnull: 'True',
-                }, [self.lookup_kwarg]),
+                }, [self.changed_lookup_kwarg]),
                 'display': EMPTY_CHANGELIST_VALUE,
             }
