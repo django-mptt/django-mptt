@@ -154,6 +154,8 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
                     'all': ['mptt/draggable-admin.css'],
                 },
                 js=[
+                    'admin/js/vendor/jquery/jquery.js',
+                    'admin/js/jquery.init.js',
                     JS('mptt/draggable-admin.js', {
                         'id': 'draggable-admin-context',
                         'data-context': json.dumps(
