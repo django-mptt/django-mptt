@@ -1518,8 +1518,10 @@ class DrilldownTreeTestCase(TreeTestCase):
         {% endfor %}
         ''')
 
-    def render_for_node(self, pk, cumulative=False, m2m=False):
+    def render_for_node(self, pk, cumulative=False, m2m=False, all_descendants=False):
         template = self.template
+        if all_descendants:
+            template = template.replace(' count myapp.Game.genre in game_count ', ' all_descendants ')
         if cumulative:
             template = template.replace(' count ', ' cumulative count ')
         if m2m:
@@ -1562,6 +1564,13 @@ class DrilldownTreeTestCase(TreeTestCase):
         self.assertEqual(
             self.render_for_node(2, cumulative=True, m2m=True),
             '1:,[2:],3:2,4:3,5:4')
+
+        self.assertEqual(
+            self.render_for_node(1, all_descendants=True),
+            '[1:],2:,3:,4:,5:,6:,7:,8:')
+        self.assertEqual(
+            self.render_for_node(2, all_descendants=True),
+            '1:,[2:],3:,4:,5:')
 
 
 class TestAutoNowDateFieldModel(TreeTestCase):

@@ -62,7 +62,7 @@ It creates an iterable which yields model instances representing a
 drilldown tree for a given node.
 
 A drilldown tree consists of a node's ancestors, itself and its
-immediate children, all in tree order.
+immediate children or all descendants, all in tree order.
 
 Optional arguments may be given to specify details of a relationship
 between the given node's class and another model class, for the
