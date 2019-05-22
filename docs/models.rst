@@ -380,7 +380,7 @@ Rebuilds the mptt fields for the entire table. This can be handy:
 It is recommended to rebuild the tree inside a ``transaction.atomic()`` block
 for safety and better performance.
 
-``add_related_count(queryset, rel_cls, rel_field, count_attr, cumulative=False)``
+``add_related_count(queryset, rel_cls, rel_field, count_attr, cumulative=False, extra_filters={})``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Adds a related item count to a given ``QuerySet`` using its
@@ -401,6 +401,9 @@ model.
 ``cumulative``
    If ``True``, the count will be for each item and all of its
    descendants, otherwise it will be for each item itself.
+
+``extra_filters``
+   Dict with aditional parameters filtering the related queryset.
 
 
 Example usage in the admin
