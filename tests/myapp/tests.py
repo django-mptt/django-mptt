@@ -1751,6 +1751,46 @@ class TreeManagerTestCase(TreeTestCase):
                 queryset, Item, 'category_pk', 'item_count', cumulative=False):
             self.assertEqual(c.item_count, c.items_by_pk.count())
 
+    def test_add_related_count_with_extra_filters(self):
+        """ Test that filtering by extra_filters works """
+        queryset = Category.objects.all()
+
+        # Test using FK that doesn't point to a primary key
+        for c in Category.objects.add_related_count(
+                queryset, Item, 'category_fk', 'item_count', cumulative=False,
+                extra_filters={"name": "Halo: Reach"}):
+            if c.pk == 5:
+                self.assertEqual(c.item_count, 1)
+            else:
+                self.assertEqual(c.item_count, 0)
+
+        # Also works when using the FK that *does* point to a primary key
+        for c in Category.objects.add_related_count(
+                queryset, Item, 'category_pk', 'item_count', cumulative=False,
+                extra_filters={"name": "Halo: Reach"}):
+            if c.pk == 5:
+                self.assertEqual(c.item_count, 1)
+            else:
+                self.assertEqual(c.item_count, 0)
+
+        # Test using FK that doesn't point to a primary key
+        for c in Category.objects.add_related_count(
+                queryset, Item, 'category_fk', 'item_count', cumulative=True,
+                extra_filters={"name": "Halo: Reach"}):
+            if c.pk in (5, 1):
+                self.assertEqual(c.item_count, 1)
+            else:
+                self.assertEqual(c.item_count, 0)
+
+        # Also works when using the FK that *does* point to a primary key
+        for c in Category.objects.add_related_count(
+                queryset, Item, 'category_pk', 'item_count', cumulative=True,
+                extra_filters={"name": "Halo: Reach"}):
+            if c.pk in (5, 1):
+                self.assertEqual(c.item_count, 1)
+            else:
+                self.assertEqual(c.item_count, 0)
+
 
 class TestOrderedInsertionBFS(TreeTestCase):
 

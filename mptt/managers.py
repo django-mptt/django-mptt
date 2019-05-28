@@ -426,13 +426,11 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                 rel_field + '__lft__gte': OuterRef(self.left_attr),
                 rel_field + '__lft__lte': OuterRef(self.right_attr),
             }
-            subquery = rel_model.objects.filter(**subquery_filters, **extra_filters).values('pk')
         else:
             subquery_filters = {
                 rel_field: OuterRef(field_name),
             }
-        subquery_filters.update(extra_filters)
-        subquery = rel_model.objects.filter(**subquery_filters).values('pk')
+        subquery = rel_model.objects.filter(**subquery_filters, **extra_filters).values('pk')
         return queryset.annotate(**{count_attr: SQCount(subquery)})
 
     @delegate_manager
