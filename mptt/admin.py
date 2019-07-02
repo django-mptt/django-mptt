@@ -41,6 +41,8 @@ class MPTTModelAdmin(ModelAdmin):
 
     form = MPTTAdminForm
 
+    mptt_change_list_sort = False  # enable sorting by column
+
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if issubclass(db_field.remote_field.model, MPTTModel) \
                 and not isinstance(db_field, TreeForeignKey) \
@@ -98,6 +100,11 @@ class MPTTModelAdmin(ModelAdmin):
                 'delete_selected',
                 _('Delete selected %(verbose_name_plural)s'))
         return actions
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or dict()
+        extra_context['mptt_change_list_sort'] = self.mptt_change_list_sort
+        return super().changelist_view(request, extra_context=extra_context)
 
 
 class DraggableMPTTAdmin(MPTTModelAdmin):

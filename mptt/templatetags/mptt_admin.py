@@ -191,14 +191,15 @@ def mptt_results(cl):
             yield list(mptt_items_for_result(cl, res, None))
 
 
-def mptt_result_list(cl):
+def mptt_result_list(cl, mptt_change_list_sort=False):
     """
     Displays the headers and data list together
     """
     return {'cl': cl,
             'result_hidden_fields': list(result_hidden_fields(cl)),
             'result_headers': list(result_headers(cl)),
-            'results': list(mptt_results(cl))}
+            'results': list(mptt_results(cl)),
+            'mptt_change_list_sort': mptt_change_list_sort}
 
 
 # custom template is merely so we can strip out sortable-ness from the column headers
