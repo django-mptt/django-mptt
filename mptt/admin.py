@@ -4,6 +4,7 @@ from django import forms, http
 from django.conf import settings
 from django.contrib.admin.actions import delete_selected
 from django.contrib.admin.options import ModelAdmin
+from django.contrib import messages
 from django.db import IntegrityError, transaction
 from django.utils.encoding import force_text
 from django.utils.html import format_html, mark_safe
@@ -175,7 +176,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
     def _move_node(self, request):
         position = request.POST.get('position')
         if position not in ('last-child', 'left', 'right'):
-            self.message_user(request, _('Did not understand moving instruction.'))
+            self.message_user(request, _('Did not understand moving instruction.'), level=messages.ERROR)
             return http.HttpResponse('FAIL, unknown instruction.')
 
         queryset = self.get_queryset(request)
@@ -183,20 +184,20 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
             cut_item = queryset.get(pk=request.POST.get('cut_item'))
             pasted_on = queryset.get(pk=request.POST.get('pasted_on'))
         except (self.model.DoesNotExist, TypeError, ValueError):
-            self.message_user(request, _('Objects have disappeared, try again.'))
+            self.message_user(request, _('Objects have disappeared, try again.'), level=messages.ERROR)
             return http.HttpResponse('FAIL, invalid objects.')
 
         if not self.has_change_permission(request, cut_item):
-            self.message_user(request, _('No permission'))
+            self.message_user(request, _('No permission'), level=messages.ERROR)
             return http.HttpResponse('FAIL, no permission.')
 
         try:
             self.model._tree_manager.move_node(cut_item, pasted_on, position)
         except InvalidMove as e:
-            self.message_user(request, '%s' % e)
+            self.message_user(request, '%s' % e, level=messages.ERROR)
             return http.HttpResponse('FAIL, invalid move.')
         except IntegrityError as e:
-            self.message_user(request, _('Database error: %s') % e)
+            self.message_user(request, _('Database error: %s') % e, level=messages.ERROR)
             raise
 
         self.message_user(
