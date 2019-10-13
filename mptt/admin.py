@@ -3,18 +3,17 @@ import json
 from django import forms, http
 from django.conf import settings
 from django.contrib.admin.actions import delete_selected
-from django.contrib.admin.options import ModelAdmin
+from django.contrib.admin.options import ModelAdmin, IncorrectLookupParameters, get_content_type_for_model
+from django.contrib.admin.models import LogEntry, CHANGE
 from django.contrib import messages
 from django.db import IntegrityError, transaction
-from django.utils.encoding import force_text
+from django.utils.encoding import force_text, smart_text
 from django.utils.html import format_html, mark_safe
 from django.utils.translation import ugettext as _, ugettext_lazy
 from django.contrib.admin import RelatedFieldListFilter
 from django.contrib.admin.utils import get_model_from_relation
-from django.contrib.admin.options import IncorrectLookupParameters
 from django.core.exceptions import ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
-from django.utils.encoding import smart_text
 from django.utils.translation import get_language_bidi
 from django.db.models.fields.related import ForeignObjectRel, ManyToManyField
 
@@ -172,6 +171,16 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
 
         return response
 
+    def get_data_before_update(self, request, cut_item, pasted_on):
+        mptt_opts = self.model._mptt_meta
+        mptt_attr_fields = ("parent_attr", "left_attr", "right_attr", "tree_id_attr", "level_attr")
+        mptt_fields = [getattr(mptt_opts, attr) for attr in mptt_attr_fields]
+        return {k: getattr(cut_item, k) for k in mptt_fields}
+
+    def get_move_node_change_message(self, request, cut_item, pasted_on, data_before_update):
+        changed_fields = [k for k, v in data_before_update.items() if v != getattr(cut_item, k)]
+        return [{'changed': {'fields': changed_fields}}]
+
     @transaction.atomic
     def _move_node(self, request):
         position = request.POST.get('position')
@@ -191,6 +200,8 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
             self.message_user(request, _('No permission'), level=messages.ERROR)
             return http.HttpResponse('FAIL, no permission.')
 
+        data_before_update = self.get_data_before_update(request, cut_item, pasted_on)
+
         try:
             self.model._tree_manager.move_node(cut_item, pasted_on, position)
         except InvalidMove as e:
@@ -199,6 +210,17 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         except IntegrityError as e:
             self.message_user(request, _('Database error: %s') % e, level=messages.ERROR)
             raise
+
+        change_message = self.get_move_node_change_message(request, cut_item, pasted_on, data_before_update)
+
+        LogEntry.objects.log_action(
+            user_id=request.user.id,
+            content_type_id=get_content_type_for_model(cut_item).pk,
+            object_id=cut_item.pk,
+            object_repr=str(cut_item),
+            action_flag=CHANGE,
+            change_message=change_message
+        )
 
         self.message_user(
             request,
