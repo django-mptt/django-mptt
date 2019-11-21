@@ -7,7 +7,7 @@ from django.contrib.admin.templatetags.admin_list import (
 from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
 from django.contrib.admin.utils import (
     display_for_field, display_for_value, lookup_field)
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import FieldDoesNotExist, ObjectDoesNotExist
 from django.db import models
 from django.template import Library
 from django.urls import NoReverseMatch
@@ -54,7 +54,7 @@ def mptt_items_for_result(cl, result, form):
         for field_name in cl.list_display:
             try:
                 f = cl.lookup_opts.get_field(field_name)
-            except models.FieldDoesNotExist:
+            except FieldDoesNotExist:
                 if (mptt_indent_field is None and
                         field_name != 'action_checkbox'):
                     mptt_indent_field = field_name
