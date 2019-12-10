@@ -7,7 +7,7 @@ from django.db.models.base import ModelBase
 from django.db.models.query import Q
 from django.db.models.query_utils import DeferredAttribute
 
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 
 from mptt.compat import cached_field_value
 from mptt.fields import TreeForeignKey, TreeOneToOneField, TreeManyToManyField

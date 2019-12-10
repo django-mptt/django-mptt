@@ -15,7 +15,7 @@ try:
     from django.utils.deprecation import RemovedInDjango20Warning
 except ImportError:
     RemovedInDjango20Warning = RuntimeWarning
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import get_language_bidi
@@ -112,7 +112,7 @@ def mptt_items_for_result(cl, result, form):
                     # #### MPTT SUBSTITUTION END
                 if isinstance(f, (models.DateField, models.TimeField, models.ForeignKey)):
                     row_classes.append('nowrap')
-        if force_text(result_repr) == '':
+        if force_str(result_repr) == '':
             result_repr = mark_safe('&nbsp;')
         row_class = mark_safe(' class="%s"' % ' '.join(row_classes))
 
@@ -174,12 +174,12 @@ def mptt_items_for_result(cl, result, form):
                     field_name == cl.model._meta.pk.name and
                     form[cl.model._meta.pk.name].is_hidden)):
                 bf = form[field_name]
-                result_repr = mark_safe(force_text(bf.errors) + force_text(bf))
+                result_repr = mark_safe(force_str(bf.errors) + force_str(bf))
             # #### MPTT SUBSTITUTION START
             yield format_html('<td{}{}>{}</td>', row_class, padding_attr, result_repr)
             # #### MPTT SUBSTITUTION END
     if form and not form[cl.model._meta.pk.name].is_hidden:
-        yield format_html('<td>{}</td>', force_text(form[cl.model._meta.pk.name]))
+        yield format_html('<td>{}</td>', force_str(form[cl.model._meta.pk.name]))
 
 
 def mptt_results(cl):
