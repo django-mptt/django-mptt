@@ -7,7 +7,7 @@ import csv
 import itertools
 import sys
 
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 
 __all__ = ('previous_current_next', 'tree_item_iterator',
            'drilldown_tree_for_node', 'get_cached_trees',)

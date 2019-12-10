@@ -3,9 +3,9 @@ Form components for working with trees.
 """
 from django import forms
 from django.forms.forms import NON_FIELD_ERRORS
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 from django.utils.html import conditional_escape, mark_safe
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 from mptt.exceptions import InvalidMove
 from mptt.settings import DEFAULT_LEVEL_INDICATOR
@@ -40,7 +40,7 @@ class TreeNodeChoiceFieldMixin:
         generating option labels.
         """
         level_indicator = self._get_level_indicator(obj)
-        return mark_safe(level_indicator + ' ' + conditional_escape(smart_text(obj)))
+        return mark_safe(level_indicator + ' ' + conditional_escape(smart_str(obj)))
 
 
 class TreeNodeChoiceField(TreeNodeChoiceFieldMixin, forms.ModelChoiceField):

@@ -5,9 +5,9 @@ trees.
 from django import template
 from django.apps import apps
 from django.core.exceptions import FieldDoesNotExist
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 from django.utils.safestring import mark_safe
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 
 from mptt.utils import (drilldown_tree_for_node, get_cached_trees,
                         tree_item_iterator)
@@ -232,7 +232,7 @@ def tree_path(items, separator=' :: '):
        {{ some_node.get_ancestors|tree_path:" > " }}
 
     """
-    return separator.join(force_text(i) for i in items)
+    return separator.join(force_str(i) for i in items)
 
 
 # ## RECURSIVE TAGS
