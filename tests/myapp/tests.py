@@ -1652,7 +1652,7 @@ class AdminBatch(TreeTestCase):
             '_selected_action': ['5', '8', '9'],
         }
         response = self.client.post('/admin/myapp/category/', data)
-        self.assertContains(response, 'value="Yes, I\'m sure"', 1)
+        self.assertRegex(response.rendered_content, r'value="Yes, I(\'|’)m sure"')
 
         data['post'] = 'yes'
         response = self.client.post('/admin/myapp/category/', data)
