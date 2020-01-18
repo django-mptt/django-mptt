@@ -910,15 +910,14 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
                 same_order = True
 
             if not same_order:
+                parent = getattr(self, opts.parent_attr)
                 opts.set_raw_field_value(self, opts.parent_attr, old_parent_id)
                 try:
                     right_sibling = None
                     if opts.order_insertion_by:
-                        right_sibling = opts.get_ordered_insertion_target(
-                            self, getattr(self, opts.parent_attr))
+                        right_sibling = opts.get_ordered_insertion_target(self, parent)
 
                     if parent_id is not None:
-                        parent = getattr(self, opts.parent_attr)
                         # If we aren't already a descendant of the new parent,
                         # we need to update the parent.rght so things like
                         # get_children and get_descendant_count work correctly.
