@@ -6,7 +6,7 @@ import contextlib
 from itertools import groupby
 
 from django.db import models, connections, router
-from django.db.models import F, ManyToManyField, Max, Q
+from django.db.models import F, IntegerField, ManyToManyField, Max, OuterRef, Q, Subquery
 from django.utils.translation import gettext as _
 
 from mptt.compat import cached_field_value
@@ -19,45 +19,9 @@ from mptt.signals import node_moved
 __all__ = ('TreeManager',)
 
 
-COUNT_SUBQUERY = """(
-    SELECT COUNT(*)
-    FROM %(rel_table)s
-    WHERE %(mptt_fk)s = %(mptt_table)s.%(mptt_rel_to)s
-)"""
-
-CUMULATIVE_COUNT_SUBQUERY = """(
-    SELECT COUNT(*)
-    FROM %(rel_table)s
-    WHERE %(mptt_fk)s IN
-    (
-        SELECT m2.%(mptt_rel_to)s
-        FROM %(mptt_table)s m2
-        WHERE m2.%(tree_id)s = %(mptt_table)s.%(tree_id)s
-          AND m2.%(left)s BETWEEN %(mptt_table)s.%(left)s
-                              AND %(mptt_table)s.%(right)s
-    )
-)"""
-
-COUNT_SUBQUERY_M2M = """(
-    SELECT COUNT(*)
-    FROM %(rel_table)s j
-    INNER JOIN %(rel_m2m_table)s k ON j.%(rel_pk)s = k.%(rel_m2m_column)s
-    WHERE k.%(mptt_fk)s = %(mptt_table)s.%(mptt_pk)s
-)"""
-
-CUMULATIVE_COUNT_SUBQUERY_M2M = """(
-    SELECT COUNT(*)
-    FROM %(rel_table)s j
-    INNER JOIN %(rel_m2m_table)s k ON j.%(rel_pk)s = k.%(rel_m2m_column)s
-    WHERE k.%(mptt_fk)s IN
-    (
-        SELECT m2.%(mptt_pk)s
-        FROM %(mptt_table)s m2
-        WHERE m2.%(tree_id)s = %(mptt_table)s.%(tree_id)s
-          AND m2.%(left)s BETWEEN %(mptt_table)s.%(left)s
-                              AND %(mptt_table)s.%(right)s
-    )
-)"""
+class SQCount(Subquery):
+    template = "(SELECT count(*) FROM (%(subquery)s) _count)"
+    output_field = IntegerField()
 
 
 def delegate_manager(method):
@@ -421,7 +385,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         return connections[router.db_for_write(self.model, **hints)]
 
     def add_related_count(self, queryset, rel_model, rel_field, count_attr,
-                          cumulative=False):
+                          cumulative=False, extra_filters={}):
         """
         Adds a related item count to a given ``QuerySet`` using its
         ``extra`` method, for a ``Model`` class which has a relation to
@@ -445,56 +409,29 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         ``cumulative``
            If ``True``, the count will be for each item and all of its
            descendants, otherwise it will be for each item itself.
-        """
-        connection = self._get_connection()
-        qn = connection.ops.quote_name
 
-        meta = self.model._meta
+        ``extra_filters``
+           Dict with aditional parameters filtering the related queryset.
+        """
         mptt_field = rel_model._meta.get_field(rel_field)
 
         if isinstance(mptt_field, ManyToManyField):
-            if cumulative:
-                subquery = CUMULATIVE_COUNT_SUBQUERY_M2M % {
-                    'rel_table': qn(rel_model._meta.db_table),
-                    'rel_pk': qn(rel_model._meta.pk.column),
-                    'rel_m2m_table': qn(mptt_field.m2m_db_table()),
-                    'rel_m2m_column': qn(mptt_field.m2m_column_name()),
-                    'mptt_fk': qn(mptt_field.m2m_reverse_name()),
-                    'mptt_table': qn(self.tree_model._meta.db_table),
-                    'mptt_pk': qn(meta.pk.column),
-                    'tree_id': qn(meta.get_field(self.tree_id_attr).column),
-                    'left': qn(meta.get_field(self.left_attr).column),
-                    'right': qn(meta.get_field(self.right_attr).column),
-                }
-            else:
-                subquery = COUNT_SUBQUERY_M2M % {
-                    'rel_table': qn(rel_model._meta.db_table),
-                    'rel_pk': qn(rel_model._meta.pk.column),
-                    'rel_m2m_table': qn(mptt_field.m2m_db_table()),
-                    'rel_m2m_column': qn(mptt_field.m2m_column_name()),
-                    'mptt_fk': qn(mptt_field.m2m_reverse_name()),
-                    'mptt_table': qn(self.tree_model._meta.db_table),
-                    'mptt_pk': qn(meta.pk.column),
-                }
+            field_name = 'pk'
         else:
-            if cumulative:
-                subquery = CUMULATIVE_COUNT_SUBQUERY % {
-                    'rel_table': qn(rel_model._meta.db_table),
-                    'mptt_fk': qn(rel_model._meta.get_field(rel_field).column),
-                    'mptt_table': qn(self.tree_model._meta.db_table),
-                    'mptt_rel_to': qn(mptt_field.remote_field.field_name),
-                    'tree_id': qn(meta.get_field(self.tree_id_attr).column),
-                    'left': qn(meta.get_field(self.left_attr).column),
-                    'right': qn(meta.get_field(self.right_attr).column),
-                }
-            else:
-                subquery = COUNT_SUBQUERY % {
-                    'rel_table': qn(rel_model._meta.db_table),
-                    'mptt_fk': qn(rel_model._meta.get_field(rel_field).column),
-                    'mptt_table': qn(self.tree_model._meta.db_table),
-                    'mptt_rel_to': qn(mptt_field.remote_field.field_name),
-                }
-        return queryset.extra(select={count_attr: subquery})
+            field_name = mptt_field.remote_field.field_name
+
+        if cumulative:
+            subquery_filters = {
+                rel_field + '__tree_id': OuterRef(self.tree_id_attr),
+                rel_field + '__lft__gte': OuterRef(self.left_attr),
+                rel_field + '__lft__lte': OuterRef(self.right_attr),
+            }
+        else:
+            subquery_filters = {
+                rel_field: OuterRef(field_name),
+            }
+        subquery = rel_model.objects.filter(**subquery_filters, **extra_filters).values('pk')
+        return queryset.annotate(**{count_attr: SQCount(subquery)})
 
     @delegate_manager
     def insert_node(self, node, target, position='last-child', save=False,
