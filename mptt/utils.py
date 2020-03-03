@@ -229,7 +229,7 @@ def get_cached_trees(queryset):
        `Node.objects.filter(**kwargs).get_cached_trees()`
     """
 
-    current_path = []
+    current_path = {}
     top_nodes = []
 
     if queryset:
@@ -239,6 +239,7 @@ def get_cached_trees(queryset):
         is_filtered = (hasattr(queryset, "query") and queryset.query.has_filters())
         for obj in queryset:
             # Get the current mptt node level
+            tree_id = obj.tree_id
             node_level = obj.get_level()
 
             if root_level is None or (is_filtered and node_level < root_level):
@@ -257,8 +258,9 @@ def get_cached_trees(queryset):
             obj._cached_children = []
 
             # Remove nodes not in the current branch
-            while len(current_path) > node_level - root_level:
-                current_path.pop(-1)
+            if tree_id in current_path:
+                while len(current_path[tree_id]) > node_level - root_level:
+                    current_path[tree_id].pop(-1)
 
             if node_level == root_level:
                 # Add the root to the list of top nodes, which will be returned
@@ -266,7 +268,7 @@ def get_cached_trees(queryset):
             else:
                 # Cache the parent on the current node, and attach the current
                 # node to the parent's list of children
-                _parent = current_path[-1]
+                _parent = current_path[tree_id][-1]
                 setattr(obj, parent_attr, _parent)
                 _parent._cached_children.append(obj)
 
@@ -279,6 +281,6 @@ def get_cached_trees(queryset):
             # the next iteration is higher up the tree (a new branch), in which
             # case the paths below it (e.g., this one) will be removed from the
             # current path during the next iteration
-            current_path.append(obj)
+            current_path.setdefault(tree_id, []).append(obj)
 
     return top_nodes
