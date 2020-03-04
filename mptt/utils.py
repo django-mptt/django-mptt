@@ -6,11 +6,17 @@ import copy
 import csv
 import itertools
 import sys
+from typing import List, Optional, Tuple
 
+from django.db.models.query import QuerySet
 from django.utils.translation import gettext as _
 
-__all__ = ('previous_current_next', 'tree_item_iterator',
-           'drilldown_tree_for_node', 'get_cached_trees',)
+__all__ = (
+    "previous_current_next",
+    "tree_item_iterator",
+    "drilldown_tree_for_node",
+    "get_cached_trees",
+)
 
 
 def previous_current_next(items):
@@ -79,37 +85,35 @@ def tree_item_iterator(items, ancestors=False, callback=str):
 
         current_level = getattr(current, opts.level_attr)
         if previous:
-            structure['new_level'] = (getattr(previous,
-                                              opts.level_attr) < current_level)
+            structure["new_level"] = getattr(previous, opts.level_attr) < current_level
             if ancestors:
                 # If the previous node was the end of any number of
                 # levels, remove the appropriate number of ancestors
                 # from the list.
-                if structure['closed_levels']:
-                    structure['ancestors'] = \
-                        structure['ancestors'][:-len(structure['closed_levels'])]
+                if structure["closed_levels"]:
+                    structure["ancestors"] = structure["ancestors"][
+                        : -len(structure["closed_levels"])
+                    ]
                 # If the current node is the start of a new level, add its
                 # parent to the ancestors list.
-                if structure['new_level']:
-                    structure['ancestors'].append(callback(previous))
+                if structure["new_level"]:
+                    structure["ancestors"].append(callback(previous))
         else:
-            structure['new_level'] = True
+            structure["new_level"] = True
             if ancestors:
                 # Set up the ancestors list on the first item
-                structure['ancestors'] = []
+                structure["ancestors"] = []
 
             first_item_level = current_level
         if next_:
-            structure['closed_levels'] = list(range(
-                current_level,
-                getattr(next_, opts.level_attr),
-                -1))
+            structure["closed_levels"] = list(
+                range(current_level, getattr(next_, opts.level_attr), -1)
+            )
         else:
             # All remaining levels need to be closed
-            structure['closed_levels'] = list(range(
-                current_level,
-                first_item_level - 1,
-                -1))
+            structure["closed_levels"] = list(
+                range(current_level, first_item_level - 1, -1)
+            )
 
         # Return a deep copy of the structure dict so this function can
         # be used in situations where the iterator is consumed
@@ -117,8 +121,14 @@ def tree_item_iterator(items, ancestors=False, callback=str):
         yield current, copy.deepcopy(structure)
 
 
-def drilldown_tree_for_node(node, rel_cls=None, rel_field=None, count_attr=None,
-                            cumulative=False, all_descendants=False):
+def drilldown_tree_for_node(
+    node,
+    rel_cls=None,
+    rel_field=None,
+    count_attr=None,
+    cumulative=False,
+    all_descendants=False,
+):
     """
     Creates a drilldown tree for the given node. A drilldown tree
     consists of a node's ancestors, itself and its immediate children
@@ -153,7 +163,8 @@ def drilldown_tree_for_node(node, rel_cls=None, rel_field=None, count_attr=None,
         children = node.get_children()
     if rel_cls and rel_field and count_attr:
         children = node._tree_manager.add_related_count(
-            children, rel_cls, rel_field, count_attr, cumulative)
+            children, rel_cls, rel_field, count_attr, cumulative
+        )
     return itertools.chain(node.get_ancestors(), [node], children)
 
 
@@ -166,22 +177,22 @@ def print_debug_info(qs, file=None):
     opts = qs.model._mptt_meta
     writer = csv.writer(sys.stdout if file is None else file)
     header = (
-        'pk',
+        "pk",
         opts.level_attr,
-        '%s_id' % opts.parent_attr,
+        "%s_id" % opts.parent_attr,
         opts.tree_id_attr,
         opts.left_attr,
         opts.right_attr,
-        'pretty',
+        "pretty",
     )
     writer.writerow(header)
-    for n in qs.order_by('tree_id', 'lft'):
+    for n in qs.order_by("tree_id", "lft"):
         level = getattr(n, opts.level_attr)
         row = []
         for field in header[:-1]:
             row.append(getattr(n, field))
 
-        row_text = '%s%s' % ('- ' * level, str(n))
+        row_text = "%s%s" % ("- " * level, str(n))
         row.append(row_text)
         writer.writerow(row)
 
@@ -197,88 +208,124 @@ def _get_tree_model(model_class):
         b = bases.pop()
         # NOTE can't use `issubclass(b, MPTTModel)` here because we can't import MPTTModel yet!
         # So hasattr(b, '_mptt_meta') will have to do.
-        if hasattr(b, '_mptt_meta') and not (b._meta.abstract or b._meta.proxy):
+        if hasattr(b, "_mptt_meta") and not (b._meta.abstract or b._meta.proxy):
             return b
     return None
 
 
 def get_cached_trees(queryset):
     """
-    Takes a list/queryset of model objects in MPTT left (depth-first) order and
-    caches the children and parent on each node. This allows up and down
-    traversal through the tree without the need for further queries. Use cases
-    include using a recursively included template or arbitrarily traversing
-    trees.
+    Cache the parents and children on a queryset of MPTT instances.
 
-    NOTE: nodes _must_ be passed in the correct (depth-first) order. If they aren't,
-    a ValueError will be raised.
+    Args:
+        queryset:
+            List or queryset of _all_ the nodes that will have a cache.
+            Instances not in the queryset will not be retrieved using the
+            cache.
 
-    Returns a list of top-level nodes. If a single tree was provided in its
-    entirety, the list will of course consist of just the tree's root node.
+    Notes:
+        Takes a list/queryset of model objects in MPTT (ordered by depth ASC)
+        and caches the children and parent of every node. This allows up and down
+        traversal through the tree without the need for further queries. Use cases
+        include using a recursively included template or arbitrarily traversing
+        trees.
 
-    For filtered querysets, if no ancestors for a node are included in the
-    queryset, it will appear in the returned list as a top-level node.
+        Any instance which has no parent in the provided queryset will be added
+        to the top nodes list.
 
-    Aliases to this function are also available:
+        For it to return proper results, queryset _must_ be ordered by ascending
+        level.
 
-    ``mptt.templatetags.mptt_tag.cache_tree_children``
-       Use for recursive rendering in templates.
+    Returns:
+        A list of top-level nodes, one node per tree root.
 
-    ``mptt.querysets.TreeQuerySet.get_cached_trees``
-       Useful for chaining with queries; e.g.,
-       `Node.objects.filter(**kwargs).get_cached_trees()`
+    See Also:
+        Aliases to this function are also available:
+
+        ``mptt.templatetags.mptt_tag.cache_tree_children``
+           Use for recursive rendering in templates.
+
+        ``mptt.querysets.TreeQuerySet.get_cached_trees``
+           Useful for chaining with queries; e.g.,
+           `Node.objects.filter(**kwargs).get_cached_trees()`
+
     """
 
-    current_path = []
     top_nodes = []
 
+    def find_parent(obj, tree_level):
+        """
+        Find the parent of ``obj`` in a list of items of the upper level.
+
+        Args:
+            obj: Instance to find a parent for.
+            tree_level: List of instances at the upper level.
+
+        Returns:
+            The instance that is the correct parent for ``obj``.
+            ``None`` if ``obj`` has no parent in the list.
+
+        Notes:
+            ``lft`` and ``right`` define the bounds of a tree node.
+            Any child node has bounds inside the bounds of its
+             parent.
+
+        """
+        for item in tree_level:
+            if getattr(item, tree_id_attr) == getattr(obj, tree_id_attr) and getattr(
+                item, left_attr
+            ) <= getattr(obj, left_attr) <= getattr(obj, right_attr) <= getattr(
+                item, right_attr
+            ):
+                return item
+        return None
+
     if queryset:
-        # Get the model's parent-attribute name
-        parent_attr = queryset[0]._mptt_meta.parent_attr
+        # List of lists, one per level, of the tree instances
+        is_filtered = hasattr(queryset, "query") and queryset.query.has_filters()
+        tree = []
         root_level = None
-        is_filtered = (hasattr(queryset, "query") and queryset.query.has_filters())
+        parent_attr = ""
+        tree_id_attr = ""
+        left_attr = ""
+        right_attr = ""
+
         for obj in queryset:
+            # Initialize the children cache (used by ``get_children``).
+            obj._cached_children = []
+            obj._mptt_use_cached_ancestors = root_level == 0
             # Get the current mptt node level
             node_level = obj.get_level()
 
             if root_level is None or (is_filtered and node_level < root_level):
-                # First iteration, so set the root level to the top node level
-                root_level = node_level
-
+                # Initialize values but avoid a query
+                root_level = obj.get_level()
+                parent_attr = obj._mptt_meta.parent_attr
+                tree_id_attr = obj._mptt_meta.tree_id_attr
+                left_attr = obj._mptt_meta.left_attr
+                right_attr = obj._mptt_meta.right_attr
             elif node_level < root_level:
-                # ``queryset`` was a list or other iterable (unable to order),
-                # and was provided in an order other than depth-first
-                raise ValueError(
-                    _('Node %s not in depth-first order') % (type(queryset),)
-                )
+                # Fail if level is descending
+                raise ValueError("Your queryset must be ordered by ascending level.")
 
-            # Set up the attribute on the node that will store cached children,
-            # which is used by ``MPTTModel.get_children``
-            obj._cached_children = []
+            # Add a level to the tree if necessary
+            while node_level >= len(tree):
+                tree.append([])
 
-            # Remove nodes not in the current branch
-            while len(current_path) > node_level - root_level:
-                current_path.pop(-1)
+            # Add the item to its own level
+            tree[node_level].append(obj)
 
-            if node_level == root_level:
-                # Add the root to the list of top nodes, which will be returned
-                top_nodes.append(obj)
+            # Define the cached parent
+            if node_level > root_level:
+                parent = find_parent(obj, tree[node_level - 1])
+                if parent is not None:
+                    setattr(obj, parent_attr, parent)
+                    parent._cached_children.append(obj)
             else:
-                # Cache the parent on the current node, and attach the current
-                # node to the parent's list of children
-                _parent = current_path[-1]
-                setattr(obj, parent_attr, _parent)
-                _parent._cached_children.append(obj)
+                parent = None
 
-                if root_level == 0:
-                    # get_ancestors() can use .parent.parent.parent...
-                    setattr(obj, '_mptt_use_cached_ancestors', True)
-
-            # Add the current node to end of the current path - the last node
-            # in the current path is the parent for the next iteration, unless
-            # the next iteration is higher up the tree (a new branch), in which
-            # case the paths below it (e.g., this one) will be removed from the
-            # current path during the next iteration
-            current_path.append(obj)
+            # Populate top nodes
+            if node_level == root_level or parent is None:
+                top_nodes.append(obj)
 
     return top_nodes
