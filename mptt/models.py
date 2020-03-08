@@ -828,7 +828,7 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
     def save(self, *args, **kwargs):
         """
         If this is a new node, sets tree fields up before it is inserted
-        into the database, making room in the tree structure as neccessary,
+        into the database, making room in the tree structure as necessary,
         defaulting to making the new node the last child of its parent.
 
         It the node's left and right edge indicators already been set, we

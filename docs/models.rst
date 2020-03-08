@@ -461,7 +461,7 @@ Returns the root node of tree with the given id.
 Sets up the tree state for ``node`` (which has not yet been inserted
 into in the database) so it will be positioned relative to a given
 ``target`` node as specified by ``position`` (when appropriate) when it
-is inserted, with any neccessary space already having been made for it.
+is inserted, with any necessary space already having been made for it.
 
 A ``target`` of ``None`` indicates that ``node`` should be the last root
 node.
