@@ -440,7 +440,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         Sets up the tree state for ``node`` (which has not yet been
         inserted into in the database) so it will be positioned relative
         to a given ``target`` node as specified by ``position`` (when
-        appropriate) it is inserted, with any neccessary space already
+        appropriate) it is inserted, with any necessary space already
         having been made for it.
 
         A ``target`` of ``None`` indicates that ``node`` should be
