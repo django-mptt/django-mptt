@@ -2,7 +2,6 @@
 Model fields for working with trees.
 """
 from django.db import models
-from django.conf import settings
 from mptt.forms import TreeNodeChoiceField, TreeNodeMultipleChoiceField
 
 
