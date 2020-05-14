@@ -14,6 +14,7 @@ from django.test import RequestFactory, TestCase
 from django.contrib.admin.views.main import ChangeList
 from django.contrib.admin import ModelAdmin, site
 from mptt.admin import TreeRelatedFieldListFilter
+from mptt.querysets import TreeQuerySet
 
 try:
     from mock_django import mock_signal_receiver
@@ -1730,6 +1731,11 @@ class QuerySetTests(TreeTestCase):
             [
                 c.pk for c in
                 Category.objects.filter(name="Nintendo Wii").get_descendants(include_self=True)],
+        )
+
+    def test_as_manager(self):
+        self.assertTrue(
+            issubclass(TreeQuerySet.as_manager().__class__, TreeManager)
         )
 
 
