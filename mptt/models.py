@@ -488,6 +488,7 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
         If ``include_self`` is ``True``, the ``QuerySet`` will also
         include this model instance.
         """
+        opts = self._mptt_meta
         if self.is_root_node():
             if not include_self:
                 return self._tree_manager.none()
@@ -495,8 +496,6 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
                 # Filter on pk for efficiency.
                 qs = self._tree_manager.filter(pk=self.pk)
         else:
-            opts = self._mptt_meta
-
             order_by = opts.left_attr
             if ascending:
                 order_by = '-' + order_by
