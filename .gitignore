@@ -7,3 +7,5 @@ MANIFEST
 tests/mydatabase
 *.egg
 .eggs
+venv/
+.idea/
