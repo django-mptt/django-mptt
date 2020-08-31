@@ -51,7 +51,7 @@ The text used to indicate a tree level can by customised by providing a
 ``level_indicator`` argument::
 
    category = TreeNodeChoiceField(queryset=Category.objects.all(),
-                                  level_indicator=u'+--')
+                                  level_indicator='+--')
 
 ...which for this example would result in a select with the following
 options::

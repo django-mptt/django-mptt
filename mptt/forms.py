@@ -28,7 +28,7 @@ class TreeNodeChoiceFieldMixin:
             mptt_opts = queryset.model._mptt_meta
             queryset = queryset.order_by(mptt_opts.tree_id_attr, mptt_opts.left_attr)
 
-        super(TreeNodeChoiceFieldMixin, self).__init__(queryset, *args, **kwargs)
+        super().__init__(queryset, *args, **kwargs)
 
     def _get_level_indicator(self, obj):
         level = getattr(obj, obj._mptt_meta.level_attr)
@@ -68,7 +68,7 @@ class TreeNodePositionField(forms.ChoiceField):
     def __init__(self, *args, **kwargs):
         if 'choices' not in kwargs:
             kwargs['choices'] = self.DEFAULT_CHOICES
-        super(TreeNodePositionField, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 # Forms #######################################################################
@@ -117,7 +117,7 @@ class MoveNodeForm(forms.Form):
         target_select_size = kwargs.pop('target_select_size', 10)
         position_choices = kwargs.pop('position_choices', None)
         level_indicator = kwargs.pop('level_indicator', None)
-        super(MoveNodeForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         opts = node._mptt_meta
         if valid_targets is None:
             valid_targets = node._tree_manager.exclude(**{
@@ -158,7 +158,7 @@ class MPTTAdminForm(forms.ModelForm):
     """
 
     def __init__(self, *args, **kwargs):
-        super(MPTTAdminForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if self.instance and self.instance.pk:
             instance = self.instance
             opts = self._meta.model._mptt_meta
@@ -173,7 +173,7 @@ class MPTTAdminForm(forms.ModelForm):
                 parent_field.queryset = parent_qs
 
     def clean(self):
-        cleaned_data = super(MPTTAdminForm, self).clean()
+        cleaned_data = super().clean()
         opts = self._meta.model._mptt_meta
         parent = cleaned_data.get(opts.parent_attr)
         if self.instance and parent:

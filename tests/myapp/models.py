@@ -32,7 +32,7 @@ class Category(MPTTModel):
         return self.name
 
     def delete(self):
-        super(Category, self).delete()
+        super().delete()
     delete.alters_data = True
 
 
@@ -273,7 +273,7 @@ class SwappedInModel(MPTTModel):
 # Default manager
 class MultipleManager(TreeManager):
     def get_queryset(self):
-        return super(MultipleManager, self).get_queryset().exclude(published=False)
+        return super().get_queryset().exclude(published=False)
 
 
 class MultipleManagerModel(MPTTModel):

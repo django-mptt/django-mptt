@@ -2470,7 +2470,7 @@ class ModelMetaIndexes(TreeTestCase):
             # class does) could cause errors. Kind of... weird, but surprisingly
             # effective.
 
-            SomeModel = type(str('model_{0}'.format(idx)), (MPTTModel,), {
+            SomeModel = type(str('model_{}'.format(idx)), (MPTTModel,), {
                 'Meta': Meta,
                 '__module__': __name__,
             })
@@ -2491,7 +2491,7 @@ class ModelMetaIndexes(TreeTestCase):
                 index_together = case
                 app_label = 'myapp'
 
-            SomeModel = type(str('model__different_attr_{0}'.format(idx)), (MPTTModel,), {
+            SomeModel = type(str('model__different_attr_{}'.format(idx)), (MPTTModel,), {
                 'MPTTMeta': MPTTMeta,
                 'Meta': Meta,
                 '__module__': str(__name__)
