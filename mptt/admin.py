@@ -55,7 +55,7 @@ class MPTTModelAdmin(ModelAdmin):
                 required=False)
             defaults.update(kwargs)
             kwargs = defaults
-        return super(MPTTModelAdmin, self).formfield_for_foreignkey(
+        return super().formfield_for_foreignkey(
             db_field, request, **kwargs)
 
     def get_ordering(self, request):
@@ -91,7 +91,7 @@ class MPTTModelAdmin(ModelAdmin):
             return delete_selected(self, request, queryset)
 
     def get_actions(self, request):
-        actions = super(MPTTModelAdmin, self).get_actions(request)
+        actions = super().get_actions(request)
         if actions is not None and 'delete_selected' in actions:
             actions['delete_selected'] = (
                 self.delete_selected_tree,
@@ -145,7 +145,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         if request.is_ajax() and request.POST.get('cmd') == 'move_node':
             return self._move_node(request)
 
-        response = super(DraggableMPTTAdmin, self).changelist_view(
+        response = super().changelist_view(
             request, *args, **kwargs)
 
         try:
@@ -298,7 +298,7 @@ class TreeRelatedFieldListFilter(RelatedFieldListFilter):
         else:
             self.rel_name = self.other_model._meta.pk.name
         self.changed_lookup_kwarg = '%s__%s__inhierarchy' % (field_path, self.rel_name)
-        super(TreeRelatedFieldListFilter, self).__init__(field, request, params,
+        super().__init__(field, request, params,
                                                          model, model_admin, field_path)
         self.lookup_val = request.GET.get(self.changed_lookup_kwarg)
 

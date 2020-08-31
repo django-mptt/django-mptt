@@ -43,7 +43,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
     """
 
     def contribute_to_class(self, model, name):
-        super(TreeManager, self).contribute_to_class(model, name)
+        super().contribute_to_class(model, name)
 
         if not model._meta.abstract:
             self.tree_model = _get_tree_model(model)
@@ -57,7 +57,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         """
         Ensures that this manager always returns nodes in tree order.
         """
-        return super(TreeManager, self).get_queryset(
+        return super().get_queryset(
             *args, **kwargs
         ).order_by(
             self.tree_id_attr, self.left_attr

@@ -38,7 +38,7 @@ class _classproperty:
 
 class classpropertytype(property):
     def __init__(self, name, bases=(), members={}):
-        return super(classpropertytype, self).__init__(
+        return super().__init__(
             members.get('__get__'),
             members.get('__set__'),
             members.get('__delete__'),
@@ -125,7 +125,7 @@ class MPTTOptions:
         so that the MPTT fields need to be updated.
         """
         instance._mptt_cached_fields = {}
-        field_names = set((self.parent_attr,))
+        field_names = {self.parent_attr}
         if self.order_insertion_by:
             for f in self.order_insertion_by:
                 if f[0] == '-':
@@ -242,7 +242,7 @@ class MPTTModelBase(ModelBase):
          - adds a TreeManager to the model
         """
         if class_name == 'NewBase' and class_dict == {}:
-            return super(MPTTModelBase, meta).__new__(meta, class_name, bases, class_dict)
+            return super().__new__(meta, class_name, bases, class_dict)
         is_MPTTModel = False
         try:
             MPTTModel
@@ -266,7 +266,7 @@ class MPTTModelBase(ModelBase):
                         setattr(MPTTMeta, name, value)
 
         class_dict['_mptt_meta'] = MPTTOptions(MPTTMeta)
-        super_new = super(MPTTModelBase, meta).__new__
+        super_new = super().__new__
         cls = super_new(meta, class_name, bases, class_dict)
         cls = meta.register(cls)
 
@@ -407,7 +407,7 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
     objects = TreeManager()
 
     def __init__(self, *args, **kwargs):
-        super(MPTTModel, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._mptt_meta.update_mptt_cached_fields(self)
 
     def _mpttfield(self, fieldname):
@@ -470,8 +470,8 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
         if num_inserted < 0:
             deleted = range(tree_id + num_inserted, -num_inserted)
             changes.difference_update(deleted)
-        new_changes = set(
-            (t + num_inserted if t >= tree_id else t) for t in changes)
+        new_changes = {
+            (t + num_inserted if t >= tree_id else t) for t in changes}
         cls._threadlocal.mptt_delayed_tree_changes = new_changes
 
     @raise_if_unsaved
@@ -867,7 +867,7 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
                     setattr(self, opts.right_attr, 2)
                     setattr(self, opts.level_attr, 0)
                     setattr(self, opts.tree_id_attr, 0)
-            return super(MPTTModel, self).save(*args, **kwargs)
+            return super().save(*args, **kwargs)
 
         parent_id = opts.get_raw_field_value(self, opts.parent_attr)
 
@@ -1010,7 +1010,7 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
                     # Default insertion
                     self.insert_at(parent, position='last-child', allow_existing_pk=True)
         try:
-            super(MPTTModel, self).save(*args, **kwargs)
+            super().save(*args, **kwargs)
         finally:
             if collapse_old_tree is not None:
                 self._tree_manager._create_tree_space(collapse_old_tree, -1)
@@ -1049,7 +1049,7 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
             right_shift = -self.get_descendant_count() - 2
             self._tree_manager._post_insert_update_cached_parent_right(parent, right_shift)
 
-        return super(MPTTModel, self).delete(*args, **kwargs)
+        return super().delete(*args, **kwargs)
     delete.alters_data = True
 
     def _mptt_refresh(self):

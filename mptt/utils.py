@@ -62,8 +62,8 @@ def tree_item_iterator(items, ancestors=False, callback=str):
           are given on the right::
 
              Books                    ->  []
-                Sci-fi                ->  [u'Books']
-                   Dystopian Futures  ->  [u'Books', u'Sci-fi']
+                Sci-fi                ->  ['Books']
+                   Dystopian Futures  ->  ['Books', 'Sci-fi']
 
           You can overload the default representation by providing an
           optional ``callback`` function which takes a single argument

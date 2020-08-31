@@ -22,16 +22,16 @@ class TreeForeignKey(models.ForeignKey):
         Use MPTT's ``TreeNodeChoiceField``
         """
         kwargs.setdefault('form_class', TreeNodeChoiceField)
-        return super(TreeForeignKey, self).formfield(**kwargs)
+        return super().formfield(**kwargs)
 
 
 class TreeOneToOneField(models.OneToOneField):
     def formfield(self, **kwargs):
         kwargs.setdefault('form_class', TreeNodeChoiceField)
-        return super(TreeOneToOneField, self).formfield(**kwargs)
+        return super().formfield(**kwargs)
 
 
 class TreeManyToManyField(models.ManyToManyField):
     def formfield(self, **kwargs):
         kwargs.setdefault('form_class', TreeNodeMultipleChoiceField)
-        return super(TreeManyToManyField, self).formfield(**kwargs)
+        return super().formfield(**kwargs)

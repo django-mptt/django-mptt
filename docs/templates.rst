@@ -170,8 +170,8 @@ comma-separated list of feature names. The valid feature names are:
       on the right::
 
          Books                    ->  []
-            Sci-fi                ->  [u'Books']
-               Dystopian Futures  ->  [u'Books', u'Sci-fi']
+            Sci-fi                ->  ['Books']
+               Dystopian Futures  ->  ['Books', 'Sci-fi']
 
 Using this filter with unpacking in a ``{% for %}`` tag, you should have
 enough information about the tree structure to create a hierarchical
