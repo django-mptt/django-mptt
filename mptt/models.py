@@ -387,7 +387,7 @@ class MPTTModelBase(ModelBase):
 def raise_if_unsaved(func):
     @wraps(func)
     def _fn(self, *args, **kwargs):
-        if not self.pk:
+        if self._state.adding:
             raise ValueError(
                 'Cannot call %(function)s on unsaved %(class)s instances'
                 % {'function': func.__name__, 'class': self.__class__.__name__}
