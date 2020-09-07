@@ -2389,8 +2389,7 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
         self.assertContains(response, 'style="text-indent:0px"', 3)
         self.assertContains(
             response,
-            'javascript" src="/static/mptt/draggable-admin.js"'
-            ' data-context="{&quot;',
+            'src="/static/mptt/draggable-admin.js" data-context="{&quot;',
         )
         self.assertContains(response, '}" id="draggable-admin-context"></script>')
 
