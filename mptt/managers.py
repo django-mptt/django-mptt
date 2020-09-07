@@ -742,7 +742,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         for child_id in child_ids:
             right = rebuild_helper(child_id, right, tree_id, level + 1)
 
-        qs = self.model._default_manager.filter(pk=pk)
+        qs = self.model._default_manager.db_manager(self.db).filter(pk=pk)
         self._mptt_update(qs, left=left, right=right, level=level, tree_id=tree_id)
 
         return right + 1
