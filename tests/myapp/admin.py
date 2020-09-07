@@ -1,8 +1,7 @@
 from django.contrib import admin
-
-from mptt.admin import MPTTModelAdmin, DraggableMPTTAdmin
-
 from myapp.models import Category, Person
+
+from mptt.admin import DraggableMPTTAdmin, MPTTModelAdmin
 
 
 class CategoryAdmin(MPTTModelAdmin):

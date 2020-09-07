@@ -9,13 +9,13 @@ from django.utils.encoding import force_str
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
 
-from mptt.utils import (drilldown_tree_for_node, get_cached_trees,
-                        tree_item_iterator)
+from mptt.utils import drilldown_tree_for_node, get_cached_trees, tree_item_iterator
 
 register = template.Library()
 
 
 # ## ITERATIVE TAGS
+
 
 class FullTreeForModelNode(template.Node):
     def __init__(self, model, context_var):
@@ -23,18 +23,25 @@ class FullTreeForModelNode(template.Node):
         self.context_var = context_var
 
     def render(self, context):
-        cls = apps.get_model(*self.model.split('.'))
+        cls = apps.get_model(*self.model.split("."))
         if cls is None:
             raise template.TemplateSyntaxError(
-                _('full_tree_for_model tag was given an invalid model: %s') % self.model
+                _("full_tree_for_model tag was given an invalid model: %s") % self.model
             )
         context[self.context_var] = cls._tree_manager.all()
-        return ''
+        return ""
 
 
 class DrilldownTreeForNodeNode(template.Node):
-    def __init__(self, node, context_var, foreign_key=None, count_attr=None,
-                 cumulative=False, all_descendants=False):
+    def __init__(
+        self,
+        node,
+        context_var,
+        foreign_key=None,
+        count_attr=None,
+        cumulative=False,
+        all_descendants=False,
+    ):
         self.node = template.Variable(node)
         self.context_var = context_var
         self.foreign_key = foreign_key
@@ -47,23 +54,28 @@ class DrilldownTreeForNodeNode(template.Node):
         args = [self.node.resolve(context)]
 
         if self.foreign_key is not None:
-            app_label, model_name, fk_attr = self.foreign_key.split('.')
+            app_label, model_name, fk_attr = self.foreign_key.split(".")
             cls = apps.get_model(app_label, model_name)
             if cls is None:
                 raise template.TemplateSyntaxError(
-                    _('drilldown_tree_for_node tag was given an invalid model: %s') %
-                    '.'.join([app_label, model_name])
+                    _("drilldown_tree_for_node tag was given an invalid model: %s")
+                    % ".".join([app_label, model_name])
                 )
             try:
                 cls._meta.get_field(fk_attr)
             except FieldDoesNotExist:
                 raise template.TemplateSyntaxError(
-                    _('drilldown_tree_for_node tag was given an invalid model field: %s') % fk_attr
+                    _(
+                        "drilldown_tree_for_node tag was given an invalid model field: %s"
+                    )
+                    % fk_attr
                 )
             args.extend([cls, fk_attr, self.count_attr, self.cumulative])
 
-        context[self.context_var] = drilldown_tree_for_node(*args, all_descendants=self.all_descendants)
-        return ''
+        context[self.context_var] = drilldown_tree_for_node(
+            *args, all_descendants=self.all_descendants
+        )
+        return ""
 
 
 @register.tag
@@ -85,13 +97,17 @@ def full_tree_for_model(parser, token):
     """
     bits = token.contents.split()
     if len(bits) != 4:
-        raise template.TemplateSyntaxError(_('%s tag requires three arguments') % bits[0])
-    if bits[2] != 'as':
-        raise template.TemplateSyntaxError(_("second argument to %s tag must be 'as'") % bits[0])
+        raise template.TemplateSyntaxError(
+            _("%s tag requires three arguments") % bits[0]
+        )
+    if bits[2] != "as":
+        raise template.TemplateSyntaxError(
+            _("second argument to %s tag must be 'as'") % bits[0]
+        )
     return FullTreeForModelNode(bits[1], bits[3])
 
 
-@register.tag('drilldown_tree_for_node')
+@register.tag("drilldown_tree_for_node")
 def do_drilldown_tree_for_node(parser, token):
     """
     Populates a template variable with the drilldown tree for a given
@@ -140,44 +156,71 @@ def do_drilldown_tree_for_node(parser, token):
     len_bits = len(bits)
     if len_bits not in (4, 5, 8, 9, 10):
         raise template.TemplateSyntaxError(
-            _('%s tag requires either three, four, seven, eight, or nine arguments') % bits[0])
-    if bits[2] != 'as':
+            _("%s tag requires either three, four, seven, eight, or nine arguments")
+            % bits[0]
+        )
+    if bits[2] != "as":
         raise template.TemplateSyntaxError(
-            _("second argument to %s tag must be 'as'") % bits[0])
+            _("second argument to %s tag must be 'as'") % bits[0]
+        )
 
     all_descendants = False
     if len_bits > 4:
-        if bits[4] == 'all_descendants':
+        if bits[4] == "all_descendants":
             len_bits -= 1
             bits.pop(4)
             all_descendants = True
 
     if len_bits == 8:
-        if bits[4] != 'count':
+        if bits[4] != "count":
             raise template.TemplateSyntaxError(
-                _("if seven arguments are given, fourth argument to %s tag must be 'with'")
-                % bits[0])
-        if bits[6] != 'in':
+                _(
+                    "if seven arguments are given, fourth argument to %s tag must be 'with'"
+                )
+                % bits[0]
+            )
+        if bits[6] != "in":
             raise template.TemplateSyntaxError(
                 _("if seven arguments are given, sixth argument to %s tag must be 'in'")
-                % bits[0])
-        return DrilldownTreeForNodeNode(bits[1], bits[3], bits[5], bits[7], all_descendants=all_descendants)
+                % bits[0]
+            )
+        return DrilldownTreeForNodeNode(
+            bits[1], bits[3], bits[5], bits[7], all_descendants=all_descendants
+        )
     elif len_bits == 9:
-        if bits[4] != 'cumulative':
+        if bits[4] != "cumulative":
             raise template.TemplateSyntaxError(
-                _("if eight arguments are given, fourth argument to %s tag must be 'cumulative'")
-                % bits[0])
-        if bits[5] != 'count':
+                _(
+                    "if eight arguments are given, fourth argument to %s tag must be 'cumulative'"
+                )
+                % bits[0]
+            )
+        if bits[5] != "count":
             raise template.TemplateSyntaxError(
-                _("if eight arguments are given, fifth argument to %s tag must be 'count'")
-                % bits[0])
-        if bits[7] != 'in':
+                _(
+                    "if eight arguments are given, fifth argument to %s tag must be 'count'"
+                )
+                % bits[0]
+            )
+        if bits[7] != "in":
             raise template.TemplateSyntaxError(
-                _("if eight arguments are given, seventh argument to %s tag must be 'in'")
-                % bits[0])
-        return DrilldownTreeForNodeNode(bits[1], bits[3], bits[6], bits[8], cumulative=True, all_descendants=all_descendants)
+                _(
+                    "if eight arguments are given, seventh argument to %s tag must be 'in'"
+                )
+                % bits[0]
+            )
+        return DrilldownTreeForNodeNode(
+            bits[1],
+            bits[3],
+            bits[6],
+            bits[8],
+            cumulative=True,
+            all_descendants=all_descendants,
+        )
     else:
-        return DrilldownTreeForNodeNode(bits[1], bits[3], all_descendants=all_descendants)
+        return DrilldownTreeForNodeNode(
+            bits[1], bits[3], all_descendants=all_descendants
+        )
 
 
 @register.filter
@@ -211,14 +254,14 @@ def tree_info(items, features=None):
     """
     kwargs = {}
     if features:
-        feature_names = features.split(',')
-        if 'ancestors' in feature_names:
-            kwargs['ancestors'] = True
+        feature_names = features.split(",")
+        if "ancestors" in feature_names:
+            kwargs["ancestors"] = True
     return tree_item_iterator(items, **kwargs)
 
 
 @register.filter
-def tree_path(items, separator=' :: '):
+def tree_path(items, separator=" :: "):
     """
     Creates a tree path represented by a list of ``items`` by joining
     the items with a ``separator``.
@@ -236,6 +279,7 @@ def tree_path(items, separator=' :: '):
 
 
 # ## RECURSIVE TAGS
+
 
 @register.filter
 def cache_tree_children(queryset):
@@ -256,8 +300,8 @@ class RecurseTreeNode(template.Node):
         context.push()
         for child in node.get_children():
             bits.append(self._render_node(context, child))
-        context['node'] = node
-        context['children'] = mark_safe(''.join(bits))
+        context["node"] = node
+        context["children"] = mark_safe("".join(bits))
         rendered = self.template_nodes.render(context)
         context.pop()
         return rendered
@@ -266,7 +310,7 @@ class RecurseTreeNode(template.Node):
         queryset = self.queryset_var.resolve(context)
         roots = cache_tree_children(queryset)
         bits = [self._render_node(context, node) for node in roots]
-        return ''.join(bits)
+        return "".join(bits)
 
 
 @register.tag
@@ -292,11 +336,11 @@ def recursetree(parser, token):
     """
     bits = token.contents.split()
     if len(bits) != 2:
-        raise template.TemplateSyntaxError(_('%s tag requires a queryset') % bits[0])
+        raise template.TemplateSyntaxError(_("%s tag requires a queryset") % bits[0])
 
     queryset_var = template.Variable(bits[1])
 
-    template_nodes = parser.parse(('endrecursetree',))
+    template_nodes = parser.parse(("endrecursetree",))
     parser.delete_first_token()
 
     return RecurseTreeNode(template_nodes, queryset_var)

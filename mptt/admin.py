@@ -2,29 +2,31 @@ import json
 
 from django import forms, http
 from django.conf import settings
-from django.contrib.admin.actions import delete_selected
-from django.contrib.admin.options import ModelAdmin, IncorrectLookupParameters, get_content_type_for_model
-from django.contrib.admin.models import LogEntry, CHANGE
 from django.contrib import messages
-from django.db import IntegrityError, transaction
-from django.utils.encoding import force_str, smart_str
-from django.utils.html import format_html, mark_safe
-from django.utils.translation import gettext as _, gettext_lazy
 from django.contrib.admin import RelatedFieldListFilter
+from django.contrib.admin.actions import delete_selected
+from django.contrib.admin.models import CHANGE, LogEntry
+from django.contrib.admin.options import (
+    IncorrectLookupParameters,
+    ModelAdmin,
+    get_content_type_for_model,
+)
 from django.contrib.admin.utils import get_model_from_relation
 from django.core.exceptions import ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
-from django.utils.translation import get_language_bidi
+from django.db import IntegrityError, transaction
 from django.db.models.fields.related import ForeignObjectRel, ManyToManyField
-
+from django.utils.encoding import force_str, smart_str
+from django.utils.html import format_html, mark_safe
+from django.utils.translation import get_language_bidi, gettext as _, gettext_lazy
 from js_asset import JS
 
 from mptt.exceptions import InvalidMove
 from mptt.forms import MPTTAdminForm, TreeNodeChoiceField
 from mptt.models import MPTTModel, TreeForeignKey
 
-__all__ = ('MPTTModelAdmin', 'MPTTAdminForm', 'DraggableMPTTAdmin')
-IS_GRAPPELLI_INSTALLED = 'grappelli' in settings.INSTALLED_APPS
+__all__ = ("MPTTModelAdmin", "MPTTAdminForm", "DraggableMPTTAdmin")
+IS_GRAPPELLI_INSTALLED = "grappelli" in settings.INSTALLED_APPS
 
 
 class MPTTModelAdmin(ModelAdmin):
@@ -35,28 +37,31 @@ class MPTTModelAdmin(ModelAdmin):
     """
 
     if IS_GRAPPELLI_INSTALLED:
-        change_list_template = 'admin/grappelli_mptt_change_list.html'
+        change_list_template = "admin/grappelli_mptt_change_list.html"
     else:
-        change_list_template = 'admin/mptt_change_list.html'
+        change_list_template = "admin/mptt_change_list.html"
 
     form = MPTTAdminForm
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if issubclass(db_field.remote_field.model, MPTTModel) \
-                and not isinstance(db_field, TreeForeignKey) \
-                and db_field.name not in self.raw_id_fields:
-            db = kwargs.get('using')
+        if (
+            issubclass(db_field.remote_field.model, MPTTModel)
+            and not isinstance(db_field, TreeForeignKey)
+            and db_field.name not in self.raw_id_fields
+        ):
+            db = kwargs.get("using")
 
             limit_choices_to = db_field.get_limit_choices_to()
             defaults = dict(
                 form_class=TreeNodeChoiceField,
                 queryset=db_field.remote_field.model._default_manager.using(
-                    db).complex_filter(limit_choices_to),
-                required=False)
+                    db
+                ).complex_filter(limit_choices_to),
+                required=False,
+            )
             defaults.update(kwargs)
             kwargs = defaults
-        return super().formfield_for_foreignkey(
-            db_field, request, **kwargs)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def get_ordering(self, request):
         """
@@ -72,7 +77,7 @@ class MPTTModelAdmin(ModelAdmin):
         trigger the post_delete hooks.)
         """
         # If this is True, the confirmation page has been displayed
-        if request.POST.get('post'):
+        if request.POST.get("post"):
             n = 0
             with queryset.model._tree_manager.delay_mptt_updates():
                 for obj in queryset:
@@ -82,8 +87,8 @@ class MPTTModelAdmin(ModelAdmin):
                         obj.delete()
                         n += 1
             self.message_user(
-                request,
-                _('Successfully deleted %(count)d items.') % {'count': n})
+                request, _("Successfully deleted %(count)d items.") % {"count": n}
+            )
             # Return None to display the change list page again
             return None
         else:
@@ -92,11 +97,12 @@ class MPTTModelAdmin(ModelAdmin):
 
     def get_actions(self, request):
         actions = super().get_actions(request)
-        if actions is not None and 'delete_selected' in actions:
-            actions['delete_selected'] = (
+        if actions is not None and "delete_selected" in actions:
+            actions["delete_selected"] = (
                 self.delete_selected_tree,
-                'delete_selected',
-                _('Delete selected %(verbose_name_plural)s'))
+                "delete_selected",
+                _("Delete selected %(verbose_name_plural)s"),
+            )
         return actions
 
 
@@ -108,8 +114,8 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
 
     change_list_template = None  # Back to default
     list_per_page = 2000  # This will take a really long time to load.
-    list_display = ('tree_actions', 'indented_title')  # Sane defaults.
-    list_display_links = ('indented_title',)  # Sane defaults.
+    list_display = ("tree_actions", "indented_title")  # Sane defaults.
+    list_display_links = ("indented_title",)  # Sane defaults.
     mptt_level_indent = 20
     expand_tree_by_default = False
 
@@ -117,17 +123,18 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         try:
             url = item.get_absolute_url()
         except Exception:  # Nevermind.
-            url = ''
+            url = ""
 
         return format_html(
             '<div class="drag-handle"></div>'
             '<div class="tree-node" data-pk="{}" data-level="{}"'
             ' data-url="{}"></div>',
             item.pk,
-            item._mpttfield('level'),
+            item._mpttfield("level"),
             url,
         )
-    tree_actions.short_description = ''
+
+    tree_actions.short_description = ""
 
     def indented_title(self, item):
         """
@@ -136,32 +143,37 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         """
         return format_html(
             '<div style="text-indent:{}px">{}</div>',
-            item._mpttfield('level') * self.mptt_level_indent,
+            item._mpttfield("level") * self.mptt_level_indent,
             item,
         )
-    indented_title.short_description = gettext_lazy('title')
+
+    indented_title.short_description = gettext_lazy("title")
 
     def changelist_view(self, request, *args, **kwargs):
-        if request.is_ajax() and request.POST.get('cmd') == 'move_node':
+        if request.is_ajax() and request.POST.get("cmd") == "move_node":
             return self._move_node(request)
 
-        response = super().changelist_view(
-            request, *args, **kwargs)
+        response = super().changelist_view(request, *args, **kwargs)
 
         try:
-            response.context_data['media'] = response.context_data['media'] + forms.Media(
+            response.context_data["media"] = response.context_data[
+                "media"
+            ] + forms.Media(
                 css={
-                    'all': ['mptt/draggable-admin.css'],
+                    "all": ["mptt/draggable-admin.css"],
                 },
                 js=[
-                    'admin/js/vendor/jquery/jquery.js',
-                    'admin/js/jquery.init.js',
-                    JS('mptt/draggable-admin.js', {
-                        'id': 'draggable-admin-context',
-                        'data-context': json.dumps(
-                            self._tree_context(request), cls=DjangoJSONEncoder
-                        ),
-                    }),
+                    "admin/js/vendor/jquery/jquery.js",
+                    "admin/js/jquery.init.js",
+                    JS(
+                        "mptt/draggable-admin.js",
+                        {
+                            "id": "draggable-admin-context",
+                            "data-context": json.dumps(
+                                self._tree_context(request), cls=DjangoJSONEncoder
+                            ),
+                        },
+                    ),
                 ],
             )
         except (AttributeError, KeyError):
@@ -173,45 +185,65 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
 
     def get_data_before_update(self, request, cut_item, pasted_on):
         mptt_opts = self.model._mptt_meta
-        mptt_attr_fields = ("parent_attr", "left_attr", "right_attr", "tree_id_attr", "level_attr")
+        mptt_attr_fields = (
+            "parent_attr",
+            "left_attr",
+            "right_attr",
+            "tree_id_attr",
+            "level_attr",
+        )
         mptt_fields = [getattr(mptt_opts, attr) for attr in mptt_attr_fields]
         return {k: getattr(cut_item, k) for k in mptt_fields}
 
-    def get_move_node_change_message(self, request, cut_item, pasted_on, data_before_update):
-        changed_fields = [k for k, v in data_before_update.items() if v != getattr(cut_item, k)]
-        return [{'changed': {'fields': changed_fields}}]
+    def get_move_node_change_message(
+        self, request, cut_item, pasted_on, data_before_update
+    ):
+        changed_fields = [
+            k for k, v in data_before_update.items() if v != getattr(cut_item, k)
+        ]
+        return [{"changed": {"fields": changed_fields}}]
 
     @transaction.atomic
     def _move_node(self, request):
-        position = request.POST.get('position')
-        if position not in ('last-child', 'left', 'right'):
-            self.message_user(request, _('Did not understand moving instruction.'), level=messages.ERROR)
-            return http.HttpResponse('FAIL, unknown instruction.')
+        position = request.POST.get("position")
+        if position not in ("last-child", "left", "right"):
+            self.message_user(
+                request,
+                _("Did not understand moving instruction."),
+                level=messages.ERROR,
+            )
+            return http.HttpResponse("FAIL, unknown instruction.")
 
         queryset = self.get_queryset(request)
         try:
-            cut_item = queryset.get(pk=request.POST.get('cut_item'))
-            pasted_on = queryset.get(pk=request.POST.get('pasted_on'))
+            cut_item = queryset.get(pk=request.POST.get("cut_item"))
+            pasted_on = queryset.get(pk=request.POST.get("pasted_on"))
         except (self.model.DoesNotExist, TypeError, ValueError):
-            self.message_user(request, _('Objects have disappeared, try again.'), level=messages.ERROR)
-            return http.HttpResponse('FAIL, invalid objects.')
+            self.message_user(
+                request, _("Objects have disappeared, try again."), level=messages.ERROR
+            )
+            return http.HttpResponse("FAIL, invalid objects.")
 
         if not self.has_change_permission(request, cut_item):
-            self.message_user(request, _('No permission'), level=messages.ERROR)
-            return http.HttpResponse('FAIL, no permission.')
+            self.message_user(request, _("No permission"), level=messages.ERROR)
+            return http.HttpResponse("FAIL, no permission.")
 
         data_before_update = self.get_data_before_update(request, cut_item, pasted_on)
 
         try:
             self.model._tree_manager.move_node(cut_item, pasted_on, position)
         except InvalidMove as e:
-            self.message_user(request, '%s' % e, level=messages.ERROR)
-            return http.HttpResponse('FAIL, invalid move.')
+            self.message_user(request, "%s" % e, level=messages.ERROR)
+            return http.HttpResponse("FAIL, invalid move.")
         except IntegrityError as e:
-            self.message_user(request, _('Database error: %s') % e, level=messages.ERROR)
+            self.message_user(
+                request, _("Database error: %s") % e, level=messages.ERROR
+            )
             raise
 
-        change_message = self.get_move_node_change_message(request, cut_item, pasted_on, data_before_update)
+        change_message = self.get_move_node_change_message(
+            request, cut_item, pasted_on, data_before_update
+        )
 
         LogEntry.objects.log_action(
             user_id=request.user.id,
@@ -219,29 +251,27 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
             object_id=cut_item.pk,
             object_repr=str(cut_item),
             action_flag=CHANGE,
-            change_message=change_message
+            change_message=change_message,
         )
 
-        self.message_user(
-            request,
-            _('%s has been successfully moved.') % cut_item)
-        return http.HttpResponse('OK, moved.')
+        self.message_user(request, _("%s has been successfully moved.") % cut_item)
+        return http.HttpResponse("OK, moved.")
 
     def _tree_context(self, request):
         opts = self.model._meta
 
         return {
-            'storageName': 'tree_%s_%s_collapsed' % (opts.app_label, opts.model_name),
-            'treeStructure': self._build_tree_structure(self.get_queryset(request)),
-            'levelIndent': self.mptt_level_indent,
-            'messages': {
-                'before': _('move node before node'),
-                'child': _('move node to child position'),
-                'after': _('move node after node'),
-                'collapseTree': _('Collapse tree'),
-                'expandTree': _('Expand tree'),
+            "storageName": "tree_%s_%s_collapsed" % (opts.app_label, opts.model_name),
+            "treeStructure": self._build_tree_structure(self.get_queryset(request)),
+            "levelIndent": self.mptt_level_indent,
+            "messages": {
+                "before": _("move node before node"),
+                "child": _("move node to child position"),
+                "after": _("move node after node"),
+                "collapseTree": _("Collapse tree"),
+                "expandTree": _("Expand tree"),
             },
-            'expandTreeByDefault': self.expand_tree_by_default,
+            "expandTreeByDefault": self.expand_tree_by_default,
         }
 
     def _build_tree_structure(self, queryset):
@@ -261,8 +291,8 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
 
         mptt_opts = self.model._mptt_meta
         items = queryset.values_list(
-            'pk',
-            '%s_id' % mptt_opts.parent_attr,
+            "pk",
+            "%s_id" % mptt_opts.parent_attr,
         )
         for p_id, parent_id in items:
             all_nodes.setdefault(
@@ -288,18 +318,20 @@ class TreeRelatedFieldListFilter(RelatedFieldListFilter):
             ('my_related_model', TreeRelatedFieldListFilter),
         )
     """
-    template = 'admin/mptt_filter.html'
+
+    template = "admin/mptt_filter.html"
     mptt_level_indent = 10
 
     def __init__(self, field, request, params, model, model_admin, field_path):
         self.other_model = get_model_from_relation(field)
-        if field.remote_field is not None and hasattr(field.remote_field, 'get_related_field'):
+        if field.remote_field is not None and hasattr(
+            field.remote_field, "get_related_field"
+        ):
             self.rel_name = field.remote_field.get_related_field().name
         else:
             self.rel_name = self.other_model._meta.pk.name
-        self.changed_lookup_kwarg = '%s__%s__inhierarchy' % (field_path, self.rel_name)
-        super().__init__(field, request, params,
-                                                         model, model_admin, field_path)
+        self.changed_lookup_kwarg = "%s__%s__inhierarchy" % (field_path, self.rel_name)
+        super().__init__(field, request, params, model, model_admin, field_path)
         self.lookup_val = request.GET.get(self.changed_lookup_kwarg)
 
     def expected_parameters(self):
@@ -315,7 +347,7 @@ class TreeRelatedFieldListFilter(RelatedFieldListFilter):
                 other_models = other_model.get_descendants(True)
                 del self.used_parameters[self.changed_lookup_kwarg]
                 self.used_parameters.update(
-                    {'%s__%s__in' % (self.field_path, self.rel_name): other_models}
+                    {"%s__%s__in" % (self.field_path, self.rel_name): other_models}
                 )
             # #### MPTT ADDITION END
             return queryset.filter(**self.used_parameters)
@@ -324,17 +356,22 @@ class TreeRelatedFieldListFilter(RelatedFieldListFilter):
 
     # Adding padding_style to each choice tuple
     def field_choices(self, field, request, model_admin):
-        mptt_level_indent = getattr(model_admin, 'mptt_level_indent', self.mptt_level_indent)
+        mptt_level_indent = getattr(
+            model_admin, "mptt_level_indent", self.mptt_level_indent
+        )
         language_bidi = get_language_bidi()
         initial_choices = field.get_choices(include_blank=False)
         pks = [pk for pk, val in initial_choices]
         models = field.related_model._default_manager.filter(pk__in=pks)
-        levels_dict = {model.pk: getattr(model, model._mptt_meta.level_attr) for model in models}
+        levels_dict = {
+            model.pk: getattr(model, model._mptt_meta.level_attr) for model in models
+        }
         choices = []
         for pk, val in initial_choices:
             padding_style = ' style="padding-%s:%spx"' % (
-                'right' if language_bidi else 'left',
-                mptt_level_indent * levels_dict[pk])
+                "right" if language_bidi else "left",
+                mptt_level_indent * levels_dict[pk],
+            )
             choices.append((pk, val, mark_safe(padding_style)))
         return choices
 
@@ -345,29 +382,39 @@ class TreeRelatedFieldListFilter(RelatedFieldListFilter):
         EMPTY_CHANGELIST_VALUE = self.empty_value_display
         # #### MPTT ADDITION END
         yield {
-            'selected': self.lookup_val is None and not self.lookup_val_isnull,
-            'query_string': cl.get_query_string({}, [self.changed_lookup_kwarg, self.lookup_kwarg_isnull]),
-            'display': _('All'),
+            "selected": self.lookup_val is None and not self.lookup_val_isnull,
+            "query_string": cl.get_query_string(
+                {}, [self.changed_lookup_kwarg, self.lookup_kwarg_isnull]
+            ),
+            "display": _("All"),
         }
         for pk_val, val, padding_style in self.lookup_choices:
             yield {
-                'selected': self.lookup_val == smart_str(pk_val),
-                'query_string': cl.get_query_string({
-                    self.changed_lookup_kwarg: pk_val,
-                }, [self.lookup_kwarg_isnull]),
-                'display': val,
+                "selected": self.lookup_val == smart_str(pk_val),
+                "query_string": cl.get_query_string(
+                    {
+                        self.changed_lookup_kwarg: pk_val,
+                    },
+                    [self.lookup_kwarg_isnull],
+                ),
+                "display": val,
                 # #### MPTT ADDITION START
-                'padding_style': padding_style,
+                "padding_style": padding_style,
                 # #### MPTT ADDITION END
             }
-        if (isinstance(self.field, ForeignObjectRel) and
-                (self.field.field.null or isinstance(self.field.field, ManyToManyField)) or
-                self.field.remote_field is not None and
-                (self.field.null or isinstance(self.field, ManyToManyField))):
+        if (
+            isinstance(self.field, ForeignObjectRel)
+            and (self.field.field.null or isinstance(self.field.field, ManyToManyField))
+            or self.field.remote_field is not None
+            and (self.field.null or isinstance(self.field, ManyToManyField))
+        ):
             yield {
-                'selected': bool(self.lookup_val_isnull),
-                'query_string': cl.get_query_string({
-                    self.lookup_kwarg_isnull: 'True',
-                }, [self.changed_lookup_kwarg]),
-                'display': EMPTY_CHANGELIST_VALUE,
+                "selected": bool(self.lookup_val_isnull),
+                "query_string": cl.get_query_string(
+                    {
+                        self.lookup_kwarg_isnull: "True",
+                    },
+                    [self.changed_lookup_kwarg],
+                ),
+                "display": EMPTY_CHANGELIST_VALUE,
             }

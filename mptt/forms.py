@@ -10,10 +10,11 @@ from django.utils.translation import gettext_lazy as _
 from mptt.exceptions import InvalidMove
 from mptt.settings import DEFAULT_LEVEL_INDICATOR
 
-
 __all__ = (
-    'TreeNodeChoiceField', 'TreeNodeMultipleChoiceField',
-    'TreeNodePositionField', 'MoveNodeForm',
+    "TreeNodeChoiceField",
+    "TreeNodeMultipleChoiceField",
+    "TreeNodePositionField",
+    "MoveNodeForm",
 )
 
 # Fields ######################################################################
@@ -21,10 +22,10 @@ __all__ = (
 
 class TreeNodeChoiceFieldMixin:
     def __init__(self, queryset, *args, **kwargs):
-        self.level_indicator = kwargs.pop('level_indicator', DEFAULT_LEVEL_INDICATOR)
+        self.level_indicator = kwargs.pop("level_indicator", DEFAULT_LEVEL_INDICATOR)
 
         # if a queryset is supplied, enforce ordering
-        if hasattr(queryset, 'model'):
+        if hasattr(queryset, "model"):
             mptt_opts = queryset.model._mptt_meta
             queryset = queryset.order_by(mptt_opts.tree_id_attr, mptt_opts.left_attr)
 
@@ -40,38 +41,42 @@ class TreeNodeChoiceFieldMixin:
         generating option labels.
         """
         level_indicator = self._get_level_indicator(obj)
-        return mark_safe(level_indicator + ' ' + conditional_escape(smart_str(obj)))
+        return mark_safe(level_indicator + " " + conditional_escape(smart_str(obj)))
 
 
 class TreeNodeChoiceField(TreeNodeChoiceFieldMixin, forms.ModelChoiceField):
     """A ModelChoiceField for tree nodes."""
 
 
-class TreeNodeMultipleChoiceField(TreeNodeChoiceFieldMixin, forms.ModelMultipleChoiceField):
+class TreeNodeMultipleChoiceField(
+    TreeNodeChoiceFieldMixin, forms.ModelMultipleChoiceField
+):
     """A ModelMultipleChoiceField for tree nodes."""
 
 
 class TreeNodePositionField(forms.ChoiceField):
     """A ChoiceField for specifying position relative to another node."""
-    FIRST_CHILD = 'first-child'
-    LAST_CHILD = 'last-child'
-    LEFT = 'left'
-    RIGHT = 'right'
+
+    FIRST_CHILD = "first-child"
+    LAST_CHILD = "last-child"
+    LEFT = "left"
+    RIGHT = "right"
 
     DEFAULT_CHOICES = (
-        (FIRST_CHILD, _('First child')),
-        (LAST_CHILD, _('Last child')),
-        (LEFT, _('Left sibling')),
-        (RIGHT, _('Right sibling')),
+        (FIRST_CHILD, _("First child")),
+        (LAST_CHILD, _("Last child")),
+        (LEFT, _("Left sibling")),
+        (RIGHT, _("Right sibling")),
     )
 
     def __init__(self, *args, **kwargs):
-        if 'choices' not in kwargs:
-            kwargs['choices'] = self.DEFAULT_CHOICES
+        if "choices" not in kwargs:
+            kwargs["choices"] = self.DEFAULT_CHOICES
         super().__init__(*args, **kwargs)
 
 
 # Forms #######################################################################
+
 
 class MoveNodeForm(forms.Form):
     """
@@ -79,6 +84,7 @@ class MoveNodeForm(forms.Form):
     in its tree to another, with optional restriction of the nodes which
     are valid target nodes for the move.
     """
+
     target = TreeNodeChoiceField(queryset=None)
     position = TreeNodePositionField()
 
@@ -113,24 +119,26 @@ class MoveNodeForm(forms.Form):
            in the target options.
         """
         self.node = node
-        valid_targets = kwargs.pop('valid_targets', None)
-        target_select_size = kwargs.pop('target_select_size', 10)
-        position_choices = kwargs.pop('position_choices', None)
-        level_indicator = kwargs.pop('level_indicator', None)
+        valid_targets = kwargs.pop("valid_targets", None)
+        target_select_size = kwargs.pop("target_select_size", 10)
+        position_choices = kwargs.pop("position_choices", None)
+        level_indicator = kwargs.pop("level_indicator", None)
         super().__init__(*args, **kwargs)
         opts = node._mptt_meta
         if valid_targets is None:
-            valid_targets = node._tree_manager.exclude(**{
-                opts.tree_id_attr: getattr(node, opts.tree_id_attr),
-                opts.left_attr + '__gte': getattr(node, opts.left_attr),
-                opts.right_attr + '__lte': getattr(node, opts.right_attr),
-            })
-        self.fields['target'].queryset = valid_targets
-        self.fields['target'].widget.attrs['size'] = target_select_size
+            valid_targets = node._tree_manager.exclude(
+                **{
+                    opts.tree_id_attr: getattr(node, opts.tree_id_attr),
+                    opts.left_attr + "__gte": getattr(node, opts.left_attr),
+                    opts.right_attr + "__lte": getattr(node, opts.right_attr),
+                }
+            )
+        self.fields["target"].queryset = valid_targets
+        self.fields["target"].widget.attrs["size"] = target_select_size
         if level_indicator:
-            self.fields['target'].level_indicator = level_indicator
+            self.fields["target"].level_indicator = level_indicator
         if position_choices:
-            self.fields['position'].choices = position_choices
+            self.fields["position"].choices = position_choices
 
     def save(self):
         """
@@ -143,8 +151,9 @@ class MoveNodeForm(forms.Form):
         redisplay the form with the error, should it occur.
         """
         try:
-            self.node.move_to(self.cleaned_data['target'],
-                              self.cleaned_data['position'])
+            self.node.move_to(
+                self.cleaned_data["target"], self.cleaned_data["position"]
+            )
             return self.node
         except InvalidMove as e:
             self.errors[NON_FIELD_ERRORS] = self.error_class(e)
@@ -166,9 +175,9 @@ class MPTTAdminForm(forms.ModelForm):
             if parent_field:
                 parent_qs = parent_field.queryset
                 parent_qs = parent_qs.exclude(
-                    pk__in=instance.get_descendants(
-                        include_self=True
-                    ).values_list('pk', flat=True)
+                    pk__in=instance.get_descendants(include_self=True).values_list(
+                        "pk", flat=True
+                    )
                 )
                 parent_field.queryset = parent_qs
 
@@ -180,6 +189,6 @@ class MPTTAdminForm(forms.ModelForm):
             if parent.is_descendant_of(self.instance, include_self=True):
                 if opts.parent_attr not in self._errors:
                     self._errors[opts.parent_attr] = self.error_class()
-                self._errors[opts.parent_attr].append(_('Invalid parent'))
+                self._errors[opts.parent_attr].append(_("Invalid parent"))
                 del self.cleaned_data[opts.parent_attr]
         return cleaned_data

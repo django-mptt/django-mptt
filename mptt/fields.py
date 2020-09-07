@@ -2,10 +2,10 @@
 Model fields for working with trees.
 """
 from django.db import models
+
 from mptt.forms import TreeNodeChoiceField, TreeNodeMultipleChoiceField
 
-
-__all__ = ('TreeForeignKey', 'TreeOneToOneField', 'TreeManyToManyField')
+__all__ = ("TreeForeignKey", "TreeOneToOneField", "TreeManyToManyField")
 
 
 class TreeForeignKey(models.ForeignKey):
@@ -21,17 +21,17 @@ class TreeForeignKey(models.ForeignKey):
         """
         Use MPTT's ``TreeNodeChoiceField``
         """
-        kwargs.setdefault('form_class', TreeNodeChoiceField)
+        kwargs.setdefault("form_class", TreeNodeChoiceField)
         return super().formfield(**kwargs)
 
 
 class TreeOneToOneField(models.OneToOneField):
     def formfield(self, **kwargs):
-        kwargs.setdefault('form_class', TreeNodeChoiceField)
+        kwargs.setdefault("form_class", TreeNodeChoiceField)
         return super().formfield(**kwargs)
 
 
 class TreeManyToManyField(models.ManyToManyField):
     def formfield(self, **kwargs):
-        kwargs.setdefault('form_class', TreeNodeMultipleChoiceField)
+        kwargs.setdefault("form_class", TreeNodeMultipleChoiceField)
         return super().formfield(**kwargs)

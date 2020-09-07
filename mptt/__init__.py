@@ -10,6 +10,7 @@ def register(*args, **kwargs):
     This is equivalent to just subclassing MPTTModel, but works for an already-created model.
     """
     from mptt.models import MPTTModelBase
+
     return MPTTModelBase.register(*args, **kwargs)
 
 
