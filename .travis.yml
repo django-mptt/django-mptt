@@ -1,4 +1,3 @@
-dist: xenial
 language: python
 cache: pip
 git:
@@ -9,19 +8,5 @@ python:
   - "3.7"
   - "3.6"
 
-env:
-  - DJANGO="Django==2.2.*"
-  - DJANGO="Django==3.0.*"
-  - DJANGO="Django==3.1.*"
-  - DJANGO="https://github.com/django/django/archive/master.tar.gz"
-
-matrix:
-  allow_failures:
-    - env: DJANGO="https://github.com/django/django/archive/master.tar.gz"
-
-before_install: pip install --upgrade pip
-
-# command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
-install: pip install $DJANGO mock-django==0.6.9 django-js-asset
-# command to run tests, e.g. python setup.py test
-script: cd tests/ && ./runtests.sh
+install: pip install tox-travis
+script: tox
