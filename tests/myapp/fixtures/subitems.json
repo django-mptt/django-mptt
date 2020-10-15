@@ -1,0 +1,16 @@
+[
+  {
+    "pk": 1,
+    "model": "myapp.subitem",
+    "fields": {
+      "item": 1
+    }
+  },
+  {
+    "pk": 2,
+    "model": "myapp.subitem",
+    "fields": {
+      "item": 3
+    }
+  }
+]

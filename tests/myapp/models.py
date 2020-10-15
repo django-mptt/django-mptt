@@ -54,6 +54,10 @@ class Item(models.Model):
         return self.name
 
 
+class SubItem(models.Model):
+    item = models.ForeignKey(Item, null=True, on_delete=models.CASCADE)
+
+
 class Genre(MPTTModel):
     name = models.CharField(max_length=50, unique=True)
     parent = TreeForeignKey(

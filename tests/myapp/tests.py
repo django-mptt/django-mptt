@@ -40,6 +40,7 @@ from myapp.models import (
     Person,
     SingleProxyModel,
     Student,
+    SubItem,
     UniqueTogetherModel,
     UUIDNode,
 )
@@ -2061,7 +2062,7 @@ class QuerySetTests(TreeTestCase):
 
 class TreeManagerTestCase(TreeTestCase):
 
-    fixtures = ["categories.json", "items.json"]
+    fixtures = ["categories.json", "items.json", "subitems.json"]
 
     def test_add_related_count_with_fk_to_natural_key(self):
         # Regression test for #284
@@ -2078,6 +2079,50 @@ class TreeManagerTestCase(TreeTestCase):
             queryset, Item, "category_pk", "item_count", cumulative=False
         ):
             self.assertEqual(c.item_count, c.items_by_pk.count())
+
+    def test_add_related_count_multistep(self):
+        queryset = Category.objects.filter(name="Xbox 360").order_by("id")
+        topqueryset = Category.objects.filter(name="PC & Video Games").order_by("id")
+
+        # Test using FK that doesn't point to a primary key
+        for c in Category.objects.add_related_count(
+            queryset, SubItem, "item__category_fk", "subitem_count", cumulative=False
+        ):
+            self.assertEqual(c.subitem_count, 1)
+        for topc in Category.objects.add_related_count(
+            topqueryset, SubItem, "item__category_fk", "subitem_count", cumulative=False
+        ):
+            self.assertEqual(topc.subitem_count, 1)
+
+        # Also works when using the FK that *does* point to a primary key
+        for c in Category.objects.add_related_count(
+            queryset, SubItem, "item__category_pk", "subitem_count", cumulative=False
+        ):
+            self.assertEqual(c.subitem_count, 1)
+        for topc in Category.objects.add_related_count(
+            topqueryset, SubItem, "item__category_pk", "subitem_count", cumulative=False
+        ):
+            self.assertEqual(topc.subitem_count, 1)
+
+        # Test using FK that doesn't point to a primary key, cumulative
+        for c in Category.objects.add_related_count(
+            queryset, SubItem, "item__category_fk", "subitem_count", cumulative=True
+        ):
+            self.assertEqual(c.subitem_count, 1)
+        for topc in Category.objects.add_related_count(
+            topqueryset, SubItem, "item__category_fk", "subitem_count", cumulative=True
+        ):
+            self.assertEqual(topc.subitem_count, 2)
+
+        # Also works when using the FK that *does* point to a primary key, cumulative
+        for c in Category.objects.add_related_count(
+            queryset, SubItem, "item__category_pk", "subitem_count", cumulative=True
+        ):
+            self.assertEqual(c.subitem_count, 1)
+        for topc in Category.objects.add_related_count(
+            topqueryset, SubItem, "item__category_pk", "subitem_count", cumulative=True
+        ):
+            self.assertEqual(topc.subitem_count, 2)
 
     def test_add_related_count_with_extra_filters(self):
         """ Test that filtering by extra_filters works """
