@@ -434,13 +434,6 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         ``extra_filters``
            Dict with aditional parameters filtering the related queryset.
         """
-        mptt_field = rel_model._meta.get_field(rel_field)
-
-        if isinstance(mptt_field, ManyToManyField):
-            field_name = "pk"
-        else:
-            field_name = mptt_field.remote_field.field_name
-
         if cumulative:
             subquery_filters = {
                 rel_field + "__tree_id": OuterRef(self.tree_id_attr),
@@ -448,6 +441,17 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                 rel_field + "__lft__lte": OuterRef(self.right_attr),
             }
         else:
+            current_rel_model = rel_model
+            for rel_field_part in rel_field.split('__'):
+                current_mptt_field = current_rel_model._meta.get_field(rel_field_part)
+                current_rel_model = current_mptt_field.related_model
+            mptt_field = current_mptt_field
+
+            if isinstance(mptt_field, ManyToManyField):
+                field_name = "pk"
+            else:
+                field_name = mptt_field.remote_field.field_name
+
             subquery_filters = {
                 rel_field: OuterRef(field_name),
             }
