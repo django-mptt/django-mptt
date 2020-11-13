@@ -177,3 +177,45 @@ class TestForms(TreeTestCase):
             '<option value="11">+-- Tactical RPG</option>'
             "</select>",
         )
+
+    def test_treenodechoicefield_relative_level(self):
+        top = Genre.objects.get(pk=2)
+        field = TreeNodeChoiceField(queryset=top.get_descendants())
+        self.assertHTMLEqual(
+            field.widget.render("test", None),
+            '<select name="test">'
+            '<option value="" selected>---------</option>'
+            '<option value="3">------ 2D Platformer</option>'
+            '<option value="4">------ 3D Platformer</option>'
+            '<option value="5">------ 4D Platformer</option>'
+            "</select>",
+        )
+
+        field = TreeNodeChoiceField(
+            queryset=top.get_descendants(include_self=True),
+            start_level=top.level,
+        )
+        self.assertHTMLEqual(
+            field.widget.render("test", None),
+            '<select name="test">'
+            '<option value="" selected>---------</option>'
+            '<option value="2"> Platformer</option>'
+            '<option value="3">--- 2D Platformer</option>'
+            '<option value="4">--- 3D Platformer</option>'
+            '<option value="5">--- 4D Platformer</option>'
+            "</select>",
+        )
+
+        field = TreeNodeChoiceField(
+            queryset=top.get_descendants(),
+            start_level=top.level + 1,
+        )
+        self.assertHTMLEqual(
+            field.widget.render("test", None),
+            '<select name="test">'
+            '<option value="" selected>---------</option>'
+            '<option value="3"> 2D Platformer</option>'
+            '<option value="4"> 3D Platformer</option>'
+            '<option value="5"> 4D Platformer</option>'
+            "</select>",
+        )

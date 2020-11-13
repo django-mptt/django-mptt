@@ -63,6 +63,17 @@ options::
    +-- Child 2.1
    +--+-- Child 2.1.1
 
+The starting level can be set so querysets not including the root object can still be displayed in a convenient way. Use the ``start_level`` argument to set the starting point for levels::
+
+   obj = Category.objects.get(pk=1)
+   category = TreeNodeChoiceField(queryset=obj.get_descendants(),
+                                  start_level=obj.level)
+
+...which for this example would result in a select with the following
+options::
+
+   --- Child 1.1.1
+
 .. _`ModelChoiceField`: https://docs.djangoproject.com/en/dev/ref/forms/fields/#django.forms.ModelChoiceField
 
 ``TreeNodeMultipleChoiceField``

@@ -23,6 +23,7 @@ __all__ = (
 class TreeNodeChoiceFieldMixin:
     def __init__(self, queryset, *args, **kwargs):
         self.level_indicator = kwargs.pop("level_indicator", DEFAULT_LEVEL_INDICATOR)
+        self.start_level = kwargs.pop("start_level", 0)
 
         # if a queryset is supplied, enforce ordering
         if hasattr(queryset, "model"):
@@ -31,8 +32,12 @@ class TreeNodeChoiceFieldMixin:
 
         super().__init__(queryset, *args, **kwargs)
 
-    def _get_level_indicator(self, obj):
+    def _get_relative_level(self, obj):
         level = getattr(obj, obj._mptt_meta.level_attr)
+        return level - self.start_level
+
+    def _get_level_indicator(self, obj):
+        level = self._get_relative_level(obj)
         return mark_safe(conditional_escape(self.level_indicator) * level)
 
     def label_from_instance(self, obj):
