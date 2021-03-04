@@ -4,8 +4,12 @@ Change log
 Next version
 ~~~~~~~~~~~~
 
+0.12
+~~~~
+
 - Fixed a few bugs and added a few features.
 - Reformatted the code using isort and black.
+- Other, undocumented changes. Please help out.
 
 
 0.11
