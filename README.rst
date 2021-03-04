@@ -1,3 +1,17 @@
+==========================================
+**This project is currently unmaintained**
+==========================================
+
+Alternatives to django-mptt include:
+
+* `django-treebeard <https://pypi.org/project/django-treebeard/>`_ includes a MPTT
+  implementation (called nested set)
+* Maybe you do not need MPTT, especially when using newer databases. See
+  `django-tree-queries <https://github.com/matthiask/django-tree-queries>`_ for an
+  implementation using recursive Common Table Expressions (CTE). See the 
+  `announcement blog post <https://406.ch/writing/django-tree-queries/>`__.
+
+
 ===========
 django-mptt
 ===========
@@ -48,8 +62,8 @@ structure and provides tools for working with trees of model instances.
 Requirements
 ------------
 
-* Python 3.5+
-* A supported version of Django (currently 1.11+)
+* Python 3.6+
+* A supported version of Django (currently 2.2+)
 
 Feature overview
 ----------------
