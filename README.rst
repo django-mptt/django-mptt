@@ -1,3 +1,8 @@
+==========================================
+**This project is currently unmaintained**
+==========================================
+
+
 ===========
 django-mptt
 ===========
@@ -48,8 +53,8 @@ structure and provides tools for working with trees of model instances.
 Requirements
 ------------
 
-* Python 3.5+
-* A supported version of Django (currently 1.11+)
+* Python 3.6+
+* A supported version of Django (currently 2.2+)
 
 Feature overview
 ----------------
