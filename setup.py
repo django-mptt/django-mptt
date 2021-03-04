@@ -8,7 +8,7 @@ setup(
         "Utilities for implementing Modified Preorder Tree Traversal "
         "with your Django Models and working with trees of Model instances."
     ),
-    version="0.11.0",
+    version="0.12.0",
     author="Craig de Stigter",
     author_email="craig.ds@gmail.com",
     url="https://github.com/django-mptt/django-mptt",
