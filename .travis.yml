@@ -14,11 +14,11 @@ env:
   - DJANGO="Django==3.0.*"
   - DJANGO="Django==3.1.*"
   - DJANGO="Django==3.2.*"
-  - DJANGO="https://github.com/django/django/archive/master.tar.gz"
+  - DJANGO="https://github.com/django/django/archive/main.tar.gz"
 
 matrix:
   allow_failures:
-    - env: DJANGO="https://github.com/django/django/archive/master.tar.gz"
+    - env: DJANGO="https://github.com/django/django/archive/main.tar.gz"
 
 before_install: pip install --upgrade pip
 
