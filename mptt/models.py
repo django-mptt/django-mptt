@@ -211,7 +211,7 @@ class MPTTOptions:
         right_sibling = None
         # Optimisation - if the parent doesn't have descendants,
         # the node will always be its last child.
-        if parent is None or parent.get_descendant_count() > 0:
+        if self.order_insertion_by and (parent is None or parent.get_descendant_count() > 0):
             opts = node._mptt_meta
             order_by = opts.order_insertion_by[:]
             filters = self.insertion_target_filters(node, order_by)
@@ -969,9 +969,7 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
                 parent = getattr(self, opts.parent_attr)
                 opts.set_raw_field_value(self, opts.parent_attr, old_parent_id)
                 try:
-                    right_sibling = None
-                    if opts.order_insertion_by:
-                        right_sibling = opts.get_ordered_insertion_target(self, parent)
+                    right_sibling = opts.get_ordered_insertion_target(self, parent)
 
                     if parent_id is not None:
                         # If we aren't already a descendant of the new parent,
