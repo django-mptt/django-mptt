@@ -151,7 +151,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
     indented_title.short_description = gettext_lazy("title")
 
     def changelist_view(self, request, *args, **kwargs):
-        if request.is_ajax() and request.POST.get("cmd") == "move_node":
+        if request.POST.get("cmd") == "move_node":
             return self._move_node(request)
 
         response = super().changelist_view(request, *args, **kwargs)
