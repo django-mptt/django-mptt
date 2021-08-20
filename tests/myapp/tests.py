@@ -2585,6 +2585,9 @@ class ListFiltersTests(TestCase):
         if hasattr(modeladmin, "sortable_by"):
             # New in Django 2.1
             args.append(modeladmin.sortable_by)
+        if hasattr(modeladmin, "search_help_text"):
+            # New in Django 4.0
+            args.append(modeladmin.search_help_text)
         return ChangeList(*args)
 
     def test_treerelatedfieldlistfilter_foreignkey(self):
