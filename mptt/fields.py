@@ -5,6 +5,7 @@ from django.db import models
 
 from mptt.forms import TreeNodeChoiceField, TreeNodeMultipleChoiceField
 
+
 __all__ = ("TreeForeignKey", "TreeOneToOneField", "TreeManyToManyField")
 
 

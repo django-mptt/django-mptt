@@ -1,0 +1,49 @@
+name: Tests
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+
+jobs:
+  tests:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+        - 3.6
+        - 3.7
+        - 3.8
+        - 3.9
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip wheel setuptools tox
+      - name: Run tox targets for ${{ matrix.python-version }}
+        run: |
+          ENV_PREFIX=$(tr -C -d "0-9" <<< "${{ matrix.python-version }}")
+          TOXENV=$(tox --listenvs | grep "^py$ENV_PREFIX" | tr '\n' ',') python -m tox
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip tox
+      - name: Run lint
+        run: tox -e style

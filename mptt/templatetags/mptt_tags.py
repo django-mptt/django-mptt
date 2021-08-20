@@ -11,6 +11,7 @@ from django.utils.translation import gettext as _
 
 from mptt.utils import drilldown_tree_for_node, get_cached_trees, tree_item_iterator
 
+
 register = template.Library()
 
 

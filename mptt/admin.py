@@ -25,6 +25,7 @@ from mptt.exceptions import InvalidMove
 from mptt.forms import MPTTAdminForm, TreeNodeChoiceField
 from mptt.models import MPTTModel, TreeForeignKey
 
+
 __all__ = ("MPTTModelAdmin", "MPTTAdminForm", "DraggableMPTTAdmin")
 IS_GRAPPELLI_INSTALLED = "grappelli" in settings.INSTALLED_APPS
 
@@ -304,7 +305,8 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
 
 class TreeRelatedFieldListFilter(RelatedFieldListFilter):
     """
-    Admin filter class which filters models related to parent model with all it's descendants.
+    Admin filter class which filters models related to parent model with all
+    its descendants.
 
      Usage:
 

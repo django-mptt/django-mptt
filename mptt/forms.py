@@ -10,6 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from mptt.exceptions import InvalidMove
 from mptt.settings import DEFAULT_LEVEL_INDICATOR
 
+
 __all__ = (
     "TreeNodeChoiceField",
     "TreeNodeMultipleChoiceField",

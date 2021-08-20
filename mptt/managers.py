@@ -23,6 +23,7 @@ from mptt.querysets import TreeQuerySet
 from mptt.signals import node_moved
 from mptt.utils import _get_tree_model
 
+
 __all__ = ("TreeManager",)
 
 
@@ -442,7 +443,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             }
         else:
             current_rel_model = rel_model
-            for rel_field_part in rel_field.split('__'):
+            for rel_field_part in rel_field.split("__"):
                 current_mptt_field = current_rel_model._meta.get_field(rel_field_part)
                 current_rel_model = current_mptt_field.related_model
             mptt_field = current_mptt_field

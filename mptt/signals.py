@@ -1,5 +1,6 @@
 from django.db.models.signals import ModelSignal
 
+
 # Behaves like Djangos normal pre-/post_save signals signals with the
 # added arguments ``target`` and ``position`` that matches those of
 # ``move_to``.

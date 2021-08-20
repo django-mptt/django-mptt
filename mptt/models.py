@@ -14,6 +14,7 @@ from mptt.managers import TreeManager
 from mptt.signals import node_moved
 from mptt.utils import _get_tree_model
 
+
 __all__ = (
     "TreeForeignKey",
     "TreeOneToOneField",
@@ -211,7 +212,9 @@ class MPTTOptions:
         right_sibling = None
         # Optimisation - if the parent doesn't have descendants,
         # the node will always be its last child.
-        if self.order_insertion_by and (parent is None or parent.get_descendant_count() > 0):
+        if self.order_insertion_by and (
+            parent is None or parent.get_descendant_count() > 0
+        ):
             opts = node._mptt_meta
             order_by = opts.order_insertion_by[:]
             filters = self.insertion_target_filters(node, order_by)
@@ -855,7 +858,7 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
             return self._mptt_saved
 
     def _get_user_field_names(self):
-        """ Returns the list of user defined (i.e. non-mptt internal) field names. """
+        """Returns the list of user defined (i.e. non-mptt internal) field names."""
         from django.db.models.fields import AutoField
 
         field_names = []

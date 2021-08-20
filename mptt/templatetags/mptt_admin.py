@@ -17,6 +17,7 @@ from django.db import models
 from django.template import Library
 from django.urls import NoReverseMatch
 
+
 try:
     from django.utils.deprecation import RemovedInDjango20Warning
 except ImportError:
@@ -26,6 +27,7 @@ from django.utils.encoding import force_str
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import get_language_bidi
+
 
 register = Library()
 

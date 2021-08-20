@@ -9,6 +9,7 @@ import sys
 
 from django.utils.translation import gettext as _
 
+
 __all__ = (
     "previous_current_next",
     "tree_item_iterator",
@@ -204,8 +205,8 @@ def _get_tree_model(model_class):
     bases = list(model_class.mro())
     while bases:
         b = bases.pop()
-        # NOTE can't use `issubclass(b, MPTTModel)` here because we can't import MPTTModel yet!
-        # So hasattr(b, '_mptt_meta') will have to do.
+        # NOTE can't use `issubclass(b, MPTTModel)` here because we can't
+        # import MPTTModel yet!  So hasattr(b, '_mptt_meta') will have to do.
         if hasattr(b, "_mptt_meta") and not (b._meta.abstract or b._meta.proxy):
             return b
     return None

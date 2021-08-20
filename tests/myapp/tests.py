@@ -16,6 +16,7 @@ from django.test import RequestFactory, TestCase
 from mptt.admin import TreeRelatedFieldListFilter
 from mptt.querysets import TreeQuerySet
 
+
 try:
     from mock_django import mock_signal_receiver
 except ImportError:
@@ -2126,7 +2127,7 @@ class TreeManagerTestCase(TreeTestCase):
             self.assertEqual(topc.subitem_count, 2)
 
     def test_add_related_count_with_extra_filters(self):
-        """ Test that filtering by extra_filters works """
+        """Test that filtering by extra_filters works"""
         queryset = Category.objects.all()
 
         # Test using FK that doesn't point to a primary key
@@ -3085,4 +3086,4 @@ class ModelMetaTests(TestCase):
         """Make sure _get_user_field_names only returns concrete fields"""
         instance = NotConcreteFieldModel()
         field_names = instance._get_user_field_names()
-        self.assertEqual(field_names, ['parent'])
+        self.assertEqual(field_names, ["parent"])

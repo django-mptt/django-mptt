@@ -381,6 +381,7 @@ class NullableDescOrderedInsertionModel(MPTTModel):
 
 class FakeNotConcreteField(Field):
     """Returning None as column results in the field being not concrete"""
+
     def get_attname_column(self):
         return self.name, None
 
