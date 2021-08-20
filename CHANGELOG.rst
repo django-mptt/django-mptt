@@ -4,6 +4,26 @@ Change log
 Next version
 ~~~~~~~~~~~~
 
+0.13
+~~~~
+
+- **MARKED THE PROJECT AS UNMAINTAINED, WHICH IT STILL IS**
+- Reformatted everything using black, isort etc.
+- Switched from Travis CI to GitHub actions.
+- Switched to a declarative setup.
+- Verified compatibility with Django up to 3.2 and Python up to 3.9. Dropped
+  compatibility guarantees (ha!) with anything older than Django 2.2 and Python
+  3.6.
+- Renamed the main development branch to main.
+- Fixed a problem where our ``_get_user_field_names`` mistakenly returned
+  abstract fields.
+- Added a workaround for the ``default_app_config`` warning.
+- Changed saving to always call ``get_ordered_insertion_target`` when using
+  ordered insertion.
+- Made it possible to override the starting level when using the tree node
+  choice field.
+
+
 0.12
 ~~~~
 
