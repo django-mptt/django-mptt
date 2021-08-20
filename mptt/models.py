@@ -865,7 +865,7 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
             self._mptt_meta.tree_id_attr,
             self._mptt_meta.level_attr,
         )
-        for field in self._meta.fields:
+        for field in self._meta.concrete_fields:
             if (
                 (field.name not in internal_fields)
                 and (not isinstance(field, AutoField))
