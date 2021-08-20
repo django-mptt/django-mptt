@@ -34,6 +34,7 @@ from myapp.models import (
     Item,
     MultipleManagerModel,
     Node,
+    NotConcreteFieldModel,
     NullableDescOrderedInsertionModel,
     NullableOrderedInsertionModel,
     OrderedInsertion,
@@ -3077,3 +3078,11 @@ class BulkLoadTests(TestCase):
         self.assertEqual((records[2].lft, records[2].rght), (6, 7))
         games.refresh_from_db()
         self.assertEqual((games.lft, games.rght), (9, 10))
+
+
+class ModelMetaTests(TestCase):
+    def test_get_user_field_names_with_not_concrete_fields(self):
+        """Make sure _get_user_field_names only returns concrete fields"""
+        instance = NotConcreteFieldModel()
+        field_names = instance._get_user_field_names()
+        self.assertEqual(field_names, ['parent'])

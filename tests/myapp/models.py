@@ -1,6 +1,7 @@
 from uuid import uuid4
 
 from django.db import models
+from django.db.models import Field
 from django.db.models.query import QuerySet
 
 import mptt
@@ -376,3 +377,16 @@ class NullableDescOrderedInsertionModel(MPTTModel):
 
     def __str__(self):
         return self.name
+
+
+class FakeNotConcreteField(Field):
+    """Returning None as column results in the field being not concrete"""
+    def get_attname_column(self):
+        return self.name, None
+
+
+class NotConcreteFieldModel(MPTTModel):
+    parent = TreeForeignKey(
+        "self", null=True, blank=True, related_name="children", on_delete=models.CASCADE
+    )
+    not_concrete_field = FakeNotConcreteField()
