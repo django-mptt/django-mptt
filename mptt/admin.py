@@ -247,7 +247,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         )
 
         LogEntry.objects.log_action(
-            user_id=request.user.id,
+            user_id=request.user.pk,
             content_type_id=get_content_type_for_model(cut_item).pk,
             object_id=cut_item.pk,
             object_repr=str(cut_item),
