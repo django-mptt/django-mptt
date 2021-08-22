@@ -5,6 +5,14 @@ Change log
 Next version
 ============
 
+- Merged the ``docs/upgrade.rst`` file into the main ``CHANGELOG.rst``.
+- Fixed the Sphinx autodoc configuration to also work locally. Ensured that
+  readthedocs is able to build the docs again.
+- Fixed a bug where ``DraggableMPTTAdmin`` assumed that the user model's
+  primary key is called ``id``.
+- Ensured that we do not install the ``tests.myapp`` package.
+
+
 0.13
 ====
 
