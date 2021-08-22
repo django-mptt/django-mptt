@@ -15,7 +15,54 @@ import sys, os
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath(".."))
-os.environ["DJANGO_SETTINGS_MODULE"] = "tests.settings"
+from django import setup
+from django.conf import settings
+
+#######################################
+settings.configure(
+    DATABASES={
+        "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"},
+    },
+    INSTALLED_APPS=(
+        "django.contrib.auth",
+        "django.contrib.admin",
+        "django.contrib.contenttypes",
+        "django.contrib.sessions",
+        "django.contrib.sitemaps",
+        "django.contrib.sites",
+        "django.contrib.staticfiles",
+        "mptt",
+    ),
+    STATIC_URL="/static/",
+    SECRET_KEY="tests",
+    ALLOWED_HOSTS=["*"],
+    MIDDLEWARE=(
+        "django.middleware.common.CommonMiddleware",
+        "django.contrib.sessions.middleware.SessionMiddleware",
+        "django.middleware.csrf.CsrfViewMiddleware",
+        "django.contrib.auth.middleware.AuthenticationMiddleware",
+        "django.contrib.messages.middleware.MessageMiddleware",
+        "django.middleware.locale.LocaleMiddleware",
+    ),
+    USE_TZ=True,
+    LANGUAGES=[("en", "English")],
+    TEMPLATES=[
+        {
+            "BACKEND": "django.template.backends.django.DjangoTemplates",
+            "DIRS": [],
+            "APP_DIRS": True,
+            "OPTIONS": {
+                "context_processors": [
+                    "django.template.context_processors.debug",
+                    "django.template.context_processors.request",
+                    "django.contrib.auth.context_processors.auth",
+                    "django.contrib.messages.context_processors.messages",
+                ],
+            },
+        }
+    ],
+)
+setup()
 
 # -- General configuration -----------------------------------------------------
 

@@ -23,7 +23,7 @@ Topic docs:
    forms
    templates
    utilities
-   upgrade
+   changelog
    technical_details
 
 .. toctree::
