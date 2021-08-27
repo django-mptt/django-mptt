@@ -11,6 +11,7 @@ Next version
 - Fixed a bug where ``DraggableMPTTAdmin`` assumed that the user model's
   primary key is called ``id``.
 - Ensured that we do not install the ``tests.myapp`` package.
+- Added dark mode support to the draggable model admin.
 
 
 0.13
