@@ -1,7 +1,7 @@
 import django
 
 
-__version__ = "0.13.2"
+__version__ = "0.13.3"
 VERSION = tuple(__version__.split("."))
 
 if django.VERSION < (3, 2):  # pragma: no cover
