@@ -174,7 +174,7 @@ class MPTTAdminForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.instance and self.instance.pk:
+        if self.instance and self.instance.pk and not self.instance._state.adding:
             instance = self.instance
             opts = self._meta.model._mptt_meta
             parent_field = self.fields.get(opts.parent_attr)
