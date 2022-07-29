@@ -1,7 +1,10 @@
+import inspect
 import operator
+import sys
 import threading
 from functools import reduce, wraps
 
+from django.conf import settings
 from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.query import Q
@@ -437,6 +440,9 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
     objects = TreeManager()
 
     def __init__(self, *args, **kwargs):
+        if hasattr(self, "_check_no_testing_generators"):
+            self._check_no_testing_generators()
+
         super().__init__(*args, **kwargs)
         self._mptt_meta.update_mptt_cached_fields(self)
 
@@ -1157,3 +1163,36 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
         )
         for k, v in values.items():
             setattr(self, k, v)
+
+
+def _check_no_testing_generators(self):
+    """Check that we are not generationg model from model_mommy or model_bakery"""
+    if sys.argv[1:2] == ["test"]:  # in testing envirnoment
+        curframe = inspect.currentframe()
+        call_frame = inspect.getouterframes(curframe, 0)
+        call_file = call_frame[5][1]
+        call_directory = call_file.split("/")[-2]
+        if ("model_mommy" in call_file or "model_bakery" in call_file) and not getattr(
+            settings, "MPTT_ALLOW_TESTING_GENERATORS", False
+        ):
+            raise Exception(
+                f"The {call_directory} populates django-mptt fields with random values which leads to unpredictable behavior. "
+                "If you really want to generate this model that way, please set MPTT_ALLOW_TESTING_GENERATORS=True in your settings.",
+            )
+
+
+# Use _check_no_testing_generators function only if model_mommy or model_bakery is in the path
+try:
+    import model_mommy  # noqa
+
+    MPTTModel._check_no_testing_generators = _check_no_testing_generators
+except ImportError:
+    pass
+
+
+try:
+    import model_bakery  # noqa
+
+    MPTTModel._check_no_testing_generators = _check_no_testing_generators
+except ImportError:
+    pass
