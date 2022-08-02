@@ -11,7 +11,9 @@ from django.contrib.auth.models import Group, User
 from django.db.models import Q
 from django.db.models.query_utils import DeferredAttribute
 from django.template import Context, Template, TemplateSyntaxError
-from django.test import RequestFactory, TestCase
+from django.test import RequestFactory, TestCase, override_settings
+from model_bakery import baker
+from model_mommy import mommy
 
 from mptt.admin import TreeRelatedFieldListFilter
 from mptt.querysets import TreeQuerySet
@@ -3090,3 +3092,30 @@ class ModelMetaTests(TestCase):
         instance = NotConcreteFieldModel()
         field_names = instance._get_user_field_names()
         self.assertEqual(field_names, ["parent"])
+
+
+class BakeryTest(TestCase):
+    @override_settings(MPTT_ALLOW_TESTING_GENERATORS=True)
+    def test_create_by_bakery(self):
+        book = baker.make("Book")
+        self.assertQuerysetEqual(book.get_ancestors(), [])
+        self.assertQuerysetEqual(book.get_descendants(), [])
+        book_mommy = mommy.make("Book")
+        self.assertQuerysetEqual(book_mommy.get_ancestors(), [])
+        self.assertQuerysetEqual(book_mommy.get_descendants(), [])
+
+    def test_create_by_bakery_exception(self):
+        with self.assertRaisesRegex(
+            Exception, "^The model_bakery populates django-mptt.*"
+        ):
+            book = baker.make("Book")
+            self.assertQuerysetEqual(book.get_ancestors(), [])
+            self.assertQuerysetEqual(book.get_descendants(), [])
+
+    def test_create_by_mommy_exception(self):
+        with self.assertRaisesRegex(
+            Exception, "^The model_mommy populates django-mptt.*"
+        ):
+            book = mommy.make("Book")
+            self.assertQuerysetEqual(book.get_ancestors(), [])
+            self.assertQuerysetEqual(book.get_descendants(), [])
