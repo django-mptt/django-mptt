@@ -25,6 +25,7 @@ Topic docs:
    utilities
    changelog
    technical_details
+   testing
 
 .. toctree::
    :maxdepth: 3
