@@ -192,7 +192,7 @@ class MPTTOptions:
                 value = field.pre_save(instance, True)
 
             if value is None:
-                # we have to use __isnull instead of __lt or __gt becase __lt = Null is invalid
+                # we have to use __isnull instead of __lt or __gt because __lt = Null is invalid
                 # depending on order, we need to find the first node where code is null or not null
                 value = filter_suffix == "__lt"
                 filter_suffix = "__isnull"
