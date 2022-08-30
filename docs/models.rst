@@ -403,7 +403,7 @@ model.
    descendants, otherwise it will be for each item itself.
 
 ``extra_filters``
-   Dict with aditional parameters filtering the related queryset.
+   Dict with additional parameters filtering the related queryset.
 
 
 Example usage in the admin

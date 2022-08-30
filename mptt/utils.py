@@ -72,7 +72,7 @@ def tree_item_iterator(items, ancestors=False, callback=str):
 
           You can overload the default representation by providing an
           optional ``callback`` function which takes a single argument
-          and performs coersion as required.
+          and performs coercion as required.
 
     """
     structure = {}
