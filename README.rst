@@ -8,7 +8,7 @@ Alternatives to django-mptt include:
   implementation (called nested set)
 * Maybe you do not need MPTT, especially when using newer databases. See
   `django-tree-queries <https://github.com/matthiask/django-tree-queries>`_ for an
-  implementation using recursive Common Table Expressions (CTE). See the 
+  implementation using recursive Common Table Expressions (CTE). See the
   `announcement blog post <https://406.ch/writing/django-tree-queries/>`__.
 
 

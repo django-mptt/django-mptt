@@ -127,8 +127,8 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             min_attr = opts.left_attr
 
         tree_key = opts.tree_id_attr
-        min_key = "%s__%s" % (min_attr, min_op)
-        max_key = "%s__%s" % (max_attr, max_op)
+        min_key = f"{min_attr}__{min_op}"
+        max_key = f"{max_attr}__{max_op}"
 
         q = queryset.order_by(opts.tree_id_attr, opts.parent_attr, opts.left_attr).only(
             opts.tree_id_attr,
@@ -138,7 +138,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             max_attr,
             opts.parent_attr,
             # These fields are used by MPTTModel.update_mptt_cached_fields()
-            *[f.lstrip("-") for f in opts.order_insertion_by]
+            *[f.lstrip("-") for f in opts.order_insertion_by],
         )
 
         if not q:

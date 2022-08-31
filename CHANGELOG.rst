@@ -12,6 +12,7 @@ Next version
   primary key is called ``id``.
 - Ensured that we do not install the ``tests.myapp`` package.
 - Added dark mode support to the draggable model admin.
+- Started using pre-commit, for the fun of it.
 
 
 0.13
@@ -95,8 +96,8 @@ Misc:
 - Trim trailing white space throughout the project
 - Pass python_requires argument to setuptools
 - Added MpttConfig
-- Add test case to support ancestor coercion callbacks. 
-- Extend tree_item_iterator with ancestor coercion callback. 
+- Add test case to support ancestor coercion callbacks.
+- Extend tree_item_iterator with ancestor coercion callback.
 
 0.9.0
 =====

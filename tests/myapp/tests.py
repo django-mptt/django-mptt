@@ -104,7 +104,7 @@ class TreeTestCase(TestCase):
         if not isinstance(tree2, str):
             tree2 = get_tree_details(tree2)
         tree2 = tree_details(tree2)
-        return self.assertEqual(tree1, tree2, "\n%r\n != \n%r" % (tree1, tree2))
+        return self.assertEqual(tree1, tree2, f"\n{tree1!r}\n != \n{tree2!r}")
 
 
 class DocTestTestCase(TreeTestCase):
@@ -2955,7 +2955,7 @@ class ModelMetaIndexes(TreeTestCase):
             class Meta:
                 app_label = "myapp"
 
-        tree_id_attr = getattr(SomeModel._mptt_meta, "tree_id_attr")
+        tree_id_attr = SomeModel._mptt_meta.tree_id_attr
         self.assertTrue(SomeModel._meta.get_field(tree_id_attr).db_index)
 
         for key in ("right_attr", "left_attr", "level_attr"):
@@ -2980,7 +2980,7 @@ class ModelMetaIndexes(TreeTestCase):
             # effective.
 
             SomeModel = type(
-                str("model_{}".format(idx)),
+                str(f"model_{idx}"),
                 (MPTTModel,),
                 {
                     "Meta": Meta,
@@ -3006,7 +3006,7 @@ class ModelMetaIndexes(TreeTestCase):
                 app_label = "myapp"
 
             SomeModel = type(
-                str("model__different_attr_{}".format(idx)),
+                str(f"model__different_attr_{idx}"),
                 (MPTTModel,),
                 {"MPTTMeta": MPTTMeta, "Meta": Meta, "__module__": str(__name__)},
             )

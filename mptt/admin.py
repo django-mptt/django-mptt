@@ -262,7 +262,9 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         opts = self.model._meta
 
         return {
-            "storageName": "tree_%s_%s_collapsed" % (opts.app_label, opts.model_name),
+            "storageName": "tree_{}_{}_collapsed".format(
+                opts.app_label, opts.model_name
+            ),
             "treeStructure": self._build_tree_structure(self.get_queryset(request)),
             "levelIndent": self.mptt_level_indent,
             "messages": {
@@ -332,7 +334,9 @@ class TreeRelatedFieldListFilter(RelatedFieldListFilter):
             self.rel_name = field.remote_field.get_related_field().name
         else:
             self.rel_name = self.other_model._meta.pk.name
-        self.changed_lookup_kwarg = "%s__%s__inhierarchy" % (field_path, self.rel_name)
+        self.changed_lookup_kwarg = "{}__{}__inhierarchy".format(
+            field_path, self.rel_name
+        )
         super().__init__(field, request, params, model, model_admin, field_path)
         self.lookup_val = request.GET.get(self.changed_lookup_kwarg)
 
@@ -349,7 +353,7 @@ class TreeRelatedFieldListFilter(RelatedFieldListFilter):
                 other_models = other_model.get_descendants(True)
                 del self.used_parameters[self.changed_lookup_kwarg]
                 self.used_parameters.update(
-                    {"%s__%s__in" % (self.field_path, self.rel_name): other_models}
+                    {f"{self.field_path}__{self.rel_name}__in": other_models}
                 )
             # #### MPTT ADDITION END
             return queryset.filter(**self.used_parameters)
@@ -370,7 +374,7 @@ class TreeRelatedFieldListFilter(RelatedFieldListFilter):
         }
         choices = []
         for pk, val in initial_choices:
-            padding_style = ' style="padding-%s:%spx"' % (
+            padding_style = ' style="padding-{}:{}px"'.format(
                 "right" if language_bidi else "left",
                 mptt_level_indent * levels_dict[pk],
             )

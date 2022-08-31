@@ -1,11 +1,5 @@
-import django
-
-
 __version__ = "0.13.4"
 VERSION = tuple(__version__.split("."))
-
-if django.VERSION < (3, 2):  # pragma: no cover
-    default_app_config = "mptt.apps.MpttConfig"
 
 
 def register(*args, **kwargs):

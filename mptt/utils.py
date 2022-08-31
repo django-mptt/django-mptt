@@ -191,7 +191,7 @@ def print_debug_info(qs, file=None):
         for field in header[:-1]:
             row.append(getattr(n, field))
 
-        row_text = "%s%s" % ("- " * level, str(n))
+        row_text = "{}{}".format("- " * level, str(n))
         row.append(row_text)
         writer.writerow(row)
 
