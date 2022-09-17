@@ -5,7 +5,7 @@
 Alternatives to django-mptt include:
 
 * `django-treebeard <https://pypi.org/project/django-treebeard/>`_ includes a MPTT
-  implementation (called nested set)
+  implementation (called nested set), but the state of maintenance is unclear.
 * Maybe you do not need MPTT, especially when using newer databases. See
   `django-tree-queries <https://github.com/matthiask/django-tree-queries>`_ for an
   implementation using recursive Common Table Expressions (CTE). See the
