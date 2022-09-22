@@ -39,7 +39,7 @@ class TreeNodeChoiceFieldMixin:
 
     def _get_level_indicator(self, obj):
         level = self._get_relative_level(obj)
-        return mark_safe(conditional_escape(self.level_indicator) * level)
+        return mark_safe(conditional_escape(self.level_indicator) * min(100, level))
 
     def label_from_instance(self, obj):
         """

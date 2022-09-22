@@ -15,6 +15,7 @@ from django.test import RequestFactory, TestCase, override_settings
 from model_bakery import baker
 from model_mommy import mommy
 
+from mptt.forms import TreeNodeMultipleChoiceField
 from mptt.admin import TreeRelatedFieldListFilter
 from mptt.querysets import TreeQuerySet
 
@@ -3119,3 +3120,27 @@ class BakeryTest(TestCase):
             book = mommy.make("Book")
             self.assertQuerysetEqual(book.get_ancestors(), [])
             self.assertQuerysetEqual(book.get_descendants(), [])
+
+
+class FormTests(TestCase):
+    def test_get_level_indicator(self):
+        queryset = Category.objects.all()
+        field = TreeNodeMultipleChoiceField(queryset=queryset)
+        self.assertEqual(field._get_level_indicator(Category(level=0)), '')
+        self.assertEqual(field._get_level_indicator(Category(level=1)), '---')
+        self.assertEqual(field._get_level_indicator(Category(level=2)), '------')
+        self.assertEqual(field._get_level_indicator(Category(level=3)), '---------')
+
+        # Even high level should not eat up whole memory
+        self.assertEqual(field._get_level_indicator(Category(level=10000000000000)), '---' * 100)
+
+    def test_label_from_instance(self):
+        queryset = Category.objects.all()
+        field = TreeNodeMultipleChoiceField(queryset=queryset)
+        self.assertEqual(field.label_from_instance(Category(level=0, name='test')), ' test')
+        self.assertEqual(field.label_from_instance(Category(level=1, name='test')), '--- test')
+        self.assertEqual(field.label_from_instance(Category(level=2, name='test')), '------ test')
+        self.assertEqual(field.label_from_instance(Category(level=3, name='test')), '--------- test')
+
+        # Even high level should not eat up whole memory
+        self.assertEqual(field.label_from_instance(Category(level=10000000000000, name='test')), '---' * 100 + ' test')
