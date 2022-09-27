@@ -5,6 +5,9 @@ Change log
 Next version
 ============
 
+0.14
+====
+
 - Merged the ``docs/upgrade.rst`` file into the main ``CHANGELOG.rst``.
 - Fixed the Sphinx autodoc configuration to also work locally. Ensured that
   readthedocs is able to build the docs again.
