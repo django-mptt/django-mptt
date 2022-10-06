@@ -16,7 +16,7 @@ The trade-off for this efficiency is that performing inserts and moving
 items around the tree is more involved, as there's some extra work
 required to keep the tree structure in a good state at all times.
 
-Here's a good article about MPTT to whet your appetite and provide
+Here's a good article about MPTT to what your appetite and provide
 details about how the technique itself works:
 
     * `Trees in SQL`_
