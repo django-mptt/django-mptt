@@ -3,6 +3,7 @@ A custom manager for working with trees of objects.
 """
 import contextlib
 import functools
+from collections import defaultdict
 from itertools import groupby
 
 from django.db import connections, models, router
@@ -638,6 +639,79 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             rebuild_helper(pk, 1, idx)
 
     rebuild.alters_data = True
+
+    def _find_out_rebuild_fields(self):
+        """
+        Due to the behavior of the metaclass, it is not possible
+        to find out the fields in the __init__ correctly.
+        """
+        lookups = self._translate_lookups(
+            left="left", right="right", level="level", tree_id="tree_id"
+        )
+        self._rebuild_fields = {value: key for key, value in lookups.items()}
+
+    def _get_parents(self, **filters):
+        opts = self.model._mptt_meta
+        qs = self._mptt_filter(parent_id__isnull=True, **filters)
+        if opts.order_insertion_by:
+            qs = qs.order_by(*opts.order_insertion_by)
+        return list(qs.only("id"))
+
+    def _get_children(self, **filters):
+        opts = self.model._mptt_meta
+        qs = self._mptt_filter(parent_id__isnull=False, **filters)
+        if opts.order_insertion_by:
+            qs = qs.order_by(*opts.order_insertion_by)
+
+        children = defaultdict(list)
+        for child in qs.only("id", "parent_id"):
+            children[child.parent_id].append(child)
+        return children
+
+    @delegate_manager
+    def optimized_rebuild(self, **filters) -> None:
+        """
+        Optimized version of the TreeManager's rebuild method.
+        """
+        self._find_out_rebuild_fields()
+
+        parents = self._get_parents(**filters)
+        children = self._get_children(**filters)
+
+        nodes_to_update = []
+        for index, parent in enumerate(parents):
+            self._optimized_rebuild_helper(
+                node=parent,
+                left=1,
+                tree_id=index + 1,
+                children=children,
+                nodes_to_update=nodes_to_update,
+                level=0,
+            )
+        self.bulk_update(nodes_to_update, self._rebuild_fields.values())
+
+    optimized_rebuild.alters_data = True
+
+    def _optimized_rebuild_helper(self, node, left, tree_id, children, nodes_to_update, level):
+        right = left + 1
+
+        for child in children[node.id]:
+            right = self._optimized_rebuild_helper(
+                node=child,
+                left=right,
+                tree_id=tree_id,
+                children=children,
+                nodes_to_update=nodes_to_update,
+                level=level + 1,
+            )
+
+        setattr(node, self._rebuild_fields["left"], left)
+        setattr(node, self._rebuild_fields["right"], right)
+        setattr(node, self._rebuild_fields["level"], level)
+        setattr(node, self._rebuild_fields["tree_id"], tree_id)
+        nodes_to_update.append(node)
+
+        return right + 1
 
     @delegate_manager
     def partial_rebuild(self, tree_id):
