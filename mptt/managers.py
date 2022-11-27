@@ -620,26 +620,6 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         """
         return self._mptt_filter(parent=None)
 
-    @delegate_manager
-    def rebuild(self):
-        """
-        Rebuilds all trees in the database table using `parent` link.
-        """
-        opts = self.model._mptt_meta
-
-        qs = self._mptt_filter(parent=None)
-        if opts.order_insertion_by:
-            qs = qs.order_by(*opts.order_insertion_by)
-        pks = qs.values_list("pk", flat=True)
-
-        rebuild_helper = self._rebuild_helper
-        idx = 0
-        for pk in pks:
-            idx += 1
-            rebuild_helper(pk, 1, idx)
-
-    rebuild.alters_data = True
-
     def _find_out_rebuild_fields(self):
         """
         Due to the behavior of the metaclass, it is not possible
@@ -669,7 +649,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         return children
 
     @delegate_manager
-    def rebuild(self, **filters) -> None:
+    def rebuild(self, batch_size=1000, **filters) -> None:
         """
         Rebuilds all trees in the database table using `parent` link.
         """
@@ -689,7 +669,11 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                 nodes_to_update=nodes_to_update,
                 level=0,
             )
-        self.bulk_update(nodes_to_update, self._rebuild_fields.values())
+        self.bulk_update(
+            nodes_to_update,
+            self._rebuild_fields.values(),
+            batch_size=batch_size,
+        )
 
     rebuild.alters_data = True
 
@@ -715,7 +699,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         return right + 1
 
     @delegate_manager
-    def partial_rebuild(self, tree_id, **filters):
+    def partial_rebuild(self, tree_id, batch_size=1000, **filters):
         """
         Partially rebuilds a tree i.e. It rebuilds only the tree with given
         ``tree_id`` in database table using ``parent`` link.
@@ -725,7 +709,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         if count == 0:
             return
         elif count == 1:
-            self.rebuild(tree_id=tree_id, **filters)
+            self.rebuild(batch_size=batch_size, tree_id=tree_id, **filters)
         else:
             raise RuntimeError(
                 "More than one root node with tree_id %d. That's invalid,"
