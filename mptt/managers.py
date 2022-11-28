@@ -632,14 +632,14 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
 
     def _get_parents(self, **filters):
         opts = self.model._mptt_meta
-        qs = self._mptt_filter(parent_id__isnull=True, **filters)
+        qs = self._mptt_filter(parent=None, **filters)
         if opts.order_insertion_by:
             qs = qs.order_by(*opts.order_insertion_by)
         return list(qs.only("pk"))
 
     def _get_children(self, **filters):
         opts = self.model._mptt_meta
-        qs = self._mptt_filter(parent_id__isnull=False, **filters)
+        qs = self._mptt_filter(parent__isnull=False, **filters)
         if opts.order_insertion_by:
             qs = qs.order_by(*opts.order_insertion_by)
 
