@@ -635,7 +635,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         qs = self._mptt_filter(parent_id__isnull=True, **filters)
         if opts.order_insertion_by:
             qs = qs.order_by(*opts.order_insertion_by)
-        return list(qs.only("id"))
+        return list(qs.only("pk"))
 
     def _get_children(self, **filters):
         opts = self.model._mptt_meta
@@ -644,8 +644,8 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             qs = qs.order_by(*opts.order_insertion_by)
 
         children = defaultdict(list)
-        for child in qs.only("id", "parent_id"):
-            children[child.parent_id].append(child)
+        for child in qs.select_related("parent"):
+            children[child.parent.pk].append(child)
         return children
 
     @delegate_manager
@@ -680,7 +680,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
     def _rebuild_helper(self, node, left, tree_id, children, nodes_to_update, level):
         right = left + 1
 
-        for child in children[node.id]:
+        for child in children[node.pk]:
             right = self._rebuild_helper(
                 node=child,
                 left=right,
