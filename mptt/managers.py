@@ -3,6 +3,7 @@ A custom manager for working with trees of objects.
 """
 import contextlib
 import functools
+from collections import defaultdict
 from itertools import groupby
 
 from django.db import connections, models, router
@@ -619,47 +620,101 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         """
         return self._mptt_filter(parent=None)
 
+    def _find_out_rebuild_fields(self):
+        """
+        Due to the behavior of the metaclass, it is not possible
+        to find out the fields in the __init__ correctly.
+        """
+        lookups = self._translate_lookups(
+            left="left", right="right", level="level", tree_id="tree_id"
+        )
+        self._rebuild_fields = {value: key for key, value in lookups.items()}
+
+    def _get_parents(self, **filters):
+        opts = self.model._mptt_meta
+        qs = self._mptt_filter(parent=None, **filters)
+        if opts.order_insertion_by:
+            qs = qs.order_by(*opts.order_insertion_by)
+        return list(qs.only("pk"))
+
+    def _get_children(self, **filters):
+        opts = self.model._mptt_meta
+        qs = self._mptt_filter(parent__isnull=False, **filters)
+        if opts.order_insertion_by:
+            qs = qs.order_by(*opts.order_insertion_by)
+
+        children = defaultdict(list)
+        for child in qs.select_related("parent"):
+            children[child.parent.pk].append(child)
+        return children
+
     @delegate_manager
-    def rebuild(self):
+    def rebuild(self, batch_size=1000, **filters) -> None:
         """
         Rebuilds all trees in the database table using `parent` link.
         """
-        opts = self.model._mptt_meta
+        self._find_out_rebuild_fields()
 
-        qs = self._mptt_filter(parent=None)
-        if opts.order_insertion_by:
-            qs = qs.order_by(*opts.order_insertion_by)
-        pks = qs.values_list("pk", flat=True)
+        parents = self._get_parents(**filters)
+        children = self._get_children(**filters)
 
-        rebuild_helper = self._rebuild_helper
-        idx = 0
-        for pk in pks:
-            idx += 1
-            rebuild_helper(pk, 1, idx)
+        tree_id = filters.get("tree_id", 1)
+        nodes_to_update = []
+        for index, parent in enumerate(parents):
+            self._rebuild_helper(
+                node=parent,
+                left=1,
+                tree_id=tree_id + index,
+                children=children,
+                nodes_to_update=nodes_to_update,
+                level=0,
+            )
+        self.bulk_update(
+            nodes_to_update,
+            self._rebuild_fields.values(),
+            batch_size=batch_size,
+        )
 
     rebuild.alters_data = True
 
+    def _rebuild_helper(self, node, left, tree_id, children, nodes_to_update, level):
+        right = left + 1
+
+        for child in children[node.pk]:
+            right = self._rebuild_helper(
+                node=child,
+                left=right,
+                tree_id=tree_id,
+                children=children,
+                nodes_to_update=nodes_to_update,
+                level=level + 1,
+            )
+
+        setattr(node, self._rebuild_fields["left"], left)
+        setattr(node, self._rebuild_fields["right"], right)
+        setattr(node, self._rebuild_fields["level"], level)
+        setattr(node, self._rebuild_fields["tree_id"], tree_id)
+        nodes_to_update.append(node)
+
+        return right + 1
+
     @delegate_manager
-    def partial_rebuild(self, tree_id):
+    def partial_rebuild(self, tree_id, batch_size=1000, **filters):
         """
         Partially rebuilds a tree i.e. It rebuilds only the tree with given
         ``tree_id`` in database table using ``parent`` link.
         """
-        opts = self.model._mptt_meta
+        count = self._mptt_filter(parent=None, tree_id=tree_id, **filters).count()
 
-        qs = self._mptt_filter(parent=None, tree_id=tree_id)
-        if opts.order_insertion_by:
-            qs = qs.order_by(*opts.order_insertion_by)
-        pks = qs.values_list("pk", flat=True)
-        if not pks:
+        if count == 0:
             return
-        if len(pks) > 1:
+        elif count == 1:
+            self.rebuild(batch_size=batch_size, tree_id=tree_id, **filters)
+        else:
             raise RuntimeError(
                 "More than one root node with tree_id %d. That's invalid,"
                 " do a full rebuild." % tree_id
             )
-
-        self._rebuild_helper(pks[0], 1, tree_id)
 
     @delegate_manager
     def build_tree_nodes(self, data, target=None, position="last-child"):
@@ -733,24 +788,6 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             self._create_space(2 * len(stack), cursor - 1, tree_id)
 
         return stack
-
-    def _rebuild_helper(self, pk, left, tree_id, level=0):
-        opts = self.model._mptt_meta
-        right = left + 1
-
-        qs = self._mptt_filter(parent__pk=pk)
-        if opts.order_insertion_by:
-            qs = qs.order_by(*opts.order_insertion_by)
-        child_ids = qs.values_list("pk", flat=True)
-
-        rebuild_helper = self._rebuild_helper
-        for child_id in child_ids:
-            right = rebuild_helper(child_id, right, tree_id, level + 1)
-
-        qs = self.model._default_manager.db_manager(self.db).filter(pk=pk)
-        self._mptt_update(qs, left=left, right=right, level=level, tree_id=tree_id)
-
-        return right + 1
 
     def _post_insert_update_cached_parent_right(self, instance, right_shift, seen=None):
         setattr(

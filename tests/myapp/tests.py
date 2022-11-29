@@ -918,7 +918,7 @@ class DelayedUpdatesTestCase(TreeTestCase):
         self.assertFalse(ConcreteModel._mptt_is_tracking)
 
     def test_insert_child(self):
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(7):
             with ConcreteModel.objects.delay_mptt_updates():
                 with self.assertNumQueries(2):
                     # 1 query for target stale check,
@@ -936,7 +936,7 @@ class DelayedUpdatesTestCase(TreeTestCase):
                     5 - 3 0 1 2
                 """,
                 )
-                # remaining queries (4 through 8) are the partial rebuild process.
+                # remaining queries (4 through 7) are the partial rebuild process.
 
         self.assertTreeEqual(
             ConcreteModel.objects.all(),
@@ -984,7 +984,7 @@ class DelayedUpdatesTestCase(TreeTestCase):
         )
 
     def test_move_node_same_tree(self):
-        with self.assertNumQueries(10):
+        with self.assertNumQueries(7):
             with ConcreteModel.objects.delay_mptt_updates():
                 with self.assertNumQueries(2):
                     # 1 query to ensure target fields aren't stale
@@ -1002,7 +1002,7 @@ class DelayedUpdatesTestCase(TreeTestCase):
                     5 - 3 0 1 2
                 """,
                 )
-            # the remaining 7 queries are the partial rebuild.
+            # the remaining 4 queries are the partial rebuild.
 
         self.assertTreeEqual(
             ConcreteModel.objects.all(),
@@ -1016,7 +1016,7 @@ class DelayedUpdatesTestCase(TreeTestCase):
         )
 
     def test_move_node_different_tree(self):
-        with self.assertNumQueries(12):
+        with self.assertNumQueries(7):
             with ConcreteModel.objects.delay_mptt_updates():
                 with self.assertNumQueries(2):
                     # 2 queries here:
@@ -1035,7 +1035,7 @@ class DelayedUpdatesTestCase(TreeTestCase):
                     5 - 2 0 1 2
                 """,
                 )
-            # the other 9 queries are the partial rebuild
+            # the other 4 queries are the partial rebuild
 
         self.assertTreeEqual(
             ConcreteModel.objects.all(),
@@ -1082,7 +1082,7 @@ class DelayedUpdatesTestCase(TreeTestCase):
         )
 
     def test_move_root_to_child(self):
-        with self.assertNumQueries(12):
+        with self.assertNumQueries(7):
             with ConcreteModel.objects.delay_mptt_updates():
                 with self.assertNumQueries(2):
                     # 2 queries here:
@@ -1101,7 +1101,7 @@ class DelayedUpdatesTestCase(TreeTestCase):
                     5 - 2 0 1 2
                 """,
                 )
-            # the remaining 9 queries are the partial rebuild.
+            # the remaining 4 queries are the partial rebuild.
 
         self.assertTreeEqual(
             ConcreteModel.objects.all(),
@@ -1169,7 +1169,7 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
         )
 
     def test_insert_child(self):
-        with self.assertNumQueries(12):
+        with self.assertNumQueries(7):
             with OrderedInsertion.objects.delay_mptt_updates():
                 with self.assertNumQueries(2):
                     # 1 query here:
@@ -1186,7 +1186,7 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
                     5 - 3 0 1 2
                 """,
                 )
-                # remaining 9 queries are the partial rebuild process.
+                # remaining 4 queries are the partial rebuild process.
 
         self.assertTreeEqual(
             OrderedInsertion.objects.all(),
@@ -1236,7 +1236,7 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
         )
 
     def test_move_node_same_tree(self):
-        with self.assertNumQueries(9):
+        with self.assertNumQueries(6):
             with OrderedInsertion.objects.delay_mptt_updates():
                 with self.assertNumQueries(1):
                     # 1 update query
@@ -1253,7 +1253,7 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
                     5 - 3 0 1 2
                 """,
                 )
-            # the remaining 7 queries are the partial rebuild.
+            # the remaining 4 queries are the partial rebuild.
 
         self.assertTreeEqual(
             OrderedInsertion.objects.all(),
@@ -1267,7 +1267,7 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
         )
 
     def test_move_node_different_tree(self):
-        with self.assertNumQueries(12):
+        with self.assertNumQueries(7):
             with OrderedInsertion.objects.delay_mptt_updates():
                 with self.assertNumQueries(2):
                     # 2 queries here:
@@ -1287,7 +1287,7 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
                     5 - 2 0 1 2
                 """,
                 )
-            # the remaining 9 queries are the partial rebuild
+            # the remaining 4 queries are the partial rebuild
 
         self.assertTreeEqual(
             OrderedInsertion.objects.all(),
@@ -1334,7 +1334,7 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
         )
 
     def test_move_root_to_child(self):
-        with self.assertNumQueries(12):
+        with self.assertNumQueries(7):
             with OrderedInsertion.objects.delay_mptt_updates():
                 with self.assertNumQueries(2):
                     # 2 queries here:
@@ -1353,7 +1353,7 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
                     5 - 2 0 1 2
                 """,
                 )
-            # the remaining 9 queries are the partial rebuild.
+            # the remaining 4 queries are the partial rebuild.
 
         self.assertTreeEqual(
             OrderedInsertion.objects.all(),
