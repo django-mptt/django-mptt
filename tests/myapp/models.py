@@ -2,6 +2,7 @@ from uuid import uuid4
 
 from django.db import models
 from django.db.models import Field
+from django.db.models.indexes import Index
 from django.db.models.query import QuerySet
 
 import mptt
@@ -38,7 +39,6 @@ class Category(MPTTModel):
 
 
 class Item(models.Model):
-
     name = models.CharField(max_length=100)
     category_fk = models.ForeignKey(
         "Category",
@@ -391,3 +391,12 @@ class NotConcreteFieldModel(MPTTModel):
         "self", null=True, blank=True, related_name="children", on_delete=models.CASCADE
     )
     not_concrete_field = FakeNotConcreteField()
+
+
+class CustomIndexModel(MPTTModel):
+    """Adding this custom index"""
+
+    class MPTTMeta:
+        indexes = [Index(fields=["tree_id", "lft", "rght"])]
+
+    parent = TreeForeignKey("self", null=True, on_delete=models.CASCADE)

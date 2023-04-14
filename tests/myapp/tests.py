@@ -14,6 +14,7 @@ from django.template import Context, Template, TemplateSyntaxError
 from django.test import RequestFactory, TestCase, override_settings
 from model_bakery import baker
 from model_mommy import mommy
+from myapp.models import CustomIndexModel
 
 from mptt.admin import TreeRelatedFieldListFilter
 from mptt.forms import TreeNodeMultipleChoiceField
@@ -2066,7 +2067,6 @@ class QuerySetTests(TreeTestCase):
 
 
 class TreeManagerTestCase(TreeTestCase):
-
     fixtures = ["categories.json", "items.json", "subitems.json"]
 
     def test_add_related_count_with_fk_to_natural_key(self):
@@ -2914,7 +2914,6 @@ class MovingNodeWithUniqueConstraint(TreeTestCase):
 
 class NullableOrderedInsertion(TreeTestCase):
     def test_nullable_ordered_insertion(self):
-
         genreA = NullableOrderedInsertionModel.objects.create(name="A", parent=None)
         genreA1 = NullableOrderedInsertionModel.objects.create(name="A1", parent=genreA)
         genreAnone = NullableOrderedInsertionModel.objects.create(
@@ -2931,7 +2930,6 @@ class NullableOrderedInsertion(TreeTestCase):
         )
 
     def test_nullable_ordered_insertion_desc(self):
-
         genreA = NullableDescOrderedInsertionModel.objects.create(name="A", parent=None)
         genreA1 = NullableDescOrderedInsertionModel.objects.create(
             name="A1", parent=genreA
@@ -2988,8 +2986,15 @@ class ModelMetaIndexes(TreeTestCase):
                     "__module__": __name__,
                 },
             )
+            existing = False
+            for index in SomeModel._meta.indexes:
+                if index.fields == ["tree_id", "lft"]:
+                    existing = True
 
-            self.assertIn(("tree_id", "lft"), SomeModel._meta.index_together)
+            self.assertTrue(
+                existing,
+                msg=f"('tree_id', 'lft') not found in {SomeModel._meta.indexes}",
+            )
 
     def test_index_together_different_attr(self):
         already_idx = [["abc", "def"], ("abc", "def")]
@@ -3011,12 +3016,27 @@ class ModelMetaIndexes(TreeTestCase):
                 (MPTTModel,),
                 {"MPTTMeta": MPTTMeta, "Meta": Meta, "__module__": str(__name__)},
             )
+            existing = False
+            for index in SomeModel._meta.indexes:
+                if index.fields == ["abc", "def"]:
+                    existing = True
 
-            self.assertIn(("abc", "def"), SomeModel._meta.index_together)
+            self.assertTrue(
+                existing, msg=f"('abc', 'def') not found in {SomeModel._meta.indexes}"
+            )
+
+    def test_custom_index_of_mptt_fields(self):
+        existing = False
+        for index in CustomIndexModel._meta.indexes:
+            if index.fields == ["tree_id", "lft", "rght"]:
+                existing = True
+        self.assertTrue(
+            existing,
+            msg=f"('tree_id', 'lft', 'rght') not found in {CustomIndexModel._meta.indexes}",
+        )
 
 
 class BulkLoadTests(TestCase):
-
     fixtures = ["categories.json"]
 
     def setUp(self):

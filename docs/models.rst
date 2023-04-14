@@ -47,6 +47,7 @@ To change the names, create an ``MPTTMeta`` class inside your class::
         class MPTTMeta:
             level_attr = 'mptt_level'
             order_insertion_by=['name']
+            indexes = [Index(fields=["tree_id", "lft", "rght"])]
 
 The available options for the MPTTMeta class are:
 
@@ -111,6 +112,13 @@ exist, they will be added to the model dynamically:
       or other updates, where ``django-mptt`` will need to re-order the
       tree you will most likely be left with dangling references.
       Please see :ref:`order_insertion_by_gotcha` for details.
+
+``indexes``
+   A list of django 
+   `Index <https://docs.djangoproject.com/en/4.2/ref/models/indexes/#index-options>`_ 
+   objects, to configure custom indexes for mptt specific fields, cause they will not 
+   be available on the django model check routines.
+  
 
 Registration of existing models
 ===============================

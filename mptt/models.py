@@ -15,7 +15,7 @@ from mptt.compat import cached_field_value
 from mptt.fields import TreeForeignKey, TreeManyToManyField, TreeOneToOneField
 from mptt.managers import TreeManager
 from mptt.signals import node_moved
-from mptt.utils import _get_tree_model
+from mptt.utils import _get_tree_model, append_indexes
 
 
 __all__ = (
@@ -72,6 +72,7 @@ class MPTTOptions:
     tree_id_attr = "tree_id"
     level_attr = "level"
     parent_attr = "parent"
+    indexes = []
 
     def __init__(self, opts=None, **kwargs):
         # Override defaults with options provided
@@ -375,9 +376,7 @@ class MPTTModelBase(ModelBase):
 
                 # Add an index_together on tree_id_attr and left_attr, as these are very
                 # commonly queried (pretty much all reads).
-                index_together = (cls._mptt_meta.tree_id_attr, cls._mptt_meta.left_attr)
-                if index_together not in cls._meta.index_together:
-                    cls._meta.index_together += (index_together,)
+                append_indexes(cls)
 
             # Add a tree manager, if there isn't one already
             if not abstract:
@@ -397,13 +396,7 @@ class MPTTModelBase(ModelBase):
                                 break
 
                 if is_cls_tree_model:
-                    idx_together = (
-                        cls._mptt_meta.tree_id_attr,
-                        cls._mptt_meta.left_attr,
-                    )
-
-                    if idx_together not in cls._meta.index_together:
-                        cls._meta.index_together += (idx_together,)
+                    append_indexes(cls)
 
                 if tree_manager and tree_manager.model is not cls:
                     tree_manager = tree_manager._copy_to_model(cls)
