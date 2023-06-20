@@ -5,8 +5,11 @@ trees.
 import copy
 import csv
 import itertools
+import random
+import string
 import sys
 
+from django.db.models.indexes import Index
 from django.utils.translation import gettext as _
 
 
@@ -292,3 +295,38 @@ def get_cached_trees(queryset):
             current_path.append(obj)
 
     return top_nodes
+
+
+def get_random_string(length):
+    # With combination of lower and upper case
+    return "".join(random.choice(string.ascii_letters) for i in range(length))
+
+
+def get_default_index(model_cls):
+    return Index(
+        fields=(model_cls._mptt_meta.tree_id_attr, model_cls._mptt_meta.left_attr),
+        name=f"{get_random_string(12)}_default_mptt_idx",
+    )
+
+
+def convert_index_together(index_together) -> Index:
+    return Index(fields=index_together, name=f"{get_random_string(30)}")
+
+
+def append_indexes(model_cls):
+    default_index = get_default_index(model_cls)
+    indexes = [default_index] + model_cls._mptt_meta.indexes
+    if hasattr(model_cls._meta, "index_together") and model_cls._meta.index_together:
+        for index in model_cls._meta.index_together:
+            indexes.append(convert_index_together(index))
+        model_cls._meta.index_together = []
+
+    for index_to_be_appended in indexes:
+        existing = False
+        for existing_index in model_cls._meta.indexes:
+            if index_to_be_appended.fields == existing_index.fields:
+                existing = True
+                break
+        if not existing:
+            print("appending on", model_cls)
+            model_cls._meta.indexes.append(index_to_be_appended)
