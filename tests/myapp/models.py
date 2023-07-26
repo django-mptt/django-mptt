@@ -38,7 +38,6 @@ class Category(MPTTModel):
 
 
 class Item(models.Model):
-
     name = models.CharField(max_length=100)
     category_fk = models.ForeignKey(
         "Category",

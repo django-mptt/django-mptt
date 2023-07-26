@@ -5,6 +5,10 @@ Change log
 Next version
 ============
 
+- Add support for Django 4.2
+- Drop support for Django 2.2, 3.0, 3.1, 4.0
+- Drop support for Python 3.6, 3.7
+
 0.14
 ====
 

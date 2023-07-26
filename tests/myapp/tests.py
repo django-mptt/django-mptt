@@ -2066,7 +2066,6 @@ class QuerySetTests(TreeTestCase):
 
 
 class TreeManagerTestCase(TreeTestCase):
-
     fixtures = ["categories.json", "items.json", "subitems.json"]
 
     def test_add_related_count_with_fk_to_natural_key(self):
@@ -2914,7 +2913,6 @@ class MovingNodeWithUniqueConstraint(TreeTestCase):
 
 class NullableOrderedInsertion(TreeTestCase):
     def test_nullable_ordered_insertion(self):
-
         genreA = NullableOrderedInsertionModel.objects.create(name="A", parent=None)
         genreA1 = NullableOrderedInsertionModel.objects.create(name="A1", parent=genreA)
         genreAnone = NullableOrderedInsertionModel.objects.create(
@@ -2931,7 +2929,6 @@ class NullableOrderedInsertion(TreeTestCase):
         )
 
     def test_nullable_ordered_insertion_desc(self):
-
         genreA = NullableDescOrderedInsertionModel.objects.create(name="A", parent=None)
         genreA1 = NullableDescOrderedInsertionModel.objects.create(
             name="A1", parent=genreA
@@ -3016,7 +3013,6 @@ class ModelMetaIndexes(TreeTestCase):
 
 
 class BulkLoadTests(TestCase):
-
     fixtures = ["categories.json"]
 
     def setUp(self):
