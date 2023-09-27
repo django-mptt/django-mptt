@@ -4,6 +4,7 @@ import sys
 import threading
 from functools import reduce, wraps
 
+import django
 from django.conf import settings
 from django.db import models
 from django.db.models.base import ModelBase
@@ -372,11 +373,16 @@ class MPTTModelBase(ModelBase):
                         )
                         field.contribute_to_class(cls, field_name)
 
-                # Add an index_together on tree_id_attr and left_attr, as these are very
-                # commonly queried (pretty much all reads).
-                index_together = (cls._mptt_meta.tree_id_attr, cls._mptt_meta.left_attr)
-                if index_together not in cls._meta.index_together:
-                    cls._meta.index_together += (index_together,)
+                if django.VERSION < (5,):
+                    # Add an index_together on tree_id_attr and left_attr, as these are very
+                    # commonly queried (pretty much all reads).
+                    # Django 5.0 (or 5.1?) only accepts Meta.indexes
+                    index_together = (
+                        cls._mptt_meta.tree_id_attr,
+                        cls._mptt_meta.left_attr,
+                    )
+                    if index_together not in cls._meta.index_together:
+                        cls._meta.index_together += (index_together,)
 
             # Add a tree manager, if there isn't one already
             if not abstract:

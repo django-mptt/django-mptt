@@ -5,6 +5,16 @@ Change log
 Next version
 ============
 
+- **Since I unfortunately still depend on django-mptt in prehistoric projects I
+  took it upon me to make it runnable again. This doesn't mean I want to
+  maintain the package.**
+- Added Django 4.2.
+- Dropped Python < 3.9, Django < 3.2.
+- Started using ruff and more rules.
+- Dropped the ``index_together`` check on Django 5 and better. Django 5 only
+  supports ``Meta.indexes``.
+
+
 0.14
 ====
 

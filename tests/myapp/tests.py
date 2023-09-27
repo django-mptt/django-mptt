@@ -4,6 +4,7 @@ import re
 import sys
 import unittest
 
+import django
 from django.apps import apps
 from django.contrib.admin import ModelAdmin, site
 from django.contrib.admin.views.main import ChangeList
@@ -2935,6 +2936,7 @@ class ModelMetaIndexes(TreeTestCase):
             field_name = getattr(SomeModel._mptt_meta, key)
             self.assertFalse(SomeModel._meta.get_field(field_name).db_index)
 
+    @unittest.skipUnless(django.VERSION < (5,), "Django 5 only accepts Meta.indexes")
     def test_index_together(self):
         already_idx = [["tree_id", "lft"], ("tree_id", "lft")]
         no_idx = [(), []]
@@ -2963,6 +2965,7 @@ class ModelMetaIndexes(TreeTestCase):
 
             self.assertIn(("tree_id", "lft"), SomeModel._meta.index_together)
 
+    @unittest.skipUnless(django.VERSION < (5,), "Django 5 only accepts Meta.indexes")
     def test_index_together_different_attr(self):
         already_idx = [["abc", "def"], ("abc", "def")]
         no_idx = [(), []]
