@@ -13,6 +13,9 @@ Next version
 - Started using ruff and more rules.
 - Dropped the ``index_together`` check on Django 5 and better. Django 5 only
   supports ``Meta.indexes``.
+- Optimized tree rebuilding.
+- Added support for the Django admin theme switcher.
+- Switched to hatchling.
 
 
 0.14

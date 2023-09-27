@@ -401,7 +401,7 @@ class MPTTModelBase(ModelBase):
                                 tree_manager = cls_manager
                                 break
 
-                if is_cls_tree_model:
+                if is_cls_tree_model and django.VERSION < (5,):
                     idx_together = (
                         cls._mptt_meta.tree_id_attr,
                         cls._mptt_meta.left_attr,

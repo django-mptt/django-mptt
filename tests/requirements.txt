@@ -1,5 +1,5 @@
 mock-django
-Django >= 2.2
+Django >= 3.2
 coverage
 django-js-asset
 model-bakery

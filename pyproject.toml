@@ -1,3 +1,52 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "django-mptt"
+dynamic = ["version"]
+description = "Utilities for implementing Modified Preorder Tree Traversal with your Django Models and working with trees of Model instances."
+readme = "README.rst"
+license = {text="MIT-License"}
+requires-python = ">=3.9"
+authors = [
+    { name = "Craig de Stigter", email = "craig.ds@gmail.com" },
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Web Environment",
+    "Framework :: Django",
+    "Framework :: Django :: 3.2",
+    "Framework :: Django :: 4.1",
+    "Framework :: Django :: 4.2",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+dependencies = [
+    "django-js-asset",
+]
+
+[project.optional-dependencies]
+tests = [
+    "coverage",
+    "mock-django",
+]
+
+[project.urls]
+Homepage = "https://github.com/django-mptt/django-mptt/"
+
+[tool.hatch.version]
+path = "django_mptt/__init__.py"
+
+[tool.hatch.build]
+include = ["/django_mptt"]
+
 [tool.ruff]
 extend-select = ["B", "E", "F", "W", "C90", "I", "N", "UP", "FBT", "C4", "DJ", "PIE", "INT", "SIM", "YTT", "G", "RUF"]
 extend-ignore = ["E501"]
