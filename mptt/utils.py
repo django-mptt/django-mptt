@@ -156,10 +156,7 @@ def drilldown_tree_for_node(
     ``all_descendants``
        If ``True``, return all descendants, not just immediate children.
     """
-    if all_descendants:
-        children = node.get_descendants()
-    else:
-        children = node.get_children()
+    children = node.get_descendants() if all_descendants else node.get_children()
     if rel_cls and rel_field and count_attr:
         children = node._tree_manager.add_related_count(
             children, rel_cls, rel_field, count_attr, cumulative
@@ -282,7 +279,7 @@ def get_cached_trees(queryset):
 
                 if root_level == 0:
                     # get_ancestors() can use .parent.parent.parent...
-                    setattr(obj, "_mptt_use_cached_ancestors", True)
+                    obj._mptt_use_cached_ancestors = True
 
             # Add the current node to end of the current path - the last node
             # in the current path is the parent for the next iteration, unless

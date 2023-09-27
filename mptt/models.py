@@ -44,7 +44,9 @@ class _classproperty:
 
 
 class classpropertytype(property):
-    def __init__(self, name, bases=(), members={}):
+    def __init__(self, name, bases=(), members=None):
+        if members is None:
+            members = {}
         return super().__init__(
             members.get("__get__"),
             members.get("__set__"),
@@ -75,10 +77,7 @@ class MPTTOptions:
 
     def __init__(self, opts=None, **kwargs):
         # Override defaults with options provided
-        if opts:
-            opts = list(opts.__dict__.items())
-        else:
-            opts = []
+        opts = list(opts.__dict__.items()) if opts else []
         opts.extend(list(kwargs.items()))
 
         if "tree_manager_attr" in [opt[0] for opt in opts]:
@@ -412,7 +411,7 @@ class MPTTModelBase(ModelBase):
                 tree_manager.contribute_to_class(cls, "_tree_manager")
 
                 # avoid using ManagerDescriptor, so instances can refer to self._tree_manager
-                setattr(cls, "_tree_manager", tree_manager)
+                cls._tree_manager = tree_manager
         return cls
 
 
@@ -879,7 +878,7 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
                 (field.name not in internal_fields)
                 and (not isinstance(field, AutoField))
                 and (not field.primary_key)
-            ):  # noqa
+            ):
                 field_names.append(field.name)
         return field_names
 
@@ -991,7 +990,7 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
                         update_cached_parent = parent and (
                             getattr(self, opts.tree_id_attr)
                             != getattr(parent, opts.tree_id_attr)
-                            or getattr(self, opts.left_attr)  # noqa
+                            or getattr(self, opts.left_attr)
                             < getattr(parent, opts.left_attr)
                             or getattr(self, opts.right_attr)
                             > getattr(parent, opts.right_attr)
@@ -1074,9 +1073,8 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
                 # positions will be found during partial rebuild later.
                 # *unless* this is a root node. (as update tracking doesn't
                 # handle re-ordering of trees.)
-                if do_updates or parent is None:
-                    if opts.order_insertion_by:
-                        right_sibling = opts.get_ordered_insertion_target(self, parent)
+                if (do_updates or parent is None) and opts.order_insertion_by:
+                    right_sibling = opts.get_ordered_insertion_target(self, parent)
 
                 if right_sibling:
                     self.insert_at(

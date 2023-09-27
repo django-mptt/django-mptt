@@ -152,7 +152,7 @@ def do_drilldown_tree_for_node(parser, token):
        {% drilldown_tree_for_node genre as drilldown count tests.Game.genre in game_count %}
        {% drilldown_tree_for_node genre as drilldown cumulative count tests.Game.genre in game_count %}
 
-    """  # noqa
+    """
     bits = token.contents.split()
     len_bits = len(bits)
     if len_bits not in (4, 5, 8, 9, 10):
@@ -166,11 +166,10 @@ def do_drilldown_tree_for_node(parser, token):
         )
 
     all_descendants = False
-    if len_bits > 4:
-        if bits[4] == "all_descendants":
-            len_bits -= 1
-            bits.pop(4)
-            all_descendants = True
+    if len_bits > 4 and bits[4] == "all_descendants":
+        len_bits -= 1
+        bits.pop(4)
+        all_descendants = True
 
     if len_bits == 8:
         if bits[4] != "count":

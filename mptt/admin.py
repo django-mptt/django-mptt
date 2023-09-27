@@ -53,13 +53,13 @@ class MPTTModelAdmin(ModelAdmin):
             db = kwargs.get("using")
 
             limit_choices_to = db_field.get_limit_choices_to()
-            defaults = dict(
-                form_class=TreeNodeChoiceField,
-                queryset=db_field.remote_field.model._default_manager.using(
+            defaults = {
+                "form_class": TreeNodeChoiceField,
+                "queryset": db_field.remote_field.model._default_manager.using(
                     db
                 ).complex_filter(limit_choices_to),
-                required=False,
-            )
+                "required": False,
+            }
             defaults.update(kwargs)
             kwargs = defaults
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
@@ -262,9 +262,7 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
         opts = self.model._meta
 
         return {
-            "storageName": "tree_{}_{}_collapsed".format(
-                opts.app_label, opts.model_name
-            ),
+            "storageName": f"tree_{opts.app_label}_{opts.model_name}_collapsed",
             "treeStructure": self._build_tree_structure(self.get_queryset(request)),
             "levelIndent": self.mptt_level_indent,
             "messages": {
@@ -334,9 +332,7 @@ class TreeRelatedFieldListFilter(RelatedFieldListFilter):
             self.rel_name = field.remote_field.get_related_field().name
         else:
             self.rel_name = self.other_model._meta.pk.name
-        self.changed_lookup_kwarg = "{}__{}__inhierarchy".format(
-            field_path, self.rel_name
-        )
+        self.changed_lookup_kwarg = f"{field_path}__{self.rel_name}__inhierarchy"
         super().__init__(field, request, params, model, model_admin, field_path)
         self.lookup_val = request.GET.get(self.changed_lookup_kwarg)
 

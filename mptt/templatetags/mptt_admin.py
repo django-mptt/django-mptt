@@ -33,7 +33,7 @@ register = Library()
 
 
 MPTT_ADMIN_LEVEL_INDENT = getattr(settings, "MPTT_ADMIN_LEVEL_INDENT", 10)
-IS_GRAPPELLI_INSTALLED = True if "grappelli" in settings.INSTALLED_APPS else False
+IS_GRAPPELLI_INSTALLED = "grappelli" in settings.INSTALLED_APPS
 
 
 ###
@@ -98,15 +98,13 @@ def mptt_items_for_result(cl, result, form):
                 # #### MPTT SUBSTITUTION END
                 if allow_tags:
                     warnings.warn(
-                        "Deprecated allow_tags attribute used on field {}. "
+                        f"Deprecated allow_tags attribute used on field {field_name}. "
                         "Use django.utils.safestring.format_html(), "
-                        "format_html_join(), or mark_safe() instead.".format(
-                            field_name
-                        ),
+                        "format_html_join(), or mark_safe() instead.",
                         RemovedInDjango20Warning,
                     )
                     result_repr = mark_safe(result_repr)
-                if isinstance(value, (datetime.date, datetime.time)):
+                if isinstance(value, datetime.date | datetime.time):
                     row_classes.append("nowrap")
             else:
                 # #### MPTT SUBSTITUTION START
@@ -123,7 +121,7 @@ def mptt_items_for_result(cl, result, form):
                     result_repr = display_for_field(value, f, empty_value_display)
                     # #### MPTT SUBSTITUTION END
                 if isinstance(
-                    f, (models.DateField, models.TimeField, models.ForeignKey)
+                    f, models.DateField | models.TimeField | models.ForeignKey
                 ):
                     row_classes.append("nowrap")
         if force_str(result_repr) == "":
@@ -134,8 +132,7 @@ def mptt_items_for_result(cl, result, form):
         if field_name == mptt_indent_field:
             level = getattr(result, result._mptt_meta.level_attr)
             padding_attr = mark_safe(
-                ' style="padding-%s:%spx"'
-                % (
+                ' style="padding-{}:{}px"'.format(
                     "right" if get_language_bidi() else "left",
                     8 + mptt_level_indent * level,
                 )
@@ -162,10 +159,7 @@ def mptt_items_for_result(cl, result, form):
                 )
                 # Convert the pk to something that can be used in Javascript.
                 # Problem cases are long ints (23L) and non-ASCII strings.
-                if cl.to_field:
-                    attr = str(cl.to_field)
-                else:
-                    attr = pk
+                attr = str(cl.to_field) if cl.to_field else pk
                 value = result.serializable_value(attr)
                 if cl.is_popup:
                     opener = format_html(' data-popup-opener="{}"', value)

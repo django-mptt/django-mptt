@@ -407,7 +407,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         rel_field,
         count_attr,
         cumulative=False,
-        extra_filters={},
+        extra_filters=None,
     ):
         """
         Adds a related item count to a given ``QuerySet`` using its
@@ -436,6 +436,8 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         ``extra_filters``
            Dict with aditional parameters filtering the related queryset.
         """
+        if extra_filters is None:
+            extra_filters = {}
         if cumulative:
             subquery_filters = {
                 rel_field + "__tree_id": OuterRef(self.tree_id_attr),
@@ -815,17 +817,11 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         target_level = getattr(target, self.level_attr)
 
         if position == "last-child" or position == "first-child":
-            if position == "last-child":
-                space_target = target_right - 1
-            else:
-                space_target = target_left
+            space_target = target_right - 1 if position == "last-child" else target_left
             level_change = level - target_level - 1
             parent = target
         elif position == "left" or position == "right":
-            if position == "left":
-                space_target = target_left - 1
-            else:
-                space_target = target_right
+            space_target = target_left - 1 if position == "left" else target_right
             level_change = level - target_level
             parent = getattr(target, self.parent_attr)
         else:
@@ -867,7 +863,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         Determines the next largest unused tree id for the tree managed
         by this manager.
         """
-        max_tree_id = list(self.aggregate(Max(self.tree_id_attr)).values())[0]
+        max_tree_id = next(iter(self.aggregate(Max(self.tree_id_attr)).values()))
         max_tree_id = max_tree_id or 0
         return max_tree_id + 1
 
@@ -884,34 +880,34 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
 
         opts = self.model._meta
         inter_tree_move_query = """
-        UPDATE %(table)s
-        SET %(level)s = CASE
-                WHEN %(left)s >= %%s AND %(left)s <= %%s
-                    THEN %(level)s - %%s
-                ELSE %(level)s END,
-            %(tree_id)s = CASE
-                WHEN %(left)s >= %%s AND %(left)s <= %%s
-                    THEN %%s
-                ELSE %(tree_id)s END,
-            %(left)s = CASE
-                WHEN %(left)s >= %%s AND %(left)s <= %%s
-                    THEN %(left)s - %%s
-                WHEN %(left)s > %%s
-                    THEN %(left)s - %%s
-                ELSE %(left)s END,
-            %(right)s = CASE
-                WHEN %(right)s >= %%s AND %(right)s <= %%s
-                    THEN %(right)s - %%s
-                WHEN %(right)s > %%s
-                    THEN %(right)s - %%s
-                ELSE %(right)s END
-        WHERE %(tree_id)s = %%s""" % {
-            "table": qn(self.tree_model._meta.db_table),
-            "level": qn(opts.get_field(self.level_attr).column),
-            "left": qn(opts.get_field(self.left_attr).column),
-            "tree_id": qn(opts.get_field(self.tree_id_attr).column),
-            "right": qn(opts.get_field(self.right_attr).column),
-        }
+        UPDATE {table}
+        SET {level} = CASE
+                WHEN {left} >= %s AND {left} <= %s
+                    THEN {level} - %s
+                ELSE {level} END,
+            {tree_id} = CASE
+                WHEN {left} >= %s AND {left} <= %s
+                    THEN %s
+                ELSE {tree_id} END,
+            {left} = CASE
+                WHEN {left} >= %s AND {left} <= %s
+                    THEN {left} - %s
+                WHEN {left} > %s
+                    THEN {left} - %s
+                ELSE {left} END,
+            {right} = CASE
+                WHEN {right} >= %s AND {right} <= %s
+                    THEN {right} - %s
+                WHEN {right} > %s
+                    THEN {right} - %s
+                ELSE {right} END
+        WHERE {tree_id} = %s""".format(
+            table=qn(self.tree_model._meta.db_table),
+            level=qn(opts.get_field(self.level_attr).column),
+            left=qn(opts.get_field(self.left_attr).column),
+            tree_id=qn(opts.get_field(self.tree_id_attr).column),
+            right=qn(opts.get_field(self.right_attr).column),
+        )
 
         left = getattr(node, self.left_attr)
         right = getattr(node, self.right_attr)
@@ -1039,15 +1035,15 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             qn = connection.ops.quote_name
 
             root_sibling_query = """
-            UPDATE %(table)s
-            SET %(tree_id)s = CASE
-                WHEN %(tree_id)s = %%s
-                    THEN %%s
-                ELSE %(tree_id)s + %%s END
-            WHERE %(tree_id)s >= %%s AND %(tree_id)s <= %%s""" % {
-                "table": qn(self.tree_model._meta.db_table),
-                "tree_id": qn(opts.get_field(self.tree_id_attr).column),
-            }
+            UPDATE {table}
+            SET {tree_id} = CASE
+                WHEN {tree_id} = %s
+                    THEN %s
+                ELSE {tree_id} + %s END
+            WHERE {tree_id} >= %s AND {tree_id} <= %s""".format(
+                table=qn(self.tree_model._meta.db_table),
+                tree_id=qn(opts.get_field(self.tree_id_attr).column),
+            )
 
             cursor = connection.cursor()
             cursor.execute(
@@ -1070,22 +1066,22 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
 
             opts = self.model._meta
             space_query = """
-            UPDATE %(table)s
-            SET %(left)s = CASE
-                    WHEN %(left)s > %%s
-                        THEN %(left)s + %%s
-                    ELSE %(left)s END,
-                %(right)s = CASE
-                    WHEN %(right)s > %%s
-                        THEN %(right)s + %%s
-                    ELSE %(right)s END
-            WHERE %(tree_id)s = %%s
-              AND (%(left)s > %%s OR %(right)s > %%s)""" % {
-                "table": qn(self.tree_model._meta.db_table),
-                "left": qn(opts.get_field(self.left_attr).column),
-                "right": qn(opts.get_field(self.right_attr).column),
-                "tree_id": qn(opts.get_field(self.tree_id_attr).column),
-            }
+            UPDATE {table}
+            SET {left} = CASE
+                    WHEN {left} > %s
+                        THEN {left} + %s
+                    ELSE {left} END,
+                {right} = CASE
+                    WHEN {right} > %s
+                        THEN {right} + %s
+                    ELSE {right} END
+            WHERE {tree_id} = %s
+              AND ({left} > %s OR {right} > %s)""".format(
+                table=qn(self.tree_model._meta.db_table),
+                left=qn(opts.get_field(self.left_attr).column),
+                right=qn(opts.get_field(self.right_attr).column),
+                tree_id=qn(opts.get_field(self.tree_id_attr).column),
+            )
             cursor = connection.cursor()
             cursor.execute(
                 space_query, [target, size, target, size, tree_id, target, target]
@@ -1228,30 +1224,30 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         # immediately after its update has been specified in the query
         # with MySQL, but not with SQLite or Postgres.
         move_subtree_query = """
-        UPDATE %(table)s
-        SET %(level)s = CASE
-                WHEN %(left)s >= %%s AND %(left)s <= %%s
-                  THEN %(level)s - %%s
-                ELSE %(level)s END,
-            %(left)s = CASE
-                WHEN %(left)s >= %%s AND %(left)s <= %%s
-                  THEN %(left)s + %%s
-                WHEN %(left)s >= %%s AND %(left)s <= %%s
-                  THEN %(left)s + %%s
-                ELSE %(left)s END,
-            %(right)s = CASE
-                WHEN %(right)s >= %%s AND %(right)s <= %%s
-                  THEN %(right)s + %%s
-                WHEN %(right)s >= %%s AND %(right)s <= %%s
-                  THEN %(right)s + %%s
-                ELSE %(right)s END
-        WHERE %(tree_id)s = %%s""" % {
-            "table": qn(self.tree_model._meta.db_table),
-            "level": qn(opts.get_field(self.level_attr).column),
-            "left": qn(opts.get_field(self.left_attr).column),
-            "right": qn(opts.get_field(self.right_attr).column),
-            "tree_id": qn(opts.get_field(self.tree_id_attr).column),
-        }
+        UPDATE {table}
+        SET {level} = CASE
+                WHEN {left} >= %s AND {left} <= %s
+                  THEN {level} - %s
+                ELSE {level} END,
+            {left} = CASE
+                WHEN {left} >= %s AND {left} <= %s
+                  THEN {left} + %s
+                WHEN {left} >= %s AND {left} <= %s
+                  THEN {left} + %s
+                ELSE {left} END,
+            {right} = CASE
+                WHEN {right} >= %s AND {right} <= %s
+                  THEN {right} + %s
+                WHEN {right} >= %s AND {right} <= %s
+                  THEN {right} + %s
+                ELSE {right} END
+        WHERE {tree_id} = %s""".format(
+            table=qn(self.tree_model._meta.db_table),
+            level=qn(opts.get_field(self.level_attr).column),
+            left=qn(opts.get_field(self.left_attr).column),
+            right=qn(opts.get_field(self.right_attr).column),
+            tree_id=qn(opts.get_field(self.tree_id_attr).column),
+        )
 
         cursor = connection.cursor()
         cursor.execute(
@@ -1324,19 +1320,19 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
 
         opts = self.model._meta
         move_tree_query = """
-        UPDATE %(table)s
-        SET %(level)s = %(level)s - %%s,
-            %(left)s = %(left)s - %%s,
-            %(right)s = %(right)s - %%s,
-            %(tree_id)s = %%s
-        WHERE %(left)s >= %%s AND %(left)s <= %%s
-          AND %(tree_id)s = %%s""" % {
-            "table": qn(self.tree_model._meta.db_table),
-            "level": qn(opts.get_field(self.level_attr).column),
-            "left": qn(opts.get_field(self.left_attr).column),
-            "right": qn(opts.get_field(self.right_attr).column),
-            "tree_id": qn(opts.get_field(self.tree_id_attr).column),
-        }
+        UPDATE {table}
+        SET {level} = {level} - %s,
+            {left} = {left} - %s,
+            {right} = {right} - %s,
+            {tree_id} = %s
+        WHERE {left} >= %s AND {left} <= %s
+          AND {tree_id} = %s""".format(
+            table=qn(self.tree_model._meta.db_table),
+            level=qn(opts.get_field(self.level_attr).column),
+            left=qn(opts.get_field(self.left_attr).column),
+            right=qn(opts.get_field(self.right_attr).column),
+            tree_id=qn(opts.get_field(self.tree_id_attr).column),
+        )
 
         cursor = connection.cursor()
         cursor.execute(
