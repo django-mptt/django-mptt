@@ -1,5 +1,4 @@
 __version__ = "0.14.0"
-VERSION = tuple(__version__.split("."))
 
 
 def register(*args, **kwargs):

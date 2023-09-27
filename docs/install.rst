@@ -38,8 +38,8 @@ You can verify that the application is available on your PYTHONPATH by
 opening a Python interpreter and entering the following commands::
 
    >>> import mptt
-   >>> mptt.VERSION
-   (0, 5, '+dev')
+   >>> mptt.__version__
+   '0.14.0'
 
 When you want to update your copy of the source code, run ``git pull``
 from within the ``django-mptt`` directory.
