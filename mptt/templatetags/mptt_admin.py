@@ -104,7 +104,7 @@ def mptt_items_for_result(cl, result, form):
                         RemovedInDjango20Warning,
                     )
                     result_repr = mark_safe(result_repr)
-                if isinstance(value, datetime.date | datetime.time):
+                if isinstance(value, (datetime.date, datetime.time)):
                     row_classes.append("nowrap")
             else:
                 # #### MPTT SUBSTITUTION START
@@ -121,7 +121,7 @@ def mptt_items_for_result(cl, result, form):
                     result_repr = display_for_field(value, f, empty_value_display)
                     # #### MPTT SUBSTITUTION END
                 if isinstance(
-                    f, models.DateField | models.TimeField | models.ForeignKey
+                    f, (models.DateField, models.TimeField, models.ForeignKey)
                 ):
                     row_classes.append("nowrap")
         if force_str(result_repr) == "":

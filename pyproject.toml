@@ -2,7 +2,7 @@
 extend-select = ["B", "E", "F", "W", "C90", "I", "N", "UP", "FBT", "C4", "DJ", "PIE", "INT", "SIM", "YTT", "G", "RUF"]
 extend-ignore = ["E501"]
 fix = true
-target-version = "py310"
+target-version = "py39"
 
 [tool.ruff.isort]
 combine-as-imports = true
