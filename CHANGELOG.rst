@@ -5,6 +5,10 @@ Change log
 Next version
 ============
 
+
+0.15
+====
+
 - **Since I unfortunately still depend on django-mptt in prehistoric projects I
   took it upon me to make it runnable again. This doesn't mean I want to
   maintain the package.**

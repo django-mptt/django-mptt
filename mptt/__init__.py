@@ -1,4 +1,4 @@
-__version__ = "0.14.0"
+__version__ = "0.15.0"
 
 
 def register(*args, **kwargs):
@@ -11,5 +11,5 @@ def register(*args, **kwargs):
     return MPTTModelBase.register(*args, **kwargs)
 
 
-class AlreadyRegistered(Exception):
+class AlreadyRegistered(Exception):  # noqa: N818
     "Deprecated - don't use this anymore. It's never thrown, you don't need to catch it"
