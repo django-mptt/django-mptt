@@ -2565,10 +2565,8 @@ class ListFiltersTests(TestCase):
             modeladmin.list_max_show_all,
             modeladmin.list_editable,
             modeladmin,
+            modeladmin.sortable_by,
         ]
-        if hasattr(modeladmin, "sortable_by"):
-            # New in Django 2.1
-            args.append(modeladmin.sortable_by)
         if hasattr(modeladmin, "search_help_text"):
             # New in Django 4.0
             args.append(modeladmin.search_help_text)
@@ -3072,28 +3070,38 @@ class ModelMetaTests(TestCase):
 class BakeryTest(TestCase):
     @override_settings(MPTT_ALLOW_TESTING_GENERATORS=True)
     def test_create_by_bakery(self):
-        book = baker.make("Book")
-        self.assertQuerysetEqual(book.get_ancestors(), [])
-        self.assertQuerysetEqual(book.get_descendants(), [])
-        book_mommy = mommy.make("Book")
-        self.assertQuerysetEqual(book_mommy.get_ancestors(), [])
-        self.assertQuerysetEqual(book_mommy.get_descendants(), [])
+        if django.VERSION < (4,):
+            book = baker.make("Book")
+            self.assertQuerysetEqual(book.get_ancestors(), [])
+            self.assertQuerysetEqual(book.get_descendants(), [])
+            book_mommy = mommy.make("Book")
+            self.assertQuerysetEqual(book_mommy.get_ancestors(), [])
+            self.assertQuerysetEqual(book_mommy.get_descendants(), [])
+        else:
+            book = baker.make("Book")
+            self.assertQuerySetEqual(book.get_ancestors(), [])
+            self.assertQuerySetEqual(book.get_descendants(), [])
+            book_mommy = mommy.make("Book")
+            self.assertQuerySetEqual(book_mommy.get_ancestors(), [])
+            self.assertQuerySetEqual(book_mommy.get_descendants(), [])
 
+    @unittest.skipUnless(django.VERSION > (4,), "Django 3.2 is boring")
     def test_create_by_bakery_exception(self):
         with self.assertRaisesRegex(
             Exception, "^The model_bakery populates django-mptt.*"
         ):
             book = baker.make("Book")
-            self.assertQuerysetEqual(book.get_ancestors(), [])
-            self.assertQuerysetEqual(book.get_descendants(), [])
+            self.assertQuerySetEqual(book.get_ancestors(), [])
+            self.assertQuerySetEqual(book.get_descendants(), [])
 
+    @unittest.skipUnless(django.VERSION > (4,), "Django 3.2 is boring")
     def test_create_by_mommy_exception(self):
         with self.assertRaisesRegex(
             Exception, "^The model_mommy populates django-mptt.*"
         ):
             book = mommy.make("Book")
-            self.assertQuerysetEqual(book.get_ancestors(), [])
-            self.assertQuerysetEqual(book.get_descendants(), [])
+            self.assertQuerySetEqual(book.get_ancestors(), [])
+            self.assertQuerySetEqual(book.get_descendants(), [])
 
 
 class FormTests(TestCase):

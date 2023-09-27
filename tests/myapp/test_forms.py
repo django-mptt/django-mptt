@@ -1,3 +1,6 @@
+import unittest
+
+import django
 from django.forms.models import modelform_factory
 from myapp.models import Category, Genre, ReferencingModel
 from myapp.tests import TreeTestCase
@@ -85,12 +88,15 @@ class TestForms(TreeTestCase):
         """,
         )
 
+    @unittest.skipUnless(
+        django.VERSION > (4,), "Django 3.2 doesn't know Form.as_div() yet"
+    )
     def test_movenodeform(self):
         self.maxDiff = 2000
         form = MoveNodeForm(Genre.objects.get(pk=7))
         expected = (
-            '<tr><th><label for="id_target">Target:</label></th>'
-            '<td><select name="target" size="10" id="id_target" required>'
+            '<div><label for="id_target">Target:</label>'
+            '<select name="target" size="10" id="id_target" required>'
             '<option value="" selected>---------</option>'
             '<option value="1"> Action</option>'
             '<option value="2">--- Platformer</option>'
@@ -102,16 +108,16 @@ class TestForms(TreeTestCase):
             '<option value="9"> Role-playing Game</option>'
             '<option value="10">--- Action RPG</option>'
             '<option value="11">--- Tactical RPG</option>'
-            "</select></td></tr>"
-            '<tr><th><label for="id_position">Position:</label></th>'
-            '<td><select name="position" id="id_position">'
+            "</select></div>"
+            '<div><label for="id_position">Position:</label>'
+            '<select name="position" id="id_position">'
             '<option value="first-child">First child</option>'
             '<option value="last-child">Last child</option>'
             '<option value="left">Left sibling</option>'
             '<option value="right">Right sibling</option>'
-            "</select></td></tr>"
+            "</select></div>"
         )
-        self.assertHTMLEqual(str(form), expected)
+        self.assertHTMLEqual(str(form.as_div()), expected)
         form = MoveNodeForm(
             Genre.objects.get(pk=7), level_indicator="+--", target_select_size=5
         )
