@@ -42,10 +42,10 @@ tests = [
 Homepage = "https://github.com/django-mptt/django-mptt/"
 
 [tool.hatch.version]
-path = "django_mptt/__init__.py"
+path = "mptt/__init__.py"
 
 [tool.hatch.build]
-include = ["/django_mptt"]
+include = ["/mptt"]
 
 [tool.ruff]
 extend-select = ["B", "E", "F", "W", "C90", "I", "N", "UP", "FBT", "C4", "DJ", "PIE", "INT", "SIM", "YTT", "G", "RUF"]
