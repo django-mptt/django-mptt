@@ -2305,6 +2305,46 @@ class CacheChildrenTestCase(TreeTestCase):
         list(Category.objects.all().get_cached_trees()) == [root, child, root2]
         list(Category.objects.filter(visible=True).get_cached_trees()) == [child, root2]
 
+    def test_nodes_from_different_trees(self):
+        """
+        Ensure that get_cached_trees returns correct tree even if multiple trees are given
+        This was reported as issue #658.
+        """
+
+        # Create two separate trees
+        self.root1 = Category.objects.create(name="Root 1")
+        self.child1 = Category.objects.create(name="Child 1", parent=self.root1)
+
+        self.root2 = Category.objects.create(name="Root 2")
+        self.child2 = Category.objects.create(name="Child 2", parent=self.root2)
+
+
+        # Create a queryset with nodes from both trees
+        queryset = Category.objects.filter(id__in=[self.root1.id, self.child2.id]).order_by('level')
+
+        # Process the queryset with get_cached_trees
+        top_nodes = queryset.get_cached_trees()
+
+
+        # Assert that child2's parent is not root1
+        self.assertNotEqual(self.child2.parent, self.root1)
+
+        # Assert that the top nodes list contains both root1 and child2
+        self.assertIn(self.root1, top_nodes)
+        self.assertIn(self.child2, top_nodes)
+
+    def test_value_error_on_wrong_order(self):
+        self.root = Category.objects.create(name="Root 1")
+        self.child1 = Category.objects.create(name="Child 1", parent=self.root)
+        self.child2 = Category.objects.create(name="Child 2", parent=self.child1)
+
+        # Create a queryset with nodes not in depth-first order
+        queryset = Category.objects.order_by('-level')
+
+        # Assert that calling get_cached_trees raises ValueError
+        with self.assertRaisesRegexp(ValueError, "Node <class 'mptt.querysets.TreeQuerySet'> not in depth-first order"):
+            queryset.get_cached_trees()
+
 
 @unittest.skipUnless(
     mock_signal_receiver, "Signals tests require mock_django installed"
