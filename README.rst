@@ -5,7 +5,7 @@
 Alternatives to django-mptt include:
 
 * `django-treebeard <https://pypi.org/project/django-treebeard/>`_ includes a MPTT
-  implementation (called nested set), but the state of maintenance is unclear.
+  implementation (called a nested set), but the state of maintenance is unclear.
 * Maybe you do not need MPTT, especially when using newer databases. See
   `django-tree-queries <https://github.com/matthiask/django-tree-queries>`_ for an
   implementation using recursive Common Table Expressions (CTE). See the
@@ -36,7 +36,7 @@ MPTT is a technique for storing hierarchical data in a database. The aim is to
 make retrieval operations very efficient.
 
 The trade-off for this efficiency is that performing inserts and moving
-items around the tree is more involved, as there's some extra work
+items around the tree are more involved, as there's some extra work
 required to keep the tree structure in a good state at all times.
 
 Here are a few articles about MPTT to whet your appetite and provide
@@ -53,7 +53,7 @@ details about how the technique itself works:
 What is ``django-mptt``?
 ========================
 
-``django-mptt`` is a reusable Django app which aims to make it easy for you
+``django-mptt`` is a reusable Django app that aims to make it easy for you
 to use MPTT with your own Django models.
 
 It takes care of the details of managing a database table as a tree
@@ -62,8 +62,8 @@ structure and provides tools for working with trees of model instances.
 Requirements
 ------------
 
-* Python 3.6+
-* A supported version of Django (currently 2.2+)
+* A supported version of Python: https://devguide.python.org/versions/#supported-versions
+* A supported version of Django: https://www.djangoproject.com/download/#supported-versions
 
 Feature overview
 ----------------
@@ -90,7 +90,7 @@ Feature overview
   * move nodes around a tree, or into a different tree
   * insert a node anywhere in a tree
   * rebuild the MPTT fields for the tree (useful when you do bulk updates
-    outside of django)
+    outside of Django)
 
 * `Form fields`_ for tree models.
 
