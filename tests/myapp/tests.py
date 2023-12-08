@@ -2342,7 +2342,7 @@ class CacheChildrenTestCase(TreeTestCase):
         queryset = Category.objects.order_by('-level')
 
         # Assert that calling get_cached_trees raises ValueError
-        with self.assertRaisesRegexp(ValueError, "Node <class 'mptt.querysets.TreeQuerySet'> not in depth-first order"):
+        with self.assertRaisesRegex(ValueError, "Node <class 'mptt.querysets.TreeQuerySet'> not in depth-first order"):
             queryset.get_cached_trees()
 
 
