@@ -145,7 +145,7 @@ django.jQuery(function ($) {
               $("body").append('<div id="drag-line"><span></span></div>')
             }
 
-            // loop trough all rows
+            // loop through all rows
             $("tr", originalRow.parent()).each(function (index, el) {
               var element = $(el),
                 top = element.offset().top,
