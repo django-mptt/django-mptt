@@ -15,5 +15,5 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: pip install --user codespell[toml] ruff
-    - run: codespell --ignore-words-list=aditional,envirnoment,mangement,trough,whet --skip="*.po,./mptt/models.py"
+    - run: codespell --ignore-words-list=whet --skip="*.po,./mptt/models.py"
     - run: ruff --output-format=github || true

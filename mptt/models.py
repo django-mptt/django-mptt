@@ -1171,7 +1171,7 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
 
 def _check_no_testing_generators(self):
     """Check that we are not generationg model from model_mommy or model_bakery"""
-    if sys.argv[1:2] == ["test"]:  # in testing envirnoment
+    if sys.argv[1:2] == ["test"]:  # in testing environment
         curframe = inspect.currentframe()
         call_frame = inspect.getouterframes(curframe, 0)
         call_file = call_frame[5][1]

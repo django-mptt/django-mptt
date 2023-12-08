@@ -434,7 +434,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
            descendants, otherwise it will be for each item itself.
 
         ``extra_filters``
-           Dict with aditional parameters filtering the related queryset.
+           Dict with additional parameters filtering the related queryset.
         """
         if extra_filters is None:
             extra_filters = {}
@@ -974,7 +974,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         database.
 
         Since we use tree ids to reduce the number of rows affected by
-        tree mangement during insertion and deletion, root nodes are not
+        tree management during insertion and deletion, root nodes are not
         true siblings; thus, making an item a sibling of a root node is
         a special case which involves shuffling tree ids around.
         """
