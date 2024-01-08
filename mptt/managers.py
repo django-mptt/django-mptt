@@ -646,8 +646,8 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             qs = qs.order_by(*opts.order_insertion_by)
 
         children = defaultdict(list)
-        for child in qs.select_related("parent"):
-            children[child.parent.pk].append(child)
+        for child in qs.select_related(opts.parent_attr):
+            children[getattr(child, opts.parent_attr).pk].append(child)
         return children
 
     @delegate_manager
