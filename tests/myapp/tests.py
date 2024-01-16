@@ -34,6 +34,7 @@ from myapp.models import (
     CustomPKName,
     CustomTreeManager,
     CustomTreeQueryset,
+    CustomParentAttrModel,
     DoubleProxyModel,
     Genre,
     Item,
@@ -3182,4 +3183,26 @@ class FormTests(TestCase):
         self.assertEqual(
             field.label_from_instance(Category(level=10000000000000, name="test")),
             "---" * 100 + " test",
+        )
+
+class CustomParentAttrModelTestCase(TreeTestCase):
+    def test_rebuild(self):
+        root = CustomParentAttrModel.objects.create(name="root")
+        child = CustomParentAttrModel.objects.create(name="child", custom_parent=root)
+        CustomParentAttrModel.objects.rebuild()
+
+        self.assertTreeEqual(
+            CustomParentAttrModel.objects.all(),
+            """
+            1 - 1 0 1 4
+            2 1 1 1 2 3
+            """
+        )
+        child.delete()
+        CustomParentAttrModel.objects.rebuild()
+        self.assertTreeEqual(
+            CustomParentAttrModel.objects.all(),
+            """
+            1 - 1 0 1 2
+            """
         )

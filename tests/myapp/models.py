@@ -390,3 +390,11 @@ class NotConcreteFieldModel(MPTTModel):
         "self", null=True, blank=True, related_name="children", on_delete=models.CASCADE
     )
     not_concrete_field = FakeNotConcreteField()
+
+class CustomParentAttrModel(MPTTModel):
+    name = models.CharField(max_length=50)
+    custom_parent = TreeForeignKey(
+        "self", null=True, blank=True, related_name="children", on_delete=models.CASCADE
+    )
+    class MPTTMeta:
+        parent_attr = "custom_parent"
