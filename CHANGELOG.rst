@@ -5,6 +5,14 @@ Change log
 Next version
 ============
 
+0.16
+====
+
+- Fixed ``get_cached_trees`` if there are multiple trees in the queryset.
+- Added support for Python 3.12, Django 5.0.
+- Added codespell and ruff checks to the CI.
+- Fixed rebuilding using custom managers not named ``objects``.
+
 
 0.15
 ====
