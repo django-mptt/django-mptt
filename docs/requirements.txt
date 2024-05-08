@@ -1,2 +1,3 @@
 Django
 django-js-asset
+sphinx-rtd-theme
