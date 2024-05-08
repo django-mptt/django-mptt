@@ -1,7 +1,6 @@
 ===============================
 Working with trees in templates
 ===============================
-.. highlightlang:: html+django
 
 .. contents::
    :depth: 3

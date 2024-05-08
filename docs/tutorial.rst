@@ -117,7 +117,6 @@ And add a URL for it in ``urls.py``::
 
 Template
 --------
-.. highlightlang:: html+django
 
 ``django-mptt`` includes some template tags for making this bit easy too.
 Create a template called ``genres.html`` in your template directory and put this in it::
@@ -167,8 +166,6 @@ of ``django.db.models.Model`` based on the table row. You will need to reload ma
 calling `Model.refresh_from_db()`_.
 
 For example, using that model from the previous code snippet:
-
-.. highlightlang:: python
 
 .. python::
 

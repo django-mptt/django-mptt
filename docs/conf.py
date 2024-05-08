@@ -97,8 +97,9 @@ copyright = "2007 - 2020, Craig de Stigter, Jonathan Buchanan and others"
 # built documents.
 #
 # The short X.Y version.
-version_tuple = __import__("mptt").VERSION
-version = ".".join(str(v) for v in version_tuple)
+# version_tuple = __import__("mptt").__version__
+# version = ".".join(str(v) for v in version_tuple)
+version = __import__("mptt").__version__
 
 # The full version, including alpha/beta/rc tags.
 release = version
