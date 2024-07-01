@@ -2,7 +2,26 @@
 {% load admin_list i18n mptt_admin %}
 
 {% block result_list %}
-    {% if action_form and actions_on_top and cl.show_admin_actions %}{% admin_actions %}{% endif %}
+  <div class="row">
+    <div class="col-12 col-sm-8">
+      {% if action_form and actions_on_top and cl.show_admin_actions %}{% admin_actions %}{% endif %}
+    </div>
+    <div class="col-12 col-sm-4">
+      {% block object-tools %}
+        {% block object-tools-items %}
+          {% change_list_object_tools %}
+        {% endblock %}
+      {% endblock %}
+    </div>
+    <hr>
+    <div class="col-12">
     {% mptt_result_list cl %}
-    {% if action_form and actions_on_bottom and cl.show_admin_actions %}{% admin_actions %}{% endif %}
+    </div>
+    {% if action_form and actions_on_bottom and cl.show_admin_actions %}
+      <div class="row">
+        <div class="col-12">
+          {% admin_actions %}
+        </div>
+      </div>{% endif %}
+  </div>
 {% endblock %}
