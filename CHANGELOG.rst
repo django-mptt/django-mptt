@@ -8,6 +8,7 @@ Next version
 0.XX
 ====
 
+- Added Django 5.1.
 - Dropped Django < 4.2.
 
 0.16

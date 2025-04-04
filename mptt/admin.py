@@ -1,11 +1,12 @@
 import json
 
+import django
 from django import forms, http
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin import RelatedFieldListFilter
 from django.contrib.admin.actions import delete_selected
-from django.contrib.admin.models import CHANGE, LogEntry
+from django.contrib.admin.models import DELETION, CHANGE, LogEntry
 from django.contrib.admin.options import (
     IncorrectLookupParameters,
     ModelAdmin,
@@ -84,7 +85,15 @@ class MPTTModelAdmin(ModelAdmin):
                 for obj in queryset:
                     if self.has_delete_permission(request, obj):
                         obj_display = force_str(obj)
-                        self.log_deletion(request, obj, obj_display)
+                        if django.VERSION < (5, 1):
+                            self.log_deletion(request, obj, obj_display)
+                        else:
+                            LogEntry.objects.log_actions(
+                                user_id=request.user.pk,
+                                queryset=[obj],
+                                action_flag=DELETION,
+                                single_object=True,
+                            )
                         obj.delete()
                         n += 1
             self.message_user(
@@ -246,15 +255,23 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
             request, cut_item, pasted_on, data_before_update
         )
 
-        LogEntry.objects.log_action(
-            user_id=request.user.pk,
-            content_type_id=get_content_type_for_model(cut_item).pk,
-            object_id=cut_item.pk,
-            object_repr=str(cut_item),
-            action_flag=CHANGE,
-            change_message=change_message,
-        )
-
+        if django.VERSION < (5, 1):
+            LogEntry.objects.log_action(
+                user_id=request.user.pk,
+                content_type_id=get_content_type_for_model(cut_item).pk,
+                object_id=cut_item.pk,
+                object_repr=str(cut_item),
+                action_flag=CHANGE,
+                change_message=change_message,
+            )
+        else:
+            LogEntry.objects.log_actions(
+                user_id=request.user.pk,
+                queryset=[cut_item],
+                action_flag=CHANGE,
+                change_message=change_message,
+                single_object=True,
+            )
         self.message_user(request, _("%s has been successfully moved.") % cut_item)
         return http.HttpResponse("OK, moved.")
 
