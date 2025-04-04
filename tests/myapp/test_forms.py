@@ -1,6 +1,3 @@
-import unittest
-
-import django
 from django.forms.models import modelform_factory
 from myapp.models import Category, Genre, ReferencingModel
 from myapp.tests import TreeTestCase

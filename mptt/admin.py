@@ -6,7 +6,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin import RelatedFieldListFilter
 from django.contrib.admin.actions import delete_selected
-from django.contrib.admin.models import DELETION, CHANGE, LogEntry
+from django.contrib.admin.models import CHANGE, DELETION, LogEntry
 from django.contrib.admin.options import (
     IncorrectLookupParameters,
     ModelAdmin,
@@ -27,7 +27,7 @@ from mptt.forms import MPTTAdminForm, TreeNodeChoiceField
 from mptt.models import MPTTModel, TreeForeignKey
 
 
-__all__ = ("MPTTModelAdmin", "MPTTAdminForm", "DraggableMPTTAdmin")
+__all__ = ("DraggableMPTTAdmin", "MPTTAdminForm", "MPTTModelAdmin")
 IS_GRAPPELLI_INSTALLED = "grappelli" in settings.INSTALLED_APPS
 
 
@@ -424,7 +424,8 @@ class TreeRelatedFieldListFilter(RelatedFieldListFilter):
         if (
             isinstance(self.field, ForeignObjectRel)
             and (self.field.field.null or isinstance(self.field.field, ManyToManyField))
-            or self.field.remote_field is not None
+        ) or (
+            self.field.remote_field is not None
             and (self.field.null or isinstance(self.field, ManyToManyField))
         ):
             yield {

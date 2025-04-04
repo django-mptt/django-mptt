@@ -1,6 +1,7 @@
 """
 Form components for working with trees.
 """
+
 from django import forms
 from django.forms.forms import NON_FIELD_ERRORS
 from django.utils.encoding import smart_str
@@ -12,10 +13,10 @@ from mptt.settings import DEFAULT_LEVEL_INDICATOR
 
 
 __all__ = (
+    "MoveNodeForm",
     "TreeNodeChoiceField",
     "TreeNodeMultipleChoiceField",
     "TreeNodePositionField",
-    "MoveNodeForm",
 )
 
 # Fields ######################################################################

@@ -51,17 +51,14 @@ path = "mptt/__init__.py"
 include = ["/mptt"]
 
 [tool.ruff]
-extend-select = ["B", "E", "F", "W", "C90", "I", "N", "UP", "FBT", "C4", "DJ", "PIE", "INT", "SIM", "YTT", "G", "RUF"]
-extend-ignore = ["E501"]
+lint.extend-select = ["B", "E", "F", "W", "C90", "I", "UP", "C4", "PIE", "INT", "YTT", "G", "RUF"]
+lint.extend-ignore = ["E501", "B018", "B028", "B904", "C901", "RUF001", "RUF012", "UP031"]
 fix = true
 target-version = "py39"
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 combine-as-imports = true
 lines-after-imports = 2
-
-[tool.ruff.mccabe]
-max-complexity = 10
 
 [tool.coverage.run]
 branch = true

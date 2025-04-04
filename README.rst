@@ -3,7 +3,7 @@
 ==========================================
 
 You can find alternatives to django-mptt on
-`Django Packages <https://djangopackages.org/grids/g/trees-and-graphs/>`__. 
+`Django Packages <https://djangopackages.org/grids/g/trees-and-graphs/>`__.
 Maybe you do not need MPTT, especially when using newer databases. See
 `django-tree-queries <https://github.com/matthiask/django-tree-queries>`_ for an
 implementation using recursive Common Table Expressions (CTE). Here's its

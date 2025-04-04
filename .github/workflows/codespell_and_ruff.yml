@@ -13,7 +13,7 @@ jobs:
   codespell_and_ruff:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - run: pip install --user codespell[toml] ruff
-    - run: codespell --ignore-words-list=whet --skip="*.po,./mptt/models.py"
-    - run: ruff --output-format=github || true
+      - uses: actions/checkout@v4
+      - run: pip install --user codespell[toml] ruff
+      - run: codespell --ignore-words-list=whet --skip="*.po,./mptt/models.py"
+      - run: ruff --output-format=github || true

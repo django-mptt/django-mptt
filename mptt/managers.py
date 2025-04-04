@@ -1,6 +1,7 @@
 """
 A custom manager for working with trees of objects.
 """
+
 import contextlib
 import functools
 from collections import defaultdict
@@ -48,7 +49,6 @@ def delegate_manager(method):
 
 
 class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
-
     """
     A manager for working with trees of objects.
     """

@@ -20,13 +20,13 @@ from mptt.utils import _get_tree_model
 
 
 __all__ = (
-    "TreeForeignKey",
-    "TreeOneToOneField",
-    "TreeManyToManyField",
-    "TreeManager",
-    "MPTTOptions",
-    "MPTTModelBase",
     "MPTTModel",
+    "MPTTModelBase",
+    "MPTTOptions",
+    "TreeForeignKey",
+    "TreeManager",
+    "TreeManyToManyField",
+    "TreeOneToOneField",
 )
 
 
@@ -467,9 +467,9 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
     # that settable classproperties are very, very hard to do! suggestions please :)
     @classmethod
     def _set_mptt_updates_enabled(cls, value):
-        assert (
-            cls is cls._mptt_tracking_base
-        ), "Can't enable or disable mptt updates on a non-tracking class."
+        assert cls is cls._mptt_tracking_base, (
+            "Can't enable or disable mptt updates on a non-tracking class."
+        )
         cls._threadlocal.mptt_updates_enabled = value
 
     @_classproperty
@@ -483,17 +483,17 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
 
     @classmethod
     def _mptt_start_tracking(cls):
-        assert (
-            cls is cls._mptt_tracking_base
-        ), "Can't start or stop mptt tracking on a non-tracking class."
+        assert cls is cls._mptt_tracking_base, (
+            "Can't start or stop mptt tracking on a non-tracking class."
+        )
         assert not cls._mptt_is_tracking, "mptt tracking is already started."
         cls._threadlocal.mptt_delayed_tree_changes = set()
 
     @classmethod
     def _mptt_stop_tracking(cls):
-        assert (
-            cls is cls._mptt_tracking_base
-        ), "Can't start or stop mptt tracking on a non-tracking class."
+        assert cls is cls._mptt_tracking_base, (
+            "Can't start or stop mptt tracking on a non-tracking class."
+        )
         assert cls._mptt_is_tracking, "mptt tracking isn't started."
         results = cls._threadlocal.mptt_delayed_tree_changes
         cls._threadlocal.mptt_delayed_tree_changes = None
@@ -704,7 +704,7 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
             )
 
         siblings = qs[:1]
-        return siblings and siblings[0] or None
+        return (siblings and siblings[0]) or None
 
     @raise_if_unsaved
     def get_previous_sibling(self, *filter_args, **filter_kwargs):
@@ -730,7 +730,7 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
             qs = qs.order_by("-" + opts.right_attr)
 
         siblings = qs[:1]
-        return siblings and siblings[0] or None
+        return (siblings and siblings[0]) or None
 
     @raise_if_unsaved
     def get_root(self):
@@ -1062,7 +1062,7 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
                             args[3] = self._get_user_field_names()
                             args = tuple(args)
                     else:
-                        if not kwargs.get("update_fields", None):
+                        if not kwargs.get("update_fields"):
                             kwargs["update_fields"] = self._get_user_field_names()
 
         else:

@@ -2,6 +2,7 @@
 Utilities for working with lists of model instances which represent
 trees.
 """
+
 import copy
 import csv
 import itertools
@@ -11,10 +12,10 @@ from django.utils.translation import gettext as _
 
 
 __all__ = (
-    "previous_current_next",
-    "tree_item_iterator",
     "drilldown_tree_for_node",
     "get_cached_trees",
+    "previous_current_next",
+    "tree_item_iterator",
 )
 
 

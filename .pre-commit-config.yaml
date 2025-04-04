@@ -1,7 +1,7 @@
 exclude: ".yarn/|yarn.lock|\\.min\\.(css|js)$"
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v5.0.0
     hooks:
       - id: check-added-large-files
       - id: check-builtin-literals
@@ -13,7 +13,7 @@ repos:
       - id: file-contents-sorter
         files: requirements-to-freeze.txt
   - repo: https://github.com/adamchainz/django-upgrade
-    rev: 1.15.0
+    rev: 1.24.0
     hooks:
       - id: django-upgrade
         args: [--target-version, "3.2"]
@@ -21,14 +21,11 @@ repos:
     rev: v0.3.1
     hooks:
       - id: absolufy-imports
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: "v0.0.291"
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: "v0.11.3"
     hooks:
       - id: ruff
-  - repo: https://github.com/psf/black
-    rev: 23.9.1
-    hooks:
-      - id: black
+      - id: ruff-format
   - repo: https://github.com/pre-commit/mirrors-eslint
     rev: v8.50.0
     hooks:
@@ -37,7 +34,7 @@ repos:
         types_or: [css, scss, javascript]
         verbose: true
         additional_dependencies:
-          - eslint
+          - eslint@^8.50
           - eslint-config-prettier
           - "@babel/core"
           - "@babel/eslint-parser"

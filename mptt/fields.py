@@ -1,12 +1,13 @@
 """
 Model fields for working with trees.
 """
+
 from django.db import models
 
 from mptt.forms import TreeNodeChoiceField, TreeNodeMultipleChoiceField
 
 
-__all__ = ("TreeForeignKey", "TreeOneToOneField", "TreeManyToManyField")
+__all__ = ("TreeForeignKey", "TreeManyToManyField", "TreeOneToOneField")
 
 
 class TreeForeignKey(models.ForeignKey):

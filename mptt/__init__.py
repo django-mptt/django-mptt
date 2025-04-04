@@ -11,5 +11,5 @@ def register(*args, **kwargs):
     return MPTTModelBase.register(*args, **kwargs)
 
 
-class AlreadyRegistered(Exception):  # noqa: N818
+class AlreadyRegistered(Exception):
     "Deprecated - don't use this anymore. It's never thrown, you don't need to catch it"

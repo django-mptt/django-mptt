@@ -30,10 +30,10 @@ from myapp.models import (
     Book,
     Category,
     ConcreteModel,
+    CustomParentAttrModel,
     CustomPKName,
     CustomTreeManager,
     CustomTreeQueryset,
-    CustomParentAttrModel,
     DoubleProxyModel,
     Genre,
     Item,
@@ -155,7 +155,6 @@ class DocTestTestCase(TreeTestCase):
 
 
 class ReparentingTestCase(TreeTestCase):
-
     """
     Test that trees are in the appropriate state after reparenting and
     that reparented items have the correct tree attributes defined,
@@ -357,7 +356,6 @@ class ReparentingTestCase(TreeTestCase):
 
 
 class ConcurrencyTestCase(TreeTestCase):
-
     """
     Test that tree structure remains intact when saving nodes (without setting new parent) after
     tree structure has been changed.
@@ -477,7 +475,6 @@ class ConcurrencyTestCase(TreeTestCase):
 
 
 class DeletionTestCase(TreeTestCase):
-
     """
     Tests that the tree structure is maintained appropriately in various
     deletion scenarios.
@@ -1367,9 +1364,7 @@ class ManagerTests(TreeTestCase):
             tm = model._tree_manager
             if id(tm) in seen:
                 self.fail(
-                    "Tree managers for {} and {} are the same manager".format(
-                        model.__name__, seen[id(tm)].__name__
-                    )
+                    f"Tree managers for {model.__name__} and {seen[id(tm)].__name__} are the same manager"
                 )
             seen[id(tm)] = model
 
@@ -1471,7 +1466,9 @@ class ManagerTests(TreeTestCase):
         )
 
     def _get_anc_names(self, qs, include_self=False):
-        ancestor = qs.model.objects.get_queryset_ancestors(qs, include_self=include_self)
+        ancestor = qs.model.objects.get_queryset_ancestors(
+            qs, include_self=include_self
+        )
         return list(ancestor.values_list("name", flat=True).order_by("name"))
 
     def test_get_queryset_ancestors(self):
@@ -1549,7 +1546,6 @@ class ManagerTests(TreeTestCase):
 
 
 class CacheTreeChildrenTestCase(TreeTestCase):
-
     """
     Tests for the ``cache_tree_children`` template filter.
     """
@@ -1590,7 +1586,6 @@ class CacheTreeChildrenTestCase(TreeTestCase):
 
 
 class RecurseTreeTestCase(TreeTestCase):
-
     """
     Tests for the ``recursetree`` template filter.
     """
@@ -2273,7 +2268,6 @@ class TestOrderedInsertionBFS(TreeTestCase):
 
 
 class CacheChildrenTestCase(TreeTestCase):
-
     """
     Tests that the queryset function `get_cached_trees` results in a minimum
     number of database queries.
@@ -2300,6 +2294,7 @@ class CacheChildrenTestCase(TreeTestCase):
                     for child2 in child.get_children():
                         self.assertIsInstance(child2, Genre)
 
+    @unittest.expectedFailure  # Not really, but the test didn't do anything before.
     def test_hide_nodes(self):
         """
         Test that caching a tree with missing nodes works
@@ -2308,8 +2303,13 @@ class CacheChildrenTestCase(TreeTestCase):
         child = Category.objects.create(name="Child", parent=root)
         root2 = Category.objects.create(name="Root2")
 
-        list(Category.objects.all().get_cached_trees()) == [root, child, root2]
-        list(Category.objects.filter(visible=True).get_cached_trees()) == [child, root2]
+        self.assertEqual(
+            list(Category.objects.all().get_cached_trees()), [root, child, root2]
+        )
+        self.assertEqual(
+            list(Category.objects.filter(visible=True).get_cached_trees()),
+            [child, root2],
+        )
 
     def test_nodes_from_different_trees(self):
         """
@@ -2324,13 +2324,13 @@ class CacheChildrenTestCase(TreeTestCase):
         self.root2 = Category.objects.create(name="Root 2")
         self.child2 = Category.objects.create(name="Child 2", parent=self.root2)
 
-
         # Create a queryset with nodes from both trees
-        queryset = Category.objects.filter(id__in=[self.root1.id, self.child2.id]).order_by('level')
+        queryset = Category.objects.filter(
+            id__in=[self.root1.id, self.child2.id]
+        ).order_by("level")
 
         # Process the queryset with get_cached_trees
         top_nodes = queryset.get_cached_trees()
-
 
         # Assert that child2's parent is not root1
         self.assertNotEqual(self.child2.parent, self.root1)
@@ -2345,10 +2345,13 @@ class CacheChildrenTestCase(TreeTestCase):
         self.child2 = Category.objects.create(name="Child 2", parent=self.child1)
 
         # Create a queryset with nodes not in depth-first order
-        queryset = Category.objects.order_by('-level')
+        queryset = Category.objects.order_by("-level")
 
         # Assert that calling get_cached_trees raises ValueError
-        with self.assertRaisesRegex(ValueError, "Node <class 'mptt.querysets.TreeQuerySet'> not in depth-first order"):
+        with self.assertRaisesRegex(
+            ValueError,
+            "Node <class 'mptt.querysets.TreeQuerySet'> not in depth-first order",
+        ):
             queryset.get_cached_trees()
 
 
@@ -2403,7 +2406,6 @@ class Signals(TestCase):
 
 
 class DeferredAttributeTests(TreeTestCase):
-
     """
     Regression tests for #176 and #424
     """
@@ -3172,6 +3174,7 @@ class FormTests(TestCase):
             "---" * 100 + " test",
         )
 
+
 class CustomParentAttrModelTestCase(TreeTestCase):
     def test_rebuild(self):
         root = CustomParentAttrModel.objects.create(name="root")
@@ -3183,7 +3186,7 @@ class CustomParentAttrModelTestCase(TreeTestCase):
             """
             1 - 1 0 1 4
             2 1 1 1 2 3
-            """
+            """,
         )
         child.delete()
         CustomParentAttrModel.objects.rebuild()
@@ -3191,5 +3194,5 @@ class CustomParentAttrModelTestCase(TreeTestCase):
             CustomParentAttrModel.objects.all(),
             """
             1 - 1 0 1 2
-            """
+            """,
         )
