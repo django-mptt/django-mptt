@@ -14,7 +14,6 @@ from django.db.models.query_utils import DeferredAttribute
 from django.template import Context, Template, TemplateSyntaxError
 from django.test import RequestFactory, TestCase, override_settings
 from model_bakery import baker
-from model_mommy import mommy
 
 from mptt.admin import TreeRelatedFieldListFilter
 from mptt.forms import TreeNodeMultipleChoiceField
@@ -3118,23 +3117,12 @@ class BakeryTest(TestCase):
         book = baker.make("Book")
         self.assertQuerySetEqual(book.get_ancestors(), [])
         self.assertQuerySetEqual(book.get_descendants(), [])
-        book_mommy = mommy.make("Book")
-        self.assertQuerySetEqual(book_mommy.get_ancestors(), [])
-        self.assertQuerySetEqual(book_mommy.get_descendants(), [])
 
     def test_create_by_bakery_exception(self):
         with self.assertRaisesRegex(
             Exception, "^The model_bakery populates django-mptt.*"
         ):
             book = baker.make("Book")
-            self.assertQuerySetEqual(book.get_ancestors(), [])
-            self.assertQuerySetEqual(book.get_descendants(), [])
-
-    def test_create_by_mommy_exception(self):
-        with self.assertRaisesRegex(
-            Exception, "^The model_mommy populates django-mptt.*"
-        ):
-            book = mommy.make("Book")
             self.assertQuerySetEqual(book.get_ancestors(), [])
             self.assertQuerySetEqual(book.get_descendants(), [])
 

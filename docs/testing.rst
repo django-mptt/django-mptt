@@ -6,8 +6,8 @@ Testing MPTT models
 Using testing generators
 ========================
 
-Using testing generators such as ``model_mommy`` or ``model_bakery`` is causing random tree fields values, which can cause unexpected behavior.
-To prevent that the ``django-mptt.MPTTModel`` will throw an Exception if made through model_mommy/model_bakery in test environment unless
+Using testing generators such as ``model_bakery`` is causing random tree fields values, which can cause unexpected behavior.
+To prevent that the ``django-mptt.MPTTModel`` will throw an Exception if made through model_bakery in test environment unless
 the ``MPTT_ALLOW_TESTING_GENERATORS`` setting is set to True.
 
 You can set the ``MPTT_ALLOW_TESTING_GENERATORS`` setting to True in your Django testing settings.py file or by the ``@override_settings`` decorator for particular test.

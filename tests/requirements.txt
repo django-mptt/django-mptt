@@ -3,4 +3,3 @@ Django >= 4.2
 coverage
 django-js-asset
 model-bakery
-model-mommy
