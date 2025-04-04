@@ -5,7 +5,7 @@ Change log
 Next version
 ============
 
-0.XX
+0.17
 ====
 
 - Added support for Python 3.13 and Django 5.1 and 5.2.
