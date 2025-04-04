@@ -2528,7 +2528,10 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
                 "_selected_action": [1],
             },
         )
-        self.assertContains(response, "Are you sure?")
+        if django.VERSION < (5, 2):
+            self.assertContains(response, "Are you sure?")
+        else:
+            self.assertContains(response, "Delete multiple objects")
         response = self.client.post(
             "/admin/myapp/person/",
             {
