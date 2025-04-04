@@ -8,7 +8,7 @@ Next version
 0.XX
 ====
 
-- Added Django 5.1.
+- Added support for Python 3.13 and Django 5.1.
 - Dropped Django < 4.2.
 
 0.16
