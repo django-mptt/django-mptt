@@ -14,7 +14,6 @@ from django.db.models.query_utils import DeferredAttribute
 from django.template import Context, Template, TemplateSyntaxError
 from django.test import RequestFactory, TestCase, override_settings
 from model_bakery import baker
-from model_mommy import mommy
 
 from mptt.admin import TreeRelatedFieldListFilter
 from mptt.forms import TreeNodeMultipleChoiceField
@@ -435,15 +434,21 @@ class ConcurrencyTestCase(TreeTestCase):
         self.assertEqual(updated_carrot.ghosts, carrot.ghosts)
         self.assertNotEqual(updated_carrot.name, carrot.name)
 
-        # update with positional arguments
-        carrot.name = "Will change"
-        carrot.ghosts = "Will not be updated"
-        carrot.save(False, False, None, ["name"])
+        # Django 5.1 deprecated passing positional arguments to save().
+        if django.VERSION < (5, 1):
+            # update with positional arguments
+            carrot.name = "Will change"
+            carrot.ghosts = "Will not be updated"
+            carrot.save(False, False, None, ["name"])
 
-        updated_carrot = ConcreteModel.objects.get(id=6)
-        self.assertNotEqual(updated_carrot.ghosts, carrot.ghosts)
-        self.assertEqual(updated_carrot.name, carrot.name)
+            updated_carrot = ConcreteModel.objects.get(id=6)
+            self.assertNotEqual(updated_carrot.ghosts, carrot.ghosts)
+            self.assertEqual(updated_carrot.name, carrot.name)
 
+    @unittest.skipUnless(
+        django.VERSION < (5, 1),
+        "Django 5.1 deprecated passing positional arguments to save()",
+    )
     def test_update_fields_positional(self):
         """
         Test that update_fields works as a positional argument
@@ -1466,8 +1471,8 @@ class ManagerTests(TreeTestCase):
         )
 
     def _get_anc_names(self, qs, include_self=False):
-        anc = qs.model.objects.get_queryset_ancestors(qs, include_self=include_self)
-        return list(anc.values_list("name", flat=True).order_by("name"))
+        ancestor = qs.model.objects.get_queryset_ancestors(qs, include_self=include_self)
+        return list(ancestor.values_list("name", flat=True).order_by("name"))
 
     def test_get_queryset_ancestors(self):
         qs = Category.objects.filter(Q(name="Nintendo Wii") | Q(name="PlayStation 3"))
@@ -2523,7 +2528,10 @@ class DraggableMPTTAdminTestCase(TreeTestCase):
                 "_selected_action": [1],
             },
         )
-        self.assertContains(response, "Are you sure?")
+        if django.VERSION < (5, 2):
+            self.assertContains(response, "Are you sure?")
+        else:
+            self.assertContains(response, "Delete multiple objects")
         response = self.client.post(
             "/admin/myapp/person/",
             {
@@ -3115,36 +3123,15 @@ class ModelMetaTests(TestCase):
 class BakeryTest(TestCase):
     @override_settings(MPTT_ALLOW_TESTING_GENERATORS=True)
     def test_create_by_bakery(self):
-        if django.VERSION < (4,):
-            book = baker.make("Book")
-            self.assertQuerysetEqual(book.get_ancestors(), [])
-            self.assertQuerysetEqual(book.get_descendants(), [])
-            book_mommy = mommy.make("Book")
-            self.assertQuerysetEqual(book_mommy.get_ancestors(), [])
-            self.assertQuerysetEqual(book_mommy.get_descendants(), [])
-        else:
-            book = baker.make("Book")
-            self.assertQuerySetEqual(book.get_ancestors(), [])
-            self.assertQuerySetEqual(book.get_descendants(), [])
-            book_mommy = mommy.make("Book")
-            self.assertQuerySetEqual(book_mommy.get_ancestors(), [])
-            self.assertQuerySetEqual(book_mommy.get_descendants(), [])
+        book = baker.make("Book")
+        self.assertQuerySetEqual(book.get_ancestors(), [])
+        self.assertQuerySetEqual(book.get_descendants(), [])
 
-    @unittest.skipUnless(django.VERSION > (4,), "Django 3.2 is boring")
     def test_create_by_bakery_exception(self):
         with self.assertRaisesRegex(
             Exception, "^The model_bakery populates django-mptt.*"
         ):
             book = baker.make("Book")
-            self.assertQuerySetEqual(book.get_ancestors(), [])
-            self.assertQuerySetEqual(book.get_descendants(), [])
-
-    @unittest.skipUnless(django.VERSION > (4,), "Django 3.2 is boring")
-    def test_create_by_mommy_exception(self):
-        with self.assertRaisesRegex(
-            Exception, "^The model_mommy populates django-mptt.*"
-        ):
-            book = mommy.make("Book")
             self.assertQuerySetEqual(book.get_ancestors(), [])
             self.assertQuerySetEqual(book.get_descendants(), [])
 

@@ -1170,13 +1170,13 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
 
 
 def _check_no_testing_generators(self):
-    """Check that we are not generationg model from model_mommy or model_bakery"""
+    """Check that we are not generationg model from model_bakery"""
     if sys.argv[1:2] == ["test"]:  # in testing environment
         curframe = inspect.currentframe()
         call_frame = inspect.getouterframes(curframe, 0)
         call_file = call_frame[5][1]
         call_directory = call_file.split("/")[-2]
-        if ("model_mommy" in call_file or "model_bakery" in call_file) and not getattr(
+        if "model_bakery" in call_file and not getattr(
             settings, "MPTT_ALLOW_TESTING_GENERATORS", False
         ):
             raise Exception(
@@ -1185,14 +1185,7 @@ def _check_no_testing_generators(self):
             )
 
 
-# Use _check_no_testing_generators function only if model_mommy or model_bakery is in the path
-try:
-    import model_mommy  # noqa
-
-    MPTTModel._check_no_testing_generators = _check_no_testing_generators
-except ImportError:
-    pass
-
+# Use _check_no_testing_generators function only if model_bakery is in the path.
 
 try:
     import model_bakery  # noqa
