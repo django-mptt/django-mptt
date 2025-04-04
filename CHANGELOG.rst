@@ -5,6 +5,11 @@ Change log
 Next version
 ============
 
+0.XX
+====
+
+- Dropped Django < 4.2.
+
 0.16
 ====
 

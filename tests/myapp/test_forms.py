@@ -88,9 +88,6 @@ class TestForms(TreeTestCase):
         """,
         )
 
-    @unittest.skipUnless(
-        django.VERSION > (4,), "Django 3.2 doesn't know Form.as_div() yet"
-    )
     def test_movenodeform(self):
         self.maxDiff = 2000
         form = MoveNodeForm(Genre.objects.get(pk=7))
