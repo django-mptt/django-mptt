@@ -5,6 +5,11 @@ Change log
 Next version
 ============
 
+0.18
+====
+
+- Fixed the way indexes are defined for Django 5 and better.
+
 0.17
 ====
 
