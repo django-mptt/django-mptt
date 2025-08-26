@@ -4,9 +4,9 @@ import sys
 import threading
 from functools import reduce, wraps
 
-import django
 from django.conf import settings
 from django.db import models
+from django.db.backends.utils import truncate_name
 from django.db.models.base import ModelBase
 from django.db.models.query import Q
 from django.db.models.query_utils import DeferredAttribute
@@ -373,16 +373,24 @@ class MPTTModelBase(ModelBase):
                         )
                         field.contribute_to_class(cls, field_name)
 
-                if django.VERSION < (5,):
-                    # Add an index_together on tree_id_attr and left_attr, as these are very
-                    # commonly queried (pretty much all reads).
-                    # Django 5.0 (or 5.1?) only accepts Meta.indexes
-                    index_together = (
-                        cls._mptt_meta.tree_id_attr,
-                        cls._mptt_meta.left_attr,
+                index_fields = (
+                    cls._mptt_meta.tree_id_attr,
+                    cls._mptt_meta.left_attr,
+                )
+                for index in cls._meta.indexes:
+                    if tuple(index.fields) == index_fields:
+                        break
+                else:
+                    cls._meta.indexes.append(
+                        models.Index(
+                            fields=index_fields,
+                            name=truncate_name(
+                                f"{cls._meta.app_label}_{cls._meta.model_name}_"
+                                f"{cls._mptt_meta.tree_id_attr}_{cls._mptt_meta.left_attr}_idx",
+                                models.Index.max_name_length,
+                            ),
+                        )
                     )
-                    if index_together not in cls._meta.index_together:
-                        cls._meta.index_together += (index_together,)
 
             # Add a tree manager, if there isn't one already
             if not abstract:
@@ -400,15 +408,6 @@ class MPTTModelBase(ModelBase):
                             if cls_manager.model is cls:
                                 tree_manager = cls_manager
                                 break
-
-                if is_cls_tree_model and django.VERSION < (5,):
-                    idx_together = (
-                        cls._mptt_meta.tree_id_attr,
-                        cls._mptt_meta.left_attr,
-                    )
-
-                    if idx_together not in cls._meta.index_together:
-                        cls._meta.index_together += (idx_together,)
 
                 if tree_manager and tree_manager.model is not cls:
                     tree_manager = tree_manager._copy_to_model(cls)

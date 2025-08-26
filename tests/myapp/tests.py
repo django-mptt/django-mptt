@@ -9,7 +9,7 @@ from django.apps import apps
 from django.contrib.admin import ModelAdmin, site
 from django.contrib.admin.views.main import ChangeList
 from django.contrib.auth.models import Group, User
-from django.db.models import Q
+from django.db.models import Index, Q
 from django.db.models.query_utils import DeferredAttribute
 from django.template import Context, Template, TemplateSyntaxError
 from django.test import RequestFactory, TestCase, override_settings
@@ -2989,16 +2989,24 @@ class ModelMetaIndexes(TreeTestCase):
             field_name = getattr(SomeModel._mptt_meta, key)
             self.assertFalse(SomeModel._meta.get_field(field_name).db_index)
 
-    @unittest.skipUnless(django.VERSION < (5,), "Django 5 only accepts Meta.indexes")
-    def test_index_together(self):
-        already_idx = [["tree_id", "lft"], ("tree_id", "lft")]
+    @staticmethod
+    def index_fields(model):
+        return (tuple(index.fields) for index in model._meta.indexes)
+
+    def test_indexes(self):
+        already_idx = [
+            [
+                Index(fields=["tree_id", "lft"], name="original_idx"),
+                Index(fields=["tree_id", "lft"], name="duplicate_idx"),
+            ],
+        ]
         no_idx = [(), []]
-        some_idx = [["tree_id"], ("tree_id",), [["tree_id"]], (("tree_id",),)]
+        some_idx = [[Index(fields=["tree_id"], name="test_some_idx")]]
 
         for idx, case in enumerate(already_idx + no_idx + some_idx):
 
             class Meta:
-                index_together = case
+                indexes = case
                 app_label = "myapp"
 
             # Use type() here and in test_index_together_different_attr over
@@ -3016,13 +3024,17 @@ class ModelMetaIndexes(TreeTestCase):
                 },
             )
 
-            self.assertIn(("tree_id", "lft"), SomeModel._meta.index_together)
+            self.assertIn(("tree_id", "lft"), self.index_fields(SomeModel))
 
-    @unittest.skipUnless(django.VERSION < (5,), "Django 5 only accepts Meta.indexes")
     def test_index_together_different_attr(self):
-        already_idx = [["abc", "def"], ("abc", "def")]
+        already_idx = [
+            [
+                Index(fields=["abc", "def"], name="original_idx"),
+                Index(fields=("abc", "def"), name="duplicate_idx"),
+            ]
+        ]
         no_idx = [(), []]
-        some_idx = [["abc"], ("abc",), [["abc"]], (("abc",),)]
+        some_idx = [[Index(fields=["abc"], name="some_idx")]]
 
         for idx, case in enumerate(already_idx + no_idx + some_idx):
 
@@ -3031,7 +3043,7 @@ class ModelMetaIndexes(TreeTestCase):
                 left_attr = "def"
 
             class Meta:
-                index_together = case
+                indexes = case
                 app_label = "myapp"
 
             SomeModel = type(
@@ -3040,7 +3052,7 @@ class ModelMetaIndexes(TreeTestCase):
                 {"MPTTMeta": MPTTMeta, "Meta": Meta, "__module__": str(__name__)},
             )
 
-            self.assertIn(("abc", "def"), SomeModel._meta.index_together)
+            self.assertIn(("abc", "def"), self.index_fields(SomeModel))
 
 
 class BulkLoadTests(TestCase):
