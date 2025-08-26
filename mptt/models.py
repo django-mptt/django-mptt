@@ -401,15 +401,6 @@ class MPTTModelBase(ModelBase):
                                 tree_manager = cls_manager
                                 break
 
-                if is_cls_tree_model and django.VERSION < (5,):
-                    idx_together = (
-                        cls._mptt_meta.tree_id_attr,
-                        cls._mptt_meta.left_attr,
-                    )
-
-                    if idx_together not in cls._meta.index_together:
-                        cls._meta.index_together += (idx_together,)
-
                 if tree_manager and tree_manager.model is not cls:
                     tree_manager = tree_manager._copy_to_model(cls)
                 elif tree_manager is None:
