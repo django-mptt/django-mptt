@@ -3297,3 +3297,36 @@ class CustomParentAttrModelTestCase(TreeTestCase):
             1 - 1 0 1 2
             """,
         )
+
+
+class MultiDatabaseTests(TestCase):
+    databases = {"default", "secondary"}
+
+    def test_save_using_non_default_db(self):
+        # Regression test for #685: save(using="secondary") should not
+        # hit the default database for any tree management queries.
+        root = Genre(name="Root")
+        root.save(using="secondary")
+
+        child = Genre(name="Child", parent=root)
+        child.save(using="secondary")
+
+        self.assertEqual(Genre.objects.using("secondary").count(), 2)
+        self.assertEqual(Genre.objects.using("default").count(), 0)
+
+        child.refresh_from_db(using="secondary")
+        self.assertEqual(child._mpttfield("level"), 1)
+        self.assertEqual(child._mpttfield("tree_id"), root._mpttfield("tree_id"))
+
+    def test_delete_using_non_default_db(self):
+        root = Genre(name="Root")
+        root.save(using="secondary")
+        child = Genre(name="Child", parent=root)
+        child.save(using="secondary")
+
+        child.delete(using="secondary")
+
+        self.assertEqual(Genre.objects.using("secondary").count(), 1)
+        # root's rght should have been updated correctly after delete
+        root.refresh_from_db(using="secondary")
+        self.assertEqual(root._mpttfield("right"), 2)

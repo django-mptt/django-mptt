@@ -4,7 +4,14 @@ import os
 DIRNAME = os.path.dirname(__file__)
 
 DEBUG = True
-DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": "mydatabase"}}
+DATABASES = {
+    "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": "mydatabase"},
+    "secondary": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": ":memory:",
+        "TEST": {"NAME": ":memory:"},
+    },
+}
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 INSTALLED_APPS = (

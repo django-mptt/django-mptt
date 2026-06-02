@@ -410,6 +410,8 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         return qs.update(**self._translate_lookups(**items))
 
     def _get_connection(self, **hints):
+        if self._db:
+            return connections[self._db]
         return connections[router.db_for_write(self.model, **hints)]
 
     def add_related_count(

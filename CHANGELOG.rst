@@ -18,6 +18,10 @@ Next version
 - Fixed ``delete_selected_tree`` admin action crashing with
   ``CantDisableUpdates`` when used with a proxy model; it now correctly calls
   ``delay_mptt_updates()`` on the underlying concrete model (fixes #615).
+- Fixed ``save(using=...)`` and ``delete(using=...)`` ignoring the specified
+  database for MPTT tree management queries; they now route raw SQL and
+  queryset operations to the correct database instead of always falling
+  back to ``default`` (fixes #685).
 - Fixed duplicate ``tree_id`` values when saving a root node after changing
   its ``order_insertion_by`` field while other root nodes have already been
   reshuffled since the instance was loaded. The MPTT tree fields are now

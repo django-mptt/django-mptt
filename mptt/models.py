@@ -782,7 +782,12 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
         Convenience method for calling ``TreeManager.insert_node`` with this
         model instance.
         """
-        self._tree_manager.insert_node(
+        _tm = (
+            self._tree_manager.db_manager(self._state.db)
+            if self._state.db
+            else self._tree_manager
+        )
+        _tm.insert_node(
             self,
             target,
             position,
@@ -910,10 +915,22 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
         tree option set, the node will be inserted or moved to the
         appropriate position to maintain ordering by the specified field.
         """
+        using = kwargs.get("using")
+        if using is not None:
+            # Set _state.db early so that router-based DB selection
+            # (e.g. in get_ordered_insertion_target) routes to the right
+            # database, not the default.
+            self._state.db = using
+
         do_updates = self.__class__._mptt_updates_enabled
         track_updates = self.__class__._mptt_is_tracking
 
         opts = self._mptt_meta
+        _tm = (
+            self._tree_manager.db_manager(self._state.db)
+            if self._state.db
+            else self._tree_manager
+        )
 
         if not (do_updates or track_updates):
             # inside manager.disable_mptt_updates(), don't do any updates.
@@ -929,7 +946,7 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
                     setattr(self, opts.right_attr, left + 1)
                     setattr(self, opts.level_attr, parent._mpttfield("level") + 1)
                     setattr(self, opts.tree_id_attr, parent._mpttfield("tree_id"))
-                    self._tree_manager._post_insert_update_cached_parent_right(
+                    _tm._post_insert_update_cached_parent_right(
                         parent, 2
                     )
                 else:
@@ -1022,7 +1039,7 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
                         )
 
                     if right_sibling:
-                        self._tree_manager._move_node(
+                        _tm._move_node(
                             self,
                             right_sibling,
                             "left",
@@ -1032,12 +1049,12 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
                     else:
                         # Default movement
                         if parent_id is None:
-                            root_nodes = self._tree_manager.root_nodes()
+                            root_nodes = _tm.root_nodes()
                             try:
                                 rightmost_sibling = root_nodes.exclude(
                                     pk=self.pk
                                 ).order_by("-" + opts.tree_id_attr)[0]
-                                self._tree_manager._move_node(
+                                _tm._move_node(
                                     self,
                                     rightmost_sibling,
                                     "right",
@@ -1047,7 +1064,7 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
                             except IndexError:
                                 pass
                         else:
-                            self._tree_manager._move_node(
+                            _tm._move_node(
                                 self, parent, "last-child", save=False
                             )
 
@@ -1125,7 +1142,7 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
             super().save(*args, **kwargs)
         finally:
             if collapse_old_tree is not None:
-                self._tree_manager._create_tree_space(collapse_old_tree, -1)
+                _tm._create_tree_space(collapse_old_tree, -1)
 
         self._mptt_saved = True
         opts.update_mptt_cached_fields(self)
@@ -1157,11 +1174,16 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
         tree_width = self._mpttfield("right") - self._mpttfield("left") + 1
         target_right = self._mpttfield("right")
         tree_id = self._mpttfield("tree_id")
-        self._tree_manager._close_gap(tree_width, target_right, tree_id)
+        _tm = (
+            self._tree_manager.db_manager(self._state.db)
+            if self._state.db
+            else self._tree_manager
+        )
+        _tm._close_gap(tree_width, target_right, tree_id)
         parent = cached_field_value(self, self._mptt_meta.parent_attr)
         if parent:
             right_shift = -self.get_descendant_count() - 2
-            self._tree_manager._post_insert_update_cached_parent_right(
+            _tm._post_insert_update_cached_parent_right(
                 parent, right_shift
             )
 
