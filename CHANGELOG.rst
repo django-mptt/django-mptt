@@ -92,8 +92,8 @@ Next version
 - Started using pre-commit, for the fun of it.
 
 
-0.13 (2021-08-20)
-=================
+0.13 (2021-08-20) — 0.13.4 (2021-09-27)
+========================================
 
 - **MARKED THE PROJECT AS UNMAINTAINED, WHICH IT STILL IS**
 - Reformatted everything using black, isort etc.
@@ -112,8 +112,8 @@ Next version
   choice field.
 
 
-0.12
-====
+0.12 (2021-03-04)
+=================
 
 - Add support for Django 3.1
 - Drop support for Django 1.11.
@@ -121,8 +121,8 @@ Next version
 - Fix an issue where the `rebuild()` method would not work correctly if you were using multiple databases.
 - Update spanish translations.
 
-0.11
-====
+0.11 (2020-01-18)
+=================
 
 - Add support for Django 3.0.
 - Add support for Python 3.8.
@@ -132,8 +132,8 @@ Next version
 - Add traditional Chinese localization.
 - properly log error user messages at the error level in the admin.
 
-0.10
-====
+0.10 (2019-04-13)
+=================
 
 - Drop support for Pythons 3.4 and Python 2.
 - Add support for Python 3.7.
@@ -141,8 +141,8 @@ Next version
 - Fix `get_cached_trees` to cleanly handle cases where nodes' parents were not included in the original queryset.
 - Add a `build_tree_nodes` method to the `TreeManager` Model manager to allow for efficient bulk inserting of a tree (as represented by a bulk dictionary).
 
-0.9.1
-=====
+0.9.1 (2018-08-02)
+==================
 
 Support for Python 3.3 has been removed.
 Support for Django 2.1 has been added, support for Django<1.11 is removed.
@@ -176,15 +176,15 @@ Misc:
 - Add test case to support ancestor coercion callbacks.
 - Extend tree_item_iterator with ancestor coercion callback.
 
-0.9.0
-=====
+0.9.0 (2017-12-09)
+==================
 
 Now supports django 1.11 and 2.0.
 
 Removed tests for unsupported django versions (django 1.9, 1.10)
 
-0.8.6
-=====
+0.8.6 (2016-08-23)
+==================
 
 Now supports django 1.10. After upgrading, you may come across this error when running migrations::
 
@@ -200,8 +200,8 @@ To fix this, please replace ``._default_manager`` in your historic migrations wi
 .. _`#469`: https://github.com/django-mptt/django-mptt/issues/469
 .. _`#498`: https://github.com/django-mptt/django-mptt/issues/498
 
-0.8.0
-=====
+0.8.0 (2015-12-21)
+==================
 
 Dropped support for old Django versions and Python 2.6
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -212,8 +212,8 @@ These versions of python/django no longer receive security patches. You should u
 
 Django 1.9 support has been added.
 
-0.7.0
-=====
+0.7.0 (2015-04-04)
+==================
 
 Dropped support for Django 1.5, Added support for 1.8
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -245,8 +245,8 @@ Removed FeinCMSModelAdmin
 
 Deprecated in 0.6.0, this has now been removed.
 
-0.6.0
-=====
+0.6.0 (2013-08-07)
+==================
 
 mptt now requires Python 2.6+, and supports Python 3.2+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -272,8 +272,8 @@ Deprecated FeinCMSModelAdmin
 If you were using ``mptt.admin.FeinCMSModelAdmin``, you should switch to using
 ``feincms.admin.tree_editor.TreeEditor`` instead, or you'll get a loud deprecation warning.
 
-0.4.2 to 0.5.5
-==============
+0.4.2 (2010-11-01) to 0.5.5 (2012-12-10)
+==========================================
 
 ``TreeManager`` is now the default manager, ``YourModel.tree`` removed
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -321,8 +321,8 @@ Tests are now run with::
 
 The previous method (``python setup.py test``) no longer works since we switched to plain distutils.
 
-0.3 to 0.4.2
-============
+0.3 (2010-04-12) to 0.4.2 (2010-11-01)
+========================================
 
 
 Model changes
