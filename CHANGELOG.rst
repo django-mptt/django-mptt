@@ -5,6 +5,8 @@ Change log
 Next version
 ============
 
+- Added support for Django 6.0.
+
 0.18
 ====
 

@@ -1,6 +1,15 @@
+import django
 from django.forms.models import modelform_factory
 from myapp.models import Category, Genre, ReferencingModel
 from myapp.tests import TreeTestCase
+
+# Django 6.2 changed the default empty choice label from "---------" to
+# "- Select an option -". django-upgrade will remove this branch once we drop
+# support for Django < 6.2.
+if django.VERSION < (6, 2):
+    EMPTY_LABEL = "---------"
+else:
+    EMPTY_LABEL = "- Select an option -"
 
 from mptt.forms import (
     MoveNodeForm,
@@ -91,7 +100,7 @@ class TestForms(TreeTestCase):
         expected = (
             '<div><label for="id_target">Target:</label>'
             '<select name="target" size="10" id="id_target" required>'
-            '<option value="" selected>---------</option>'
+            f'<option value="" selected>{EMPTY_LABEL}</option>'
             '<option value="1"> Action</option>'
             '<option value="2">--- Platformer</option>'
             '<option value="3">------ 2D Platformer</option>'
@@ -136,7 +145,7 @@ class TestForms(TreeTestCase):
         self.assertHTMLEqual(
             field.widget.render("test", None),
             '<select name="test">'
-            '<option value="" selected>---------</option>'
+            f'<option value="" selected>{EMPTY_LABEL}</option>'
             '<option value="1"> Action</option>'
             '<option value="2">--- Platformer</option>'
             '<option value="3">------ 2D Platformer</option>'
@@ -163,7 +172,7 @@ class TestForms(TreeTestCase):
         self.assertHTMLEqual(
             field.widget.render("test", None),
             '<select name="test">'
-            '<option value="" selected>---------</option>'
+            f'<option value="" selected>{EMPTY_LABEL}</option>'
             '<option value="1"> Action</option>'
             '<option value="2">+-- Platformer</option>'
             '<option value="3">+--+-- 2D Platformer</option>'
@@ -184,7 +193,7 @@ class TestForms(TreeTestCase):
         self.assertHTMLEqual(
             field.widget.render("test", None),
             '<select name="test">'
-            '<option value="" selected>---------</option>'
+            f'<option value="" selected>{EMPTY_LABEL}</option>'
             '<option value="3">------ 2D Platformer</option>'
             '<option value="4">------ 3D Platformer</option>'
             '<option value="5">------ 4D Platformer</option>'
@@ -198,7 +207,7 @@ class TestForms(TreeTestCase):
         self.assertHTMLEqual(
             field.widget.render("test", None),
             '<select name="test">'
-            '<option value="" selected>---------</option>'
+            f'<option value="" selected>{EMPTY_LABEL}</option>'
             '<option value="2"> Platformer</option>'
             '<option value="3">--- 2D Platformer</option>'
             '<option value="4">--- 3D Platformer</option>'
@@ -213,7 +222,7 @@ class TestForms(TreeTestCase):
         self.assertHTMLEqual(
             field.widget.render("test", None),
             '<select name="test">'
-            '<option value="" selected>---------</option>'
+            f'<option value="" selected>{EMPTY_LABEL}</option>'
             '<option value="3"> 2D Platformer</option>'
             '<option value="4"> 3D Platformer</option>'
             '<option value="5"> 4D Platformer</option>'
