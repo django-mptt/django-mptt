@@ -54,6 +54,18 @@ These are magically inserted into your context while you're inside the
   ``node``.
 
 .. note::
+    ``{% recursetree %}`` cannot be used with a paginated queryset.
+    Internally it calls ``get_cached_trees()``, which requires the queryset
+    to contain a complete subtree in depth-first order. Pagination slices
+    the queryset at an arbitrary boundary, so a page that starts with a
+    child node whose parent is on the previous page will raise
+    ``ValueError: Node not in depth-first order``.
+
+    If you need pagination, render the tree as a flat list and use the
+    node's ``level`` attribute (or ``get_ancestors()`` /
+    ``get_descendants()``) to add indentation or filtering in your template.
+
+.. note::
     ``{% block %}`` / ``{{ block.super }}`` do not work inside
     ``{% recursetree %}``. The tag extracts its content from the template at
     render time, which removes it from the normal block-inheritance chain.
