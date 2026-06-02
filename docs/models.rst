@@ -360,14 +360,20 @@ tree structure, with root nodes appearing in tree id order and their
 descendants being ordered in a depth-first fashion.
 
 .. note::
-   ``bulk_create()`` does **not** work with MPTT models. Django's
    ``bulk_create()`` bypasses ``Model.save()``, so the MPTT tree fields
-   (``lft``, ``rght``, ``tree_id``, ``level``) are never populated,
-   causing database integrity errors.
+   (``lft``, ``rght``, ``tree_id``, ``level``) are not populated
+   automatically. You must either set them to placeholder values (e.g.
+   ``0``) to satisfy any ``NOT NULL`` constraints, then call
+   ``MyModel.objects.rebuild()`` afterwards to compute correct values::
 
-   Create nodes one at a time, or use ``build_tree_nodes()`` together
-   with a manual database insert for bulk loading, followed by
-   ``rebuild()`` to recompute the tree structure.
+       MyModel.objects.bulk_create([
+           MyModel(name="foo", parent=None, lft=0, rght=0, tree_id=0, level=0),
+           ...
+       ])
+       MyModel.objects.rebuild()
+
+   Alternatively, use ``build_tree_nodes()`` to pre-compute the tree
+   fields before inserting.
 
 Methods
 -------
