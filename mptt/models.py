@@ -809,7 +809,11 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
         Returns ``True`` if this model instance is a root node,
         ``False`` otherwise.
         """
-        return getattr(self, self._mptt_meta.parent_attr + "_id") is None
+        opts = self._mptt_meta
+        return (
+            getattr(self, opts.parent_attr + "_id") is None
+            and getattr(self, opts.parent_attr) is None
+        )
 
     @raise_if_unsaved
     def is_descendant_of(self, other, include_self=False):
@@ -855,7 +859,7 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
         self._tree_manager.move_node(self, target, position)
 
     def _is_saved(self, using=None):
-        if self.pk is None or self._mpttfield("tree_id") is None:
+        if self._state.adding or self._mpttfield("tree_id") is None:
             return False
         opts = self._meta
         if opts.pk.remote_field is None:

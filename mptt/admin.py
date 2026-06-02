@@ -130,18 +130,11 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
     expand_tree_by_default = False
 
     def tree_actions(self, item):
-        try:
-            url = item.get_absolute_url()
-        except Exception:  # Nevermind.
-            url = ""
-
         return format_html(
             '<div class="drag-handle"></div>'
-            '<div class="tree-node" data-pk="{}" data-level="{}"'
-            ' data-url="{}"></div>',
+            '<div class="tree-node" data-pk="{}" data-level="{}"></div>',
             item.pk,
             item._mpttfield("level"),
-            url,
         )
 
     tree_actions.short_description = ""

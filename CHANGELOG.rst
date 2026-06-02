@@ -6,6 +6,15 @@ Next version
 ============
 
 - Added support for Django 6.0.
+- Fixed ``is_root_node()`` incorrectly returning ``True`` for unsaved instances
+  that have a parent assigned but not yet saved (fixes #617).
+- Fixed ``_is_saved()`` always returning ``True`` for models with a UUID primary
+  key or any other auto-generated non-``None`` PK by using ``_state.adding``
+  instead of checking ``pk is None`` (fixes #514).
+- Removed the unnecessary ``get_absolute_url()`` call per row in
+  ``DraggableMPTTAdmin.tree_actions()``; the resulting ``data-url`` attribute
+  was not used by the drag-and-drop JavaScript and caused N+1 queries when
+  ``get_absolute_url()`` traversed the tree (fixes #782).
 
 0.18
 ====
