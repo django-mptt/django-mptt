@@ -3,6 +3,7 @@ import warnings
 
 from django.conf import settings
 from django.contrib.admin.templatetags.admin_list import (
+    ResultList,
     result_headers,
     result_hidden_fields,
 )
@@ -203,10 +204,10 @@ def mptt_items_for_result(cl, result, form):
 def mptt_results(cl):
     if cl.formset:
         for res, form in zip(cl.result_list, cl.formset.forms):
-            yield list(mptt_items_for_result(cl, res, form))
+            yield ResultList(form, mptt_items_for_result(cl, res, form))
     else:
         for res in cl.result_list:
-            yield list(mptt_items_for_result(cl, res, None))
+            yield ResultList(None, mptt_items_for_result(cl, res, None))
 
 
 def mptt_result_list(cl):

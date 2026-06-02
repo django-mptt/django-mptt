@@ -2,12 +2,27 @@
 **This project is currently unmaintained**
 ==========================================
 
-You can find alternatives to django-mptt on
-`Django Packages <https://djangopackages.org/grids/g/trees-and-graphs/>`__.
-Maybe you do not need MPTT, especially when using newer databases. See
-`django-tree-queries <https://github.com/matthiask/django-tree-queries>`_ for an
-implementation using recursive Common Table Expressions (CTE). Here's its
-`announcement blog post <https://406.ch/writing/django-tree-queries/>`__.
+django-mptt works by storing pre-computed left/right/level/tree_id values
+alongside each row. This makes reads very fast, but it means that every
+insert, move, or delete must update a potentially large number of sibling and
+ancestor rows. This write amplification is the fundamental reason the library
+is hard to maintain: concurrent writes can race and corrupt the tree, bulk
+operations bypass the update logic entirely, and any code that touches the
+database outside of django-mptt (raw SQL, ``bulk_update``, migrations) can
+leave the tree in an inconsistent state. Rebuilding with ``rebuild()`` is
+the escape hatch, but it locks the table.
+
+If you are starting a new project, or can afford to migrate, consider an
+alternative. Newer databases support recursive Common Table Expressions (CTE),
+which let you store only a parent FK and compute ancestry on the fly. See
+`django-tree-queries <https://github.com/matthiask/django-tree-queries>`_ for
+such an implementation and its `announcement blog post
+<https://406.ch/writing/django-tree-queries/>`__. Other alternatives are
+listed on `Django Packages <https://djangopackages.org/grids/g/trees-and-graphs/>`__.
+
+django-mptt itself is kept alive on a best-effort basis — bugs get fixed when
+reported with a clear reproduction, compatibility with new Django versions is
+maintained, but new features will not be added.
 
 
 ===========
