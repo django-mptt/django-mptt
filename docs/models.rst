@@ -359,6 +359,16 @@ Any ``QuerySet`` created with this manager will be ordered based on the
 tree structure, with root nodes appearing in tree id order and their
 descendants being ordered in a depth-first fashion.
 
+.. note::
+   ``bulk_create()`` does **not** work with MPTT models. Django's
+   ``bulk_create()`` bypasses ``Model.save()``, so the MPTT tree fields
+   (``lft``, ``rght``, ``tree_id``, ``level``) are never populated,
+   causing database integrity errors.
+
+   Create nodes one at a time, or use ``build_tree_nodes()`` together
+   with a manual database insert for bulk loading, followed by
+   ``rebuild()`` to recompute the tree structure.
+
 Methods
 -------
 
