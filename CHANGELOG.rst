@@ -18,6 +18,12 @@ Next version
 - Fixed ``delete_selected_tree`` admin action crashing with
   ``CantDisableUpdates`` when used with a proxy model; it now correctly calls
   ``delay_mptt_updates()`` on the underlying concrete model (fixes #615).
+- Fixed ``get_queryset_descendants()`` and ``get_queryset_ancestors()``
+  incorrectly including contiguous input siblings in their results when the
+  bounding-box range spanned intermediate siblings; a level constraint is now
+  added to each range filter (fixes #517).
+- Fixed ``get_family()`` bypassing the ``_base_manager`` delegation used by
+  MTI-based models such as django-polymorphic-tree (fixes #709).
 - Fixed ``get_ancestors()``, ``get_descendants()``, ``get_children()`` and
   related methods returning instances of the concrete model instead of the
   proxy model when called on a proxy model instance. The tree manager for

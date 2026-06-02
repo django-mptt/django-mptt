@@ -604,7 +604,8 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
             }
         )
 
-        return self._tree_manager.filter(ancestors | descendants)
+        manager = self._tree_manager._base_manager or self._tree_manager
+        return manager.filter(ancestors | descendants)
 
     @raise_if_unsaved
     def get_children(self):

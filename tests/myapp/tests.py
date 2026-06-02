@@ -1515,6 +1515,37 @@ class ManagerTests(TreeTestCase):
             list(Genre.objects.values_list("name", flat=True).order_by("name")),
         )
 
+    def test_get_queryset_descendants_excludes_siblings_517(self):
+        # https://github.com/django-mptt/django-mptt/issues/517
+        # When siblings are contiguous, the bounding-box range used to
+        # include intermediate siblings in the result.
+        root = Genre.objects.create(name="Root517")
+        child1 = Genre.objects.create(name="Child1", parent=root)
+        child2 = Genre.objects.create(name="Child2", parent=root)
+        child3 = Genre.objects.create(name="Child3", parent=root)
+        Genre.objects.create(name="Grandchild1", parent=child1)
+        Genre.objects.create(name="Grandchild2", parent=child2)
+        Genre.objects.create(name="Grandchild3", parent=child3)
+        Genre.objects.create(name="Grandchild4", parent=child3)
+
+        level_1_qs = Genre.objects.filter(parent=root)
+        desc_names = set(
+            Genre.objects.get_queryset_descendants(level_1_qs, include_self=False)
+            .values_list("name", flat=True)
+        )
+        self.assertNotIn("Child2", desc_names)
+        self.assertNotIn("Child3", desc_names)
+        self.assertEqual(
+            desc_names,
+            {"Grandchild1", "Grandchild2", "Grandchild3", "Grandchild4"},
+        )
+
+        anc_names = set(
+            Genre.objects.get_queryset_ancestors(level_1_qs, include_self=False)
+            .values_list("name", flat=True)
+        )
+        self.assertEqual(anc_names, {"Root517"})
+
     def test_custom_querysets(self):
         """
         Test that a custom manager also provides custom querysets.
