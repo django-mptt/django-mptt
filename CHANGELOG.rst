@@ -18,6 +18,11 @@ Next version
 - Fixed ``delete_selected_tree`` admin action crashing with
   ``CantDisableUpdates`` when used with a proxy model; it now correctly calls
   ``delay_mptt_updates()`` on the underlying concrete model (fixes #615).
+- Fixed ``get_ancestors()``, ``get_descendants()``, ``get_children()`` and
+  related methods returning instances of the concrete model instead of the
+  proxy model when called on a proxy model instance. The tree manager for
+  proxy models no longer delegates queryset operations to the concrete model's
+  manager, since proxy models share the same database table (fixes #802).
 
 0.18
 ====

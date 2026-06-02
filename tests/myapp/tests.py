@@ -1400,10 +1400,30 @@ class ManagerTests(TreeTestCase):
 
     def test_proxy_custom_manager(self):
         self.assertIsInstance(SingleProxyModel._tree_manager, CustomTreeManager)
-        self.assertIsInstance(SingleProxyModel._tree_manager._base_manager, TreeManager)
+        # Proxy models share the concrete model's DB table; no delegation needed.
+        self.assertIsNone(SingleProxyModel._tree_manager._base_manager)
 
         self.assertIsInstance(SingleProxyModel.objects, CustomTreeManager)
-        self.assertIsInstance(SingleProxyModel.objects._base_manager, TreeManager)
+        self.assertIsNone(SingleProxyModel.objects._base_manager)
+
+    def test_proxy_queryset_returns_proxy_instances(self):
+        # get_ancestors/get_descendants must return instances of the proxy class,
+        # not the concrete class (regression test for #802).
+        from myapp.models import ConcreteModel, SingleProxyModel
+
+        root = ConcreteModel.objects.create(name="root")
+        child = SingleProxyModel.objects.create(name="child", parent=root)
+        grandchild = SingleProxyModel.objects.create(name="grandchild", parent=child)
+
+        ancestors = grandchild.get_ancestors()
+        self.assertTrue(
+            all(isinstance(obj, SingleProxyModel) for obj in ancestors),
+            "get_ancestors() returned non-proxy instances",
+        )
+
+        descendants = root.get_descendants()
+        # descendants of a concrete root include proxy children
+        self.assertIn(grandchild.pk, descendants.values_list("pk", flat=True))
 
     def test_get_queryset_descendants(self):
         def get_desc_names(qs, include_self=False):
