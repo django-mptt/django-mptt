@@ -18,6 +18,10 @@ Next version
 - Fixed ``delete_selected_tree`` admin action crashing with
   ``CantDisableUpdates`` when used with a proxy model; it now correctly calls
   ``delay_mptt_updates()`` on the underlying concrete model (fixes #615).
+- Fixed ``TreeRelatedFieldListFilter`` crashing with a ``KeyError`` when the
+  foreign key uses ``to_field`` pointing to a non-PK field; both
+  ``field_choices()`` and ``queryset()`` now look up related objects by the
+  referenced field rather than always assuming ``pk`` (fixes #693).
 - Fixed ``get_queryset_descendants()`` and ``get_queryset_ancestors()``
   incorrectly including contiguous input siblings in their results when the
   bounding-box range spanned intermediate siblings; a level constraint is now

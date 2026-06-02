@@ -355,7 +355,9 @@ class TreeRelatedFieldListFilter(RelatedFieldListFilter):
         try:
             # #### MPTT ADDITION START
             if self.lookup_val:
-                other_model = self.other_model.objects.get(pk=self.lookup_val)
+                other_model = self.other_model.objects.get(
+                    **{self.rel_name: self.lookup_val}
+                )
                 other_models = other_model.get_descendants(True)
                 del self.used_parameters[self.changed_lookup_kwarg]
                 self.used_parameters.update(
@@ -374,9 +376,12 @@ class TreeRelatedFieldListFilter(RelatedFieldListFilter):
         language_bidi = get_language_bidi()
         initial_choices = field.get_choices(include_blank=False)
         pks = [pk for pk, val in initial_choices]
-        models = field.related_model._default_manager.filter(pk__in=pks)
+        models = field.related_model._default_manager.filter(
+            **{f"{self.rel_name}__in": pks}
+        )
         levels_dict = {
-            model.pk: getattr(model, model._mptt_meta.level_attr) for model in models
+            getattr(model, self.rel_name): getattr(model, model._mptt_meta.level_attr)
+            for model in models
         }
         choices = []
         for pk, val in initial_choices:
