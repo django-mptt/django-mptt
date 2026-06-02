@@ -15,6 +15,9 @@ Next version
   ``DraggableMPTTAdmin.tree_actions()``; the resulting ``data-url`` attribute
   was not used by the drag-and-drop JavaScript and caused N+1 queries when
   ``get_absolute_url()`` traversed the tree (fixes #782).
+- Fixed ``delete_selected_tree`` admin action crashing with
+  ``CantDisableUpdates`` when used with a proxy model; it now correctly calls
+  ``delay_mptt_updates()`` on the underlying concrete model (fixes #615).
 
 0.18
 ====
