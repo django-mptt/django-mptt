@@ -18,6 +18,11 @@ Next version
 - Fixed ``delete_selected_tree`` admin action crashing with
   ``CantDisableUpdates`` when used with a proxy model; it now correctly calls
   ``delay_mptt_updates()`` on the underlying concrete model (fixes #615).
+- Fixed duplicate ``tree_id`` values when saving a root node after changing
+  its ``order_insertion_by`` field while other root nodes have already been
+  reshuffled since the instance was loaded. The MPTT tree fields are now
+  refreshed from the database before the repositioning move so that
+  ``_make_sibling_of_root_node`` operates on the correct rows (fixes #687).
 - Fixed ``TreeRelatedFieldListFilter`` crashing with a ``KeyError`` when the
   foreign key uses ``to_field`` pointing to a non-PK field; both
   ``field_choices()`` and ``queryset()`` now look up related objects by the

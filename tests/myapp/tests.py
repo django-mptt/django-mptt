@@ -1139,6 +1139,38 @@ class OrderedInsertionSortingTestCase(TestCase):
         b.refresh_from_db()
         self.assertIn(b, b.get_ancestors(include_self=True))
 
+    def test_reorder_root_nodes_no_duplicate_tree_ids(self):
+        # Regression test for #687: saving a root node after changing its
+        # order_insertion_by field could produce duplicate tree_ids,
+        # especially when iterating over a queryset loaded before any moves.
+        OrderedInsertion.objects.create(name="a")
+        OrderedInsertion.objects.create(name="c")
+        OrderedInsertion.objects.create(name="e")
+        OrderedInsertion.objects.create(name="g")
+
+        # Load all nodes at once — simulates the reporter's pattern of
+        # iterating over a pre-loaded queryset and saving each.
+        new_names = {"a": "d", "c": "b", "e": "f", "g": "h"}
+        nodes = list(OrderedInsertion.objects.filter(parent=None))
+        for node in nodes:
+            node.name = new_names[node.name]
+            node.save()
+
+        tree_ids = list(
+            OrderedInsertion.objects.filter(parent=None).values_list(
+                "tree_id", flat=True
+            )
+        )
+        self.assertEqual(
+            len(tree_ids),
+            len(set(tree_ids)),
+            f"Duplicate tree_ids after reorder: {tree_ids}",
+        )
+        names = list(
+            OrderedInsertion.objects.filter(parent=None).values_list("name", flat=True)
+        )
+        self.assertEqual(names, ["b", "d", "f", "h"])
+
 
 class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
     def setUp(self):
@@ -2482,8 +2514,11 @@ class DeferredAttributeTests(TreeTestCase):
 
         with self.assertNumQueries(1):
             obj.name
-        with self.assertNumQueries(3):
-            # does a node move, since the order_insertion_by field changed
+        with self.assertNumQueries(4):
+            # 1 query to refresh MPTT tree fields (stale-instance safety, #687)
+            # 1 query to find ordered insertion target
+            # 1 query to find rightmost sibling (fallback, no target found)
+            # 1 update query
             obj.save()
 
         self.assertEqual(obj._mptt_cached_fields["name"], "a")
@@ -2495,8 +2530,11 @@ class DeferredAttributeTests(TreeTestCase):
         with self.assertNumQueries(0):
             obj.name = "b"
 
-        with self.assertNumQueries(3):
-            # does a node move, since the order_insertion_by field changed
+        with self.assertNumQueries(4):
+            # 1 query to refresh MPTT tree fields (stale-instance safety, #687)
+            # 1 query to find ordered insertion target
+            # 1 query to find rightmost sibling (fallback, no target found)
+            # 1 update query
             obj.save()
 
         self.assertEqual(obj._mptt_cached_fields["name"], "b")

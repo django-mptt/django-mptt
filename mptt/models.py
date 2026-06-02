@@ -984,6 +984,21 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
                 same_order = True
 
             if not same_order:
+                if not track_updates:
+                    # Refresh MPTT tree fields from the database before moving.
+                    # Another save may have already reshuffled tree_ids since
+                    # this instance was loaded; using stale in-memory values
+                    # in _make_sibling_of_root_node corrupts the tree (#687).
+                    # Skip inside delay_mptt_updates(): the tracking layer
+                    # manages tree state there independently.
+                    self.refresh_from_db(
+                        fields=[
+                            opts.left_attr,
+                            opts.right_attr,
+                            opts.tree_id_attr,
+                            opts.level_attr,
+                        ]
+                    )
                 parent = getattr(self, opts.parent_attr)
                 opts.set_raw_field_value(self, opts.parent_attr, old_parent_id)
                 try:
