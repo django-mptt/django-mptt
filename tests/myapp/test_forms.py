@@ -3,6 +3,7 @@ from django.forms.models import modelform_factory
 from myapp.models import Category, Genre, ReferencingModel
 from myapp.tests import TreeTestCase
 
+
 # Django 6.2 changed the default empty choice label from "---------" to
 # "- Select an option -". django-upgrade will remove this branch once we drop
 # support for Django < 6.2.
