@@ -4,7 +4,7 @@ build
 dist
 .tox
 MANIFEST
-tests/mydatabase
+mydatabase
 *.egg
 .eggs
 venv/
