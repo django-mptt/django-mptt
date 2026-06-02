@@ -1134,7 +1134,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             level_change,
             left_right_change,
             parent,
-            new_parent_right,
+            _new_parent_right,
         ) = self._calculate_inter_tree_move_values(node, target, position)
 
         tree_width = right - left + 1
@@ -1322,7 +1322,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             level_change,
             left_right_change,
             parent,
-            right_shift,
+            _right_shift,
         ) = self._calculate_inter_tree_move_values(node, target, position)
 
         # Create space for the tree which will be inserted

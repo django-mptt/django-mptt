@@ -16,4 +16,4 @@ jobs:
       - uses: actions/checkout@v6
       - run: pip install --user codespell[toml] ruff
       - run: codespell --ignore-words-list=whet --skip="*.po,./mptt/models.py"
-      - run: ruff --output-format=github || true
+      - run: ruff check --output-format=github
