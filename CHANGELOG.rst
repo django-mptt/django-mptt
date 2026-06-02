@@ -43,19 +43,19 @@ Next version
   proxy models no longer delegates queryset operations to the concrete model's
   manager, since proxy models share the same database table (fixes #802).
 
-0.18
-====
+0.18 (2025-08-26)
+=================
 
 - Fixed the way indexes are defined for Django 5 and better.
 
-0.17
-====
+0.17 (2025-04-04)
+=================
 
 - Added support for Python 3.13 and Django 5.1 and 5.2.
 - Dropped Django < 4.2.
 
-0.16
-====
+0.16 (2024-01-16)
+=================
 
 - Fixed ``get_cached_trees`` if there are multiple trees in the queryset.
 - Added support for Python 3.12, Django 5.0.
@@ -63,8 +63,8 @@ Next version
 - Fixed rebuilding using custom managers not named ``objects``.
 
 
-0.15
-====
+0.15 (2023-09-27)
+=================
 
 - **Since I unfortunately still depend on django-mptt in prehistoric projects I
   took it upon me to make it runnable again. This doesn't mean I want to
@@ -79,8 +79,8 @@ Next version
 - Switched to hatchling.
 
 
-0.14
-====
+0.14 (2022-09-27)
+=================
 
 - Merged the ``docs/upgrade.rst`` file into the main ``CHANGELOG.rst``.
 - Fixed the Sphinx autodoc configuration to also work locally. Ensured that
@@ -92,8 +92,8 @@ Next version
 - Started using pre-commit, for the fun of it.
 
 
-0.13
-====
+0.13 (2021-08-20)
+=================
 
 - **MARKED THE PROJECT AS UNMAINTAINED, WHICH IT STILL IS**
 - Reformatted everything using black, isort etc.

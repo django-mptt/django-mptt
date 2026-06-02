@@ -11,6 +11,33 @@ move, or delete touches many rows. This makes concurrent writes, bulk
 operations, and any out-of-MPTT writes (raw SQL, `bulk_update`) inherently
 risky. See `README.rst` and `docs/models.rst` for the documented caveats.
 
+## Working conventions
+
+### Commits
+- No attribution line (`Co-Authored-By` etc.) — plain commit messages only.
+- Commit message style: short imperative subject, blank line, then a paragraph
+  explaining *why* (the bug mechanism, not just what changed).
+- Include `(fixes #NNN)` in the subject when closing an issue.
+- Commit AGENTS.md changes, CHANGELOG updates, and code/tests together in
+  one commit per logical fix.
+
+### Issues
+- Always read the full issue body AND comments before acting.
+- Close noisy issues (support questions, feature requests, third-party
+  integrations, stale old-version reports) with a polite message referencing
+  #833 and, where relevant, pointing to docs or Stack Overflow.
+- For bugs: write a failing test first, then fix, then verify the test passes.
+- When closing a PR from a first-time contributor, thank them and explain
+  clearly why it is not being merged.
+
+### CHANGELOG
+- Add entries under "Next version" for every user-visible change.
+- Use release dates in headings: `0.18 (2025-08-26)` format.
+- One bullet per fix, starting with the affected symbol in backticks.
+
+### Releases
+- Not automatic; a human tags and publishes to PyPI when ready.
+
 ## Test command
 
 ```
