@@ -265,8 +265,15 @@ otherwise.
 -------------------------------------------
 
 Moves the model instance elsewhere in the tree based on ``target`` and
-``position`` (when appropriate). If moved without any exceptions
-raised then the signal ``node_moved`` will be sent.
+``position`` (when appropriate). If moved without any exceptions raised,
+the signal ``node_moved`` will be sent.
+
+.. note::
+   When ``node_moved`` fires, the move is fully complete: the instance
+   has already been saved to the database and all MPTT fields (``lft``,
+   ``rght``, ``level``, ``tree_id``) reflect the new position. You can
+   safely read tree-related attributes from the ``instance`` argument in
+   your signal handler.
 
 .. note::
    It is assumed that when you call this method, the tree fields in the

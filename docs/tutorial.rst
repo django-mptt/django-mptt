@@ -63,7 +63,11 @@ As with most Django applications, you should add ``mptt`` to the ``INSTALLED_APP
 Set up your model
 -----------------
 
-Start with a basic subclass of MPTTModel, something like this::
+Start with a basic subclass of ``MPTTModel``. The example below uses a
+``Genre`` model — swap in whatever name fits your domain (``Category``,
+``Page``, ``Section``, etc.)::
+
+
 
     from django.db import models
     from mptt.models import MPTTModel, TreeForeignKey

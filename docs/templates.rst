@@ -54,6 +54,13 @@ These are magically inserted into your context while you're inside the
   ``node``.
 
 .. note::
+    ``{% block %}`` / ``{{ block.super }}`` do not work inside
+    ``{% recursetree %}``. The tag extracts its content from the template at
+    render time, which removes it from the normal block-inheritance chain.
+    If you need block-like reuse, move the recursive fragment into a separate
+    template and use ``{% include %}`` instead.
+
+.. note::
     If you already have variables called ``node`` or ``children`` in your
     template, and you need to access them inside the ``recursetree`` block,
     you'll need to alias them to some other name first::

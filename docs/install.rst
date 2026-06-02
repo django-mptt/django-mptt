@@ -55,3 +55,33 @@ from within the ``django-mptt`` directory.
 .. _`git`: https://git-scm.com/
 .. _`PYTHONPATH`: http://docs.python.org/tut/node8.html#SECTION008110000000000000000
 .. _`Commit History`: https://github.com/django-mptt/django-mptt/commits/master
+
+
+Adding MPTT to an existing model
+=================================
+
+If you are converting an existing model (one that already has rows in the
+database) to use MPTT, the tree fields will be added with a default of ``0``
+by the Django migration.  After running ``migrate`` you need to rebuild the
+tree so that all the MPTT fields get correct values::
+
+    python manage.py shell
+    >>> from myapp.models import MyModel
+    >>> MyModel.objects.rebuild()
+
+If you need to do this inside a data migration, import and register the model
+manually — Django's historical model proxy doesn't carry the MPTT manager::
+
+    from django.db import migrations
+    from mptt.models import MPTTModel, TreeForeignKey
+
+    def rebuild_tree(apps, schema_editor):
+        # Re-register the real model so the MPTT manager is available.
+        MyModel = apps.get_model('myapp', 'MyModel')
+        from mptt import register
+        register(MyModel)
+        MyModel.objects.rebuild()
+
+    class Migration(migrations.Migration):
+        dependencies = [('myapp', '0001_initial')]
+        operations = [migrations.RunPython(rebuild_tree, migrations.RunPython.noop)]
