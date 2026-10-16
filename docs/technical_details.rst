@@ -87,30 +87,97 @@ of nodes which are retrieved for the whole tree or any subtree::
 Concurrency
 ===========
 
-Most CRUD methods involve the execution of multiple queries. These
-methods need to be made mutually exclusive, otherwise corrupt hierarchies might get created.
-Mutual exclusivity is usually achieved by placing the queries between
-**LOCK TABLE** and **UNLOCK TABLE** statements. However, mptt
-can't do the locking itself because the `LOCK/UNLOCK statements are not transaction safe`_
-and would therefore mess up the client code's transactions. This means that it's
-the client code's responsibility to ensure that calls to mptt CRUD methods are mutually
-exclusive.
+Inserting, moving and deleting nodes reads the tree fields of the involved
+nodes and then runs several ``UPDATE`` statements based on those values. If
+two processes modify the tree at the same time these statements can
+interleave and corrupt the tree. Wrapping the operations in
+``transaction.atomic()`` is not enough: under ``READ COMMITTED``, which Django
+uses by default on PostgreSQL and MySQL, another transaction can commit
+between the reads and the updates.
 
-Note: In the above paragraph 'client code' means any django app that uses mptt base models.
+django-mptt does not lock anything itself. There is no portable,
+transaction-safe way to do so (MySQL's ``LOCK TABLES`` implicitly commits the
+current transaction, SQLite has no table locks) and the right lock depends on
+the application. Instead, serialize all writes to the tree in your code:
 
-Wrapping tree operations in ``transaction.atomic()`` alone is not enough.
-django-mptt reads tree fields and then runs several ``UPDATE`` statements
-based on those values. With the default isolation levels another
-transaction can commit in between (``READ COMMITTED``, the PostgreSQL
-default), or the reads see an older snapshot than the updates
-(``REPEATABLE READ``, the MySQL/InnoDB default). Both can corrupt the tree.
-Serialize tree writes instead, for example with PostgreSQL's transaction
-scoped ``LOCK TABLE ... IN SHARE ROW EXCLUSIVE MODE``, an advisory lock, or
-a ``select_for_update()`` on a dedicated lock row which every tree write
-acquires first. Acquire the lock before reading any tree nodes in the
-transaction, otherwise ``REPEATABLE READ`` still returns the old snapshot.
+1. Run every operation which modifies the tree in a transaction and acquire
+   a lock at its start. Use one lock for the whole table: some operations,
+   e.g. inserting a root node, change the ``tree_id`` of other trees too, so
+   locking only the affected tree is not sufficient.
+2. Acquire the lock before django-mptt reads the tree. django-mptt reloads
+   the tree fields of the involved nodes from the database when inserting,
+   moving and deleting, so under ``READ COMMITTED`` it doesn't matter if your
+   instances were loaded before the lock was acquired.
 
-.. _`LOCK/UNLOCK statements are not transaction safe`: https://dev.mysql.com/doc/refman/5.7/en/lock-tables-and-transactions.html
+A portable lock is ``select_for_update()`` on a dedicated row:
+
+.. code-block:: python
+
+    from django.db import models
+
+
+    class TreeLock(models.Model):
+        """Contains exactly one row, create it in a data migration."""
+
+
+    def lock_tree():
+        TreeLock.objects.select_for_update().get(pk=1)
+
+On PostgreSQL a transaction-level advisory lock works without an additional
+table:
+
+.. code-block:: python
+
+    from django.db import connection
+
+
+    def lock_tree():
+        with connection.cursor() as cursor:
+            # Any constant which is unique within your project
+            cursor.execute("SELECT pg_advisory_xact_lock(%s)", [4711])
+
+Then acquire the lock in all code paths which modify the tree, including the
+admin, by overriding the model methods:
+
+.. code-block:: python
+
+    from django.db import transaction
+    from mptt.models import MPTTModel
+
+
+    class Category(MPTTModel):
+        ...
+
+        def save(self, *args, **kwargs):
+            with transaction.atomic():
+                lock_tree()
+                super().save(*args, **kwargs)
+
+        def delete(self, *args, **kwargs):
+            with transaction.atomic():
+                lock_tree()
+                return super().delete(*args, **kwargs)
+
+        def move_to(self, target, position="first-child"):
+            with transaction.atomic():
+                lock_tree()
+                super().move_to(target, position)
+
+Calls to manager methods such as ``rebuild()``, ``partial_rebuild()``,
+``insert_node()`` and ``move_node()``, and ``delay_mptt_updates()`` or
+``disable_mptt_updates()`` blocks have to be wrapped the same way.
+
+Some notes on other configurations:
+
+* SQLite only allows one writer at a time, ``select_for_update()`` is a no-op
+  there.
+* With ``REPEATABLE READ`` (e.g. configured using the ``isolation_level``
+  option on MySQL) reads see a snapshot taken at the first read of the
+  transaction. Acquire the lock before reading anything else in the
+  transaction, otherwise django-mptt still sees outdated tree fields.
+* With PostgreSQL's ``SERIALIZABLE`` isolation level conflicting
+  transactions fail with serialization errors instead of corrupting the
+  tree; they have to be retried.
 
 
 

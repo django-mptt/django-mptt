@@ -400,9 +400,11 @@ Rebuilds the mptt fields for the entire table. This can be handy:
 
 It is recommended to rebuild the tree inside a ``transaction.atomic()`` block
 for safety and better performance.
+If other processes may modify the tree at the same time, acquire the same
+lock as for all other tree writes first, see :ref:`concurrency`.
 
 ``add_related_count(queryset, rel_cls, rel_field, count_attr, cumulative=False, extra_filters={})``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Adds a related item count to a given ``QuerySet`` using its
 `extra method`_, for a model which has a relation to this manager's

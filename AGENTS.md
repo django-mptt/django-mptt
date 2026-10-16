@@ -153,7 +153,11 @@ remains out of scope.
 - #483 point 2 (tree_ids not consecutive) is cosmetic, not a bug.
 - Still unfixable from MPTT's side: writes outside MPTT (raw SQL,
   `bulk_update`, `update()`) and concurrent writers. `transaction.atomic()` is
-  not enough under READ COMMITTED or InnoDB's REPEATABLE READ (snapshot reads
-  vs. current-read UPDATEs); tree writes must be serialized with a lock taken
-  first in the transaction. Documented in `docs/technical_details.rst`
-  (Concurrency). Building locking into MPTT would be a larger change.
+  not enough under READ COMMITTED (Django's default on PostgreSQL *and* MySQL,
+  Django overrides InnoDB's REPEATABLE READ). The documented recipe in
+  `docs/technical_details.rst` (Concurrency): one table-wide lock
+  (`select_for_update()` on a lock row or `pg_advisory_xact_lock`) taken at
+  the start of every tree write, via `save()`/`delete()`/`move_to()`
+  overrides. Per-tree locks are insufficient (root inserts shift other trees'
+  tree_ids). `rebuild()` deliberately takes no lock: not portable (MySQL
+  `LOCK TABLES` commits, SQLite has none) and it would surprise callers.
