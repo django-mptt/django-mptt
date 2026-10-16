@@ -10,3 +10,4 @@ mydatabase
 venv/
 .idea/
 .coverage
+.venv
