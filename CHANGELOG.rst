@@ -5,6 +5,9 @@ Change log
 Next version
 ============
 
+0.19.1 (2026-10-16)
+===================
+
 - Fixed ``move_to()`` / ``TreeManager.move_node()`` corrupting the tree when
   the node or the target instance was loaded before other nodes were moved;
   their tree fields (and the node's parent) are now reloaded from the
