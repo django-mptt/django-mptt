@@ -620,11 +620,30 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         ``MPTTMeta.order_insertion_by``.  In most cases you should just
         move the node yourself by setting node.parent.
         """
+        if not self.tree_model._mptt_is_tracking:
+            # The move calculations use the in-memory tree fields of both
+            # nodes. If another move has happened since the instances were
+            # loaded these are stale and the raw SQL would corrupt the tree
+            # (#257, #568). Skip inside delay_mptt_updates(), the tracking
+            # layer manages tree state there independently.
+            self._refresh_tree_fields(node, include_parent=True)
+            if target is not None:
+                self._refresh_tree_fields(target)
         self._move_node(node, target, position=position)
         node.save()
         node_moved.send(
             sender=node.__class__, instance=node, target=target, position=position
         )
+
+    def _refresh_tree_fields(self, node, include_parent=False):
+        fields = [self.left_attr, self.right_attr, self.tree_id_attr, self.level_attr]
+        if include_parent:
+            fields.append(self.parent_attr)
+        node.refresh_from_db(fields=fields)
+        if include_parent:
+            node._mptt_cached_fields[self.parent_attr] = (
+                node._mptt_meta.get_raw_field_value(node, self.parent_attr)
+            )
 
     @delegate_manager
     def root_node(self, tree_id):

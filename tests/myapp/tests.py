@@ -3333,3 +3333,58 @@ class MultiDatabaseTests(TestCase):
         root.refresh_from_db(using="secondary")
         self.assertEqual(root._mpttfield("right"), 2)
 
+
+class StaleInstanceMoveTests(TreeTestCase):
+    """
+    ``move_to()`` must use the database state of both nodes, not possibly
+    stale in-memory tree fields (#257, #568).
+    """
+
+    def setUp(self):
+        root = Genre.objects.create(name="root")
+        cat1 = Genre.objects.create(name="cat1", parent=root)
+        x = Genre.objects.create(name="x", parent=cat1)
+        for name in "abc":
+            Genre.objects.create(name=name, parent=x)
+        Genre.objects.create(name="y", parent=cat1)
+
+    def get(self, name):
+        return Genre.objects.get(name=name)
+
+    def assertTreeConsistent(self):
+        before = get_tree_details(Genre.objects.all())
+        Genre.objects.rebuild()
+        self.assertTreeEqual(before, Genre.objects.all())
+
+    def test_stale_node(self):
+        # Moving all children of x to cat1 using instances loaded up front
+        children = list(self.get("x").get_children())
+        for child in children:
+            child.move_to(self.get("cat1"), "last-child")
+        self.assertTreeConsistent()
+        self.assertEqual(
+            [node.name for node in self.get("cat1").get_children()],
+            ["x", "y", "a", "b", "c"],
+        )
+
+    def test_stale_target(self):
+        target = self.get("y")
+        # Shifts y's lft/rght in the database
+        Genre.objects.create(name="z", parent=self.get("x"))
+        self.get("c").move_to(target, "last-child")
+        self.assertTreeConsistent()
+        self.assertEqual(self.get("c").parent, self.get("y"))
+
+    def test_stale_parent(self):
+        a = self.get("a")
+        self.get("a").move_to(self.get("y"), "last-child")
+        a.move_to(self.get("root"), "last-child")
+        self.assertTreeConsistent()
+        self.assertEqual(self.get("a").parent, self.get("root"))
+
+    def test_stale_root_node(self):
+        other = Genre.objects.create(name="other")
+        self.get("other").move_to(self.get("y"), "last-child")
+        other.move_to(self.get("x"), "first-child")
+        self.assertTreeConsistent()
+        self.assertEqual(self.get("other").parent, self.get("x"))

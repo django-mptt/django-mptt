@@ -276,13 +276,11 @@ the signal ``node_moved`` will be sent.
    your signal handler.
 
 .. note::
-   It is assumed that when you call this method, the tree fields in the
-   instance you've called it on, and in any ``target`` instance passed
-   in, reflect the current state of the database.
-
-   Modifying the tree fields manually before calling this method or
-   using tree fields which are out of sync with the database can result
-   in the tree structure being put into an inaccurate state.
+   The tree fields (and the parent) of the instance and of ``target`` are
+   reloaded from the database before the move, so it is safe to call this
+   method on instances which have been loaded before other nodes were
+   moved. This does not protect against concurrent writes from other
+   processes, see :ref:`concurrency`.
 
 If ``target`` is another model instance, it will be used to determine
 the type of movement which needs to take place, and will be used as the

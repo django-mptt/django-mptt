@@ -132,72 +132,22 @@ queryset results are typed to the proxy class).
   `block.super`), `node_moved` signal state, `bulk_create` usage, migration
   rebuild pattern, `TreeForeignKey` must point to `'self'`.
 
-## Remaining known bugs
+## Stale instances, #257 / #568 / #483 (fixed after 0.19)
 
-Deferred until after the 0.19 release (decided 2026-10-16): these need
-larger changes to the move logic and therefore another stabilization period
-(release candidate). Don't start on them while preparing 0.19.
-
-### #568 / #483 — `move_to` leaves incorrect `rght` on ancestors
-
-**Symptom:** After `move_to()`, a parent node's `rght` value is too large
-(the test suite itself has wrong expected values that paper over this).
-Issue #483 was filed by the original maintainer; issue #568 is a user report
-with before/after CSV dumps showing `cat1.rght = 6` when it should be `14`.
-
-**Root cause (hypothesis):** When a subtree is moved between parents,
-`_close_gap` removes space from the old location and `_create_space` adds space
-at the new location. The in-memory `rght` update on the old parent
-(`_post_insert_update_cached_parent_right`) may not match the actual SQL
-update, leaving the cached value inconsistent with the DB. This is compounded
-when `move_to` is called in a loop with stale instances.
-
-**Approach to fix:**
-1. Write a minimal reproducer: create a tree, move one child out, check the
-   old parent's `rght` directly from the DB (`refresh_from_db`).
-2. Compare what the raw SQL (`_inter_tree_move_and_close_gap`) produces in the
-   DB against what `_post_insert_update_cached_parent_right` sets in memory.
-3. The fix is likely adding `refresh_from_db` for MPTT fields at the top of
-   `move_node()` (similar to how `delete()` already does it), so that the move
-   calculations start from current DB values rather than potentially-stale
-   in-memory values.
-4. Alternatively, look at the `mk/nomagic` branch
-   (https://github.com/matthiask/django-mptt/compare/master...mk/nomagic) which
-   avoids the in-memory calculations entirely by refreshing from the DB after
-   each raw SQL operation.
-
-### #257 — Tree fields out of sync (canonical corruption meta-issue)
-
-**Symptom:** Any code path that modifies tree fields outside of MPTT (raw SQL,
-`bulk_update`, `update()` on a queryset) leaves the tree in an inconsistent
-state. Also: calling `move_to()` on an instance with stale MPTT attributes.
-
-**What we fixed:** The `save()` path — when `order_insertion_by` or `parent`
-changes, we now `refresh_from_db` the four MPTT tree fields before executing
-the move. This prevents the stale-instance + save() corruption case.
-
-**What remains:**
-- `move_to()` with stale instances: `move_node()` in the manager does not
-  refresh the node's tree fields from the DB before computing the move. Adding
-  `node.refresh_from_db(fields=[left, right, tree_id, level])` at the start of
-  `move_node()` (the public API entry point) would mirror what `delete()` does
-  and what `save()` now does.
-- Out-of-MPTT writes: cannot be defended against from MPTT's side; must be
-  documented as requiring a subsequent `rebuild()`.
-
-**Approach to fix `move_to` stale-instance case:**
-```python
-def move_node(self, node, target, position="last-child"):
-    opts = node._mptt_meta
-    node.refresh_from_db(
-        fields=[
-            opts.left_attr,
-            opts.right_attr,
-            opts.tree_id_attr,
-            opts.level_attr,
-        ]
-    )
-    # ... rest of method unchanged
-```
-Verify this doesn't break the existing move_node tests and check query counts
-for any tests using `assertNumQueries`.
+- `TreeManager.move_node()` (and therefore `move_to()`) now reloads the tree
+  fields of node and target, plus the node's parent and its
+  `_mptt_cached_fields` entry, before moving (skipped inside
+  `delay_mptt_updates()`). Regression tests: `StaleInstanceMoveTests`.
+- The exact loop from #568 does not reproduce on current code; only its
+  stale-instance variants did.
+- #483 point 1 was a `delay_mptt_updates()` bug: moving a node out of a tree
+  only marked the destination tree as modified, so the old tree was never
+  rebuilt. `_move_node()` now tracks the old tree_id too. The tests asserting
+  `rght = 6` were updated to the correct `4`.
+- #483 point 2 (tree_ids not consecutive) is cosmetic, not a bug.
+- Still unfixable from MPTT's side: writes outside MPTT (raw SQL,
+  `bulk_update`, `update()`) and concurrent writers. `transaction.atomic()` is
+  not enough under READ COMMITTED or InnoDB's REPEATABLE READ (snapshot reads
+  vs. current-read UPDATEs); tree writes must be serialized with a lock taken
+  first in the transaction. Documented in `docs/technical_details.rst`
+  (Concurrency). Building locking into MPTT would be a larger change.

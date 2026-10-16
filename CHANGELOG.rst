@@ -5,9 +5,15 @@ Change log
 Next version
 ============
 
+- Fixed ``move_to()`` / ``TreeManager.move_node()`` corrupting the tree when
+  the node or the target instance was loaded before other nodes were moved;
+  their tree fields (and the node's parent) are now reloaded from the
+  database before the move (#257, #568).
 - Fixed ``delay_mptt_updates()`` leaving a gap in the old tree when a node
   was moved out of it; the old tree is now rebuilt as well when the block
   exits (fixes #483).
+- Documented why ``transaction.atomic()`` alone does not prevent concurrent
+  writes from corrupting the tree and how to serialize tree writes.
 
 0.19 (2026-10-16)
 =================

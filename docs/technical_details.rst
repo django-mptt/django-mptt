@@ -82,6 +82,8 @@ of nodes which are retrieved for the whole tree or any subtree::
    node.get_descendants().filter(level__lte=node.level + 2)
 
 
+.. _concurrency:
+
 Concurrency
 ===========
 
@@ -95,6 +97,18 @@ the client code's responsibility to ensure that calls to mptt CRUD methods are m
 exclusive.
 
 Note: In the above paragraph 'client code' means any django app that uses mptt base models.
+
+Wrapping tree operations in ``transaction.atomic()`` alone is not enough.
+django-mptt reads tree fields and then runs several ``UPDATE`` statements
+based on those values. With the default isolation levels another
+transaction can commit in between (``READ COMMITTED``, the PostgreSQL
+default), or the reads see an older snapshot than the updates
+(``REPEATABLE READ``, the MySQL/InnoDB default). Both can corrupt the tree.
+Serialize tree writes instead, for example with PostgreSQL's transaction
+scoped ``LOCK TABLE ... IN SHARE ROW EXCLUSIVE MODE``, an advisory lock, or
+a ``select_for_update()`` on a dedicated lock row which every tree write
+acquires first. Acquire the lock before reading any tree nodes in the
+transaction, otherwise ``REPEATABLE READ`` still returns the old snapshot.
 
 .. _`LOCK/UNLOCK statements are not transaction safe`: https://dev.mysql.com/doc/refman/5.7/en/lock-tables-and-transactions.html
 
