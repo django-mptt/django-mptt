@@ -4,10 +4,10 @@ from myapp.models import Category, Genre, ReferencingModel
 from myapp.tests import TreeTestCase
 
 
-# Django 6.2 changed the default empty choice label from "---------" to
+# Django 6.1 changed the default empty choice label from "---------" to
 # "- Select an option -". django-upgrade will remove this branch once we drop
-# support for Django < 6.2.
-if django.VERSION < (6, 2):
+# support for Django < 6.1.
+if django.VERSION < (6, 1):
     EMPTY_LABEL = "---------"
 else:
     EMPTY_LABEL = "- Select an option -"

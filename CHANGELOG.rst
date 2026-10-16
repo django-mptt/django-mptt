@@ -8,7 +8,7 @@ Next version
 0.19 (unreleased)
 =================
 
-- Added support for Python 3.14 and Django 6.0.
+- Added support for Python 3.14, Django 6.0 and Django 6.1.
 - Fixed ``is_root_node()`` incorrectly returning ``True`` for unsaved instances
   that have a parent assigned but not yet saved (fixes #617).
 - Fixed ``_is_saved()`` always returning ``True`` for models with a UUID primary

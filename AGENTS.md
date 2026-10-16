@@ -36,7 +36,17 @@ risky. See `README.rst` and `docs/models.rst` for the documented caveats.
 - One bullet per fix, starting with the affected symbol in backticks.
 
 ### Releases
-- Not automatic; a human tags and publishes to PyPI when ready.
+- Not automatic; a human runs `make-release` (in `~/_dotfiles/bin`), which
+  bumps `mptt/__init__.py`, dates the CHANGELOG section, commits, tags and
+  pushes; the tag triggers the PyPI publish workflow.
+- Keep a `0.NN (unreleased)` heading directly below "Next version" so
+  `make-release` picks it up as the default version. Dry run:
+  `make-release --dry-run`.
+
+### Linting
+- CI installs an unpinned ruff and runs `ruff check`; new ruff releases can
+  enable new default rules and break CI on main. Run `uvx ruff check` (latest)
+  and keep the pre-commit ruff rev in sync.
 
 ## Test command
 
@@ -78,7 +88,8 @@ queryset results are typed to the proxy class).
 ## What we fixed in this session
 
 - **Django 6.x test compat** — `empty_label` default changed from `"---------"`
-  to `"- Select an option -"`. Added `django.VERSION < (6, 2)` guard in tests.
+  to `"- Select an option -"` in Django 6.1. Guarded with
+  `django.VERSION < (6, 1)` in `tests/myapp/test_forms.py`.
 - **`is_root_node()` for unsaved instances** — Was checking only `parent_id`
   (always None for unsaved objects). Now also checks the `parent` attribute.
 - **`_is_saved()` for UUID PKs** — Was checking `pk is None`; UUID fields are
