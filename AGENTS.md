@@ -134,6 +134,10 @@ queryset results are typed to the proxy class).
 
 ## Remaining known bugs
 
+Deferred until after the 0.19 release (decided 2026-10-16): these need
+larger changes to the move logic and therefore another stabilization period
+(release candidate). Don't start on them while preparing 0.19.
+
 ### #568 / #483 — `move_to` leaves incorrect `rght` on ancestors
 
 **Symptom:** After `move_to()`, a parent node's `rght` value is too large
