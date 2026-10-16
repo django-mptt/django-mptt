@@ -6,11 +6,12 @@ django-mptt works by storing pre-computed left/right/level/tree_id values
 alongside each row. This makes reads very fast, but it means that every
 insert, move, or delete must update a potentially large number of sibling and
 ancestor rows. This write amplification is the fundamental reason the library
-is hard to maintain: concurrent writes can race and corrupt the tree, bulk
-operations bypass the update logic entirely, and any code that touches the
+is hard to maintain: concurrent writes can race and corrupt the tree (see
+`Concurrency <https://django-mptt.readthedocs.io/en/latest/technical_details.html#concurrency>`__),
+bulk operations bypass the update logic entirely, and any code that touches the
 database outside of django-mptt (raw SQL, ``bulk_update``, migrations) can
 leave the tree in an inconsistent state. Rebuilding with ``rebuild()`` is
-the escape hatch, but it locks the table.
+the escape hatch, but it rewrites every row, which is slow for large tables.
 
 If you are starting a new project, or can afford to migrate, consider an
 alternative. Newer databases support recursive Common Table Expressions (CTE),
@@ -32,15 +33,15 @@ django-mptt
 Utilities for implementing Modified Preorder Tree Traversal with your
 Django Models and working with trees of Model instances.
 
-.. image:: https://secure.travis-ci.org/django-mptt/django-mptt.svg?branch=master
+.. image:: https://github.com/django-mptt/django-mptt/actions/workflows/tests.yml/badge.svg?branch=main
     :alt: Build Status
-    :target: https://travis-ci.org/django-mptt/django-mptt
+    :target: https://github.com/django-mptt/django-mptt/actions/workflows/tests.yml
 
 Project home: https://github.com/django-mptt/django-mptt/
 
 Documentation: https://django-mptt.readthedocs.io/
 
-Discussion group: https://groups.google.com/forum/#!forum/django-mptt-dev
+Bug reports: https://github.com/django-mptt/django-mptt/issues
 
 What is Modified Preorder Tree Traversal?
 =========================================
