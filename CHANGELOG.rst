@@ -5,6 +5,10 @@ Change log
 Next version
 ============
 
+- Fixed ``delay_mptt_updates()`` leaving a gap in the old tree when a node
+  was moved out of it; the old tree is now rebuilt as well when the block
+  exits (fixes #483).
+
 0.19 (2026-10-16)
 =================
 

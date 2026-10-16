@@ -573,7 +573,10 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         self, node, target, position="last-child", save=True, refresh_target=True
     ):
         if self.tree_model._mptt_is_tracking:
-            # delegate to insert_node and clean up the gaps later.
+            # delegate to insert_node and clean up the gaps later. The tree
+            # the node is leaving needs a rebuild too, otherwise the gap
+            # stays in its ancestors' rght values (#483).
+            self.tree_model._mptt_track_tree_modified(getattr(node, self.tree_id_attr))
             return self.insert_node(
                 node,
                 target,

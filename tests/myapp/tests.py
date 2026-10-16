@@ -1042,7 +1042,7 @@ class DelayedUpdatesTestCase(TreeTestCase):
         )
 
     def test_move_node_to_root(self):
-        with self.assertNumQueries(4), ConcreteModel.objects.delay_mptt_updates():
+        with self.assertNumQueries(8), ConcreteModel.objects.delay_mptt_updates():
             with self.assertNumQueries(3):
                 # 3 queries here!
                 #   1. find the next tree_id to move to
@@ -1065,7 +1065,7 @@ class DelayedUpdatesTestCase(TreeTestCase):
         self.assertTreeEqual(
             ConcreteModel.objects.all(),
             """
-            1 - 1 0 1 6
+            1 - 1 0 1 4
             2 1 1 1 2 3
             4 - 2 0 1 2
             5 - 3 0 1 2
@@ -1320,7 +1320,7 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
         )
 
     def test_move_node_to_root(self):
-        with self.assertNumQueries(4), OrderedInsertion.objects.delay_mptt_updates():
+        with self.assertNumQueries(8), OrderedInsertion.objects.delay_mptt_updates():
             with self.assertNumQueries(3):
                 # 3 queries here!
                 #   1. find the next tree_id to move to
@@ -1343,7 +1343,7 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
         self.assertTreeEqual(
             OrderedInsertion.objects.all(),
             """
-            1 - 1 0 1 6
+            1 - 1 0 1 4
             2 1 1 1 2 3
             3 - 2 0 1 2
             4 - 3 0 1 2
@@ -3332,3 +3332,4 @@ class MultiDatabaseTests(TestCase):
         # root's rght should have been updated correctly after delete
         root.refresh_from_db(using="secondary")
         self.assertEqual(root._mpttfield("right"), 2)
+
