@@ -5,7 +5,7 @@ Change log
 Next version
 ============
 
-0.19 (unreleased)
+0.19 (2026-10-16)
 =================
 
 - Added support for Python 3.14, Django 6.0 and Django 6.1.

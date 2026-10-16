@@ -1,4 +1,4 @@
-__version__ = "0.19rc1"
+__version__ = "0.19.0"
 
 
 def register(*args, **kwargs):
