@@ -60,7 +60,11 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             self.tree_model = _get_tree_model(model)
 
             self._base_manager = None
-            if self.tree_model and self.tree_model is not model and not model._meta.proxy:
+            if (
+                self.tree_model
+                and self.tree_model is not model
+                and not model._meta.proxy
+            ):
                 # _base_manager is the treemanager on tree_model (MTI only).
                 # Proxy models share the same DB table so they don't need
                 # delegation; keeping _base_manager None lets their own
@@ -173,12 +177,9 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                     next_lft = rght + 1
                     min_max = {"min": min_val, "max": max_val, "level": level}
                 elif lft == next_lft:
-                    if min_val < min_max["min"]:
-                        min_max["min"] = min_val
-                    if max_val > min_max["max"]:
-                        min_max["max"] = max_val
-                    if level < min_max["level"]:
-                        min_max["level"] = level
+                    min_max["min"] = min(min_max["min"], min_val)
+                    min_max["max"] = max(min_max["max"], max_val)
+                    min_max["level"] = min(min_max["level"], level)
                     next_lft = rght + 1
                 elif lft != next_lft:
                     filters |= Q(

@@ -174,10 +174,14 @@ the move. This prevents the stale-instance + save() corruption case.
 ```python
 def move_node(self, node, target, position="last-child"):
     opts = node._mptt_meta
-    node.refresh_from_db(fields=[
-        opts.left_attr, opts.right_attr,
-        opts.tree_id_attr, opts.level_attr,
-    ])
+    node.refresh_from_db(
+        fields=[
+            opts.left_attr,
+            opts.right_attr,
+            opts.tree_id_attr,
+            opts.level_attr,
+        ]
+    )
     # ... rest of method unchanged
 ```
 Verify this doesn't break the existing move_node tests and check query counts

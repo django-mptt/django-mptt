@@ -49,7 +49,7 @@ class classpropertytype(property):
     def __init__(self, name, bases=(), members=None):
         if members is None:
             members = {}
-        return super().__init__(
+        super().__init__(
             members.get("__get__"),
             members.get("__set__"),
             members.get("__delete__"),
@@ -316,7 +316,9 @@ class MPTTModelBase(ModelBase):
         """
 
         if not issubclass(cls, models.Model):
-            raise ValueError(_("register() expects a Django model class argument"))
+            raise ValueError(  # noqa: TRY004
+                _("register() expects a Django model class argument")
+            )
 
         if not hasattr(cls, "_mptt_meta"):
             cls._mptt_meta = MPTTOptions(**kwargs)
@@ -404,11 +406,13 @@ class MPTTModelBase(ModelBase):
                     tree_manager = cls._default_manager
                 else:
                     for cls_manager in cls._meta.managers:
-                        if isinstance(cls_manager, TreeManager):
-                            # prefer any locally defined manager (i.e. keep going if not local)
-                            if cls_manager.model is cls:
-                                tree_manager = cls_manager
-                                break
+                        # prefer any locally defined manager (i.e. keep going if not local)
+                        if (
+                            isinstance(cls_manager, TreeManager)
+                            and cls_manager.model is cls
+                        ):
+                            tree_manager = cls_manager
+                            break
 
                 if tree_manager and tree_manager.model is not cls:
                     tree_manager = tree_manager._copy_to_model(cls)
@@ -947,9 +951,7 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
                     setattr(self, opts.right_attr, left + 1)
                     setattr(self, opts.level_attr, parent._mpttfield("level") + 1)
                     setattr(self, opts.tree_id_attr, parent._mpttfield("tree_id"))
-                    _tm._post_insert_update_cached_parent_right(
-                        parent, 2
-                    )
+                    _tm._post_insert_update_cached_parent_right(parent, 2)
                 else:
                     setattr(self, opts.left_attr, 1)
                     setattr(self, opts.right_attr, 2)
@@ -1065,9 +1067,7 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
                             except IndexError:
                                 pass
                         else:
-                            _tm._move_node(
-                                self, parent, "last-child", save=False
-                            )
+                            _tm._move_node(self, parent, "last-child", save=False)
 
                     if parent_id is not None and update_cached_parent:
                         # Update rght of cached parent
@@ -1184,9 +1184,7 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
         parent = cached_field_value(self, self._mptt_meta.parent_attr)
         if parent:
             right_shift = -self.get_descendant_count() - 2
-            _tm._post_insert_update_cached_parent_right(
-                parent, right_shift
-            )
+            _tm._post_insert_update_cached_parent_right(parent, right_shift)
 
         return super().delete(*args, **kwargs)
 
@@ -1221,7 +1219,7 @@ def _check_no_testing_generators(self):
         if "model_bakery" in call_file and not getattr(
             settings, "MPTT_ALLOW_TESTING_GENERATORS", False
         ):
-            raise Exception(
+            raise Exception(  # noqa: TRY002
                 f"The {call_directory} populates django-mptt fields with random values which leads to unpredictable behavior. "
                 "If you really want to generate this model that way, please set MPTT_ALLOW_TESTING_GENERATORS=True in your settings.",
             )

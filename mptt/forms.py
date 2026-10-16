@@ -192,10 +192,13 @@ class MPTTAdminForm(forms.ModelForm):
         cleaned_data = super().clean()
         opts = self._meta.model._mptt_meta
         parent = cleaned_data.get(opts.parent_attr)
-        if self.instance and parent:
-            if parent.is_descendant_of(self.instance, include_self=True):
-                if opts.parent_attr not in self._errors:
-                    self._errors[opts.parent_attr] = self.error_class()
-                self._errors[opts.parent_attr].append(_("Invalid parent"))
-                del self.cleaned_data[opts.parent_attr]
+        if (
+            self.instance
+            and parent
+            and parent.is_descendant_of(self.instance, include_self=True)
+        ):
+            if opts.parent_attr not in self._errors:
+                self._errors[opts.parent_attr] = self.error_class()
+            self._errors[opts.parent_attr].append(_("Invalid parent"))
+            del self.cleaned_data[opts.parent_attr]
         return cleaned_data

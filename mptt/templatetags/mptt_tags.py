@@ -61,7 +61,7 @@ class DrilldownTreeForNodeNode(template.Node):
             if cls is None:
                 raise template.TemplateSyntaxError(
                     _("drilldown_tree_for_node tag was given an invalid model: %s")
-                    % ".".join([app_label, model_name])
+                    % f"{app_label}.{model_name}"
                 )
             try:
                 cls._meta.get_field(fk_attr)

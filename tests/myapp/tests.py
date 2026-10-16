@@ -1562,8 +1562,9 @@ class ManagerTests(TreeTestCase):
 
         level_1_qs = Genre.objects.filter(parent=root)
         desc_names = set(
-            Genre.objects.get_queryset_descendants(level_1_qs, include_self=False)
-            .values_list("name", flat=True)
+            Genre.objects.get_queryset_descendants(
+                level_1_qs, include_self=False
+            ).values_list("name", flat=True)
         )
         self.assertNotIn("Child2", desc_names)
         self.assertNotIn("Child3", desc_names)
@@ -1573,8 +1574,9 @@ class ManagerTests(TreeTestCase):
         )
 
         anc_names = set(
-            Genre.objects.get_queryset_ancestors(level_1_qs, include_self=False)
-            .values_list("name", flat=True)
+            Genre.objects.get_queryset_ancestors(
+                level_1_qs, include_self=False
+            ).values_list("name", flat=True)
         )
         self.assertEqual(anc_names, {"Root517"})
 

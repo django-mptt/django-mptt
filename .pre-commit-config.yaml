@@ -22,7 +22,7 @@ repos:
     hooks:
       - id: absolufy-imports
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.11.3"
+    rev: "v0.17.1"
     hooks:
       - id: ruff
       - id: ruff-format
