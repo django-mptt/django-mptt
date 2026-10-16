@@ -5,7 +5,10 @@ Change log
 Next version
 ============
 
-- Added support for Django 6.0.
+0.19 (unreleased)
+=================
+
+- Added support for Python 3.14 and Django 6.0.
 - Fixed ``is_root_node()`` incorrectly returning ``True`` for unsaved instances
   that have a parent assigned but not yet saved (fixes #617).
 - Fixed ``_is_saved()`` always returning ``True`` for models with a UUID primary
@@ -42,6 +45,14 @@ Next version
   proxy model when called on a proxy model instance. The tree manager for
   proxy models no longer delegates queryset operations to the concrete model's
   manager, since proxy models share the same database table (fixes #802).
+- Fixed ``get_children()`` issuing a slow ``pk__in`` query after
+  ``get_cached_trees()``; it now filters by parent and reuses the cached
+  children as the queryset's result cache (fixes #587).
+- Fixed validation errors from ``list_editable`` forms not being shown in the
+  MPTT admin change list; ``mptt_results()`` now yields Django's
+  ``ResultList`` so the template can access the row's form (fixes #726).
+- Fixed the model_bakery guard crashing with an ``IndexError`` on Windows
+  because it split the caller's path on ``/`` (#852).
 
 0.18 (2025-08-26)
 =================
