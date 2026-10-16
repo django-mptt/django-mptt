@@ -1,5 +1,6 @@
 import inspect
 import operator
+import os
 import sys
 import threading
 from functools import reduce, wraps
@@ -1216,7 +1217,7 @@ def _check_no_testing_generators(self):
         curframe = inspect.currentframe()
         call_frame = inspect.getouterframes(curframe, 0)
         call_file = call_frame[5][1]
-        call_directory = call_file.split("/")[-2]
+        call_directory = os.path.basename(os.path.dirname(call_file))
         if "model_bakery" in call_file and not getattr(
             settings, "MPTT_ALLOW_TESTING_GENERATORS", False
         ):
