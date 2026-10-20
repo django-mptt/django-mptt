@@ -5,7 +5,7 @@ Change log
 Next version
 ============
 
-0.20 (unreleased)
+0.20 (2026-10-20)
 =================
 
 - ``DraggableMPTTAdmin`` now uses ``Script(src, **attrs)`` instead of the
