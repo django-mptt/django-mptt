@@ -20,7 +20,7 @@ from django.db.models.fields.related import ForeignObjectRel, ManyToManyField
 from django.utils.encoding import force_str, smart_str
 from django.utils.html import format_html, mark_safe
 from django.utils.translation import get_language_bidi, gettext as _, gettext_lazy
-from js_asset import JS
+from js_asset import Script
 
 from mptt.exceptions import InvalidMove
 from mptt.forms import MPTTAdminForm, TreeNodeChoiceField
@@ -168,13 +168,13 @@ class DraggableMPTTAdmin(MPTTModelAdmin):
                 js=[
                     "admin/js/vendor/jquery/jquery.js",
                     "admin/js/jquery.init.js",
-                    JS(
+                    Script(
                         "mptt/draggable-admin.js",
-                        {
-                            "id": "draggable-admin-context",
+                        id="draggable-admin-context",
+                        **{
                             "data-context": json.dumps(
                                 self._tree_context(request), cls=DjangoJSONEncoder
-                            ),
+                            )
                         },
                     ),
                 ],

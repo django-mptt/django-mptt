@@ -5,6 +5,13 @@ Change log
 Next version
 ============
 
+0.20 (unreleased)
+=================
+
+- ``DraggableMPTTAdmin`` now uses ``Script(src, **attrs)`` instead of the
+  deprecated ``JS(src, {...})`` form of django-js-asset, and requires
+  ``django-js-asset>=4.0``.
+
 0.19.1 (2026-10-16)
 ===================
 

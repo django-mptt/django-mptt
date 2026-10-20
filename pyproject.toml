@@ -35,7 +35,7 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    "django-js-asset",
+    "django-js-asset>=4.0",
 ]
 
 [project.optional-dependencies]

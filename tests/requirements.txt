@@ -1,5 +1,5 @@
 mock-django
 Django >= 4.2
 coverage
-django-js-asset
+django-js-asset>=4.0
 model-bakery
