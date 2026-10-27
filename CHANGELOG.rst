@@ -5,7 +5,7 @@ Change log
 Next version
 ============
 
-0.21 (unreleased)
+0.21 (2026-10-27)
 =================
 
 - Fixed tree methods of proxy models with a filtering custom manager (e.g.
