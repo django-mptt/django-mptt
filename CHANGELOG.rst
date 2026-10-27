@@ -16,6 +16,14 @@ Next version
   (fixes #853, regression in 0.19).
 - ``TreeManager.db_manager()`` now passes the database on to the manager
   that proxy and multi-table inheritance models delegate tree operations to.
+- Tree writes (inserting, moving and deleting nodes, ``rebuild()``,
+  ``partial_rebuild()``, ``build_tree_nodes()``) now always see every row,
+  even if the model's tree manager is a ``TreeManager`` subclass which
+  filters ``get_queryset()``. Previously, hidden nodes could lead to crashes
+  or a corrupted tree, e.g. duplicate tree ids or child nodes left behind
+  in the wrong tree. Positions for ``order_insertion_by`` now also take
+  hidden siblings into account. Read methods such as ``get_children()``
+  still apply the filter.
 
 0.20 (2026-10-20)
 =================

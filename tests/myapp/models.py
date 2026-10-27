@@ -160,6 +160,28 @@ class SecondLevelOrderedInsertion(OrderedInsertion):
         proxy = True
 
 
+class VisibleManager(TreeManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(visible=True)
+
+
+class FilteredDefaultManagerModel(MPTTModel):
+    name = models.CharField(max_length=50)
+    visible = models.BooleanField(default=True)
+    parent = TreeForeignKey(
+        "self", null=True, blank=True, related_name="children", on_delete=models.CASCADE
+    )
+
+    objects = VisibleManager()
+    all_objects = TreeManager()
+
+    class MPTTMeta:
+        order_insertion_by = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
 class Tree(MPTTModel):
     parent = TreeForeignKey(
         "self", null=True, blank=True, related_name="children", on_delete=models.CASCADE

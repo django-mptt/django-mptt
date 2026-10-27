@@ -35,6 +35,7 @@ from myapp.models import (
     CustomTreeManager,
     CustomTreeQueryset,
     DoubleProxyModel,
+    FilteredDefaultManagerModel,
     Genre,
     Item,
     MultipleManagerModel,
@@ -3390,6 +3391,97 @@ class MultiDatabaseTests(TestCase):
             [(node.name, node.tree_id) for node in OrderedInsertion.objects.all()],
             [("b", 1)],
         )
+
+
+class FilteredDefaultManagerTests(TreeTestCase):
+    """
+    Tree writes must see every row even if the default manager filters
+    ``get_queryset()``; reads keep the manager's filter.
+    """
+
+    def tree(self):
+        return [
+            (node.name, node.tree_id, node.lft, node.rght, node.level)
+            for node in FilteredDefaultManagerModel.all_objects.all()
+        ]
+
+    def test_insert_below_hidden_parent(self):
+        root = FilteredDefaultManagerModel.objects.create(name="root")
+        hidden = FilteredDefaultManagerModel.objects.create(
+            name="hidden", parent=root, visible=False
+        )
+        FilteredDefaultManagerModel.objects.create(name="child", parent=hidden)
+
+        self.assertEqual(
+            self.tree(),
+            [("root", 1, 1, 6, 0), ("hidden", 1, 2, 5, 1), ("child", 1, 3, 4, 2)],
+        )
+
+    def test_insert_root_before_hidden_nodes(self):
+        b = FilteredDefaultManagerModel.objects.create(name="b")
+        FilteredDefaultManagerModel.objects.create(
+            name="b-hidden", parent=b, visible=False
+        )
+        FilteredDefaultManagerModel.objects.create(name="c", visible=False)
+        FilteredDefaultManagerModel.objects.create(name="a")
+
+        self.assertEqual(
+            self.tree(),
+            [
+                ("a", 1, 1, 2, 0),
+                ("b", 2, 1, 4, 0),
+                ("b-hidden", 2, 2, 3, 1),
+                ("c", 3, 1, 2, 0),
+            ],
+        )
+
+    def test_next_tree_id_with_hidden_root(self):
+        FilteredDefaultManagerModel.objects.create(name="a")
+        FilteredDefaultManagerModel.objects.create(name="b", visible=False)
+        FilteredDefaultManagerModel.objects.insert_node(
+            FilteredDefaultManagerModel(name="c"), None, save=True
+        )
+
+        self.assertEqual(
+            self.tree(),
+            [("a", 1, 1, 2, 0), ("b", 2, 1, 2, 0), ("c", 3, 1, 2, 0)],
+        )
+
+    def test_ordered_insertion_with_hidden_sibling(self):
+        root = FilteredDefaultManagerModel.objects.create(name="root")
+        FilteredDefaultManagerModel.objects.create(name="a", parent=root)
+        FilteredDefaultManagerModel.objects.create(name="c", parent=root, visible=False)
+        FilteredDefaultManagerModel.objects.create(name="b", parent=root)
+
+        self.assertEqual(
+            self.tree(),
+            [
+                ("root", 1, 1, 8, 0),
+                ("a", 1, 2, 3, 1),
+                ("b", 1, 4, 5, 1),
+                ("c", 1, 6, 7, 1),
+            ],
+        )
+
+    def test_rebuild(self):
+        root = FilteredDefaultManagerModel.objects.create(name="root")
+        FilteredDefaultManagerModel.objects.create(
+            name="hidden", parent=root, visible=False
+        )
+        FilteredDefaultManagerModel.all_objects.update(lft=0, rght=0, tree_id=0)
+        FilteredDefaultManagerModel.objects.rebuild()
+
+        self.assertEqual(self.tree(), [("root", 1, 1, 4, 0), ("hidden", 1, 2, 3, 1)])
+
+    def test_reads_stay_filtered(self):
+        root = FilteredDefaultManagerModel.objects.create(name="root")
+        FilteredDefaultManagerModel.objects.create(
+            name="hidden", parent=root, visible=False
+        )
+        FilteredDefaultManagerModel.objects.create(name="visible", parent=root)
+
+        self.assertEqual([node.name for node in root.get_children()], ["visible"])
+        self.assertEqual([node.name for node in root.get_descendants()], ["visible"])
 
 
 class StaleInstanceMoveTests(TreeTestCase):

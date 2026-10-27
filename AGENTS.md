@@ -84,10 +84,18 @@ Key invariants:
 
 `@delegate_manager` routes decorated methods to `_base_manager` when set.
 For MTI (multi-table inheritance) models it is the tree model's
-`_tree_manager`. For proxy models it is a plain, unregistered `TreeManager`
-bound to the proxy: tree operations must ignore filters in the proxy manager's
-`get_queryset()` (#853), but results must still be proxy instances (#802).
+`_tree_manager`; for proxy models it is `_unfiltered_manager` (see below),
+so results are proxy instances (#802) and reads ignore manager filters (#853).
 `delegate_manager` passes `_db` on via `db_manager()`.
+
+Tree writes must see every row, reads may be filtered. A tree manager whose
+class overrides `get_queryset()` gets `_unfiltered_manager`, a plain,
+unregistered `TreeManager` bound to the same model. `@unfiltered_manager`
+routes write entry points (`insert_node`, `_move_node`, `rebuild`,
+`_create_tree_space`, `_get_next_tree_id`, ...) to `TreeManager._unfiltered()`;
+model code that queries during writes uses `_unfiltered()` too. Read methods
+(`_mptt_filter`, `get_children()`, ...) keep the manager's filter on concrete
+models, deliberately: projects rely on it to hide nodes.
 
 ## What we fixed in this session
 

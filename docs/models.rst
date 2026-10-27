@@ -358,6 +358,15 @@ tree structure, with root nodes appearing in tree id order and their
 descendants being ordered in a depth-first fashion.
 
 .. note::
+   If you subclass ``TreeManager`` and filter its ``get_queryset()`` (for
+   example to hide unpublished nodes), the tree methods of model instances
+   such as ``get_children()`` or ``get_descendants()`` apply that filter, so
+   the results may skip nodes. Tree writes (inserting, moving and deleting
+   nodes, ``rebuild()``) always ignore the filter, because they need to see
+   every node to keep the tree consistent. Proxy models are the exception:
+   their tree methods ignore the filter for reads too.
+
+.. note::
    ``bulk_create()`` bypasses ``Model.save()``, so the MPTT tree fields
    (``lft``, ``rght``, ``tree_id``, ``level``) are not populated
    automatically. You must either set them to placeholder values (e.g.

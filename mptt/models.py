@@ -232,10 +232,11 @@ class MPTTOptions:
                 # Fall back on tree id ordering if multiple root nodes have
                 # the same values.
                 order_by.append(opts.tree_id_attr)
+            # Siblings hidden by a filtering manager matter for the position.
+            manager = node.__class__._tree_manager
+            manager = manager._unfiltered_manager or manager
             queryset = (
-                node.__class__._tree_manager.db_manager(node._state.db)
-                .filter(filters)
-                .order_by(*order_by)
+                manager.db_manager(node._state.db).filter(filters).order_by(*order_by)
             )
             if node.pk:
                 queryset = queryset.exclude(pk=node.pk)
@@ -1052,7 +1053,7 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
                     else:
                         # Default movement
                         if parent_id is None:
-                            root_nodes = _tm.root_nodes()
+                            root_nodes = _tm._unfiltered().root_nodes()
                             try:
                                 rightmost_sibling = root_nodes.exclude(
                                     pk=self.pk
@@ -1193,7 +1194,7 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
     def _mptt_refresh(self):
         if not self.pk:
             return
-        manager = type(self)._tree_manager
+        manager = type(self)._tree_manager._unfiltered()
         opts = self._mptt_meta
         values = (
             manager.using(self._state.db)
