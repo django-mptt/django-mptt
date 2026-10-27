@@ -83,9 +83,11 @@ Key invariants:
   corrupt the tree.
 
 `@delegate_manager` routes decorated methods to `_base_manager` when set.
-`_base_manager` is used only for MTI (multi-table inheritance) models, NOT for
-proxy models (fixed in this session — proxy models now use their own manager so
-queryset results are typed to the proxy class).
+For MTI (multi-table inheritance) models it is the tree model's
+`_tree_manager`. For proxy models it is a plain, unregistered `TreeManager`
+bound to the proxy: tree operations must ignore filters in the proxy manager's
+`get_queryset()` (#853), but results must still be proxy instances (#802).
+`delegate_manager` passes `_db` on via `db_manager()`.
 
 ## What we fixed in this session
 
@@ -104,7 +106,8 @@ queryset results are typed to the proxy class).
   `_tree_manager.tree_model._tree_manager`.
 - **Proxy model queryset methods returning concrete instances** — `_base_manager`
   was set for proxy models, causing all `@delegate_manager` methods to return
-  concrete-typed querysets. Proxy models now have `_base_manager = None`.
+  concrete-typed querysets. (Superseded by #853: proxies now delegate to an
+  unfiltered `TreeManager` bound to the proxy, see Architecture.)
 - **`get_queryset_descendants/ancestors` sibling bleed (#517)** — The bounding-
   box range filter was too broad; contiguous siblings in the input queryset
   could appear in results. Added a level constraint to each range Q.

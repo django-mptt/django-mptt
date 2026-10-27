@@ -44,6 +44,8 @@ from myapp.models import (
     NullableOrderedInsertionModel,
     OrderedInsertion,
     Person,
+    RootLevelOrderedInsertion,
+    SecondLevelOrderedInsertion,
     SingleProxyModel,
     Student,
     SubItem,
@@ -1432,11 +1434,13 @@ class ManagerTests(TreeTestCase):
 
     def test_proxy_custom_manager(self):
         self.assertIsInstance(SingleProxyModel._tree_manager, CustomTreeManager)
-        # Proxy models share the concrete model's DB table; no delegation needed.
-        self.assertIsNone(SingleProxyModel._tree_manager._base_manager)
+        # Proxy models delegate to a plain tree manager bound to the proxy.
+        base_manager = SingleProxyModel._tree_manager._base_manager
+        self.assertIs(type(base_manager), TreeManager)
+        self.assertIs(base_manager.model, SingleProxyModel)
 
         self.assertIsInstance(SingleProxyModel.objects, CustomTreeManager)
-        self.assertIsNone(SingleProxyModel.objects._base_manager)
+        self.assertIs(type(SingleProxyModel.objects._base_manager), TreeManager)
 
     def test_proxy_queryset_returns_proxy_instances(self):
         # get_ancestors/get_descendants must return instances of the proxy class,
@@ -1456,6 +1460,42 @@ class ManagerTests(TreeTestCase):
         descendants = root.get_descendants()
         # descendants of a concrete root include proxy children
         self.assertIn(grandchild.pk, descendants.values_list("pk", flat=True))
+
+    def test_proxy_filtered_manager_traversal(self):
+        # Tree traversal must not be restricted by a proxy manager's
+        # get_queryset() filters (#853).
+        root = OrderedInsertion.objects.create(name="root")
+        child = OrderedInsertion.objects.create(name="child", parent=root)
+        OrderedInsertion.objects.create(name="grandchild", parent=child)
+
+        grandchild = SecondLevelOrderedInsertion.objects.get(name="grandchild")
+        self.assertEqual(grandchild.get_root().pk, root.pk)
+        self.assertIsInstance(grandchild.get_root(), SecondLevelOrderedInsertion)
+        self.assertEqual(
+            [node.name for node in grandchild.get_ancestors()], ["root", "child"]
+        )
+        self.assertTrue(
+            all(
+                isinstance(node, SecondLevelOrderedInsertion)
+                for node in grandchild.get_ancestors()
+            )
+        )
+
+    def test_proxy_filtered_manager_insert_root(self):
+        # Inserting a root node through a filtered proxy manager must shift
+        # the tree_id of every node in the following trees, not only of the
+        # nodes visible through the manager (#853).
+        b = OrderedInsertion.objects.create(name="b")
+        OrderedInsertion.objects.create(name="b-child", parent=b)
+        RootLevelOrderedInsertion.objects.create(name="a")
+
+        self.assertEqual(
+            [
+                (node.name, node.tree_id, node.lft, node.rght)
+                for node in OrderedInsertion.objects.all()
+            ],
+            [("a", 1, 1, 2), ("b", 2, 1, 4), ("b-child", 2, 2, 3)],
+        )
 
     def test_get_queryset_descendants(self):
         def get_desc_names(qs, include_self=False):
@@ -3332,6 +3372,24 @@ class MultiDatabaseTests(TestCase):
         # root's rght should have been updated correctly after delete
         root.refresh_from_db(using="secondary")
         self.assertEqual(root._mpttfield("right"), 2)
+
+    def test_proxy_save_using_non_default_db(self):
+        # Delegated tree operations of proxy models must keep the database.
+        OrderedInsertion(name="b").save(using="default")
+        RootLevelOrderedInsertion(name="b").save(using="secondary")
+        RootLevelOrderedInsertion(name="a").save(using="secondary")
+
+        self.assertEqual(
+            [
+                (node.name, node.tree_id)
+                for node in OrderedInsertion.objects.using("secondary")
+            ],
+            [("a", 1), ("b", 2)],
+        )
+        self.assertEqual(
+            [(node.name, node.tree_id) for node in OrderedInsertion.objects.all()],
+            [("b", 1)],
+        )
 
 
 class StaleInstanceMoveTests(TreeTestCase):

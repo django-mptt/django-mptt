@@ -42,7 +42,10 @@ def delegate_manager(method):
     @functools.wraps(method)
     def wrapped(self, *args, **kwargs):
         if self._base_manager:
-            return getattr(self._base_manager, method.__name__)(*args, **kwargs)
+            manager = self._base_manager
+            if self._db:
+                manager = manager.db_manager(self._db)
+            return getattr(manager, method.__name__)(*args, **kwargs)
         return method(self, *args, **kwargs)
 
     return wrapped
@@ -60,16 +63,21 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             self.tree_model = _get_tree_model(model)
 
             self._base_manager = None
-            if (
-                self.tree_model
-                and self.tree_model is not model
-                and not model._meta.proxy
-            ):
-                # _base_manager is the treemanager on tree_model (MTI only).
-                # Proxy models share the same DB table so they don't need
-                # delegation; keeping _base_manager None lets their own
-                # queryset be used, which returns instances of the proxy class.
-                self._base_manager = self.tree_model._tree_manager
+            if self.tree_model and self.tree_model is not model:
+                if model._meta.concrete_model is self.tree_model:
+                    # Proxy of the tree model: delegate to a plain tree manager
+                    # bound to the proxy. Tree operations must see every row
+                    # regardless of filters in the proxy manager's
+                    # get_queryset() (#853), and results should still be
+                    # proxy instances (#802).
+                    self._base_manager = TreeManager()
+                    self._base_manager.model = model
+                    self._base_manager.name = name
+                    self._base_manager.tree_model = self.tree_model
+                    self._base_manager._base_manager = None
+                else:
+                    # _base_manager is the treemanager on tree_model (MTI)
+                    self._base_manager = self.tree_model._tree_manager
 
     def get_queryset(self, *args, **kwargs):
         """

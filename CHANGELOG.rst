@@ -5,6 +5,18 @@ Change log
 Next version
 ============
 
+0.21 (unreleased)
+=================
+
+- Fixed tree methods of proxy models with a filtering custom manager (e.g.
+  ``get_queryset().filter(level=2)``) only seeing the filtered rows: e.g.
+  ``get_root()`` raised ``DoesNotExist``, and inserting nodes through such a
+  manager corrupted the tree. Tree operations now use an unfiltered tree
+  manager bound to the proxy model, so they still return proxy instances
+  (fixes #853, regression in 0.19).
+- ``TreeManager.db_manager()`` now passes the database on to the manager
+  that proxy and multi-table inheritance models delegate tree operations to.
+
 0.20 (2026-10-20)
 =================
 

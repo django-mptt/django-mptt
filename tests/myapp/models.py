@@ -136,6 +136,30 @@ class OrderedInsertion(MPTTModel):
         return self.name
 
 
+class RootLevelManager(TreeManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(level=0)
+
+
+class SecondLevelManager(TreeManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(level=2)
+
+
+class RootLevelOrderedInsertion(OrderedInsertion):
+    objects = RootLevelManager()
+
+    class Meta:
+        proxy = True
+
+
+class SecondLevelOrderedInsertion(OrderedInsertion):
+    objects = SecondLevelManager()
+
+    class Meta:
+        proxy = True
+
+
 class Tree(MPTTModel):
     parent = TreeForeignKey(
         "self", null=True, blank=True, related_name="children", on_delete=models.CASCADE
