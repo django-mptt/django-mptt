@@ -349,24 +349,20 @@ class TreeRelatedFieldListFilter(RelatedFieldListFilter):
     def expected_parameters(self):
         return [self.changed_lookup_kwarg, self.lookup_kwarg_isnull]
 
-    # Ripped from contrib.admin.filters,FieldListFilter Django 1.8 to deal with
     # lookup name 'inhierarchy'
     def queryset(self, request, queryset):
-        try:
-            # #### MPTT ADDITION START
-            if self.lookup_val:
-                other_model = self.other_model.objects.get(
-                    **{self.rel_name: self.lookup_val}
-                )
-                other_models = other_model.get_descendants(True)
-                del self.used_parameters[self.changed_lookup_kwarg]
-                self.used_parameters.update(
-                    {f"{self.field_path}__{self.rel_name}__in": other_models}
-                )
-            # #### MPTT ADDITION END
-            return queryset.filter(**self.used_parameters)
-        except ValidationError as e:
-            raise IncorrectLookupParameters(e)
+        if self.lookup_val:
+            other_model = self.other_model.objects.get(
+                **{self.rel_name: self.lookup_val}
+            )
+            other_models = other_model.get_descendants(True)
+            del self.used_parameters[self.changed_lookup_kwarg]
+            self.used_parameters.update(
+                {f"{self.field_path}__{self.rel_name}__in": [
+                    str(pk) for pk in other_models.values_list("pk", flat=True)
+                    ]}
+            )
+        return super().queryset(request, queryset)
 
     # Adding padding_style to each choice tuple
     def field_choices(self, field, request, model_admin):
