@@ -5,8 +5,8 @@ Change log
 Next version
 ============
 
-0.22 (unreleased)
-=================
+0.21.1 (2026-11-03)
+===================
 
 - ``TreeRelatedFieldListFilter`` now reuses Django's
   ``RelatedFieldListFilter.queryset()`` instead of an outdated copy of it,
