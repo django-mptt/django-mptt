@@ -6,7 +6,7 @@ import threading
 from functools import reduce, wraps
 
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction
 from django.db.backends.utils import truncate_name
 from django.db.models.base import ModelBase
 from django.db.models.query import Q
@@ -1181,13 +1181,18 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
             if self._state.db
             else self._tree_manager
         )
-        _tm._close_gap(tree_width, target_right, tree_id)
+        # Close the gap before deleting so that post_delete handlers see a
+        # consistent tree, but roll it back if Django refuses the delete
+        # (PROTECT, RESTRICT) or anything else fails.
+        with transaction.atomic(using=_tm.db):
+            _tm._close_gap(tree_width, target_right, tree_id)
+            result = super().delete(*args, **kwargs)
         parent = cached_field_value(self, self._mptt_meta.parent_attr)
         if parent:
             right_shift = -self.get_descendant_count() - 2
             _tm._post_insert_update_cached_parent_right(parent, right_shift)
 
-        return super().delete(*args, **kwargs)
+        return result
 
     delete.alters_data = True
 

@@ -9,8 +9,9 @@ from django.apps import apps
 from django.contrib.admin import ModelAdmin, site
 from django.contrib.admin.views.main import ChangeList
 from django.contrib.auth.models import Group, User
-from django.db.models import Index, Q
+from django.db.models import Index, ProtectedError, Q, RestrictedError
 from django.db.models.query_utils import DeferredAttribute
+from django.db.models.signals import post_delete
 from django.template import Context, Template, TemplateSyntaxError
 from django.test import RequestFactory, TestCase, override_settings
 from model_bakery import baker
@@ -45,6 +46,8 @@ from myapp.models import (
     NullableOrderedInsertionModel,
     OrderedInsertion,
     Person,
+    ProtectedGenreRef,
+    RestrictedGenreRef,
     RootLevelOrderedInsertion,
     SecondLevelOrderedInsertion,
     SingleProxyModel,
@@ -613,6 +616,111 @@ class DeletionTestCase(TreeTestCase):
             8 1 1 1 10 15
             9 8 1 2 11 12
             10 8 1 2 13 14""",
+        )
+
+    def test_protected_delete_keeps_tree(self):
+        genre = Genre.objects.create(name="root")
+        child = Genre.objects.create(name="child", parent=genre)
+        Genre.objects.create(name="sibling", parent=genre)
+        ProtectedGenreRef.objects.create(genre=child)
+
+        with self.assertRaises(ProtectedError):
+            child.delete()
+
+        self.assertTreeEqual(
+            Genre.objects.all(),
+            """
+            1 - 1 0 1 6
+            2 1 1 1 2 3
+            3 1 1 1 4 5""",
+        )
+
+    def _protected_delete_tree(self):
+        root = Genre.objects.create(name="root")
+        a = Genre.objects.create(name="a", parent=root)
+        a1 = Genre.objects.create(name="a1", parent=a)
+        Genre.objects.create(name="a2", parent=a)
+        b = Genre.objects.create(name="b", parent=root)
+        Genre.objects.create(name="b1", parent=b)
+        return a, a1
+
+    _protected_delete_tree_details = """
+        1 - 1 0 1 12
+        2 1 1 1 2 7
+        3 2 1 2 3 4
+        4 2 1 2 5 6
+        5 1 1 1 8 11
+        6 5 1 2 9 10"""
+
+    def test_protected_descendant_delete_keeps_tree(self):
+        a, a1 = self._protected_delete_tree()
+        ProtectedGenreRef.objects.create(genre=a1)
+        a1 = Genre.objects.select_related("parent").get(pk=a1.pk)
+
+        with self.assertRaises(ProtectedError):
+            a.delete()
+        with self.assertRaises(ProtectedError):
+            a1.delete()
+
+        self.assertTreeEqual(Genre.objects.all(), self._protected_delete_tree_details)
+        # The cached parent must not be updated either.
+        self.assertEqual(a1.parent.rght, 7)
+
+    def test_restricted_delete_keeps_tree(self):
+        a, a1 = self._protected_delete_tree()
+        RestrictedGenreRef.objects.create(genre=a1)
+
+        with self.assertRaises(RestrictedError):
+            a.delete()
+
+        self.assertTreeEqual(Genre.objects.all(), self._protected_delete_tree_details)
+
+    def test_restricted_delete_allowed_through_cascade(self):
+        a, a1 = self._protected_delete_tree()
+        RestrictedGenreRef.objects.create(genre=a1, owner=a)
+
+        a.delete()
+
+        self.assertTreeEqual(
+            Genre.objects.all(),
+            """
+            1 - 1 0 1 6
+            5 1 1 1 2 5
+            6 5 1 2 3 4""",
+        )
+
+    def test_post_delete_handler_deletes_node(self):
+        """
+        post_delete handlers may write to the tree, e.g. to remove a parent
+        which lost its last child; the gap must already be closed then.
+        """
+        root = Genre.objects.create(name="root")
+        Genre.objects.create(name="x", parent=root)
+        a = Genre.objects.create(name="a", parent=root)
+        a1 = Genre.objects.create(name="a1", parent=a)
+        b = Genre.objects.create(name="b", parent=root)
+        Genre.objects.create(name="b1", parent=b)
+
+        def delete_empty_parent(sender, instance, **kwargs):
+            if (
+                instance.parent_id
+                and not Genre.objects.filter(parent_id=instance.parent_id).exists()
+            ):
+                Genre.objects.get(pk=instance.parent_id).delete()
+
+        post_delete.connect(delete_empty_parent, sender=Genre)
+        try:
+            Genre.objects.get(pk=a1.pk).delete()
+        finally:
+            post_delete.disconnect(delete_empty_parent, sender=Genre)
+
+        self.assertTreeEqual(
+            Genre.objects.all(),
+            """
+            1 - 1 0 1 8
+            2 1 1 1 2 3
+            5 1 1 1 4 7
+            6 5 1 2 5 6""",
         )
 
 
