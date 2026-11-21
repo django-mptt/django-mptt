@@ -607,6 +607,8 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
             if parent:
                 self._post_insert_update_cached_parent_right(parent, right_shift)
 
+        # Tells save() to keep the tree fields set up above.
+        node._mptt_insert_prepared = True
         if save:
             node.save()
         return node

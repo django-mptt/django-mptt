@@ -2215,6 +2215,120 @@ class TestUnsaved(TreeTestCase):
             )
 
 
+class CopyNodeTestCase(TreeTestCase):
+    """
+    Copying a node the way Django documents it (pk = None and
+    _state.adding = True) inserts a new node instead of reusing the
+    original's tree fields.
+    """
+
+    def _copy(self, node, name):
+        node.pk = None
+        node._state.adding = True
+        node.name = name
+        node.save()
+        return node
+
+    def test_copy_leaf(self):
+        root = Genre.objects.create(name="root")
+        a = Genre.objects.create(name="a", parent=root)
+        Genre.objects.create(name="a1", parent=a)
+        Genre.objects.create(name="b", parent=root)
+
+        copy = Genre.objects.select_related("parent").get(name="b")
+        parent = copy.parent
+        self._copy(copy, "copy")
+
+        self.assertTreeEqual(
+            Genre.objects.all(),
+            """
+            1 - 1 0 1 10
+            2 1 1 1 2 5
+            3 2 1 2 3 4
+            4 1 1 1 6 7
+            5 1 1 1 8 9""",
+        )
+        # The cached parent is updated by the size of the copy, not of the
+        # original's stale lft/rght.
+        self.assertEqual(parent.rght, 10)
+
+    def test_copy_node_with_children(self):
+        root = Genre.objects.create(name="root")
+        a = Genre.objects.create(name="a", parent=root)
+        Genre.objects.create(name="a1", parent=a)
+
+        copy = Genre.objects.select_related("parent").get(name="a")
+        parent = copy.parent
+        self._copy(copy, "copy")
+
+        # Descendants are not copied, the copy is a new leaf.
+        self.assertTreeEqual(
+            Genre.objects.all(),
+            """
+            1 - 1 0 1 8
+            2 1 1 1 2 5
+            3 2 1 2 3 4
+            4 1 1 1 6 7""",
+        )
+        self.assertEqual(parent.rght, 8)
+
+    def test_copy_root(self):
+        root = Genre.objects.create(name="root")
+        Genre.objects.create(name="a", parent=root)
+        self._copy(Genre.objects.get(name="root"), "copy")
+
+        self.assertTreeEqual(
+            Genre.objects.all(),
+            """
+            1 - 1 0 1 4
+            2 1 1 1 2 3
+            3 - 2 0 1 2""",
+        )
+
+    def test_copy_ordered_insertion(self):
+        root = OrderedInsertion.objects.create(name="root")
+        OrderedInsertion.objects.create(name="b", parent=root)
+        OrderedInsertion.objects.create(name="d", parent=root)
+
+        copy = OrderedInsertion.objects.get(name="d")
+        copy.pk = None
+        copy._state.adding = True
+        copy.name = "c"
+        copy.save()
+
+        self.assertEqual(
+            [node.name for node in root.get_children()],
+            ["b", "c", "d"],
+        )
+
+    def test_insert_node_then_save(self):
+        root = Genre.objects.create(name="root")
+        Genre.objects.create(name="a", parent=root)
+
+        node = Genre(name="first")
+        Genre.objects.insert_node(node, root, position="first-child")
+        node.save()
+
+        self.assertTreeEqual(
+            Genre.objects.all(),
+            """
+            1 - 1 0 1 6
+            3 1 1 1 2 3
+            2 1 1 1 4 5""",
+        )
+
+        # The flag does not outlive the save, so a later copy is inserted.
+        self._copy(node, "copy")
+        self.assertTreeEqual(
+            Genre.objects.all(),
+            """
+            1 - 1 0 1 8
+            3 1 1 1 2 3
+            2 1 1 1 4 5
+            4 1 1 1 6 7""",
+        )
+
+
 class QuerySetTests(TreeTestCase):
     fixtures = ["categories.json"]
 

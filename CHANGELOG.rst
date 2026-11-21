@@ -8,6 +8,10 @@ Next version
 - ``MPTTModel.delete()`` no longer shifts the tree when Django refuses the
   delete because of a ``PROTECT`` or ``RESTRICT`` foreign key; closing the
   gap and deleting now happen in one transaction (#855).
+- ``MPTTModel.save()`` now inserts a copy made with ``pk = None`` and
+  ``_state.adding = True`` as a new node instead of writing it over the
+  original's tree position (#856). Preset tree fields of new nodes are only
+  kept when they were set up by ``insert_node()`` or ``insert_at()``.
 
 0.21.1 (2026-11-03)
 ===================

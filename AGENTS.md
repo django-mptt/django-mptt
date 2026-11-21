@@ -147,6 +147,13 @@ models, deliberately: projects rely on it to hide nodes.
   Closing the gap *after* the delete is wrong: `post_delete` handlers that
   write to the same tree (e.g. deleting an empty parent) would run before
   the gap is closed, leaving the outer close with a stale `target_right`.
+- **Copying a node with `pk = None` (#856)** — `save()` kept any preset
+  lft/rght on new nodes, assuming `insert_node()` had made space, so a copy
+  landed on the original's position. `insert_node()` now sets
+  `_mptt_insert_prepared` on the instance (removed again after a successful
+  `save()`); new nodes without it get their tree fields cleared and are
+  inserted normally. A `save(raw=...)`-style argument doesn't work because
+  `insert_node(save=False)` + a later `node.save()` is the documented default.
 - **Several documentation gaps** — `recursetree` limitations (pagination,
   `block.super`), `node_moved` signal state, `bulk_create` usage, migration
   rebuild pattern, `TreeForeignKey` must point to `'self'`.

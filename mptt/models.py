@@ -1105,10 +1105,19 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
 
         else:
             # new node, do an insert
-            if getattr(self, opts.left_attr) and getattr(self, opts.right_attr):
-                # This node has already been set up for insertion.
+            if getattr(self, "_mptt_insert_prepared", False):
+                # insert_node() has already made space for this node.
                 pass
             else:
+                # Anything else in the tree fields is stale, e.g. the original's
+                # position when copying a node with pk = None.
+                for attr in (
+                    opts.left_attr,
+                    opts.right_attr,
+                    opts.level_attr,
+                    opts.tree_id_attr,
+                ):
+                    setattr(self, attr, None)
                 parent = getattr(self, opts.parent_attr)
 
                 right_sibling = None
@@ -1146,6 +1155,7 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
             if collapse_old_tree is not None:
                 _tm._create_tree_space(collapse_old_tree, -1)
 
+        self.__dict__.pop("_mptt_insert_prepared", None)
         self._mptt_saved = True
         opts.update_mptt_cached_fields(self)
 
