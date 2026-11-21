@@ -5,6 +5,9 @@ Change log
 Next version
 ============
 
+0.22 (unreleased)
+=================
+
 - ``MPTTModel.delete()`` no longer shifts the tree when Django refuses the
   delete because of a ``PROTECT`` or ``RESTRICT`` foreign key; closing the
   gap and deleting now happen in one transaction (#855).
@@ -13,9 +16,9 @@ Next version
   original's tree position (#856). Preset tree fields of new nodes are only
   kept when they were set up by ``insert_node()`` or ``insert_at()``.
 - ``get_cached_trees()`` no longer scans the whole parent level for every
-  node, which made it quadratic for wide trees.
+  node, which made it quadratic for wide trees (#857).
 - ``TreeManager.rebuild()`` and ``partial_rebuild()`` only write nodes whose
-  tree fields actually change.
+  tree fields actually change (#858).
 
 0.21.1 (2026-11-03)
 ===================
