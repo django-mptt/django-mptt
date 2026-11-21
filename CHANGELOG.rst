@@ -9,6 +9,10 @@ Next version
 =================
 
 - Added support for Python 3.15 (with Django 6.1 and newer).
+- ``MPTTModelAdmin.get_actions()`` accepts Django 6.1's ``action_location``
+  argument and keeps the ``Action`` object for ``delete_selected``, which
+  silences Django's deprecation warnings for overriding ``get_actions()``
+  and unpacking action tuples.
 - ``MPTTModel.delete()`` no longer shifts the tree when Django refuses the
   delete because of a ``PROTECT`` or ``RESTRICT`` foreign key; closing the
   gap and deleting now happen in one transaction (#855).

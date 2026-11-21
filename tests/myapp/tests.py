@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import unittest
+import warnings
 
 import django
 from django.apps import apps
@@ -2218,6 +2219,24 @@ class AdminBatch(TreeTestCase):
             4 2 1 2 5 6
         """,
         )
+
+    def test_actions_without_deprecation_warnings(self):
+        user = User.objects.create_superuser("admin", "test@example.com", "p")
+        self.client.login(username=user.username, password="p")
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            self.client.get("/admin/myapp/category/")
+            self.client.post(
+                "/admin/myapp/category/",
+                {"action": "delete_selected", "_selected_action": ["5"], "post": "yes"},
+            )
+
+        self.assertEqual(
+            [str(w.message) for w in caught if "action" in str(w.message)], []
+        )
+        # delete_selected_tree removed node 5 with its descendants.
+        self.assertEqual(Category.objects.count(), 7)
 
 
 class TestUnsaved(TreeTestCase):

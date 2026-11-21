@@ -1,3 +1,4 @@
+import dataclasses
 import json
 
 import django
@@ -23,6 +24,12 @@ from js_asset import Script
 from mptt.exceptions import InvalidMove
 from mptt.forms import MPTTAdminForm, TreeNodeChoiceField
 from mptt.models import MPTTModel, TreeForeignKey
+
+
+try:
+    from django.contrib.admin.options import ActionLocation
+except ImportError:  # Django < 6.1
+    ActionLocation = None
 
 
 __all__ = ("DraggableMPTTAdmin", "MPTTAdminForm", "MPTTModelAdmin")
@@ -103,13 +110,27 @@ class MPTTModelAdmin(ModelAdmin):
             # (ab)using the built-in action to display the confirmation page
             return delete_selected(self, request, queryset)
 
-    def get_actions(self, request):
-        actions = super().get_actions(request)
-        if actions is not None and "delete_selected" in actions:
-            actions["delete_selected"] = (
-                self.delete_selected_tree,
-                "delete_selected",
-                _("Delete selected %(verbose_name_plural)s"),
+    if ActionLocation is None:
+
+        def get_actions(self, request):
+            return self._replace_delete_selected(super().get_actions(request))
+
+    else:
+        # Django checks the signature for action_location, **kwargs isn't enough.
+        def get_actions(self, request, action_location=ActionLocation.CHANGE_LIST):
+            return self._replace_delete_selected(
+                super().get_actions(request, action_location=action_location)
+            )
+
+    def _replace_delete_selected(self, actions):
+        action = actions.get("delete_selected") if actions else None
+        if action is None:
+            pass
+        elif isinstance(action, tuple):  # Django < 6.1
+            actions["delete_selected"] = (self.delete_selected_tree, *action[1:])
+        else:
+            actions["delete_selected"] = dataclasses.replace(
+                action, func=self.delete_selected_tree
             )
         return actions
 
