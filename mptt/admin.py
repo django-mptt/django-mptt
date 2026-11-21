@@ -8,12 +8,10 @@ from django.contrib.admin import RelatedFieldListFilter
 from django.contrib.admin.actions import delete_selected
 from django.contrib.admin.models import CHANGE, DELETION, LogEntry
 from django.contrib.admin.options import (
-    IncorrectLookupParameters,
     ModelAdmin,
     get_content_type_for_model,
 )
 from django.contrib.admin.utils import get_model_from_relation
-from django.core.exceptions import ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import IntegrityError, transaction
 from django.db.models.fields.related import ForeignObjectRel, ManyToManyField
