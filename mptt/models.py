@@ -1181,13 +1181,16 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
             if self._state.db
             else self._tree_manager
         )
+        # Django may refuse the delete (PROTECT, RESTRICT), so only close the
+        # gap once the rows are actually gone.
+        result = super().delete(*args, **kwargs)
         _tm._close_gap(tree_width, target_right, tree_id)
         parent = cached_field_value(self, self._mptt_meta.parent_attr)
         if parent:
             right_shift = -self.get_descendant_count() - 2
             _tm._post_insert_update_cached_parent_right(parent, right_shift)
 
-        return super().delete(*args, **kwargs)
+        return result
 
     delete.alters_data = True
 

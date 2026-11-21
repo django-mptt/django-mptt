@@ -446,3 +446,7 @@ class CustomParentAttrModel(MPTTModel):
 
     class MPTTMeta:
         parent_attr = "custom_parent"
+
+
+class ProtectedGenreRef(models.Model):
+    genre = models.ForeignKey(Genre, on_delete=models.PROTECT)

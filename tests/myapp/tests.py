@@ -9,7 +9,7 @@ from django.apps import apps
 from django.contrib.admin import ModelAdmin, site
 from django.contrib.admin.views.main import ChangeList
 from django.contrib.auth.models import Group, User
-from django.db.models import Index, Q
+from django.db.models import Index, ProtectedError, Q
 from django.db.models.query_utils import DeferredAttribute
 from django.template import Context, Template, TemplateSyntaxError
 from django.test import RequestFactory, TestCase, override_settings
@@ -45,6 +45,7 @@ from myapp.models import (
     NullableOrderedInsertionModel,
     OrderedInsertion,
     Person,
+    ProtectedGenreRef,
     RootLevelOrderedInsertion,
     SecondLevelOrderedInsertion,
     SingleProxyModel,
@@ -613,6 +614,23 @@ class DeletionTestCase(TreeTestCase):
             8 1 1 1 10 15
             9 8 1 2 11 12
             10 8 1 2 13 14""",
+        )
+
+    def test_protected_delete_keeps_tree(self):
+        genre = Genre.objects.create(name="root")
+        child = Genre.objects.create(name="child", parent=genre)
+        Genre.objects.create(name="sibling", parent=genre)
+        ProtectedGenreRef.objects.create(genre=child)
+
+        with self.assertRaises(ProtectedError):
+            child.delete()
+
+        self.assertTreeEqual(
+            Genre.objects.all(),
+            """
+            1 - 1 0 1 6
+            2 1 1 1 2 3
+            3 1 1 1 4 5""",
         )
 
 
