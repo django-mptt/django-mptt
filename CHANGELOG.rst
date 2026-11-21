@@ -5,6 +5,9 @@ Change log
 Next version
 ============
 
+- ``MPTTModel.save()`` now inserts a copy made with ``pk = None`` as a new
+  node instead of writing it over the original's tree position.
+
 0.21.1 (2026-11-03)
 ===================
 

@@ -1105,7 +1105,18 @@ class MPTTModel(models.Model, metaclass=MPTTModelBase):
 
         else:
             # new node, do an insert
-            if getattr(self, opts.left_attr) and getattr(self, opts.right_attr):
+            if (
+                getattr(self, opts.left_attr)
+                and getattr(self, opts.right_attr)
+                # A copy made with pk = None still carries the original's
+                # position, which is taken.
+                and not _tm._unfiltered()
+                ._mptt_filter(
+                    tree_id=self._mpttfield("tree_id"),
+                    left=self._mpttfield("left"),
+                )
+                .exists()
+            ):
                 # This node has already been set up for insertion.
                 pass
             else:

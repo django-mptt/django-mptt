@@ -2107,6 +2107,37 @@ class TestUnsaved(TreeTestCase):
             )
 
 
+class CopyNodeTestCase(TreeTestCase):
+    def test_copy_child(self):
+        root = Genre.objects.create(name="root")
+        child = Genre.objects.create(name="child", parent=root)
+        child.pk = None
+        child.name = "copy"
+        child.save(force_insert=True)
+
+        self.assertTreeEqual(
+            Genre.objects.all(),
+            """
+            1 - 1 0 1 6
+            2 1 1 1 2 3
+            3 1 1 1 4 5""",
+        )
+
+    def test_copy_root(self):
+        root = Genre.objects.create(name="root")
+        root.pk = None
+        root.name = "copy"
+        root._state.adding = True
+        root.save()
+
+        self.assertTreeEqual(
+            Genre.objects.all(),
+            """
+            1 - 1 0 1 2
+            2 - 2 0 1 2""",
+        )
+
+
 class QuerySetTests(TreeTestCase):
     fixtures = ["categories.json"]
 
