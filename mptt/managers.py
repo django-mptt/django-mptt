@@ -717,7 +717,7 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
         qs = self._mptt_filter(parent=None, **filters)
         if opts.order_insertion_by:
             qs = qs.order_by(*opts.order_insertion_by)
-        return list(qs.only("pk"))
+        return list(qs.only("pk", *self._rebuild_fields.values()))
 
     def _get_children(self, **filters):
         opts = self.model._mptt_meta
@@ -772,11 +772,15 @@ class TreeManager(models.Manager.from_queryset(TreeQuerySet)):
                 level=level + 1,
             )
 
-        setattr(node, self._rebuild_fields["left"], left)
-        setattr(node, self._rebuild_fields["right"], right)
-        setattr(node, self._rebuild_fields["level"], level)
-        setattr(node, self._rebuild_fields["tree_id"], tree_id)
-        nodes_to_update.append(node)
+        values = {"left": left, "right": right, "level": level, "tree_id": tree_id}
+        # bulk_update() is slow per row, leave out nodes which are correct already.
+        if any(
+            getattr(node, self._rebuild_fields[key]) != value
+            for key, value in values.items()
+        ):
+            for key, value in values.items():
+                setattr(node, self._rebuild_fields[key], value)
+            nodes_to_update.append(node)
 
         return right + 1
 

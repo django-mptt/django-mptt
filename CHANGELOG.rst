@@ -5,6 +5,9 @@ Change log
 Next version
 ============
 
+- ``TreeManager.rebuild()`` and ``partial_rebuild()`` only write nodes whose
+  tree fields actually change.
+
 0.21.1 (2026-11-03)
 ===================
 

@@ -1390,6 +1390,17 @@ class OrderedInsertionDelayedUpdatesTestCase(TreeTestCase):
 class ManagerTests(TreeTestCase):
     fixtures = ["categories.json", "genres.json", "persons.json"]
 
+    def test_rebuild_writes_only_changed_nodes(self):
+        before = get_tree_details(Genre.objects.all())
+        # select roots, select children, no update
+        with self.assertNumQueries(2):
+            Genre.objects.rebuild()
+
+        Genre.objects.filter(name="Action RPG").update(lft=0)
+        with self.assertNumQueries(3):
+            Genre.objects.rebuild()
+        self.assertTreeEqual(Genre.objects.all(), before)
+
     def test_all_managers_are_different(self):
         # all tree managers should be different. otherwise, possible infinite recursion.
         seen = {}
