@@ -12,6 +12,8 @@ Next version
   ``_state.adding = True`` as a new node instead of writing it over the
   original's tree position (#856). Preset tree fields of new nodes are only
   kept when they were set up by ``insert_node()`` or ``insert_at()``.
+- ``get_cached_trees()`` no longer scans the whole parent level for every
+  node, which made it quadratic for wide trees.
 
 0.21.1 (2026-11-03)
 ===================

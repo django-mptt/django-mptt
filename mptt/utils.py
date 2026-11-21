@@ -240,8 +240,10 @@ def get_cached_trees(queryset):
     """
 
     top_nodes = []
+    # Index of the last parent found, per level
+    last_parent = {}
 
-    def find_parent(obj, tree_level):
+    def find_parent(obj, level, tree_level):
         """
         Find the parent of ``obj`` in a list of items of the upper level.
         Args:
@@ -255,12 +257,17 @@ def get_cached_trees(queryset):
             Any child node has bounds inside the bounds of its
              parent.
         """
-        for item in tree_level:
+        # Start at the previous match: in depth-first and in level order the
+        # next node's parent is never further back, so this stays linear.
+        start = last_parent.get(level, 0)
+        for i in itertools.chain(range(start, len(tree_level)), range(start)):
+            item = tree_level[i]
             if getattr(item, tree_id_attr) == getattr(obj, tree_id_attr) and getattr(
                 item, left_attr
             ) <= getattr(obj, left_attr) <= getattr(obj, right_attr) <= getattr(
                 item, right_attr
             ):
+                last_parent[level] = i
                 return item
         return None
 
@@ -304,7 +311,7 @@ def get_cached_trees(queryset):
 
             # Define the cached parent
             if node_level > root_level:
-                parent = find_parent(obj, tree[node_level - 1])
+                parent = find_parent(obj, node_level - 1, tree[node_level - 1])
                 if parent is not None:
                     setattr(obj, parent_attr, parent)
                     parent._cached_children.append(obj)
