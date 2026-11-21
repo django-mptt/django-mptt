@@ -5,6 +5,9 @@ Change log
 Next version
 ============
 
+- ``get_cached_trees()`` no longer scans the whole parent level for every
+  node, which made it quadratic for wide trees.
+
 0.21.1 (2026-11-03)
 ===================
 

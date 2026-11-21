@@ -1710,6 +1710,20 @@ class CacheTreeChildrenTestCase(TreeTestCase):
         cache_tree_children(Category.objects.order_by("tree_id", "lft", "name"))
         cache_tree_children(Category.objects.filter(tree_id=1).order_by("lft"))
 
+    def test_wide_level(self):
+        root = Genre.objects.create(name="root")
+        for i in range(20):
+            child = Genre.objects.create(name=f"c{i}", parent=root)
+            Genre.objects.create(name=f"g{i}", parent=child)
+
+        for ordering in [("tree_id", "lft"), ("level", "tree_id", "lft")]:
+            nodes = list(Genre.objects.order_by(*ordering))
+            with self.assertNumQueries(0):
+                (root,) = cache_tree_children(nodes)
+                for child in root.get_children():
+                    (grandchild,) = child.get_children()
+                    self.assertEqual(grandchild.name, "g" + child.name[1:])
+
 
 class RecurseTreeTestCase(TreeTestCase):
     """
