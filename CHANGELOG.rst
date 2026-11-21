@@ -8,6 +8,7 @@ Next version
 0.22 (unreleased)
 =================
 
+- Added support for Python 3.15 (with Django 6.1 and newer).
 - ``MPTTModel.delete()`` no longer shifts the tree when Django refuses the
   delete because of a ``PROTECT`` or ``RESTRICT`` foreign key; closing the
   gap and deleting now happen in one transaction (#855).
