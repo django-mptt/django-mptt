@@ -14,6 +14,8 @@ Next version
   kept when they were set up by ``insert_node()`` or ``insert_at()``.
 - ``get_cached_trees()`` no longer scans the whole parent level for every
   node, which made it quadratic for wide trees.
+- ``TreeManager.rebuild()`` and ``partial_rebuild()`` only write nodes whose
+  tree fields actually change.
 
 0.21.1 (2026-11-03)
 ===================
