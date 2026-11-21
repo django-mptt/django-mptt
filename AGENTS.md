@@ -141,6 +141,12 @@ models, deliberately: projects rely on it to hide nodes.
   Fixed: `_get_connection()` now uses `self._db` when set; `save()`, `delete()`,
   and `insert_at()` build a `db_manager()`-bound manager and use it for all
   tree operations.
+- **Refused deletes shifting the tree (#855)** — `delete()` closed the gap
+  before Django's collector raised `ProtectedError`/`RestrictedError`. The
+  gap close and `super().delete()` now run in one `transaction.atomic()`.
+  Closing the gap *after* the delete is wrong: `post_delete` handlers that
+  write to the same tree (e.g. deleting an empty parent) would run before
+  the gap is closed, leaving the outer close with a stale `target_right`.
 - **Several documentation gaps** — `recursetree` limitations (pagination,
   `block.super`), `node_moved` signal state, `bulk_create` usage, migration
   rebuild pattern, `TreeForeignKey` must point to `'self'`.

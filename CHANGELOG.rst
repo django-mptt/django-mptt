@@ -6,7 +6,8 @@ Next version
 ============
 
 - ``MPTTModel.delete()`` no longer shifts the tree when Django refuses the
-  delete because of a ``PROTECT`` or ``RESTRICT`` foreign key.
+  delete because of a ``PROTECT`` or ``RESTRICT`` foreign key; closing the
+  gap and deleting now happen in one transaction (#855).
 
 0.21.1 (2026-11-03)
 ===================
